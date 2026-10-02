@@ -17,9 +17,13 @@ const STRIDE_BRAKE := 11.0
 const STRIDE_WALK := 1.02
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
+# Per-step speed swing: checks on impact, surges on push-off.
+const STEP_SURGE_WALK := 0.06
+const STEP_SURGE_SPRINT := 0.12
 const STAMINA_MAX := 4.6
 const STAMINA_REGEN := 1.35
 const EXHAUST_LOCK := 0.85
+const SPRINT_RESUME := 1.6
 const HOLD_DRAIN := 0.6
 const ANOMALIES_PER_RUN := 1
 const GRAVITY := 20.0

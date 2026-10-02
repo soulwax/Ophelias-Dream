@@ -23,6 +23,12 @@ var _glide := Vector3.ZERO
 var footprints: Footprints
 var stride: Stride
 var kicks: SnowKick
+var foot_lock: FootLock
+# Per-step dynamics: time since the last real touchdown and how long a step
+# has been taking, so speed can check on impact and surge on push-off.
+var _since_plant := 0.0
+var _step_time := 0.5
+var _last_plant_msec := 0
 # Footfalls come from distance covered, so sound, prints and powder land in
 # rhythm with the stride at any speed.
 var _travel := 0.0
@@ -119,7 +125,9 @@ func _physics_process(delta: float) -> void:
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
 	var wants_sprint := moving and (Input.is_action_pressed("sprint") or _autopilot == "sprint") and exhaust_left <= 0.0
-	var sprinting := wants_sprint and stamina > 0.0 and (_sprinting or stamina > 0.4)
+	# Once spent she must get some breath back before she can sprint again,
+	# so holding Shift through exhaustion cannot stutter into a stumble loop.
+	var sprinting := wants_sprint and stamina > 0.0 and (_sprinting or stamina > Tune.SPRINT_RESUME)
 	_sprinting = sprinting
 	var speed := Tune.WALK_SPEED
 	if sprinting:
@@ -143,13 +151,17 @@ func _physics_process(delta: float) -> void:
 		push = Game.weather.wind * 0.03 * (1.0 + Game.weather.gust * 0.8)
 	var target := Vector3(wish.x, 0.0, wish.z) * speed
 	_glide = _glide.move_toward(target, _momentum(target, moving, sprinting) * delta)
-	velocity.x = _glide.x + push.x
-	velocity.z = _glide.z + push.z
+	_since_plant += delta
+	if foot_lock:
+		foot_lock.body_speed = _ground_speed()
+	var surge := _step_surge()
+	velocity.x = _glide.x * surge + push.x
+	velocity.z = _glide.z * surge + push.z
 	move_and_slide()
 	_animate(moving, sprinting)
 	_breathe(delta, sprinting)
 	_carry(delta, sprinting)
-	_steps(delta, sprinting)
+	_steps(delta)
 	_move_camera(delta)
 	_flicker_lantern(delta)
 
@@ -186,6 +198,47 @@ func _stumble() -> void:
 	strain = 1.0
 	if Game.soundscape:
 		Game.soundscape.play_step(true)
+
+
+# Within each step her speed checks as the foot lands and surges as it
+# pushes off: subtle at a walk, a real drive at a sprint.
+func _step_surge() -> float:
+	var speed := _ground_speed()
+	if speed < 0.5:
+		return 1.0
+	var pace := clampf((speed - 1.2) / (Tune.SPRINT_SPEED - 1.2), 0.0, 1.0)
+	var phase := clampf(_since_plant / _step_time, 0.0, 1.0)
+	return 1.0 - lerpf(Tune.STEP_SURGE_WALK, Tune.STEP_SURGE_SPRINT, pace) * cos(TAU * phase)
+
+
+# A real touchdown from the animation: everything a step does happens here.
+func _on_planted(left: bool, at: Vector3) -> void:
+	var speed := _ground_speed()
+	if speed < 0.5 or not is_on_floor() or Game.locks_movement():
+		return
+	var now := Time.get_ticks_msec()
+	if _last_plant_msec > 0:
+		_step_time = clampf(float(now - _last_plant_msec) / 1000.0, 0.18, 1.0)
+	_last_plant_msec = now
+	_since_plant = 0.0
+	_footfall(left, at, speed)
+
+
+func _footfall(left: bool, at: Vector3, speed: float) -> void:
+	_left_foot = left
+	var heavy := speed > 4.0
+	var power := clampf(speed / Tune.SPRINT_SPEED, 0.2, 1.0)
+	if Game.soundscape:
+		Game.soundscape.play_step(heavy)
+	_jolt -= lerpf(0.004, 0.026, power * power)
+	_roll_kick += (1.0 if left else -1.0) * lerpf(0.001, 0.01, power)
+	var forward := Vector3(_glide.x, 0.0, _glide.z).normalized()
+	var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else global_position.y
+	var sole := Vector3(at.x, ground_y, at.z)
+	if kicks:
+		kicks.kick(sole + Vector3(0, 0.05, 0), power, -forward)
+	if footprints:
+		footprints.stamp(sole, atan2(forward.x, forward.z), heavy, left)
 
 
 func _ground_speed() -> float:
@@ -332,7 +385,7 @@ func _flicker_lantern(_delta: float) -> void:
 	lantern.light_energy = 0.22 + sin(Time.get_ticks_msec() * 0.013) * 0.03
 
 
-func _steps(delta: float, sprinting: bool) -> void:
+func _steps(delta: float) -> void:
 	var speed := _ground_speed()
 	if not is_on_floor() or speed < 0.3:
 		_travel = 0.0
@@ -341,23 +394,15 @@ func _steps(delta: float, sprinting: bool) -> void:
 	var step_length := lerpf(0.62, 1.12, smoothstep(1.2, Tune.SPRINT_SPEED, speed))
 	_travel += speed * delta
 	_stride_phase += speed * delta / step_length * PI
-	if _travel < step_length:
+	# With planted feet the real touchdowns drive the steps (_on_planted);
+	# distance is only the fallback when the rig has no leg IK.
+	if foot_lock != null or _travel < step_length:
 		return
 	_travel -= step_length
-	_left_foot = not _left_foot
-	var heavy := speed > 4.0 or sprinting
-	var power := clampf(speed / Tune.SPRINT_SPEED, 0.2, 1.0)
-	if Game.soundscape:
-		Game.soundscape.play_step(heavy)
-	_jolt -= lerpf(0.004, 0.026, power * power)
-	_roll_kick += (1.0 if _left_foot else -1.0) * lerpf(0.001, 0.01, power)
 	var forward := Vector3(_glide.x, 0.0, _glide.z).normalized()
 	var side := Vector3(forward.z, 0.0, -forward.x)
-	var at := global_position + side * (0.12 if _left_foot else -0.12)
-	if kicks:
-		kicks.kick(at + Vector3(0, 0.05, 0), power, -forward)
-	if footprints:
-		footprints.stamp(at, atan2(forward.x, forward.z), heavy, _left_foot)
+	var left := not _left_foot
+	_footfall(left, global_position + side * (0.12 if left else -0.12), speed)
 
 
 func _cloak(root: Node) -> void:
@@ -468,3 +513,8 @@ func _build_model() -> void:
 		outfit.attach("Head", breath, Transform3D(Basis(), outfit.mouth_rest))
 	if animation_player:
 		stride = Stride.build(animation_player, model)
+	var skeletons := model.find_children("*", "Skeleton3D", true, false)
+	if not skeletons.is_empty():
+		foot_lock = FootLock.fit(model, skeletons[0] as Skeleton3D)
+		foot_lock.ground = trail.ground if trail else null
+		foot_lock.planted.connect(_on_planted)

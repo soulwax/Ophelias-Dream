@@ -7,6 +7,7 @@ var _heart: AudioStreamPlayer
 var _steps: Array[AudioStreamPlayer] = []
 var _step_clips: Array[AudioStream] = []
 var _step_cursor := 0
+var _last_step := -1
 var _snap: AudioStreamPlayer
 var _sting: AudioStreamPlayer
 
@@ -25,14 +26,25 @@ func _ready() -> void:
 		_wind.volume_db = -22.0
 
 
+# One boot in snow. The clip is picked at random but never the same twice in
+# a row, and each step gets its own pitch and level, so a long walk never
+# turns into a loop. A sprint lands deeper and louder than a walk.
 func play_step(heavy: bool = false) -> void:
 	if _steps.is_empty() or _step_clips.is_empty():
 		return
 	var player := _steps[_step_cursor]
 	_step_cursor = (_step_cursor + 1) % _steps.size()
-	player.stream = _step_clips[randi() % _step_clips.size()]
-	player.pitch_scale = randf_range(0.94, 1.06) if heavy else randf_range(1.08, 1.28)
-	player.volume_db = randf_range(-11.0, -7.5) if heavy else randf_range(-16.0, -12.0)
+	var pick := randi() % _step_clips.size()
+	if _step_clips.size() > 1 and pick == _last_step:
+		pick = (pick + 1 + randi() % (_step_clips.size() - 1)) % _step_clips.size()
+	_last_step = pick
+	player.stream = _step_clips[pick]
+	if heavy:
+		player.pitch_scale = randf_range(0.86, 0.98)
+		player.volume_db = randf_range(-5.0, -2.0)
+	else:
+		player.pitch_scale = randf_range(0.95, 1.08)
+		player.volume_db = randf_range(-11.0, -7.5)
 	player.play()
 
 
@@ -43,25 +55,22 @@ func play_snap(volume_db: float = -4.0) -> void:
 
 
 func _load_steps() -> void:
-	var taps: Array[String] = ["tap_0.wav", "tap_1.wav", "tap_2.wav", "tap_3.wav", "tap_4.wav", "tap_5.wav"]
-	var names: Array[String] = taps
-	var found_tap := false
-	for file_name in taps:
-		if FileAccess.file_exists("res://assets/audio/" + file_name):
-			found_tap = true
+	# Recorded snow steps first; the generated taps and steps are fallbacks.
+	# ResourceLoader, not FileAccess: imported sources are absent in exports.
+	var sets: Array = [
+		["snow_step_1.mp3", "snow_step_2.mp3", "snow_step_3.mp3"],
+		["tap_0.wav", "tap_1.wav", "tap_2.wav", "tap_3.wav", "tap_4.wav", "tap_5.wav"],
+		["step_0.wav", "step_1.wav", "step_2.wav", "step_3.wav", "step_4.wav", "step.wav"],
+	]
+	for names in sets:
+		for file_name in names:
+			var path := "res://assets/audio/" + (file_name as String)
+			if ResourceLoader.exists(path):
+				var clip := load(path) as AudioStream
+				if clip:
+					_step_clips.append(clip)
+		if not _step_clips.is_empty():
 			break
-	if not found_tap:
-		names = ["step_0.wav", "step_1.wav", "step_2.wav", "step_3.wav", "step_4.wav"]
-	for file_name in names:
-		var path := "res://assets/audio/" + file_name
-		if FileAccess.file_exists(path):
-			var clip := load(path) as AudioStream
-			if clip:
-				_step_clips.append(clip)
-	if _step_clips.is_empty() and ResourceLoader.exists("res://assets/audio/step.wav"):
-		var fallback := load("res://assets/audio/step.wav") as AudioStream
-		if fallback:
-			_step_clips.append(fallback)
 	for _i in 4:
 		var player := AudioStreamPlayer.new()
 		add_child(player)

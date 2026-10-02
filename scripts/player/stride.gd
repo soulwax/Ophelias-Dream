@@ -18,24 +18,31 @@ var _gaits: Array = []
 
 static func build(player: AnimationPlayer, model: Node) -> Stride:
 	var stride := Stride.new()
+	# Each running gait has a plateau (two points, same clip), so a steady
+	# speed always plays one clip cleanly. Blends between clips with
+	# different cycles muddle the legs, so they only happen in the short
+	# bands she crosses while speeding up or slowing down.
 	stride._gaits = [
 		[IDLE, 0.0, 0.0],
 		["Walk_Formal", 1.2, Tune.STRIDE_WALK],
-		["Jog_Fwd", 2.9, Tune.STRIDE_JOG],
+		["Jog_Fwd", 2.0, Tune.STRIDE_JOG],
+		["Jog_Fwd", 3.2, Tune.STRIDE_JOG],
+		["Sprint", 4.6, Tune.STRIDE_SPRINT],
 		["Sprint", Tune.SPRINT_SPEED, Tune.STRIDE_SPRINT],
 	]
 	var space := AnimationNodeBlendSpace1D.new()
 	space.min_space = 0.0
 	space.max_space = Tune.SPRINT_SPEED + 1.0
 	space.sync = true
-	for gait in stride._gaits:
+	for index in stride._gaits.size():
+		var gait: Array = stride._gaits[index]
 		var clip := _resolve(player, gait[0])
 		if clip == "":
 			continue
 		player.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 		var node := AnimationNodeAnimation.new()
 		node.animation = clip
-		space.add_blend_point(node, gait[1], -1, gait[0])
+		space.add_blend_point(node, gait[1], -1, "%s_%d" % [gait[0], index])
 	var root := AnimationNodeBlendTree.new()
 	root.add_node("locomotion", space)
 	var pace := AnimationNodeTimeScale.new()
