@@ -2,6 +2,20 @@ class_name FieldNote
 extends Node3D
 
 var entry: NoteEntry
+var collected := false
+
+
+func collect() -> bool:
+	if collected:
+		return false
+	collected = true
+	var glow := get_node_or_null("Glow") as OmniLight3D
+	if glow:
+		glow.light_energy = 0.06
+	var marker := get_node_or_null("Mark") as Label3D
+	if marker:
+		marker.modulate = Color(0.55, 0.56, 0.58, 0.65)
+	return true
 
 
 func _ready() -> void:
@@ -16,6 +30,7 @@ func _build() -> void:
 	add_child(page)
 
 	var glow := OmniLight3D.new()
+	glow.name = "Glow"
 	glow.light_color = Color(0.95, 0.78, 0.45)
 	glow.light_energy = 0.55
 	glow.omni_range = 3.2
@@ -24,6 +39,7 @@ func _build() -> void:
 	add_child(glow)
 
 	var marker := Label3D.new()
+	marker.name = "Mark"
 	marker.text = "note"
 	marker.font_size = 42
 	marker.modulate = Color(0.93, 0.86, 0.7)

@@ -17,17 +17,23 @@ var _step_debt: float = 0.0
 var _bob: float = 0.0
 var _clip: String = ""
 var _sprinting := false
+var _step_interval := 0.5
+var _left_foot := false
+var footprints: Footprints
 
 
 func _ready() -> void:
 	collision_layer = Tune.LAYER_ACTOR
 	collision_mask = Tune.LAYER_WORLD
-	floor_snap_length = 0.25
-	floor_max_angle = deg_to_rad(46.0)
+	floor_snap_length = 0.55
+	floor_max_angle = deg_to_rad(50.0)
+	floor_constant_speed = true
 	_build_body()
 	_build_camera()
 	_build_model()
 	_place()
+	footprints = Footprints.new()
+	add_child(footprints)
 	Game.player = self
 
 
@@ -90,10 +96,12 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= Tune.GRAVITY * delta
 	else:
 		velocity.y = -1.0
-	velocity.x = wish.x * speed
-	velocity.z = wish.z * speed
+	var push := Vector3.ZERO
+	if Game.weather:
+		push = Game.weather.wind * 0.065 * (1.0 + Game.weather.gust * 0.8)
+	velocity.x = wish.x * speed + push.x
+	velocity.z = wish.z * speed + push.z
 	move_and_slide()
-	_keep_on_trail()
 	_animate(moving, sprinting)
 	_bob_camera(delta, moving, sprinting)
 	_flicker_lantern(delta)
@@ -104,7 +112,8 @@ func _place() -> void:
 	if trail == null:
 		return
 	var at := trail.position_at(trail.player_start_offset)
-	global_position = Vector3(at.x, 0.2, at.z)
+	var height := trail.ground.height_at(at.x, at.z) if trail.ground else 0.2
+	global_position = Vector3(at.x, height + 0.08, at.z)
 	var ahead := trail.position_at(trail.player_start_offset + 2.0)
 	var forward := ahead - at
 	forward.y = 0.0
@@ -116,18 +125,9 @@ func _apply_look() -> void:
 	rotation.y = _yaw
 	if spring_arm:
 		spring_arm.rotation.x = _pitch
-
-
-func _keep_on_trail() -> void:
-	var local := trail.to_local(global_position)
-	var offset := trail.curve.get_closest_offset(local)
-	var on_curve := trail.curve.sample_baked(offset)
-	var lateral := local - on_curve
-	lateral.y = 0.0
-	if lateral.length() > Tune.TRAIL_HALF_WIDTH:
-		var clamped := on_curve + lateral.normalized() * Tune.TRAIL_HALF_WIDTH
-		clamped.y = local.y
-		global_position = trail.to_global(clamped)
+	if camera and Game.weather:
+		var shake := Game.weather.gust * 0.012
+		camera.rotation.z = sin(Time.get_ticks_msec() * 0.009) * shake
 
 
 func _animate(moving: bool, sprinting: bool) -> void:
@@ -192,25 +192,36 @@ func _bob_camera(delta: float, moving: bool, sprinting: bool) -> void:
 func _flicker_lantern(_delta: float) -> void:
 	if lantern == null:
 		return
-	var nervous := 0.25 + Game.closeness * 0.9
-	lantern.light_energy = 2.4 + sin(Time.get_ticks_msec() * 0.013) * 0.12 + randf_range(-nervous, nervous) * 0.08
+	lantern.light_energy = 0.22 + sin(Time.get_ticks_msec() * 0.013) * 0.03
 
 
 func _steps(delta: float, moving: bool, sprinting: bool) -> void:
 	if not moving or not is_on_floor():
+		_step_debt = 0.0
 		return
-	var interval := 0.34 if sprinting else 0.52
 	_step_debt += delta
-	if _step_debt < interval:
+	if _step_debt < _step_interval:
 		return
 	_step_debt = 0.0
+	_step_interval = randf_range(0.28, 0.36) if sprinting else randf_range(0.46, 0.62)
+	_left_foot = not _left_foot
 	if Game.soundscape:
-		Game.soundscape.play_step()
+		Game.soundscape.play_step(sprinting)
+	if footprints == null:
+		return
+	var forward := Vector3(velocity.x, 0.0, velocity.z)
+	if forward.length() < 0.05:
+		return
+	forward = forward.normalized()
+	var side := Vector3(forward.z, 0.0, -forward.x)
+	var yaw := atan2(forward.x, forward.z)
+	var at := global_position + side * (0.12 if _left_foot else -0.12)
+	footprints.stamp(at, yaw, sprinting, _left_foot)
 
 
 func _cloak(root: Node) -> void:
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.07, 0.075, 0.09)
+	material.albedo_color = Color(0.16, 0.17, 0.2)
 	material.roughness = 0.78
 	material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	for mesh_instance in root.find_children("*", "MeshInstance3D", true, false):
@@ -239,22 +250,22 @@ func _build_camera() -> void:
 	camera.current = true
 	camera.fov = 68.0
 	camera.near = 0.08
-	camera.far = 240.0
+	camera.far = 420.0
 	spring_arm.add_child(camera)
 
 	lantern = SpotLight3D.new()
 	lantern.light_color = Color(1.0, 0.82, 0.58)
-	lantern.light_energy = 2.5
-	lantern.spot_range = 16.0
-	lantern.spot_angle = 28.0
-	lantern.spot_attenuation = 0.7
-	lantern.light_volumetric_fog_energy = 1.4
+	lantern.light_energy = 0.22
+	lantern.spot_range = 7.0
+	lantern.spot_angle = 24.0
+	lantern.spot_attenuation = 0.8
+	lantern.light_volumetric_fog_energy = 0.15
 	lantern.shadow_enabled = false
 	camera.add_child(lantern)
 
 	var fill := OmniLight3D.new()
 	fill.light_color = Color(0.7, 0.76, 0.9)
-	fill.light_energy = 0.28
+	fill.light_energy = 0.06
 	fill.omni_range = 3.5
 	fill.position = Vector3(0, 1.3, 0.2)
 	add_child(fill)

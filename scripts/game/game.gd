@@ -11,8 +11,11 @@ var player: Player
 var hunter: Hunter
 var trail: Trail
 var soundscape: Soundscape
+var weather: Weather
 var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
+var notes_found: int = 0
+var _hunt_start_msec: int = -1
 
 
 func _ready() -> void:
@@ -46,7 +49,10 @@ func reset() -> void:
 	hunter = null
 	trail = null
 	soundscape = null
+	weather = null
 	active_note = null
+	notes_found = 0
+	_hunt_start_msec = -1
 
 
 func begin_intro() -> void:
@@ -73,7 +79,17 @@ func set_closeness(value: float) -> void:
 func begin_reading() -> void:
 	if phase != Phase.PLAYING:
 		return
+	if active_note and active_note.collect():
+		notes_found += 1
+		if notes_found == Tune.HUNT_NOTES and _hunt_start_msec < 0:
+			_hunt_start_msec = Time.get_ticks_msec()
 	set_phase(Phase.READING)
+
+
+func seconds_hunting() -> float:
+	if _hunt_start_msec < 0:
+		return 0.0
+	return float(Time.get_ticks_msec() - _hunt_start_msec) / 1000.0
 
 
 func close_reading() -> void:

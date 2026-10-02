@@ -16,7 +16,7 @@ func _ready() -> void:
 	var hunter := Hunter.new()
 	hunter.trail = trail
 	add_child(hunter)
-	add_child(Snowfall.new())
+	add_child(Weather.new())
 	add_child(Soundscape.new())
 	add_child(Hud.new())
 	Game.begin_intro()

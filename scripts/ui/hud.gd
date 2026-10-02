@@ -31,7 +31,7 @@ func _process(_delta: float) -> void:
 		_breath_fill.offset_right = 220.0 * ratio
 		_breath_fill.color = Color(0.85, 0.86, 0.9) if Game.player.exhaust_left <= 0.0 else Color(0.75, 0.3, 0.22)
 	if _vignette and _vignette.material is ShaderMaterial:
-		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.42 + Game.closeness * 0.58)
+		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.2 + Game.closeness * 0.7)
 		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.closeness * 0.55, 0.0, 0.0))
 	if _debug.visible and Game.player and Game.hunter and Game.trail:
 		var gap := Game.trail.offset_of(Game.player.global_position) - Game.hunter.offset
@@ -54,7 +54,15 @@ func _on_phase(next: Game.Phase) -> void:
 	_intro.visible = next == Game.Phase.INTRO
 	_pause.visible = next == Game.Phase.PAUSED
 	_objective.visible = next == Game.Phase.PLAYING or next == Game.Phase.READING
+	_refresh_objective()
 	_breath.visible = next == Game.Phase.PLAYING or next == Game.Phase.READING
+
+
+func _refresh_objective() -> void:
+	if Game.notes_found < Tune.HUNT_NOTES:
+		_objective.text = "The lookout is ahead.   %d / 5" % Game.notes_found
+	else:
+		_objective.text = "Do not stand still.   %d / 5" % Game.notes_found
 
 
 func _warning_line() -> String:
@@ -73,7 +81,16 @@ func _prompt_line() -> String:
 		return ""
 	if Game.player.nearby_note():
 		return "E  —  read the note"
+	if _against_wire():
+		return "the wire does not give"
 	return ""
+
+
+func _against_wire() -> bool:
+	var at := Game.player.global_position
+	var dx := minf(at.x - Tune.FENCE_MIN_X, Tune.FENCE_MAX_X - at.x)
+	var dz := minf(at.z - Tune.FENCE_MIN_Z, Tune.FENCE_MAX_Z - at.z)
+	return minf(dx, dz) < 2.6
 
 
 func _build() -> void:
@@ -92,13 +109,13 @@ func _build() -> void:
 	_intro.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_intro)
-	_intro_title = _centered_label(_intro, "RUN AWAY", 64, Vector2(0, -40), Color(0.94, 0.93, 0.9))
-	_centered_label(_intro, "The ridge road is still open.", 22, Vector2(0, 30), Color(0.75, 0.78, 0.82))
-	_centered_label(_intro, "Do not stop to read for long.", 18, Vector2(0, 64), Color(0.55, 0.5, 0.48))
+	_intro_title = _centered_label(_intro, "RUN AWAY", 64, Vector2(0, -40), Color(0.16, 0.18, 0.22))
+	_centered_label(_intro, "Daylight on the snow. The wire is as far as the ground goes.", 22, Vector2(0, 30), Color(0.22, 0.24, 0.28))
+	_centered_label(_intro, "It stays patient until you have read too much.", 18, Vector2(0, 64), Color(0.35, 0.28, 0.26))
 
 	_objective = _anchored_label("The road is ahead.", 18, Control.PRESET_CENTER_TOP, Vector2(0, 28))
 	_warning = _anchored_label("", 22, Control.PRESET_CENTER_TOP, Vector2(0, 58))
-	_warning.add_theme_color_override("font_color", Color(0.86, 0.45, 0.38))
+	_warning.add_theme_color_override("font_color", Color(0.45, 0.1, 0.08))
 	_prompt = _anchored_label("", 20, Control.PRESET_CENTER_BOTTOM, Vector2(0, -78))
 
 	_breath = Control.new()
@@ -178,6 +195,6 @@ func _anchored_label(text: String, size: int, preset: Control.LayoutPreset, plac
 	label.offset_top = place.y
 	label.offset_bottom = place.y + 28
 	label.add_theme_font_size_override("font_size", size)
-	label.add_theme_color_override("font_color", Color(0.86, 0.88, 0.9))
+	label.add_theme_color_override("font_color", Color(0.1, 0.12, 0.14))
 	add_child(label)
 	return label

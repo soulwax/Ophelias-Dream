@@ -52,15 +52,36 @@ static func _material_for(file_name: String) -> StandardMaterial3D:
 	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	match key:
 		"pine", "background":
-			mat.albedo_color = Color(0.045, 0.08, 0.055)
+			mat.albedo_color = Color(0.09, 0.16, 0.1)
 			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		"broadleaf":
+			mat.albedo_color = Color(0.13, 0.2, 0.1)
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		"grass":
+			mat.albedo_color = Color(0.22, 0.32, 0.14)
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		"moss":
+			mat.albedo_color = Color(0.16, 0.24, 0.12)
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		"flower":
+			mat.albedo_color = Color(0.62, 0.42, 0.28)
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		"mushroom":
+			mat.albedo_color = Color(0.55, 0.34, 0.22)
+			mat.roughness = 0.8
+		"shrub":
+			mat.albedo_color = Color(0.24, 0.28, 0.12)
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		"fence":
+			mat.albedo_color = Color(0.2, 0.13, 0.08)
+			mat.roughness = 0.84
 		"dead":
-			mat.albedo_color = Color(0.2, 0.16, 0.13)
+			mat.albedo_color = Color(0.32, 0.24, 0.16)
 			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		"snow":
-			mat.albedo_color = Color(0.8, 0.84, 0.9)
+			mat.albedo_color = Color(0.84, 0.88, 0.93)
 		"rock", "cliff":
-			mat.albedo_color = Color(0.34, 0.36, 0.4)
+			mat.albedo_color = Color(0.42, 0.43, 0.46)
 		"ice":
 			mat.albedo_color = Color(0.7, 0.82, 0.9, 0.8)
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -81,10 +102,24 @@ static func _material_for(file_name: String) -> StandardMaterial3D:
 
 static func _family(file_name: String) -> String:
 	var n := file_name.to_lower()
-	if "noleaves" in n or "dead" in n:
+	if "fence" in n:
+		return "fence"
+	if "mushroom" in n:
+		return "mushroom"
+	if "flower" in n:
+		return "flower"
+	if "moss" in n or "groundcover" in n:
+		return "moss"
+	if "fern" in n or "grass" in n:
+		return "grass"
+	if "bush" in n or "shrub" in n or "branch" in n:
+		return "shrub"
+	if "noleaves" in n or "dead" in n or "stump" in n or "log" in n:
 		return "dead"
-	if "pine" in n or "background_trees" in n or "branch" in n:
+	if "pine" in n or "background_trees" in n:
 		return "pine"
+	if "tree" in n:
+		return "broadleaf"
 	if "snow" in n:
 		return "snow"
 	if "cliff" in n:
