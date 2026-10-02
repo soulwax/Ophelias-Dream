@@ -28,7 +28,7 @@ func _snow_volume() -> void:
 	volume.size = Vector3(360, 42, 360)
 	volume.position = Vector3(0, 14, -74)
 	var material := FogMaterial.new()
-	material.density = 0.032
+	material.density = 0.008
 	material.albedo = Color(0.9, 0.93, 0.97)
 	material.edge_fade = 0.18
 	volume.material = material
@@ -39,22 +39,22 @@ func _snow_volume() -> void:
 func apply_storm(strength: float) -> void:
 	if _env == null:
 		return
-	var t := clampf(strength, 0.0, 1.0)
-	_env.fog_density = lerpf(0.006, 0.038, t)
-	_env.fog_light_color = Color(0.78, 0.83, 0.88).lerp(Color(0.86, 0.88, 0.9), t)
-	_env.volumetric_fog_density = lerpf(0.012, 0.062, t)
-	_env.volumetric_fog_albedo = Color(0.92, 0.94, 0.97).lerp(Color(0.95, 0.96, 0.98), t)
-	_env.volumetric_fog_length = lerpf(80.0, 32.0, t)
-	_env.background_color = Color(0.64, 0.72, 0.8).lerp(Color(0.78, 0.8, 0.83), t)
-	_env.ambient_light_energy = lerpf(0.85, 0.48, t)
-	_env.adjustment_brightness = lerpf(1.04, 0.88, t)
-	_env.adjustment_saturation = lerpf(0.78, 0.42, t)
+	var t := clampf(strength, 0.0, 1.0) * 0.32
+	_env.fog_density = lerpf(0.0045, 0.011, t)
+	_env.fog_light_color = Color(0.78, 0.83, 0.88).lerp(Color(0.84, 0.87, 0.9), t)
+	_env.volumetric_fog_density = lerpf(0.006, 0.016, t)
+	_env.volumetric_fog_albedo = Color(0.9, 0.93, 0.96)
+	_env.volumetric_fog_length = lerpf(90.0, 70.0, t)
+	_env.background_color = Color(0.62, 0.7, 0.78).lerp(Color(0.7, 0.75, 0.8), t)
+	_env.ambient_light_energy = lerpf(0.9, 0.72, t)
+	_env.adjustment_brightness = lerpf(1.05, 0.98, t)
+	_env.adjustment_saturation = lerpf(0.8, 0.62, t)
 	if _sun:
-		_sun.light_energy = lerpf(1.35, 0.38, t)
-		_sun.light_volumetric_fog_energy = lerpf(1.6, 3.4, t)
+		_sun.light_energy = lerpf(1.4, 1.05, t)
+		_sun.light_volumetric_fog_energy = lerpf(0.8, 1.3, t)
 	if _veil:
-		_veil.density = lerpf(0.02, 0.095, t)
-		_veil.albedo = Color(0.9, 0.93, 0.97).lerp(Color(0.94, 0.95, 0.97), t)
+		_veil.density = lerpf(0.008, 0.02, t)
+		_veil.albedo = Color(0.88, 0.91, 0.95)
 
 
 func _make_environment() -> Environment:
@@ -79,11 +79,11 @@ func _make_environment() -> Environment:
 	env.adjustment_saturation = 0.78
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
-	env.fog_density = 0.0075
+	env.fog_density = 0.0045
 	env.fog_light_color = Color(0.78, 0.83, 0.88)
 	env.fog_aerial_perspective = 0.45
 	env.volumetric_fog_enabled = true
-	env.volumetric_fog_density = 0.018
+	env.volumetric_fog_density = 0.006
 	env.volumetric_fog_albedo = Color(0.92, 0.94, 0.97)
 	env.volumetric_fog_length = 80.0
 	env.volumetric_fog_ambient_inject = 0.7

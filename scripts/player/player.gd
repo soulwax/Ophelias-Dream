@@ -220,12 +220,45 @@ func _steps(delta: float, moving: bool, sprinting: bool) -> void:
 
 
 func _cloak(root: Node) -> void:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.16, 0.17, 0.2)
-	material.roughness = 0.78
-	material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var suit := _suit_material()
+	var eyes := _eye_material()
+	var hair := StandardMaterial3D.new()
+	hair.albedo_color = Color(0.08, 0.07, 0.06)
+	hair.roughness = 0.72
+	hair.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	for mesh_instance in root.find_children("*", "MeshInstance3D", true, false):
-		(mesh_instance as MeshInstance3D).material_override = material
+		var instance := mesh_instance as MeshInstance3D
+		var mesh_name := instance.name.to_lower()
+		if "brow" in mesh_name:
+			instance.material_override = hair
+		elif "eye" in mesh_name:
+			instance.material_override = eyes
+		else:
+			instance.material_override = suit
+
+
+func _suit_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_texture = load("res://assets/characters/winter_coat.png")
+	material.albedo_color = Color.WHITE
+	var normal_path := "res://addons/quaternius_ik_rigged/Godot - UE/T_Superhero_Male_Normal.png"
+	if ResourceLoader.exists(normal_path):
+		material.normal_enabled = true
+		material.normal_texture = load(normal_path)
+		material.normal_scale = 0.22
+	material.roughness = 0.9
+	material.metallic = 0.0
+	material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	return material
+
+
+func _eye_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	var path := "res://addons/quaternius_ik_rigged/Godot - UE/T_Eye_Brown.png"
+	if ResourceLoader.exists(path):
+		material.albedo_texture = load(path)
+	material.roughness = 0.28
+	return material
 
 
 func _build_body() -> void:
