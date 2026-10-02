@@ -1,9 +1,14 @@
 class_name Fence
 extends Node3D
 
-const SEGMENTS: Array[String] = ["SM_Bld_Fence_01.fbx", "SM_Bld_Fence_02.fbx"]
+const SCALE := 100.0
+const MESH := "res://assets/environment/SM_WireFence.fbx"
+const ALBEDO := "res://assets/environment/T_WireFence_B.png"
+const NORMAL := "res://assets/environment/T_WireFence_N.png"
 
 var ground: Ground
+var _packed: PackedScene
+var _material: StandardMaterial3D
 
 
 func _ready() -> void:
@@ -18,42 +23,85 @@ func build() -> void:
 		Vector3(Tune.FENCE_MAX_X, 0, Tune.FENCE_MIN_Z),
 		Vector3(Tune.FENCE_MIN_X, 0, Tune.FENCE_MIN_Z),
 	]
-	var sample := PropFactory.spawn(SEGMENTS[0])
+	_packed = load(MESH) as PackedScene
+	_material = _wire_material()
+	var sample := _segment()
 	var bounds := _bounds(sample)
 	sample.free()
-	var along_x := bounds.size.x >= bounds.size.z
-	var span := bounds.size.x if along_x else bounds.size.z
-	span = maxf(span, 0.5)
+	var span := maxf(bounds.size.x * SCALE, 0.5)
 	for edge in corners.size():
-		_run(corners[edge], corners[(edge + 1) % corners.size()], bounds, along_x, span)
-		_end_post(corners[edge])
+		_run(corners[edge], corners[(edge + 1) % corners.size()], bounds, span)
 
 
-func _run(from: Vector3, to: Vector3, bounds: AABB, along_x: bool, span: float) -> void:
+func _run(from: Vector3, to: Vector3, bounds: AABB, span: float) -> void:
 	var flat := Vector3(to.x - from.x, 0.0, to.z - from.z)
 	var length := flat.length()
 	if length < 0.01:
 		return
-	var count := int(ceil(length / (span * 0.96)))
-	var yaw := atan2(-flat.z, flat.x) if along_x else atan2(flat.x, flat.z)
+	var count := int(ceil(length / (span * 0.98)))
+	var yaw := atan2(-flat.z, flat.x)
 	for i in count:
 		var at := from.lerp(to, (float(i) + 0.5) / float(count))
 		at.y = ground.height_at(at.x, at.z) if ground else 0.0
-		var node := PropFactory.spawn(SEGMENTS[i % SEGMENTS.size()])
-		node.rotation.y = yaw
-		var center := bounds.get_center()
-		node.position = at - node.transform.basis * Vector3(center.x, bounds.position.y, center.z)
+		var node := _segment()
 		add_child(node)
+		_seat(node, at, yaw, bounds)
 	_wall(from, to)
 
 
-func _end_post(at: Vector3) -> void:
-	at.y = ground.height_at(at.x, at.z) if ground else 0.0
-	var node := PropFactory.spawn("SM_Bld_Fence_End_01.fbx")
-	var bounds := _bounds(node)
-	var center := bounds.get_center()
-	node.position = at - Vector3(center.x, bounds.position.y, center.z)
-	add_child(node)
+func _seat(node: Node3D, at: Vector3, yaw: float, bounds: AABB) -> void:
+	var stand := Basis(Vector3.RIGHT, -PI * 0.5)
+	var turn := Basis(Vector3.UP, yaw)
+	node.transform.basis = (turn * stand).scaled(Vector3(SCALE, SCALE, SCALE))
+	var acc := Vector3.ZERO
+	var min_y := INF
+	var corners := _corners(bounds)
+	for corner in corners:
+		var placed: Vector3 = node.transform.basis * corner
+		acc += placed
+		min_y = minf(min_y, placed.y)
+	acc /= float(corners.size())
+	node.position = at - Vector3(acc.x, min_y, acc.z)
+
+
+func _corners(bounds: AABB) -> Array[Vector3]:
+	var p := bounds.position
+	var s := bounds.size
+	return [
+		p,
+		p + Vector3(s.x, 0, 0),
+		p + Vector3(0, s.y, 0),
+		p + Vector3(0, 0, s.z),
+		p + Vector3(s.x, s.y, 0),
+		p + Vector3(s.x, 0, s.z),
+		p + Vector3(0, s.y, s.z),
+		p + s,
+	]
+
+
+func _segment() -> Node3D:
+	var node := _packed.instantiate() as Node3D
+	for mesh_instance in node.find_children("*", "MeshInstance3D", true, false):
+		var instance := mesh_instance as MeshInstance3D
+		var mesh_name := instance.name.to_lower()
+		if "lod1" in mesh_name or "lod2" in mesh_name or mesh_name.begins_with("ucx"):
+			instance.visible = false
+			continue
+		instance.material_override = _material
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return node
+
+
+func _wire_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_texture = load(ALBEDO)
+	material.normal_enabled = true
+	material.normal_texture = load(NORMAL)
+	material.metallic = 0.72
+	material.roughness = 0.48
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	return material
 
 
 func _wall(from: Vector3, to: Vector3) -> void:
