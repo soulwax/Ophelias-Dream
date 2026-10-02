@@ -68,6 +68,8 @@ func _open() -> void:
 			index = i + 1
 			break
 	_count.text = "Note %d of %d" % [index, notes.size()]
+	if _entry.record_of != "":
+		_count.text = "Containment record"
 	_title.text = _entry.title
 	_body.text = ""
 	_scroll.scroll_vertical = 0
@@ -120,7 +122,10 @@ func _build() -> void:
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(footer)
 	footer.add_child(UiChrome.key_row("E", "Close the page"))
+	footer.add_child(UiChrome.key_row("Space", "Hold breath"))
 	var close := UiChrome.paper_button("Close")
+	# Space holds her breath while she reads; it must not press the button.
+	close.focus_mode = Control.FOCUS_NONE
 	close.pressed.connect(func() -> void: Game.close_reading())
 	footer.add_child(close)
 

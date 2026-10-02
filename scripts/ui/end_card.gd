@@ -17,11 +17,9 @@ func _ready() -> void:
 func _on_phase(next: Game.Phase) -> void:
 	match next:
 		Game.Phase.CAUGHT:
-			_show(
-				"It caught you",
-				"You stopped. The snow closed over the place you were.",
-				"Wake in the cabin"
-			)
+			var title := Game.ending_title if Game.ending_title != "" else "It caught you"
+			var body := Game.ending_body if Game.ending_body != "" else "You stopped. The snow closed over the place you were."
+			_show(title, body, "Wake in the cabin")
 		Game.Phase.ESCAPED:
 			_show(
 				"The road",

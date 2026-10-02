@@ -18,9 +18,13 @@ func _ready() -> void:
 	sun.directional_shadow_max_distance = 120.0
 	sun.shadow_bias = 0.04
 	sun.light_volumetric_fog_energy = 1.8
+	if Game.lean_graphics:
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		sun.directional_shadow_max_distance = 70.0
 	add_child(sun)
 	_sun = sun
-	_snow_volume()
+	if not Game.lean_graphics:
+		_snow_volume()
 
 
 func _snow_volume() -> void:
@@ -40,7 +44,11 @@ func apply_storm(strength: float) -> void:
 	if _env == null:
 		return
 	var t := clampf(strength, 0.0, 1.0) * 0.45
-	_env.fog_density = lerpf(0.004, 0.012, t)
+	if Game.lean_graphics:
+		# Without volumetric fog the plain fog carries the whiteout alone.
+		_env.fog_density = lerpf(0.007, 0.016, t)
+	else:
+		_env.fog_density = lerpf(0.004, 0.012, t)
 	_env.fog_light_color = Color(0.78, 0.83, 0.88).lerp(Color(0.84, 0.87, 0.9), t)
 	_env.volumetric_fog_density = lerpf(0.007, 0.02, t)
 	_env.volumetric_fog_albedo = Color(0.9, 0.93, 0.96)
@@ -88,4 +96,8 @@ func _make_environment() -> Environment:
 	env.volumetric_fog_length = 80.0
 	env.volumetric_fog_ambient_inject = 0.7
 	env.volumetric_fog_detail_spread = 1.1
+	if Game.lean_graphics:
+		env.ssao_enabled = false
+		env.volumetric_fog_enabled = false
+		env.fog_density = 0.007
 	return env

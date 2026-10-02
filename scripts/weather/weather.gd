@@ -58,14 +58,14 @@ func _build_layers() -> void:
 	flakes.position = Vector3(0, 5.5, 0)
 	flakes.fall = 2.4
 	flakes.wind_scale = 0.55
-	flakes.setup(TEX + "flake.png", 1600, 4.0, Vector3(16, 5, 16), 0.45, 1.0, Vector2(0.012, 0.012), Color(0.97, 0.98, 1.0, 0.9))
+	flakes.setup(TEX + "flake.png", 2200, 3.6, Vector3(16, 5, 16), 0.35, 0.7, Vector2(0.0035, 0.0035), Color(0.97, 0.98, 1.0, 0.95))
 	_add_layer(flakes)
 
 	var glitter := SnowLayer.new()
 	glitter.position = Vector3(0, 3.0, 0)
 	glitter.fall = 1.6
 	glitter.wind_scale = 0.7
-	glitter.setup(TEX + "flake.png", 420, 6.5, Vector3(22, 7, 22), 0.7, 1.3, Vector2(0.02, 0.02), Color(0.93, 0.95, 0.98, 0.35))
+	glitter.setup(TEX + "flake.png", 700, 5.5, Vector3(22, 7, 22), 0.4, 0.65, Vector2(0.005, 0.005), Color(0.94, 0.96, 0.99, 0.28))
 	_add_layer(glitter)
 
 	var streaks := SnowLayer.new()
@@ -83,7 +83,7 @@ func _build_layers() -> void:
 	drift.position = Vector3(0, -1.15, 0)
 	drift.fall = 0.15
 	drift.wind_scale = 0.85
-	drift.setup(TEX + "flake.png", 80, 1.8, Vector3(8, 0.2, 8), 0.4, 0.8, Vector2(0.05, 0.02), Color(0.94, 0.96, 0.99, 0.35))
+	drift.setup(TEX + "flake.png", 80, 1.6, Vector3(8, 0.15, 8), 0.35, 0.6, Vector2(0.004, 0.004), Color(0.94, 0.96, 0.99, 0.4))
 	_add_layer(drift)
 
 

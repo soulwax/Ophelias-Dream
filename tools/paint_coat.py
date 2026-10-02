@@ -56,8 +56,10 @@ def main() -> None:
 	paint(
 		tex + r"\T_Superhero_Female_Dark_BaseColor.png",
 		out + r"\girl_coat.png",
-		coat=(0.62, 0.16, 0.22),
-		trim=(0.32, 0.08, 0.12),
+		# Charcoal base layer: scripts/player/outfit.gd puts the parka over it,
+		# so anything the clothes miss reads as thermals, not skin-tight red.
+		coat=(0.2, 0.2, 0.23),
+		trim=(0.13, 0.13, 0.15),
 		glove=(0.09, 0.08, 0.08),
 		face_box=(0.0, 0.0, 0.40, 0.36),
 		hand_box=(0.38, 0.0, 1.0, 0.42),

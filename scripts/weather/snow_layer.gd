@@ -10,7 +10,7 @@ var gust_only := false
 
 
 func setup(texture_path: String, count: int, life: float, box: Vector3, scale_min: float, scale_max: float, quad_size: Vector2, tint: Color) -> void:
-	amount = count
+	amount = count if not Game.lean_graphics else maxi(int(count * 0.5), 1)
 	lifetime = life
 	preprocess = 2.5
 	randomness = 0.8
@@ -28,7 +28,7 @@ func setup(texture_path: String, count: int, life: float, box: Vector3, scale_mi
 	motion.scale_min = scale_min
 	motion.scale_max = scale_max
 	motion.color = tint
-	motion.turbulence_enabled = true
+	motion.turbulence_enabled = not Game.lean_graphics
 	motion.turbulence_noise_strength = 0.65
 	motion.turbulence_noise_scale = 1.6
 	motion.turbulence_noise_speed = Vector3(0.15, 0.05, 0.12)

@@ -83,8 +83,8 @@ func _on_closeness(value: float) -> void:
 
 
 func _process(_delta: float) -> void:
-	if Game.closeness > 0.35 and _heart and not _heart.playing:
-		_heart.play()
+	# The heart answers whatever presses hardest: the hunter or an anomaly.
+	_on_closeness(Game.threat())
 
 
 func _loop(file_name: String, volume_db: float) -> AudioStreamPlayer:

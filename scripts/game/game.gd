@@ -15,11 +15,28 @@ var weather: Weather
 var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
 var notes_found: int = 0
+var lean_graphics := true
+var blackbox: Blackbox
+# Anomalies: the strongest pressure any of them puts on her this frame, the
+# HUD line that goes with it, and which ones she has read the record of.
+var director: AnomalyDirector
+var dread: float = 0.0
+var anomaly_hint := ""
+var understood: Dictionary = {}
+var ending_title := ""
+var ending_body := ""
 var _hunt_start_msec: int = -1
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	lean_graphics = _wants_lean_graphics()
+	print("graphics: ", "lean" if lean_graphics else "full", " on ", RenderingServer.get_video_adapter_name())
+	var blackbox_path := OS.get_environment("RUN_BLACKBOX")
+	if blackbox_path != "":
+		blackbox = Blackbox.open(blackbox_path)
+		if blackbox:
+			add_child(blackbox)
 	_bind("move_forward", KEY_W)
 	_bind("move_back", KEY_S)
 	_bind("move_left", KEY_A)
@@ -28,6 +45,7 @@ func _ready() -> void:
 	_bind("interact", KEY_E)
 	_bind("pause", KEY_ESCAPE)
 	_bind("restart", KEY_R)
+	_bind("hold_breath", KEY_SPACE)
 
 
 func _process(delta: float) -> void:
@@ -52,6 +70,12 @@ func reset() -> void:
 	weather = null
 	active_note = null
 	notes_found = 0
+	director = null
+	dread = 0.0
+	anomaly_hint = ""
+	understood.clear()
+	ending_title = ""
+	ending_body = ""
 	_hunt_start_msec = -1
 
 
@@ -59,6 +83,11 @@ func begin_intro() -> void:
 	intro_left = Tune.INTRO_TIME
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	set_phase(Phase.INTRO)
+
+
+func mark(line: String) -> void:
+	if blackbox:
+		blackbox.write(line)
 
 
 func set_phase(next: Phase) -> void:
@@ -80,7 +109,11 @@ func begin_reading() -> void:
 	if phase != Phase.PLAYING:
 		return
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	if active_note and active_note.collect():
+	var record := active_note != null and active_note.entry != null and active_note.entry.record_of != ""
+	if record:
+		active_note.collect()
+		understood[active_note.entry.record_of] = true
+	elif active_note and active_note.collect():
 		notes_found += 1
 		if notes_found == Tune.HUNT_NOTES and _hunt_start_msec < 0:
 			_hunt_start_msec = Time.get_ticks_msec()
@@ -111,9 +144,12 @@ func toggle_pause() -> void:
 		set_phase(Phase.PLAYING)
 
 
-func catch_player() -> void:
+# title and body replace the hunter's ending when something else took her.
+func catch_player(title := "", body := "") -> void:
 	if phase == Phase.CAUGHT or phase == Phase.ESCAPED:
 		return
+	ending_title = title
+	ending_body = body
 	Engine.time_scale = 0.4
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	set_phase(Phase.CAUGHT)
@@ -134,12 +170,32 @@ func restart() -> void:
 	get_tree().reload_current_scene()
 
 
+# How hard the world is pressing on her: the hunter or any anomaly.
+func threat() -> float:
+	return maxf(closeness, dread)
+
+
+func knows(code: String) -> bool:
+	return understood.has(code)
+
+
 func locks_movement() -> bool:
 	return phase != Phase.PLAYING
 
 
 func locks_look() -> bool:
 	return phase != Phase.PLAYING and phase != Phase.INTRO
+
+
+# Integrated GPUs hard-froze on volumetric fog and the full shadow load.
+# RUN_GRAPHICS=full or RUN_GRAPHICS=lean overrides the guess.
+func _wants_lean_graphics() -> bool:
+	var forced := OS.get_environment("RUN_GRAPHICS")
+	if forced == "full":
+		return false
+	if forced == "lean":
+		return true
+	return RenderingServer.get_video_adapter_type() != RenderingDevice.DEVICE_TYPE_DISCRETE_GPU
 
 
 func _bind(action: String, key: Key) -> void:

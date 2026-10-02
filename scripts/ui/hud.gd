@@ -41,8 +41,8 @@ func _process(delta: float) -> void:
 		_play_age += delta
 		_controls.modulate.a = clampf(1.0 - (_play_age - 8.0) / 4.0, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
-		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.closeness * 0.62)
-		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.closeness * 0.5, 0.0, 0.0))
+		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62)
+		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.threat() * 0.5, 0.0, 0.0))
 	if _debug.visible and Game.player and Game.hunter and Game.trail:
 		var gap := Game.trail.offset_of(Game.player.global_position) - Game.hunter.offset
 		_debug.text = "gap %.1f m   breath %.1f" % [gap, Game.player.stamina]
@@ -94,7 +94,10 @@ func _refresh_breath() -> void:
 	var ratio := clampf(Game.player.stamina / Tune.STAMINA_MAX, 0.0, 1.0)
 	_breath_fill.anchor_right = ratio
 	var spent := Game.player.exhaust_left > 0.0
-	if spent:
+	if Game.player.holding_breath:
+		_breath_fill.color = Color(0.62, 0.78, 0.95)
+		_breath_label.text = "Holding breath"
+	elif spent:
 		_breath_fill.color = Color(0.86, 0.32, 0.24)
 		_breath_label.text = "Catching breath"
 	elif ratio < 0.28:
@@ -111,6 +114,8 @@ func _warning_line() -> String:
 		return "It is close."
 	if near > 0.55:
 		return "Do not stop."
+	if Game.anomaly_hint != "":
+		return Game.anomaly_hint
 	if near > 0.32:
 		return "Something is on the trail."
 	return ""
@@ -187,8 +192,8 @@ func _build_intro() -> void:
 	card.set_anchors_preset(Control.PRESET_CENTER)
 	card.offset_left = -340
 	card.offset_right = 340
-	card.offset_top = -150
-	card.offset_bottom = 150
+	card.offset_top = -168
+	card.offset_bottom = 168
 	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro.add_child(card)
@@ -203,7 +208,7 @@ func _build_intro() -> void:
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
 	box.add_child(HSeparator.new())
-	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["E", "Read"], ["Esc", "Pause"]]:
+	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
 		var row := UiChrome.key_row(pair[0], pair[1])
 		box.add_child(row)
 
@@ -260,13 +265,13 @@ func _build_controls() -> void:
 	_controls = VBoxContainer.new()
 	_controls.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_controls.offset_left = 28
-	_controls.offset_top = -132
+	_controls.offset_top = -210
 	_controls.offset_right = 240
 	_controls.offset_bottom = -28
 	_controls.add_theme_constant_override("separation", 4)
 	_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_controls)
-	for pair in [["WASD", "Move"], ["Shift", "Sprint"], ["E", "Read"], ["Esc", "Pause"]]:
+	for pair in [["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
 		_controls.add_child(UiChrome.key_row(pair[0], pair[1]))
 
 
@@ -337,7 +342,7 @@ func _build_pause() -> void:
 	var title := UiChrome.label("Paused", 36)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["E", "Read"]]:
+	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Hold breath"], ["E", "Read"]]:
 		box.add_child(UiChrome.key_row(pair[0], pair[1]))
 	var resume := UiChrome.text_button("Resume")
 	resume.pressed.connect(func() -> void: Game.toggle_pause())

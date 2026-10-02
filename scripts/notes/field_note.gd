@@ -32,6 +32,8 @@ func _build() -> void:
 	var glow := OmniLight3D.new()
 	glow.name = "Glow"
 	glow.light_color = Color(0.95, 0.78, 0.45)
+	if entry != null and entry.record_of != "":
+		glow.light_color = Color(0.62, 0.78, 0.95)
 	glow.light_energy = 0.55
 	glow.omni_range = 3.2
 	glow.position = Vector3(0, 0.45, 0)
@@ -40,7 +42,8 @@ func _build() -> void:
 
 	var marker := Label3D.new()
 	marker.name = "Mark"
-	marker.text = "note"
+	var record := entry != null and entry.record_of != ""
+	marker.text = "record" if record else "note"
 	marker.font_size = 42
 	marker.modulate = Color(0.93, 0.86, 0.7)
 	marker.outline_modulate = Color(0, 0, 0)
