@@ -3,7 +3,7 @@ extends RefCounted
 
 # Balance for one run of the ridge. Change feel here, not in the systems.
 
-const WALK_SPEED := 3.45
+const WALK_SPEED := 2.55
 const SPRINT_SPEED := 6.85
 const HUNTER_CREEP := 1.4
 const HUNTER_CHASE := 5.7

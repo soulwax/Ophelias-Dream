@@ -31,8 +31,8 @@ func play_step(heavy: bool = false) -> void:
 	var player := _steps[_step_cursor]
 	_step_cursor = (_step_cursor + 1) % _steps.size()
 	player.stream = _step_clips[randi() % _step_clips.size()]
-	player.pitch_scale = randf_range(0.78, 1.05) if heavy else randf_range(0.86, 1.22)
-	player.volume_db = randf_range(-3.5, -0.5) if heavy else randf_range(-8.5, -4.0)
+	player.pitch_scale = randf_range(0.94, 1.06) if heavy else randf_range(1.08, 1.28)
+	player.volume_db = randf_range(-11.0, -7.5) if heavy else randf_range(-16.0, -12.0)
 	player.play()
 
 
@@ -43,10 +43,18 @@ func play_snap(volume_db: float = -4.0) -> void:
 
 
 func _load_steps() -> void:
-	var names: Array[String] = ["step_0.wav", "step_1.wav", "step_2.wav", "step_3.wav", "step_4.wav", "step.wav"]
+	var taps: Array[String] = ["tap_0.wav", "tap_1.wav", "tap_2.wav", "tap_3.wav", "tap_4.wav", "tap_5.wav"]
+	var names: Array[String] = taps
+	var found_tap := false
+	for file_name in taps:
+		if FileAccess.file_exists("res://assets/audio/" + file_name):
+			found_tap = true
+			break
+	if not found_tap:
+		names = ["step_0.wav", "step_1.wav", "step_2.wav", "step_3.wav", "step_4.wav"]
 	for file_name in names:
 		var path := "res://assets/audio/" + file_name
-		if FileAccess.file_exists(path) and file_name != "step.wav":
+		if FileAccess.file_exists(path):
 			var clip := load(path) as AudioStream
 			if clip:
 				_step_clips.append(clip)

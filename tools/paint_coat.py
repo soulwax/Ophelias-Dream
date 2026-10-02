@@ -6,12 +6,7 @@ shadow, retinted as wool, so the suit still follows the mesh.
 import os
 from PIL import Image, ImageFilter
 
-SRC = r"C:\Users\soulwax\Workspace\Godot\run\addons\quaternius_ik_rigged\Godot - UE\T_Superhero_Male_Dark.png"
-DST = r"C:\Users\soulwax\Workspace\Godot\run\assets\characters\winter_coat.png"
-
-COAT = (0.20, 0.22, 0.25)
-PANTS = (0.11, 0.12, 0.14)
-GLOVE = (0.16, 0.15, 0.14)
+ROOT = r"C:\Users\soulwax\Workspace\Godot\run"
 
 
 def shade(color, lum: float) -> tuple:
@@ -19,14 +14,14 @@ def shade(color, lum: float) -> tuple:
 	return tuple(max(0, min(255, int(channel * gain * 255))) for channel in color)
 
 
-def main() -> None:
-	image = Image.open(SRC).convert("RGB")
+def paint(src_path: str, dst_path: str, coat, trim, glove, face_box, hand_box, blur: float) -> None:
+	image = Image.open(src_path).convert("RGB")
 	w, h = image.size
 	src = image.load()
 	out = Image.new("RGB", (w, h))
 	dst = out.load()
-	face = (int(w * 0.015), int(h * 0.012), int(w * 0.30), int(h * 0.30))
-	hands = (int(w * 0.34), 0, w, int(h * 0.40))
+	face = tuple(int(v) for v in (w * face_box[0], h * face_box[1], w * face_box[2], h * face_box[3]))
+	hands = tuple(int(v) for v in (w * hand_box[0], h * hand_box[1], w * hand_box[2], h * hand_box[3]))
 	for y in range(h):
 		for x in range(w):
 			r, g, b = src[x, y]
@@ -35,12 +30,12 @@ def main() -> None:
 				continue
 			lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
 			if hands[0] <= x < hands[2] and hands[1] <= y < hands[3] and lum > 0.34:
-				dst[x, y] = shade(GLOVE, lum)
-			elif lum < 0.30:
-				dst[x, y] = shade(PANTS, lum)
+				dst[x, y] = shade(glove, lum)
+			elif lum < 0.28:
+				dst[x, y] = shade(trim, lum)
 			else:
-				dst[x, y] = shade(COAT, lum)
-	soft = out.filter(ImageFilter.GaussianBlur(radius=5))
+				dst[x, y] = shade(coat, lum)
+	soft = out.filter(ImageFilter.GaussianBlur(radius=blur))
 	face_img = image.crop(face)
 	mask = Image.new("L", face_img.size, 0)
 	mp = mask.load()
@@ -50,9 +45,24 @@ def main() -> None:
 			edge = min(x, y, fw - 1 - x, fh - 1 - y) / 36.0
 			mp[x, y] = int(max(0.0, min(1.0, edge)) * 255)
 	soft.paste(face_img, face[:2], mask)
-	os.makedirs(os.path.dirname(DST), exist_ok=True)
-	soft.save(DST, optimize=True)
-	print("wrote", DST, os.path.getsize(DST))
+	os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+	soft.save(dst_path, optimize=True)
+	print("wrote", dst_path, os.path.getsize(dst_path))
+
+
+def main() -> None:
+	tex = ROOT + r"\addons\quaternius_ik_rigged\Godot - UE"
+	out = ROOT + r"\assets\characters"
+	paint(
+		tex + r"\T_Superhero_Female_Dark_BaseColor.png",
+		out + r"\girl_coat.png",
+		coat=(0.62, 0.16, 0.22),
+		trim=(0.32, 0.08, 0.12),
+		glove=(0.09, 0.08, 0.08),
+		face_box=(0.0, 0.0, 0.40, 0.36),
+		hand_box=(0.38, 0.0, 1.0, 0.42),
+		blur=2.2,
+	)
 
 
 if __name__ == "__main__":

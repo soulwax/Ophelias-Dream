@@ -6,6 +6,7 @@ var fall := 1.4
 var wind_scale := 1.0
 var spread_calm := 18.0
 var spread_storm := 7.0
+var gust_only := false
 
 
 func setup(texture_path: String, count: int, life: float, box: Vector3, scale_min: float, scale_max: float, quad_size: Vector2, tint: Color) -> void:
@@ -54,7 +55,10 @@ func apply(intensity: float, wind: Vector3, gust: float) -> void:
 	motion.initial_velocity_max = speed * (1.05 + gust * 0.45)
 	motion.gravity = Vector3(blow.x * 0.15, -0.25 * fall, blow.z * 0.15)
 	motion.spread = lerpf(spread_calm, spread_storm, intensity)
-	amount_ratio = clampf(lerpf(0.42, 1.0, intensity), 0.15, 1.0)
+	if gust_only:
+		amount_ratio = clampf(gust * intensity, 0.0, 0.75)
+	else:
+		amount_ratio = clampf(lerpf(0.55, 1.0, intensity), 0.2, 1.0)
 
 
 func _card(texture_path: String, quad_size: Vector2) -> QuadMesh:

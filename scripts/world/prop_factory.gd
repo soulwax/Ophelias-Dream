@@ -38,9 +38,41 @@ static func _hide_lods(root: Node) -> void:
 
 
 static func _paint(root: Node, file_name: String) -> void:
-	var mat := _material_for(file_name)
+	var mat := _foliage_material(file_name)
+	if mat == null:
+		mat = _material_for(file_name)
 	for mesh_instance in root.find_children("*", "MeshInstance3D", true, false):
 		(mesh_instance as MeshInstance3D).material_override = mat
+
+
+static func _foliage_material(file_name: String) -> StandardMaterial3D:
+	var texture_name := ""
+	match file_name:
+		"SM_Env_Bush_01.fbx":
+			texture_name = "Alpine_Bush_01.tga"
+		"SM_Env_Bush_02.fbx":
+			texture_name = "Alpine_Bush_02.tga"
+		"SM_Env_Grass_01.fbx":
+			texture_name = "Alpine_Grass_01.tga"
+		"SM_Env_Flowers_01.fbx":
+			texture_name = "Flowers_01.tga"
+		_:
+			return null
+	var path := ROOT + "foliage/" + texture_name
+	if not ResourceLoader.exists(path) and not FileAccess.file_exists(path):
+		return null
+	if _materials.has(path):
+		return _materials[path]
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = load(path)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.alpha_scissor_threshold = 0.35
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.roughness = 0.9
+	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_materials[path] = mat
+	return mat
 
 
 static func _material_for(file_name: String) -> StandardMaterial3D:
@@ -52,8 +84,9 @@ static func _material_for(file_name: String) -> StandardMaterial3D:
 	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	match key:
 		"pine", "background":
-			mat.albedo_color = Color(0.09, 0.16, 0.1)
+			mat.albedo_color = Color(0.11, 0.24, 0.13)
 			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+			mat.roughness = 0.94
 		"broadleaf":
 			mat.albedo_color = Color(0.13, 0.2, 0.1)
 			mat.cull_mode = BaseMaterial3D.CULL_DISABLED

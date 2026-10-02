@@ -39,10 +39,10 @@ func _snow_volume() -> void:
 func apply_storm(strength: float) -> void:
 	if _env == null:
 		return
-	var t := clampf(strength, 0.0, 1.0) * 0.32
-	_env.fog_density = lerpf(0.0045, 0.011, t)
+	var t := clampf(strength, 0.0, 1.0) * 0.45
+	_env.fog_density = lerpf(0.004, 0.012, t)
 	_env.fog_light_color = Color(0.78, 0.83, 0.88).lerp(Color(0.84, 0.87, 0.9), t)
-	_env.volumetric_fog_density = lerpf(0.006, 0.016, t)
+	_env.volumetric_fog_density = lerpf(0.007, 0.02, t)
 	_env.volumetric_fog_albedo = Color(0.9, 0.93, 0.96)
 	_env.volumetric_fog_length = lerpf(90.0, 70.0, t)
 	_env.background_color = Color(0.62, 0.7, 0.78).lerp(Color(0.7, 0.75, 0.8), t)

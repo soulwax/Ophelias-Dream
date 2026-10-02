@@ -19,6 +19,7 @@ var _clip: String = ""
 var _sprinting := false
 var _step_interval := 0.5
 var _left_foot := false
+var _glide := Vector3.ZERO
 var footprints: Footprints
 
 
@@ -61,8 +62,9 @@ func _physics_process(delta: float) -> void:
 		return
 	_apply_look()
 	if Game.locks_movement():
-		velocity.x = move_toward(velocity.x, 0.0, Tune.SPRINT_SPEED)
-		velocity.z = move_toward(velocity.z, 0.0, Tune.SPRINT_SPEED)
+		_glide = _glide.move_toward(Vector3.ZERO, 10.0 * delta)
+		velocity.x = _glide.x
+		velocity.z = _glide.z
 		if not is_on_floor():
 			velocity.y -= Tune.GRAVITY * delta
 		move_and_slide()
@@ -99,8 +101,10 @@ func _physics_process(delta: float) -> void:
 	var push := Vector3.ZERO
 	if Game.weather:
 		push = Game.weather.wind * 0.065 * (1.0 + Game.weather.gust * 0.8)
-	velocity.x = wish.x * speed + push.x
-	velocity.z = wish.z * speed + push.z
+	var glide_rate := 16.0 if sprinting else 5.5
+	_glide = _glide.move_toward(Vector3(wish.x, 0.0, wish.z) * speed, glide_rate * delta)
+	velocity.x = _glide.x + push.x
+	velocity.z = _glide.z + push.z
 	move_and_slide()
 	_animate(moving, sprinting)
 	_bob_camera(delta, moving, sprinting)
@@ -131,15 +135,23 @@ func _apply_look() -> void:
 
 
 func _animate(moving: bool, sprinting: bool) -> void:
+	if animation_player == null:
+		return
 	if not moving:
-		_play_clip("Idle_Talking")
+		_play_clip("Idle_Talking", 0.28)
+		animation_player.speed_scale = 0.72
 	elif sprinting:
-		_play_clip("Sprint")
+		_play_clip("Sprint", 0.18)
+		animation_player.speed_scale = 1.0
 	else:
-		_play_clip("Jog_Fwd")
+		_play_clip("Walk_Formal", 0.32)
+		animation_player.speed_scale = 0.86
+	if visual:
+		var sway := 0.0 if not moving else sin(_bob * 0.5) * (0.012 if sprinting else 0.02)
+		visual.rotation.z = sway
 
 
-func _play_clip(clip: String) -> void:
+func _play_clip(clip: String, blend: float = 0.28) -> void:
 	if animation_player == null:
 		return
 	var resolved := _resolve(clip)
@@ -148,7 +160,7 @@ func _play_clip(clip: String) -> void:
 	var animation := animation_player.get_animation(resolved)
 	if animation:
 		animation.loop_mode = Animation.LOOP_LINEAR
-	animation_player.play(resolved, 0.16)
+	animation_player.play(resolved, blend)
 	_clip = resolved
 
 
@@ -159,6 +171,8 @@ func _resolve(clip: String) -> String:
 	for name in animation_player.get_animation_list():
 		if name.ends_with(suffix) or name.ends_with(clip):
 			return name
+	if clip == "Walk_Formal":
+		return _resolve("Walk")
 	if clip == "Jog_Fwd":
 		return _resolve("Walk")
 	return ""
@@ -184,8 +198,8 @@ func _bob_camera(delta: float, moving: bool, sprinting: bool) -> void:
 	if spring_arm == null:
 		return
 	if moving:
-		_bob += delta * (9.0 if sprinting else 6.0)
-	var bob := sin(_bob) * (0.035 if moving else 0.0)
+		_bob += delta * (8.0 if sprinting else 3.6)
+	var bob := sin(_bob) * (0.016 if sprinting else 0.006)
 	spring_arm.position.y = 1.5 + bob
 
 
@@ -203,7 +217,7 @@ func _steps(delta: float, moving: bool, sprinting: bool) -> void:
 	if _step_debt < _step_interval:
 		return
 	_step_debt = 0.0
-	_step_interval = randf_range(0.28, 0.36) if sprinting else randf_range(0.46, 0.62)
+	_step_interval = randf_range(0.30, 0.36) if sprinting else randf_range(0.58, 0.68)
 	_left_foot = not _left_foot
 	if Game.soundscape:
 		Game.soundscape.play_step(sprinting)
@@ -223,7 +237,7 @@ func _cloak(root: Node) -> void:
 	var suit := _suit_material()
 	var eyes := _eye_material()
 	var hair := StandardMaterial3D.new()
-	hair.albedo_color = Color(0.08, 0.07, 0.06)
+	hair.albedo_color = Color(0.22, 0.12, 0.08)
 	hair.roughness = 0.72
 	hair.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	for mesh_instance in root.find_children("*", "MeshInstance3D", true, false):
@@ -239,9 +253,9 @@ func _cloak(root: Node) -> void:
 
 func _suit_material() -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
-	material.albedo_texture = load("res://assets/characters/winter_coat.png")
+	material.albedo_texture = load("res://assets/characters/girl_coat.png")
 	material.albedo_color = Color.WHITE
-	var normal_path := "res://addons/quaternius_ik_rigged/Godot - UE/T_Superhero_Male_Normal.png"
+	var normal_path := "res://addons/quaternius_ik_rigged/Godot - UE/T_Superhero_Female_Normal.png"
 	if ResourceLoader.exists(normal_path):
 		material.normal_enabled = true
 		material.normal_texture = load(normal_path)
@@ -308,7 +322,7 @@ func _build_model() -> void:
 	visual = Node3D.new()
 	visual.name = "Visual"
 	add_child(visual)
-	var path := "res://addons/quaternius_ik_rigged/Models_with_rigging/Master_Rigged.tscn"
+	var path := "res://addons/quaternius_ik_rigged/Models_with_rigging/Female_Rigged.tscn"
 	if not ResourceLoader.exists(path):
 		return
 	var packed := load(path) as PackedScene
