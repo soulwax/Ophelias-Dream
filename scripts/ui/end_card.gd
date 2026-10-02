@@ -3,7 +3,7 @@ extends Control
 
 var _title: Label
 var _body: Label
-var _hint: Label
+var _again: Button
 
 
 func _ready() -> void:
@@ -20,56 +20,60 @@ func _on_phase(next: Game.Phase) -> void:
 			_show(
 				"It caught you",
 				"You stopped. The snow closed over the place you were.",
-				"R  —  wake in the cabin again"
+				"Wake in the cabin"
 			)
 		Game.Phase.ESCAPED:
 			_show(
 				"The road",
-				"Headlights. A real road. You do not look back. You run until the snow is only a sound.",
-				"R  —  walk the ridge again"
+				"Headlights. A real road. You do not look back.",
+				"Walk the ridge again"
 			)
 		_:
 			visible = false
 
 
-func _show(title: String, body: String, hint: String) -> void:
+func _show(title: String, body: String, action: String) -> void:
 	_title.text = title
 	_body.text = body
-	_hint.text = hint
+	_again.text = action
 	visible = true
 
 
 func _build() -> void:
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(0.03, 0.04, 0.06, 0.72)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dim)
 
-	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_CENTER)
-	box.offset_left = -360
-	box.offset_right = 360
-	box.offset_top = -120
-	box.offset_bottom = 120
-	box.add_theme_constant_override("separation", 14)
-	add_child(box)
+	var card := PanelContainer.new()
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.offset_left = -380
+	card.offset_right = 380
+	card.offset_top = -160
+	card.offset_bottom = 160
+	card.add_theme_stylebox_override("panel", UiChrome.plate(32, 8))
+	add_child(card)
 
-	_title = Label.new()
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	card.add_child(box)
+
+	_title = UiChrome.label("", 42)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_title.add_theme_font_size_override("font_size", 42)
-	_title.add_theme_color_override("font_color", Color(0.93, 0.9, 0.86))
 	box.add_child(_title)
 
-	_body = Label.new()
+	_body = UiChrome.label("", 18, UiChrome.MUTED)
 	_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.custom_minimum_size = Vector2(640, 0)
-	_body.add_theme_font_size_override("font_size", 20)
-	_body.add_theme_color_override("font_color", Color(0.78, 0.78, 0.8))
 	box.add_child(_body)
 
-	_hint = Label.new()
-	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hint.add_theme_font_size_override("font_size", 16)
-	_hint.add_theme_color_override("font_color", Color(0.62, 0.62, 0.66))
-	box.add_child(_hint)
+	_again = UiChrome.text_button("Wake in the cabin")
+	_again.pressed.connect(func() -> void: Game.restart())
+	box.add_child(_again)
+
+	var hint := UiChrome.label("R does the same.", 13, UiChrome.MUTED)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(hint)

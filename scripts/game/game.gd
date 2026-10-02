@@ -79,6 +79,7 @@ func set_closeness(value: float) -> void:
 func begin_reading() -> void:
 	if phase != Phase.PLAYING:
 		return
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if active_note and active_note.collect():
 		notes_found += 1
 		if notes_found == Tune.HUNT_NOTES and _hunt_start_msec < 0:

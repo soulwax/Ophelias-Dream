@@ -2,15 +2,21 @@ class_name Hud
 extends CanvasLayer
 
 var _intro: Control
-var _intro_title: Label
+var _objective_plate: PanelContainer
 var _objective: Label
-var _prompt: Label
+var _pips: Array[ColorRect] = []
+var _warning_plate: PanelContainer
 var _warning: Label
-var _breath_fill: ColorRect
+var _prompt: HBoxContainer
+var _prompt_caption: Label
 var _breath: Control
+var _breath_fill: ColorRect
+var _breath_label: Label
+var _controls: Control
 var _vignette: ColorRect
-var _pause: Label
+var _pause: Control
 var _debug: Label
+var _play_age := 0.0
 var reader: NoteReader
 var ending: EndCard
 
@@ -23,16 +29,20 @@ func _ready() -> void:
 	_on_phase(Game.phase)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_warning.text = _warning_line()
-	_prompt.text = _prompt_line()
-	if Game.player:
-		var ratio := Game.player.stamina / Tune.STAMINA_MAX
-		_breath_fill.offset_right = 220.0 * ratio
-		_breath_fill.color = Color(0.85, 0.86, 0.9) if Game.player.exhaust_left <= 0.0 else Color(0.75, 0.3, 0.22)
+	_warning_plate.visible = _warning.text != "" and Game.phase == Game.Phase.PLAYING
+	_refresh_prompt()
+	_refresh_breath()
+	_refresh_pips()
+	if Game.phase == Game.Phase.INTRO:
+		_intro.modulate.a = clampf(Game.intro_left / 0.65, 0.0, 1.0)
+	elif Game.phase == Game.Phase.PLAYING:
+		_play_age += delta
+		_controls.modulate.a = clampf(1.0 - (_play_age - 8.0) / 4.0, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
-		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.2 + Game.closeness * 0.7)
-		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.closeness * 0.55, 0.0, 0.0))
+		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.closeness * 0.62)
+		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.closeness * 0.5, 0.0, 0.0))
 	if _debug.visible and Game.player and Game.hunter and Game.trail:
 		var gap := Game.trail.offset_of(Game.player.global_position) - Game.hunter.offset
 		_debug.text = "gap %.1f m   breath %.1f" % [gap, Game.player.stamina]
@@ -42,8 +52,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		Game.toggle_pause()
 		get_viewport().set_input_as_handled()
-	if event.is_action_pressed("restart") or event.is_action_pressed("interact"):
-		if Game.phase == Game.Phase.CAUGHT or Game.phase == Game.Phase.ESCAPED:
+	if event.is_action_pressed("restart"):
+		if Game.phase == Game.Phase.CAUGHT or Game.phase == Game.Phase.ESCAPED or Game.phase == Game.Phase.PAUSED:
 			Game.restart()
 			get_viewport().set_input_as_handled()
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F3 and OS.is_debug_build():
@@ -53,37 +63,76 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_phase(next: Game.Phase) -> void:
 	_intro.visible = next == Game.Phase.INTRO
 	_pause.visible = next == Game.Phase.PAUSED
-	_objective.visible = next == Game.Phase.PLAYING or next == Game.Phase.READING
+	var playing := next == Game.Phase.PLAYING
+	_objective_plate.visible = playing
+	_breath.visible = playing
+	_controls.visible = playing
+	if next == Game.Phase.INTRO:
+		_controls.modulate.a = 1.0
+	if next == Game.Phase.PLAYING and _play_age <= 0.0:
+		_controls.modulate.a = 1.0
 	_refresh_objective()
-	_breath.visible = next == Game.Phase.PLAYING or next == Game.Phase.READING
 
 
 func _refresh_objective() -> void:
 	if Game.notes_found < Tune.HUNT_NOTES:
-		_objective.text = "The lookout is ahead.   %d / 5" % Game.notes_found
+		_objective.text = "Reach the lookout."
 	else:
-		_objective.text = "Do not stand still.   %d / 5" % Game.notes_found
+		_objective.text = "Keep moving."
+
+
+func _refresh_pips() -> void:
+	var found := Game.notes_found
+	for index in _pips.size():
+		var on := index < found
+		_pips[index].color = Color(0.93, 0.86, 0.7) if on else Color(1, 1, 1, 0.22)
+
+
+func _refresh_breath() -> void:
+	if Game.player == null:
+		return
+	var ratio := clampf(Game.player.stamina / Tune.STAMINA_MAX, 0.0, 1.0)
+	_breath_fill.anchor_right = ratio
+	var spent := Game.player.exhaust_left > 0.0
+	if spent:
+		_breath_fill.color = Color(0.86, 0.32, 0.24)
+		_breath_label.text = "Catching breath"
+	elif ratio < 0.28:
+		_breath_fill.color = Color(0.9, 0.62, 0.38)
+		_breath_label.text = "Breath"
+	else:
+		_breath_fill.color = Color(0.86, 0.9, 0.94)
+		_breath_label.text = "Breath"
 
 
 func _warning_line() -> String:
 	var near := Game.closeness
 	if near > 0.82:
-		return "it is close"
+		return "It is close."
 	if near > 0.55:
-		return "do not stop"
+		return "Do not stop."
 	if near > 0.32:
-		return "something is on the trail"
+		return "Something is on the trail."
 	return ""
 
 
-func _prompt_line() -> String:
-	if Game.phase != Game.Phase.PLAYING or Game.player == null:
-		return ""
-	if Game.player.nearby_note():
-		return "E  —  read the note"
-	if _against_wire():
-		return "the wire does not give"
-	return ""
+func _refresh_prompt() -> void:
+	var show := false
+	var caption := ""
+	var key := "E"
+	if Game.phase == Game.Phase.PLAYING and Game.player:
+		if Game.player.nearby_note():
+			show = true
+			caption = "Read the note"
+		elif _against_wire():
+			show = true
+			key = ""
+			caption = "The fence does not give."
+	_prompt.visible = show
+	if not show:
+		return
+	_prompt.get_child(0).visible = key != ""
+	_prompt_caption.text = caption
 
 
 func _against_wire() -> bool:
@@ -102,99 +151,214 @@ func _build() -> void:
 	material.shader = shader
 	_vignette.material = material
 	add_child(_vignette)
-
 	_letterbox()
-
-	_intro = Control.new()
-	_intro.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_intro)
-	_intro_title = _centered_label(_intro, "RUN AWAY", 64, Vector2(0, -40), Color(0.16, 0.18, 0.22))
-	_centered_label(_intro, "Daylight on the snow. The wire is as far as the ground goes.", 22, Vector2(0, 30), Color(0.22, 0.24, 0.28))
-	_centered_label(_intro, "It stays patient until you have read too much.", 18, Vector2(0, 64), Color(0.35, 0.28, 0.26))
-
-	_objective = _anchored_label("The road is ahead.", 18, Control.PRESET_CENTER_TOP, Vector2(0, 28))
-	_warning = _anchored_label("", 22, Control.PRESET_CENTER_TOP, Vector2(0, 58))
-	_warning.add_theme_color_override("font_color", Color(0.45, 0.1, 0.08))
-	_prompt = _anchored_label("", 20, Control.PRESET_CENTER_BOTTOM, Vector2(0, -78))
-
-	_breath = Control.new()
-	_breath.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_breath.offset_left = -110
-	_breath.offset_right = 110
-	_breath.offset_top = -48
-	_breath.offset_bottom = -36
-	add_child(_breath)
-	var back := ColorRect.new()
-	back.color = Color(0, 0, 0, 0.45)
-	back.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_breath.add_child(back)
-	_breath_fill = ColorRect.new()
-	_breath_fill.color = Color(0.85, 0.86, 0.9)
-	_breath_fill.offset_right = 220
-	_breath_fill.offset_bottom = 12
-	_breath.add_child(_breath_fill)
-	var breath_label := Label.new()
-	breath_label.text = "breath"
-	breath_label.position = Vector2(0, -18)
-	breath_label.add_theme_font_size_override("font_size", 12)
-	breath_label.add_theme_color_override("font_color", Color(0.7, 0.72, 0.76))
-	_breath.add_child(breath_label)
-
-	_pause = _centered_label(self, "Paused", 36, Vector2(0, 0), Color(0.9, 0.9, 0.92))
-	_pause.visible = false
-
+	_build_intro()
+	_build_objective()
+	_build_warning()
+	_build_controls()
+	_build_bottom()
+	_build_pause()
 	reader = NoteReader.new()
 	add_child(reader)
 	ending = EndCard.new()
 	add_child(ending)
-
-	_debug = Label.new()
+	_debug = UiChrome.label("", 14, UiChrome.MUTED)
 	_debug.visible = false
-	_debug.position = Vector2(16, 16)
-	_debug.add_theme_font_size_override("font_size", 14)
+	_debug.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_debug.offset_left = -280
+	_debug.offset_top = 16
+	_debug.offset_right = -16
+	_debug.offset_bottom = 40
+	_debug.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(_debug)
+
+
+func _build_intro() -> void:
+	_intro = Control.new()
+	_intro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_intro)
+	var scrim := ColorRect.new()
+	scrim.color = Color(0.04, 0.05, 0.07, 0.28)
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_intro.add_child(scrim)
+	var card := PanelContainer.new()
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.offset_left = -340
+	card.offset_right = 340
+	card.offset_top = -150
+	card.offset_bottom = 150
+	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_intro.add_child(card)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	card.add_child(box)
+	var title := UiChrome.label("RUN AWAY", 54)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(title)
+	var line := UiChrome.label("The fence is as far as the snow goes.", 18, UiChrome.MUTED)
+	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(line)
+	box.add_child(HSeparator.new())
+	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["E", "Read"], ["Esc", "Pause"]]:
+		var row := UiChrome.key_row(pair[0], pair[1])
+		box.add_child(row)
+
+
+func _build_objective() -> void:
+	_objective_plate = PanelContainer.new()
+	_objective_plate.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_objective_plate.offset_left = 28
+	_objective_plate.offset_top = 28
+	_objective_plate.offset_right = 360
+	_objective_plate.offset_bottom = 118
+	_objective_plate.add_theme_stylebox_override("panel", UiChrome.plate(16, 6))
+	_objective_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_objective_plate)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_plate.add_child(box)
+	_objective = UiChrome.label("Reach the lookout.", 20)
+	box.add_child(_objective)
+	var notes := HBoxContainer.new()
+	notes.add_theme_constant_override("separation", 8)
+	notes.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notes.add_child(UiChrome.label("Notes", 13, UiChrome.MUTED))
+	var total := NoteCatalog.all().size()
+	for _index in total:
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = Vector2(18, 8)
+		pip.color = Color(1, 1, 1, 0.22)
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		notes.add_child(pip)
+		_pips.append(pip)
+	box.add_child(notes)
+
+
+func _build_warning() -> void:
+	_warning_plate = PanelContainer.new()
+	_warning_plate.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_warning_plate.offset_left = -180
+	_warning_plate.offset_right = 180
+	_warning_plate.offset_top = 28
+	_warning_plate.offset_bottom = 76
+	_warning_plate.add_theme_stylebox_override("panel", UiChrome.plate(12, 6))
+	_warning_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warning_plate.visible = false
+	add_child(_warning_plate)
+	_warning = UiChrome.label("", 18, UiChrome.RUST)
+	_warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_warning.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_warning_plate.add_child(_warning)
+
+
+func _build_controls() -> void:
+	_controls = VBoxContainer.new()
+	_controls.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_controls.offset_left = 28
+	_controls.offset_top = -132
+	_controls.offset_right = 240
+	_controls.offset_bottom = -28
+	_controls.add_theme_constant_override("separation", 4)
+	_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_controls)
+	for pair in [["WASD", "Move"], ["Shift", "Sprint"], ["E", "Read"], ["Esc", "Pause"]]:
+		_controls.add_child(UiChrome.key_row(pair[0], pair[1]))
+
+
+func _build_bottom() -> void:
+	var dock := VBoxContainer.new()
+	dock.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	dock.offset_left = -160
+	dock.offset_right = 160
+	dock.offset_top = -128
+	dock.offset_bottom = -28
+	dock.add_theme_constant_override("separation", 10)
+	dock.alignment = BoxContainer.ALIGNMENT_CENTER
+	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dock)
+	_prompt = UiChrome.key_row("E", "Read the note")
+	_prompt.visible = false
+	_prompt_caption = _prompt.get_child(1) as Label
+	dock.add_child(_prompt)
+	_breath = PanelContainer.new()
+	_breath.add_theme_stylebox_override("panel", UiChrome.plate(12, 6))
+	_breath.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dock.add_child(_breath)
+	var breath_box := VBoxContainer.new()
+	breath_box.add_theme_constant_override("separation", 6)
+	breath_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_breath.add_child(breath_box)
+	_breath_label = UiChrome.label("Breath", 12, UiChrome.MUTED)
+	breath_box.add_child(_breath_label)
+	var track := Control.new()
+	track.custom_minimum_size = Vector2(240, 8)
+	track.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	breath_box.add_child(track)
+	var back := ColorRect.new()
+	back.color = Color(1, 1, 1, 0.12)
+	back.set_anchors_preset(Control.PRESET_FULL_RECT)
+	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	track.add_child(back)
+	_breath_fill = ColorRect.new()
+	_breath_fill.color = Color(0.86, 0.9, 0.94)
+	_breath_fill.anchor_right = 1.0
+	_breath_fill.anchor_bottom = 1.0
+	_breath_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	track.add_child(_breath_fill)
+
+
+func _build_pause() -> void:
+	_pause = Control.new()
+	_pause.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_pause.visible = false
+	add_child(_pause)
+	var scrim := ColorRect.new()
+	scrim.color = Color(0.03, 0.04, 0.06, 0.55)
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pause.add_child(scrim)
+	var card := PanelContainer.new()
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.offset_left = -260
+	card.offset_right = 260
+	card.offset_top = -180
+	card.offset_bottom = 180
+	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
+	_pause.add_child(card)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	card.add_child(box)
+	var title := UiChrome.label("Paused", 36)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(title)
+	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["E", "Read"]]:
+		box.add_child(UiChrome.key_row(pair[0], pair[1]))
+	var resume := UiChrome.text_button("Resume")
+	resume.pressed.connect(func() -> void: Game.toggle_pause())
+	box.add_child(resume)
+	var again := UiChrome.text_button("Restart")
+	again.pressed.connect(func() -> void: Game.restart())
+	box.add_child(again)
+	var hint := UiChrome.label("Esc resumes.  R restarts.", 13, UiChrome.MUTED)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(hint)
 
 
 func _letterbox() -> void:
 	for top in [true, false]:
 		var bar := ColorRect.new()
-		bar.color = Color(0, 0, 0, 0.65)
+		bar.color = Color(0, 0, 0, 0.72)
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if top:
 			bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-			bar.offset_bottom = 18
+			bar.offset_bottom = 10
 		else:
 			bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-			bar.offset_top = -18
+			bar.offset_top = -10
 		add_child(bar)
-
-
-func _centered_label(parent: Node, text: String, size: int, place: Vector2, color: Color) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.set_anchors_preset(Control.PRESET_CENTER)
-	label.offset_left = -420
-	label.offset_right = 420
-	label.offset_top = place.y - 20
-	label.offset_bottom = place.y + 24
-	label.add_theme_font_size_override("font_size", size)
-	label.add_theme_color_override("font_color", color)
-	parent.add_child(label)
-	return label
-
-
-func _anchored_label(text: String, size: int, preset: Control.LayoutPreset, place: Vector2) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.set_anchors_preset(preset)
-	label.offset_left = -320 + place.x
-	label.offset_right = 320 + place.x
-	label.offset_top = place.y
-	label.offset_bottom = place.y + 28
-	label.add_theme_font_size_override("font_size", size)
-	label.add_theme_color_override("font_color", Color(0.1, 0.12, 0.14))
-	add_child(label)
-	return label
