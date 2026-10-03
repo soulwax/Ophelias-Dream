@@ -52,11 +52,13 @@ func stamp(at: Vector3, yaw: float, heavy: bool, flip: bool) -> void:
 	var forward := Vector3(sin(yaw), 0.0, cos(yaw))
 	var right := Vector3(forward.z, 0.0, -forward.x)
 	var normal := Vector3.UP
-	# Just clear of the snow. The shader sinks the sole and lifts the berm.
-	var planted := Vector3(at.x, at.y + 0.014, at.z)
+	# Clear of the deepest part of the sole, so the bowl sits in the snow
+	# and the berm is what rises out of it.
+	var lift := 0.026
+	var planted := Vector3(at.x, at.y + lift, at.z)
 	if Game.trail != null and Game.trail.ground != null:
 		var ground: Ground = Game.trail.ground
-		planted.y = ground.height_at(at.x, at.z) + 0.014
+		planted.y = ground.height_at(at.x, at.z) + lift
 		var hx := ground.height_at(at.x + 0.3, at.z) - ground.height_at(at.x - 0.3, at.z)
 		var hz := ground.height_at(at.x, at.z + 0.3) - ground.height_at(at.x, at.z - 0.3)
 		normal = Vector3(-hx, 0.6, -hz).normalized()
@@ -66,6 +68,8 @@ func stamp(at: Vector3, yaw: float, heavy: bool, flip: bool) -> void:
 	basis.x = right * (-width if flip else width)
 	basis.y = forward * length
 	basis.z = normal
+	# A newer print sits a hair above an older one, so two steps do not fight.
+	planted.y += float(_cursor) * 0.00025
 	mesh_instance.transform = Transform3D(basis, planted - forward * 0.02)
 	mesh_instance.visible = true
 	_ages[_cursor] = 0.0
@@ -73,6 +77,7 @@ func stamp(at: Vector3, yaw: float, heavy: bool, flip: bool) -> void:
 	if material:
 		material.set_shader_parameter("fade", 1.0)
 		material.set_shader_parameter("press", press)
+		material.set_shader_parameter("span", Vector2(width, length))
 	_cursor = (_cursor + 1) % POOL
 
 
