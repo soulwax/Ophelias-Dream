@@ -57,6 +57,7 @@ func interact() -> bool:
 			node.visible = on
 	if _click and _click.stream:
 		_click.pitch_scale = randf_range(1.32, 1.48)
+		Loudness.sound(_click, Loudness.SWITCH)
 		_click.play()
 	return true
 

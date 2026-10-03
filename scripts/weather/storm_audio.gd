@@ -31,11 +31,18 @@ func _ready() -> void:
 	for i in 2:
 		var whistle := Loudness.voice(Loudness.WINDOW_WHISTLE, "Ambience")
 		whistle.top_level = true
+		whistle.volume_db = -80.0
 		whistle.stream = _stream("window.ogg")
 		add_child(whistle)
 		if whistle.stream:
 			whistle.play(randf() * whistle.stream.get_length())
 		_whistles.append(whistle)
+
+
+# Streamed loops still playing at quit are reported as leaks.
+func _exit_tree() -> void:
+	for player in find_children("*", "AudioStreamPlayer3D", false, false):
+		(player as AudioStreamPlayer3D).stop()
 
 
 ## intensity and gust from Weather (0..1), the wind it blows, and how far
@@ -91,6 +98,8 @@ func _bed(file_name: String, offset: Vector3) -> AudioStreamPlayer3D:
 	player.attenuation_filter_db = 0.0
 	player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
 	player.max_db = 6.0
+	# Silent until the first apply() sets its level.
+	player.volume_db = -80.0
 	player.position = offset
 	player.stream = _stream(file_name)
 	add_child(player)

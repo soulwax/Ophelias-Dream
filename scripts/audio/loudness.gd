@@ -10,7 +10,9 @@ extends RefCounted
 # falls below the threshold of hearing. Her ears are the listener.
 
 # The SPL a levelled recording represents when it plays at 0 dB at 1 m.
-const CALIBRATION := 80.0
+# Measured from a recorded mix: a calm spell sits near -32 LUFS, a full
+# gust near -15, the loudest moments just under the Master limiter.
+const CALIBRATION := 75.0
 # Quieter than this at the ears (dB SPL) and a sound is gone: its reach.
 const HEARING_FLOOR := 20.0
 const FARTHEST := 420.0
@@ -40,6 +42,33 @@ const GUST := 80.0
 const WALLS := 24.0
 const CELLAR := 14.0
 const WINDOW_WHISTLE := 58.0
+# The cabin: a door's handle, its hinge creak (pushed, or drifting on its
+# own) and latch; a light switch; and what haunts it: knocks at the front
+# door, a board settling, a tap dripping, a steel tray, a body's weight
+# dropping, boots on the floor above, a whisper.
+const DOOR_HANDLE := 60.0
+const DOOR_CREAK := 58.0
+const DOOR_DRIFT := 60.0
+const DOOR_LATCH := 66.0
+const SWITCH := 56.0
+const KNOCK := 80.0
+const KNOCK_HARD := 88.0
+const BOARD_CREAK := 56.0
+const DRIP := 44.0
+const TRAY := 70.0
+const THUD := 80.0
+const STEP_ABOVE := 62.0
+const WHISPER := 42.0
+
+# Recordings that tools/make_soundscape.py did not level: how far each sits
+# from the levelled impact (-12 dBFS over its loudest 50 ms), measured once.
+const TRIM := {
+	"door_01": 10.2, "door_02": 13.6, "door_close_01": 1.7, "door_open": -2.0, "switch_01": 7.9,
+	"house_creak_board": -2.7, "house_creak_board_2": -1.7, "house_creak_door": -1.6,
+	"house_drip": 5.2, "house_knock": -4.3, "house_knock_hard": -4.9, "house_thud": -4.4,
+	"house_tray": -4.7, "house_whisper": 2.1,
+	"house_step_above_0": -4.6, "house_step_above_1": -5.2, "house_step_above_2": -4.8,
+}
 
 
 ## The volume_db that plays a levelled recording as a source of this level.
@@ -59,6 +88,15 @@ static func voice(spl: float, bus: String, far := false) -> AudioStreamPlayer3D:
 	player.bus = bus
 	place(player, spl, far)
 	return player
+
+
+## Sets a voice up for its current stream as a source of this level, trimmed
+## for recordings that were not levelled. Call it right before playing: the
+## authored level stores its own values on house nodes.
+static func sound(player: AudioStreamPlayer3D, spl: float, far := false) -> void:
+	place(player, spl, far)
+	if player.stream:
+		player.volume_db += float(TRIM.get(player.stream.resource_path.get_file().get_basename(), 0.0))
 
 
 static func place(player: AudioStreamPlayer3D, spl: float, far := false) -> void:

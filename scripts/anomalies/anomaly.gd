@@ -25,6 +25,34 @@ func record_offset() -> float:
 	return 14.0
 
 
+# Where it stands when the editable level has no marker for it yet.
+func stand_transform(host: Trail) -> Transform3D:
+	var along := host.player_start_offset + 40.0
+	var frame := host.frame_at(along)
+	var at := host.on_ground(frame.origin + frame.basis.x * 18.0)
+	return Transform3D(Basis.looking_at(-frame.basis.z, Vector3.UP), at)
+
+
+# Where its page lies, on the side of the trail opposite the field notes.
+func record_position(host: Trail, index: int) -> Vector3:
+	var along := host.player_start_offset + record_offset() + float(index) * 9.0
+	var frame := host.frame_at(along)
+	var at := host.on_ground(frame.origin + frame.basis.x * 3.4)
+	at.y += 0.04
+	return at
+
+
+# Stand on the snow where the editor marker is, facing the way it faces.
+func adopt_marker(marker: Node3D) -> void:
+	global_position = marker.global_position
+	rotation.y = marker.global_rotation.y
+	if trail and trail.ground:
+		var at := global_position
+		at.y = trail.ground.height_at(at.x, at.z)
+		global_position = at
+	reset_physics_interpolation()
+
+
 # Dev hook: stand at a point, facing another.
 func place_near(at: Vector3, facing: Vector3) -> void:
 	if trail and trail.ground:

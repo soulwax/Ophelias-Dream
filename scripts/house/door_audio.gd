@@ -7,6 +7,8 @@ const HANDLE := "res://assets/derived/doors/audio/switch_01.ogg"
 const CREAK_LIGHT := "res://assets/derived/doors/audio/door_01.ogg"
 const CREAK_HEAVY := "res://assets/derived/doors/audio/door_02.ogg"
 const LATCH := "res://assets/derived/doors/audio/door_close_01.ogg"
+# How loud each cue is at 1 m (Loudness); the leaf sets it as it plays.
+const LEVELS := {"handle": Loudness.DOOR_HANDLE, "creak": Loudness.DOOR_CREAK, "latch": Loudness.DOOR_LATCH}
 
 
 ## Returns {"handle", "creak", "latch"} -> AudioStreamPlayer3D under `parent`.

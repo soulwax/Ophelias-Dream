@@ -153,6 +153,27 @@ func _listen_pose(delta: float) -> void:
 	_skeleton.set_bone_pose_rotation(_head, _head_rest * Quaternion(Vector3(0, 0, 1), _tilt))
 
 
+func stand_transform(host: Trail) -> Transform3D:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = host.seed_value + 2117
+	var start := host.position_at(host.player_start_offset)
+	var at := start
+	for _attempt in 20:
+		var angle := rng.randf() * TAU
+		at = start + Vector3(cos(angle), 0.0, sin(angle)) * rng.randf_range(55.0, 95.0)
+		if at.x > Tune.FENCE_MIN_X + 8.0 and at.x < Tune.FENCE_MAX_X - 8.0 and at.z > Tune.FENCE_MIN_Z + 8.0 and at.z < Tune.FENCE_MAX_Z - 8.0:
+			break
+	at.x = clampf(at.x, Tune.FENCE_MIN_X + 8.0, Tune.FENCE_MAX_X - 8.0)
+	at.z = clampf(at.z, Tune.FENCE_MIN_Z + 8.0, Tune.FENCE_MAX_Z - 8.0)
+	at = host.on_ground(at)
+	return Transform3D(Basis(Vector3.UP, rng.randf() * TAU), at)
+
+
+func adopt_marker(marker: Node3D) -> void:
+	super.adopt_marker(marker)
+	_memory = global_position
+
+
 func place_near(at: Vector3, facing: Vector3) -> void:
 	super.place_near(at, facing)
 	_memory = global_position

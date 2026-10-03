@@ -57,6 +57,11 @@ func _ready() -> void:
 func _build_rooms() -> void:
 	if Game.house == null:
 		return
+	# The house already carries these as Authoring areas, so a moved room
+	# keeps the reverb you set on it.
+	var authoring := Game.house.get_node_or_null("Authoring")
+	if authoring and authoring.get_node_or_null("RoomTone") is Area3D:
+		return
 	for zone in Game.house.acoustic_zones():
 		var area := Area3D.new()
 		area.name = zone[0]

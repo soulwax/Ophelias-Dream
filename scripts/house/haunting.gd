@@ -119,7 +119,7 @@ func _ambient(delta: float) -> void:
 	_drip_in = randf_range(1.6, 4.5)
 	if room in ["morgue", "corridor", "janitor"]:
 		var at := house.to_global(house.morgue.sink_at) if room != "janitor" else house.to_global(Vector3(House.JANITOR.position.x + 0.9, House.CELLAR_FLOOR + 0.8, House.JANITOR.end.y - 0.35))
-		_play("house_drip", at, -14.0, randf_range(0.9, 1.15))
+		_play("house_drip", at, Loudness.DRIP, randf_range(0.9, 1.15))
 
 
 # --- Choosing --------------------------------------------------------------------
@@ -159,7 +159,7 @@ func _flicker() -> void:
 func _creak() -> void:
 	# A board gives a few metres behind her.
 	var behind := _behind(randf_range(2.0, 4.0))
-	_play("house_creak_board" if randf() < 0.5 else "house_creak_board_2", behind, -8.0, randf_range(0.85, 1.1))
+	_play("house_creak_board" if randf() < 0.5 else "house_creak_board_2", behind, Loudness.BOARD_CREAK, randf_range(0.85, 1.1))
 
 
 func _door() -> void:
@@ -189,27 +189,29 @@ func _knock() -> void:
 	if front == null:
 		return
 	var hard := _hunter_waiting() or tension > 0.75
-	_play("house_knock_hard" if hard else "house_knock", front.global_position + Vector3(0.0, 1.2, 0.4), -2.0 if hard else -6.0, randf_range(0.92, 1.05))
+	_play("house_knock_hard" if hard else "house_knock", front.global_position + Vector3(0.0, 1.2, 0.4), Loudness.KNOCK_HARD if hard else Loudness.KNOCK, randf_range(0.92, 1.05))
 
 
 func _steps() -> void:
 	# Someone crosses the room above, toward the head of the stair.
-	var path: Array[Vector3] = [Vector3(-3.2, 0.2, 2.2), Vector3(-1.6, 0.2, 1.9), Vector3(-0.2, 0.2, 1.2), Vector3(0.1, 0.2, 0.0), Vector3(-0.6, 0.2, -1.1), Vector3(0.4, 0.2, -1.9), Vector3(0.9, 0.2, -2.6)]
-	var count := randi_range(5, path.size())
+	var path := house.steps_above()
+	if path.is_empty():
+		return
+	var count := randi_range(mini(5, path.size()), path.size())
 	var start := path.size() - count
 	for i in range(start, path.size()):
 		var tread := "steps_above_%d" % (i % 6)
 		if not _sounds.has(tread):
 			tread = "house_step_above_%d" % (i % 3)
-		_play(tread, house.to_global(path[i]), -4.0, randf_range(0.9, 1.1))
+		_play(tread, path[i], Loudness.STEP_ABOVE, randf_range(0.9, 1.1))
 		await get_tree().create_timer(randf_range(0.5, 0.68)).timeout
 		if not is_inside_tree():
 			return
 	if randf() < 0.45:
-		_play("house_creak_board", house.to_global(path[path.size() - 1]), -6.0, 0.8)
+		_play("house_creak_board", path[path.size() - 1], Loudness.BOARD_CREAK + 2.0, 0.8)
 	elif randf() < 0.5:
 		await get_tree().create_timer(0.9).timeout
-		_play("house_thud", house.to_global(path[path.size() - 1]), -3.0, 1.0)
+		_play("house_thud", path[path.size() - 1], Loudness.THUD, 1.0)
 
 
 func _chamber() -> void:
@@ -230,14 +232,14 @@ func _chamber() -> void:
 	var chamber := shut[randi() % shut.size()]
 	chamber.drift(true, _sounds.get("house_creak_door"))
 	await get_tree().create_timer(1.1).timeout
-	_play("house_tray", chamber.global_position, -6.0, randf_range(0.9, 1.05))
+	_play("house_tray", chamber.global_position, Loudness.TRAY, randf_range(0.9, 1.05))
 
 
 func _whisper() -> void:
 	# Close at her ear, a little behind, on one side.
 	var side := Game.player.camera.global_transform.basis.x * (1.0 if randf() < 0.5 else -1.0) if Game.player.camera else Vector3.RIGHT
 	var at := _eye() + side * 0.45 - _look() * 0.25
-	_play("house_whisper", at, -10.0, randf_range(0.9, 1.0))
+	_play("house_whisper", at, Loudness.WHISPER, randf_range(0.9, 1.0))
 
 
 # --- Helpers -------------------------------------------------------------------------
@@ -271,20 +273,24 @@ func _update_flicker(delta: float) -> void:
 		state[2] = randf_range(0.04, 0.16)
 
 
-func _play(id: String, at: Vector3, volume_db: float, pitch: float) -> void:
+# spl: how loud the thing is at 1 m (Loudness); her distance does the rest.
+func _play(id: String, at: Vector3, spl: float, pitch: float) -> void:
 	var stream: AudioStream = _sounds.get(id)
 	if stream == null:
 		return
 	var voice := _voices[_voice_cursor]
 	_voice_cursor = (_voice_cursor + 1) % _voices.size()
 	voice.stream = stream
+	Loudness.sound(voice, spl)
 	voice.global_position = at
-	voice.volume_db = volume_db
 	voice.pitch_scale = pitch
 	voice.play()
 
 
+# Her head, where she hears from.
 func _eye() -> Vector3:
+	if Game.player.ears:
+		return Game.player.ears.global_position
 	return Game.player.camera.global_position if Game.player.camera else Game.player.global_position + Vector3(0.0, 1.6, 0.0)
 
 

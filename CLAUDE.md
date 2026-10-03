@@ -41,7 +41,11 @@ This machine (ThinkPad, Iris Xe) has hard-frozen while running the game. `Game.l
 
 F3 toggles a debug label (hunter gap and stamina) in debug builds.
 
-`tools/make_storm.py` and `tools/make_taps.py` synthesize WAVs into `assets/audio/`; inspect their output paths before running them. `tools/prepare_elf.py <original-elf.glb>` removes bow and arrow triangles from the Styloo source asset. `tools/prev_*.png` are scratch previews and are not part of the game.
+Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound HQ previews, after the CC0 licence is checked on each page.
+- `python tools/fetch_sounds.py` downloads them to `build/sfx_src/`.
+- `python tools/make_soundscape.py` (needs ffmpeg) cuts them into `assets/audio/{steps,weather,nature}/` and writes `assets/audio/provenance.json`, which credits every file.
+- Steps, calls, creaks and snowfalls are found by onset detection and levelled to a -12 dBFS impact. Loops are made seamless and levelled to -20 dBFS RMS.
+- `tools/make_storm.py` only synthesizes the slide hiss. `tools/prepare_elf.py <original-elf.glb>` removes bow and arrow triangles from the Styloo source asset. `tools/prev_*.png` are scratch previews and are not part of the game.
 
 ## Architecture
 
@@ -119,7 +123,7 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
   - `whisper` (high tension only).
   - Persistent: the bedroom lantern goes out when she leaves and relights when she returns; the sheeted body (`Morgue.body`) is laid out after her first visit; taps drip.
   - Dev hook: `RUN_HAUNT=<event>` fires that event every 2 s and prints it.
-- *Sounds*: `python tools/make_house_sounds.py` synthesizes all the `house_*.wav` files (knocks, creaks, whisper, drip, tray, thud, steps above) from resonator and noise models. No licensed audio.
+- *Sounds*: `python tools/make_house_sounds.py` synthesizes all the `house_*.wav` files (knocks, creaks, whisper, drip, tray, thud, steps above) from resonator and noise models. No licensed audio. The cellar's "steps above" now prefer `assets/audio/steps/above_*.wav`: recorded wood steps, low-passed as if heard through the floor.
 
 **Terrain winding**: `Ground` triangles must be clockwise seen from above (Godot's front face). They used to be counter-clockwise, which culled the whole terrain from above; the "snow" was the sky colour.
 
@@ -138,6 +142,32 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - Inside a modifier, global bone poses go stale once a parent is written, so `Grace` writes local rotations conjugated through each parent's clip pose. For the same reason, bone attachments don't show its children's changes; `godot --path . -s tools/grace_probe.gd` (needs a window) renders side views with it on and off into `build/grace/`.
 
 **Hunter model**: `scripts/hunter/hunter.gd` still uses the Quaternius `Master_Rigged.tscn` from `addons/quaternius_ik_rigged/`. Keep the shared `UAL1_Standard.glb` animation source and male meshes when cleaning assets.
+
+**Sound (`scripts/audio/`, `weather/storm_audio.gd`)**
+- *Positioning*: everything in the world is a positional `AudioStreamPlayer3D`, heard from `Player.ears`, an `AudioListener3D` at her head facing the camera's yaw, not from the camera. `audio/general/3d_panning_strength` is 0.85, so surround output pans fully.
+- *Loudness* (`loudness.gd`): every source has a typical dB SPL at 1 m.
+ - `Loudness.voice/place/sound` set inverse-distance attenuation (unit_size 1, so -6 dB per doubling), a reach where it falls below hearing, and air dulling for far sources.
+ - `CALIBRATION` maps SPL to volume; it was measured from recorded mixes: calm about -32 LUFS, a gust about -21, nothing clipping.
+ - Recordings that were not levelled carry a measured `TRIM`.
+ - New sounds get an SPL constant here, not a hand-set volume_db.
+- *Steps* (`Soundscape.play_step(at, surface, force)`): play at the foot.
+ - `Player._surface_at` raycasts under the foot and reads the collider's `surface` meta. `HouseKit.surface(material, kind)` tags a material, and `solid`/`stair` copy the tag to their bodies.
+ - Planks are wood; the porch and cellar are stone. Otherwise it is snow outdoors and wood indoors.
+ - Wood occasionally adds a board creak, and prints and powder appear only on snow.
+- *Storm* (`StormAudio`):
+ - Four storm beds and two breeze beds sit on a world-fixed ring around the ears, unattenuated, so the storm turns with her head. The gust howl sits upwind.
+ - Indoors the walls take `Loudness.WALLS` (the cellar more), and the `Outside` bus low-pass closes down.
+ - Wind whistles at the windward `House.windows()`.
+- *Wildlife* (`wildlife.gd`):
+ - The nearest pines (`Flora.tree_positions()`) rustle with the gusts; trunks creak; snow slides off branches.
+ - Crows and ravens call from far trees and fall silent under threat. A raven scolds from beside the hunter when it shows.
+ - Songbirds (the PAD day-birds from the inventory) sing only in calm.
+- *Buses* (Settings):
+ - `Ambience` holds `Outside`, which has the walls low-pass, plus the window whistle.
+ - `Effects` is steps and the house; `Room` and `Cellar` are reverbs fed by Area3D zones that `Soundscape` builds from `House.acoustic_zones()`.
+ - `Dread` is the heart, drone, sting and the hunter's positional branch snaps.
+ - A hard limiter sits on Master.
+- *Editable level*: `EditableLevel.apply` matches nodes by child order and frees script-less nodes it does not know. Keep sound-only nodes out of the editable trees, or append them last. Set house audio levels at play time (`Loudness.sound`), because the snapshot overwrites stored properties. `House/Authoring` (spawn markers, window markers, the `StepsAbove` path, room and cellar reverb areas) and `Trail/Anomalies` (one marker and a `*_Record` marker per anomaly code) are appended last and grouped as `level_authoring`, so an older snapshot keeps them until the next repack. She still wakes on the authored Player transform; `RUN_SPAWN` uses the spawn markers.
 
 **Weather** follows the camera and drives several `SnowLayer` particle layers, `StormAudio`, and `Atmosphere.apply_storm(intensity)` from one gust/intensity model. `scripts/world/snowfall.gd` (`Snowfall`) is the older snow system and nothing instantiates it any more.
 

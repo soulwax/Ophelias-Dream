@@ -5,6 +5,11 @@ const SCENE_PATH := "res://scenes/editable_level.scn"
 const GENERATED_DIR := "res://scenes/generated/"
 const SOURCE_PATH := &"generated_index_path"
 const GROUP_PARENT_PATH := &"generated_parent_path"
+# Markers, paths and reverb areas the code appends for the editor. An older
+# snapshot does not list them yet, so they stay instead of being treated as
+# nodes the author deleted. Once the snapshot contains their root, deleting
+# one of them does remove it.
+const AUTHORING_GROUP := &"level_authoring"
 
 
 static func bake(nodes: Array[Node], seed_value: int) -> Error:
@@ -41,7 +46,7 @@ static func _save_hierarchy(root: Node3D) -> Error:
 		result = _nest_scene(cellar, cellar.get_node("Morgue"), "house/morgue.scn", root)
 		if result != OK:
 			return result
-	for group_name in ["GroundFloor", "Roof", "Stair", "Cellar", "Furniture", "Lights", "Haunting", "SnowPatch"]:
+	for group_name in ["GroundFloor", "Roof", "Stair", "Cellar", "Furniture", "Lights", "Haunting", "SnowPatch", "Authoring"]:
 		var group := house.get_node_or_null(group_name)
 		if group:
 			result = _nest_scene(house, group, "house/%s.scn" % group_name.to_snake_case(), root)
@@ -51,7 +56,7 @@ static func _save_hierarchy(root: Node3D) -> Error:
 	if result != OK:
 		return result
 	var landmarks := _group_landmarks(trail, root)
-	for name in ["Ground", "Fence", "Flora"]:
+	for name in ["Ground", "Fence", "Flora", "Anomalies"]:
 		var branch := trail.get_node_or_null(name)
 		if branch:
 			result = _nest_scene(trail, branch, "%s.scn" % name.to_snake_case(), root)
@@ -82,7 +87,7 @@ static func _group_landmarks(trail: Node3D, root: Node3D) -> Node3D:
 	trail.add_child(group)
 	group.owner = root
 	for child in trail.get_children():
-		if child == group or child.name in ["Ground", "House", "Fence", "Flora"]:
+		if child == group or child.name in ["Ground", "House", "Fence", "Flora", "Anomalies"]:
 			continue
 		child.owner = null
 		child.reparent(group, false)
@@ -169,16 +174,32 @@ static func apply(snapshot: Node, generated: Array[Node]) -> void:
 	_apply_tree(snapshot, originals, authored)
 	# A removed visual or collision node should stay removed at run time. Scripted
 	# nodes remain alive because gameplay can still hold references to them.
+	var keep_authoring: Dictionary = {}
+	for key in originals:
+		var listed := originals[key] as Node
+		if listed and listed.is_in_group(AUTHORING_GROUP) and not authored.has(key):
+			keep_authoring[listed.get_instance_id()] = true
 	for key in originals:
 		if authored.has(key):
 			continue
 		var node := originals[key] as Node
 		if node == null or not is_instance_valid(node):
 			continue
+		if _has_kept_authoring_ancestor(node, keep_authoring):
+			continue
 		if node.get_script() == null:
 			node.queue_free()
 		elif node is Node3D:
 			(node as Node3D).visible = false
+
+
+static func _has_kept_authoring_ancestor(node: Node, keep: Dictionary) -> bool:
+	var current := node
+	while current:
+		if keep.has(current.get_instance_id()):
+			return true
+		current = current.get_parent()
+	return false
 
 
 static func _strip_scripts(node: Node) -> void:

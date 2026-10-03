@@ -38,6 +38,7 @@ func _ready() -> void:
 	for i in NEAR_TREES:
 		var rustle := Loudness.voice(Loudness.TREE_RUSTLE, "Outside", true)
 		rustle.top_level = true
+		rustle.volume_db = -80.0
 		rustle.stream = _loop(NATURE + "trees_%d.ogg" % i)
 		add_child(rustle)
 		if rustle.stream:
@@ -57,6 +58,12 @@ func _ready() -> void:
 		var chorus := _loop("res://assets/audio/birds_%d.wav" % index)
 		if chorus:
 			_choruses.append(chorus)
+
+
+# Streamed loops still playing at quit are reported as leaks.
+func _exit_tree() -> void:
+	for player in find_children("*", "AudioStreamPlayer3D", false, false):
+		(player as AudioStreamPlayer3D).stop()
 
 
 func _process(delta: float) -> void:

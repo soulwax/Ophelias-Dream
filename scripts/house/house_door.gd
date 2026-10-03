@@ -76,6 +76,7 @@ func drift(open: bool, creak: AudioStream = null) -> void:
 		player.stream = creak
 	_was_moving = true
 	if player and player.stream:
+		Loudness.sound(player, Loudness.DOOR_DRIFT)
 		player.play()
 
 
@@ -174,6 +175,7 @@ func _press_handle() -> void:
 func _play(cue: String) -> void:
 	var player := _audio.get(cue) as AudioStreamPlayer3D
 	if player and player.stream:
+		Loudness.sound(player, DoorAudio.LEVELS.get(cue, Loudness.DOOR_CREAK))
 		player.play()
 
 

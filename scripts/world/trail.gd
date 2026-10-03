@@ -35,6 +35,7 @@ func _ready() -> void:
 	house.transform = house_frame
 	add_child(house)
 	house.add_snow_patch(ground.snow_material)
+	house.add_authoring()
 	Game.house = house
 	for x in range(-12, 13, 3):
 		for z in range(-10, 11, 3):
@@ -44,10 +45,14 @@ func _ready() -> void:
 	fence.ground = ground
 	add_child(fence)
 	_build_landmarks()
-	var flora := Flora.new()
+	flora = Flora.new()
 	flora.name = "Flora"
 	add_child(flora)
 	flora.grow(ground, curve, _reserved, seed_value)
+	var anomalies := Node3D.new()
+	anomalies.name = "Anomalies"
+	anomalies.add_to_group(EditableLevel.AUTHORING_GROUP)
+	add_child(anomalies)
 	Game.trail = self
 
 

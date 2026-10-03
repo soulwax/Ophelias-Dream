@@ -56,8 +56,13 @@ func _ready() -> void:
 	add_child(hud)
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player, hunter]
+	# The previous bake stored the containment page as a trail child, in the
+	# slot Anomalies now uses. Hold that branch aside until the snapshot
+	# actually contains it, so the page is not painted onto the markers.
+	var parked_anomalies := _park_anomalies(snapshot if not baking or repacking else null, trail)
 	if repacking and snapshot:
 		EditableLevel.apply(snapshot, editable_nodes)
+		_restore_anomalies(trail, parked_anomalies)
 		player.set_process(false)
 		player.set_physics_process(false)
 		hunter.set_physics_process(false)
@@ -69,12 +74,12 @@ func _ready() -> void:
 		return
 	if snapshot:
 		EditableLevel.apply(snapshot, editable_nodes)
+		_restore_anomalies(trail, parked_anomalies)
 		player.apply_authored_spawn()
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
+	director.layout()
 	Game.begin_intro()
-	if OS.get_environment("RUN_TEMP_REC") != "":
-		_temp_record.call_deferred(float(OS.get_environment("RUN_TEMP_REC")))
 	if _capture:
 		Game.set_phase(Game.Phase.PLAYING)
 		# Dev hook: RUN_MENU=<page> opens the Esc menu on that page for the shot.
@@ -110,31 +115,21 @@ func _shoot() -> void:
 	get_tree().quit()
 
 
-func _temp_record(seconds: float) -> void:
-	Game.set_phase(Game.Phase.PLAYING)
-	var record := AudioEffectRecord.new()
-	AudioServer.add_bus_effect(0, record)
-	record.set_recording_active(true)
-	await get_tree().create_timer(0.5).timeout
-	var flora := Game.trail.flora.tree_positions().size()
-	var house := get_tree().get_nodes_in_group("x").size()
-	print("TEMP trees ", flora, " listener ", get_viewport().get_audio_listener_3d(), " buses ", AudioServer.bus_count)
-	for i in AudioServer.bus_count:
-		print("TEMP bus ", AudioServer.get_bus_name(i), " -> ", AudioServer.get_bus_send(i), " fx ", AudioServer.get_bus_effect_count(i))
-	var players := 0
-	var playing := 0
-	for node in find_children("*", "AudioStreamPlayer3D", true, false):
-		players += 1
-		if (node as AudioStreamPlayer3D).playing:
-			playing += 1
-	print("TEMP 3d players ", players, " playing ", playing, " zones ", find_children("*Tone", "Area3D", true, false).size(), " house ", house)
-	await get_tree().create_timer(seconds).timeout
-	record.set_recording_active(false)
-	var clip := record.get_recording()
-	if clip:
-		clip.save_to_wav(OS.get_environment("RUN_TEMP_WAV"))
-		print("TEMP saved ", clip.get_length(), " s")
-	get_tree().quit()
+func _park_anomalies(snapshot: Node, trail: Trail) -> Node:
+	if snapshot == null:
+		return null
+	var authored := snapshot.get_node_or_null("Trail")
+	if authored and authored.get_node_or_null("Anomalies"):
+		return null
+	var anomalies := trail.get_node_or_null("Anomalies")
+	if anomalies:
+		trail.remove_child(anomalies)
+	return anomalies
+
+
+func _restore_anomalies(trail: Trail, anomalies: Node) -> void:
+	if anomalies:
+		trail.add_child(anomalies)
 
 
 func _resolve_seed(snapshot: Node) -> int:

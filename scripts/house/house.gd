@@ -16,6 +16,9 @@ const WINDOWS := [
 	[Vector3(-2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, -3.5), PI],
 	[Vector3(-4.5, 0.0, 2.0), -PI * 0.5], [Vector3(4.5, 0.0, 1.8), PI * 0.5], [Vector3(4.5, 0.0, -1.5), PI * 0.5],
 ]
+const WINDOW_NAMES := ["FrontWest", "FrontEast", "Back", "West", "EastFront", "EastBack"]
+# Someone crossing the boards above the cellar, toward the head of the stair.
+const STEPS_ABOVE: Array[Vector3] = [Vector3(-3.2, 0.2, 2.2), Vector3(-1.6, 0.2, 1.9), Vector3(-0.2, 0.2, 1.2), Vector3(0.1, 0.2, 0.0), Vector3(-0.6, 0.2, -1.1), Vector3(0.4, 0.2, -1.9), Vector3(0.9, 0.2, -2.6)]
 const CEILING := 2.75
 const WALL_TOP := 2.95
 const EXTERIOR := 0.24
@@ -39,6 +42,16 @@ const JANITOR := Rect2(-9.2, -1.2, 3.0, 3.4)
 const MORGUE := Rect2(-4.6, 0.6, 9.4, 5.3)
 const MORGUE_DOOR_Z := 3.25
 const JANITOR_DOOR_Z := 0.5
+# Named spots for RUN_SPAWN, in house-local space: position, facing.
+const SPAWNS := {
+	"outside": [Vector3(2.5, -PLINTH, 15.0), Vector3(-0.15, 0.0, -1.0)],
+	"bedroom": [Vector3(-2.7, 0.05, 1.7), Vector3(1.0, 0.0, 0.25)],
+	"living": [Vector3(2.4, 0.05, 2.6), Vector3(0.3, 0.0, -1.0)],
+	"stair": [Vector3(1.0, 0.05, -2.775), Vector3(-1.0, 0.0, 0.0)],
+	"cellar": [Vector3(-5.2, CELLAR_FLOOR + 0.05, -2.8), Vector3(0.0, 0.0, 1.0)],
+	"janitor": [Vector3(-5.6, CELLAR_FLOOR + 0.05, JANITOR_DOOR_Z), Vector3(-1.0, 0.0, 0.0)],
+	"morgue": [Vector3(-4.2, CELLAR_FLOOR + 0.05, MORGUE_DOOR_Z), Vector3(1.0, 0.0, 0.1)],
+}
 
 var morgue: Morgue
 var haunting: Haunting
@@ -94,9 +107,23 @@ func _ready() -> void:
 
 
 ## Every window as [world centre, world outward normal]: where the wind
-## whistles in.
+## whistles in. The Authoring/Windows markers are what you move; the glass
+## stays with the wall openings.
 func windows() -> Array:
 	var found := []
+	var markers := get_node_or_null("Authoring/Windows")
+	if markers:
+		for child in markers.get_children():
+			if not child is Node3D:
+				continue
+			var marker := child as Node3D
+			var outward := -marker.global_transform.basis.z
+			outward.y = 0.0
+			if outward.length_squared() < 0.0001:
+				outward = global_transform.basis.z
+			found.append([marker.global_position, outward.normalized()])
+	if not found.is_empty():
+		return found
 	for spot in WINDOWS:
 		var yaw: float = spot[1]
 		var normal := (global_transform.basis * Vector3(sin(yaw), 0.0, cos(yaw))).normalized()
@@ -152,29 +179,111 @@ func contains(world_point: Vector3) -> bool:
 
 ## Where she wakes: beside the day bed, facing the bedroom door.
 func spawn_point() -> Vector3:
-	return to_global(Vector3(-2.7, 0.05, 1.7))
+	var spot := dev_spawn("bedroom")
+	return spot[0] if not spot.is_empty() else to_global(Vector3(-2.7, 0.05, 1.7))
 
 
 func spawn_facing() -> Vector3:
-	return global_transform.basis * Vector3(1.0, 0.0, 0.25).normalized()
+	var spot := dev_spawn("bedroom")
+	return spot[1] if not spot.is_empty() else global_transform.basis * Vector3(1.0, 0.0, 0.25).normalized()
 
 
 ## Dev hook (RUN_SPAWN): [world position, world facing] for a named spot, or
-## an empty array.
+## an empty array. The Authoring/Spawns markers are those spots.
 func dev_spawn(where: String) -> Array:
-	var spots := {
-		"outside": [Vector3(2.5, -PLINTH, 15.0), Vector3(-0.15, 0.0, -1.0)],
-		"bedroom": [Vector3(-2.7, 0.05, 1.7), Vector3(1.0, 0.0, 0.25)],
-		"living": [Vector3(2.4, 0.05, 2.6), Vector3(0.3, 0.0, -1.0)],
-		"stair": [Vector3(1.0, 0.05, -2.775), Vector3(-1.0, 0.0, 0.0)],
-		"cellar": [Vector3(-5.2, CELLAR_FLOOR + 0.05, -2.8), Vector3(0.0, 0.0, 1.0)],
-		"janitor": [Vector3(-5.6, CELLAR_FLOOR + 0.05, JANITOR_DOOR_Z), Vector3(-1.0, 0.0, 0.0)],
-		"morgue": [Vector3(-4.2, CELLAR_FLOOR + 0.05, MORGUE_DOOR_Z), Vector3(1.0, 0.0, 0.1)],
-	}
-	if not spots.has(where):
+	var marker := get_node_or_null("Authoring/Spawns/%s" % where) as Marker3D
+	if marker:
+		var facing := -marker.global_transform.basis.z
+		facing.y = 0.0
+		if facing.length_squared() < 0.0001:
+			facing = global_transform.basis.z
+		return [marker.global_position, facing.normalized()]
+	if not SPAWNS.has(where):
 		return []
-	var spot: Array = spots[where]
+	var spot: Array = SPAWNS[where]
 	return [to_global(spot[0]), global_transform.basis * (spot[1] as Vector3).normalized()]
+
+
+## World points along the boards above the cellar. The path is
+## Authoring/StepsAbove.
+func steps_above() -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	var path := get_node_or_null("Authoring/StepsAbove") as Path3D
+	if path and path.curve and path.curve.point_count > 0:
+		for index in path.curve.point_count:
+			points.append(path.to_global(path.curve.get_point_position(index)))
+		return points
+	for point in STEPS_ABOVE:
+		points.append(to_global(point))
+	return points
+
+
+## Markers, the overhead path and the reverb areas. Appended last so an
+## existing editable level keeps every earlier child where it was.
+func add_authoring() -> void:
+	if get_node_or_null("Authoring"):
+		return
+	var root := Node3D.new()
+	root.name = "Authoring"
+	root.add_to_group(EditableLevel.AUTHORING_GROUP)
+	add_child(root)
+	var spawns := Node3D.new()
+	spawns.name = "Spawns"
+	root.add_child(spawns)
+	for spot_name in SPAWNS:
+		var spot: Array = SPAWNS[spot_name]
+		_marker(spawns, spot_name, spot[0], spot[1], 0.45)
+	var windows := Node3D.new()
+	windows.name = "Windows"
+	root.add_child(windows)
+	for index in WINDOWS.size():
+		var spot: Array = WINDOWS[index]
+		var yaw: float = spot[1]
+		var outward := Vector3(sin(yaw), 0.0, cos(yaw))
+		var label: String = WINDOW_NAMES[index] if index < WINDOW_NAMES.size() else "Window%d" % index
+		_marker(windows, label, (spot[0] as Vector3) + Vector3(0.0, 1.47, 0.0), outward, 0.35)
+	var path := Path3D.new()
+	path.name = "StepsAbove"
+	var curve := Curve3D.new()
+	for point in STEPS_ABOVE:
+		curve.add_point(point)
+	path.curve = curve
+	root.add_child(path)
+	_reverb_area(root, "RoomTone", "Room", 0.32, [_volumes[0]])
+	_reverb_area(root, "CellarTone", "Cellar", 0.5, _volumes.slice(1))
+
+
+func _marker(parent: Node3D, marker_name: String, at: Vector3, facing: Vector3, extent: float) -> void:
+	var marker := Marker3D.new()
+	marker.name = marker_name
+	marker.gizmo_extents = extent
+	var flat := Vector3(facing.x, 0.0, facing.z)
+	if flat.length_squared() < 0.0001:
+		flat = Vector3.FORWARD
+	marker.transform = Transform3D(Basis.looking_at(flat.normalized(), Vector3.UP), at)
+	parent.add_child(marker)
+
+
+func _reverb_area(parent: Node3D, area_name: String, bus: String, amount: float, boxes: Array) -> void:
+	var area := Area3D.new()
+	area.name = area_name
+	area.monitoring = false
+	area.monitorable = true
+	area.collision_layer = 1
+	area.collision_mask = 0
+	area.reverb_bus_enabled = true
+	area.reverb_bus_name = bus
+	area.reverb_bus_amount = amount
+	area.reverb_bus_uniformity = 0.4
+	for box in boxes:
+		var volume: AABB = box
+		var shape := CollisionShape3D.new()
+		var cube := BoxShape3D.new()
+		cube.size = volume.size
+		shape.shape = cube
+		shape.position = volume.get_center()
+		area.add_child(shape)
+	parent.add_child(area)
 
 
 ## Out in the snow in front of the door: where something waits.
