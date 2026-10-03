@@ -82,6 +82,7 @@ void fragment() {
 }
 
 void light() {
+	DIFFUSE_LIGHT += max(dot(NORMAL, LIGHT), 0.0) * ATTENUATION * LIGHT_COLOR / PI * 0.28;
 	float spec = pow(clamp(dot(normalize(LIGHT + VIEW), NORMAL), 0.0, 1.0), 64.0);
 	SPECULAR_LIGHT += LIGHT_COLOR * ATTENUATION * spec * crystal * 4.0;
 }

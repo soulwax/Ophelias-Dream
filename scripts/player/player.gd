@@ -710,6 +710,8 @@ func _build_model() -> void:
 	model.scale = Vector3.ONE * Tune.PLAYER_MODEL_SCALE
 	model.rotation.y = PI
 	visual.add_child(model)
+	for mesh in model.find_children("*", "MeshInstance3D", true, false):
+		(mesh as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
 	if skeleton == null:
 		return
