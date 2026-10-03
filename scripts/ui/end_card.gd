@@ -24,7 +24,7 @@ func _on_phase(next: Game.Phase) -> void:
 		Game.Phase.ESCAPED:
 			_show(
 				"The road",
-				"Headlights. A real road. You do not look back.",
+				"Headlights. The last page lied. You do not look back.",
 				"Walk the ridge again"
 			)
 		_:
