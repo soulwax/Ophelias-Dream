@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/environment/premium/T_MVV_Pine_2048_B.png" id="1_weaaa"]
+[ext_resource type="Texture2D" path="res://assets/environment/premium/T_MVV_Pine_2048_AO.png" id="2_8gscj"]
+[ext_resource type="Texture2D" path="res://assets/environment/premium/T_MVV_Pine_2048_OpenGL_N.png" id="3_l5q3o"]
+
+[resource]
+albedo_texture = ExtResource("1_weaaa")
+roughness = 0.93
+normal_enabled = true
+normal_texture = ExtResource("3_l5q3o")
+ao_enabled = true
+ao_texture = ExtResource("2_8gscj")
+texture_filter = 5

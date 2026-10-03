@@ -1,0 +1,21 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/environment/premium/T_MVV_Bushes_2048_B.png" id="1_cynm3"]
+[ext_resource type="Texture2D" path="res://assets/environment/premium/T_MVV_Bushes_2048_AO.png" id="2_n41vd"]
+[ext_resource type="Texture2D" path="res://assets/environment/premium/T_MVV_Bushes_2048_OpenGL_N.png" id="3_dvam7"]
+
+[resource]
+transparency = 2
+alpha_scissor_threshold = 0.35
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_color = Color(0.78, 0.82, 0.73, 1)
+albedo_texture = ExtResource("1_cynm3")
+roughness = 0.93
+normal_enabled = true
+normal_texture = ExtResource("3_dvam7")
+ao_enabled = true
+ao_texture = ExtResource("2_n41vd")
+backlight_enabled = true
+backlight = Color(0.18, 0.22, 0.14, 1)
+texture_filter = 5
