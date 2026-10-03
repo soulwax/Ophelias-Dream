@@ -87,7 +87,6 @@ func _ready() -> void:
 	_build_cellar()
 	_furnish()
 	_light_house()
-	_acoustics()
 	haunting = Haunting.new()
 	haunting.name = "Haunting"
 	haunting.house = self
@@ -105,35 +104,14 @@ func windows() -> Array:
 	return found
 
 
-# The rooms answer what sounds in them: a short, soft ring in the timber
-# rooms, a longer, harder one in the stone cellar. Any 3D sound made inside
-# a zone is sent to its reverb bus (made by Settings).
-func _acoustics() -> void:
-	_reverb_zone("RoomTone", [_volumes[0]], "Room", 0.32)
-	_reverb_zone("CellarTone", _volumes.slice(1), "Cellar", 0.5)
-
-
-func _reverb_zone(zone: String, boxes: Array, bus: String, amount: float) -> void:
-	var area := Area3D.new()
-	area.name = zone
-	area.monitoring = false
-	area.monitorable = true
-	# Sounds look for zones on their area_mask, layer 1 by default.
-	area.collision_layer = 1
-	area.collision_mask = 0
-	area.reverb_bus_enabled = true
-	area.reverb_bus_name = bus
-	area.reverb_bus_amount = amount
-	area.reverb_bus_uniformity = 0.4
-	for box in boxes:
-		var volume: AABB = box
-		var shape := CollisionShape3D.new()
-		var cube := BoxShape3D.new()
-		cube.size = volume.size
-		shape.shape = cube
-		shape.position = volume.get_center()
-		area.add_child(shape)
-	add_child(area)
+## How the rooms answer what sounds in them, for Soundscape to build its
+## reverb zones from: a short, soft ring in the timber rooms, a longer,
+## harder one in the stone cellar. [[name, reverb bus, send, local boxes]].
+func acoustic_zones() -> Array:
+	return [
+		["RoomTone", "Room", 0.32, [_volumes[0]]],
+		["CellarTone", "Cellar", 0.5, _volumes.slice(1)],
+	]
 
 
 ## Which room a point is in ("" outside the house).

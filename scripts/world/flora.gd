@@ -1,9 +1,6 @@
 class_name Flora
 extends Node3D
 
-## Where each pine stands (trunk base, world space): what the wind thrashes,
-## what sheds snow and where the birds sit.
-var trees: PackedVector3Array = []
 var _rng := RandomNumberGenerator.new()
 var _density := FastNoiseLite.new()
 
@@ -91,7 +88,17 @@ func _prop(ground: Ground, file_name: String, at: Vector3, scale: float, trunk: 
 	add_child(node)
 	if trunk:
 		_trunk(at, 0.4, 3.6 * scale)
-		trees.append(to_global(at) if is_inside_tree() else at)
+
+
+## Where each pine stands (trunk base, world space): what the wind thrashes,
+## what sheds snow and where the birds sit. Read from the trunks themselves,
+## so pines moved in the authored level are where they are heard.
+func tree_positions() -> PackedVector3Array:
+	var found := PackedVector3Array()
+	for child in get_children():
+		if child is StaticBody3D and child.is_inside_tree():
+			found.append((child as StaticBody3D).global_position)
+	return found
 
 
 func _trunk(at: Vector3, radius: float, height: float) -> void:

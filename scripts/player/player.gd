@@ -95,6 +95,13 @@ func _ready() -> void:
 	add_child(footprints)
 	kicks = SnowKick.new()
 	add_child(kicks)
+	# Last child: the authored level matches her nodes by their order.
+	ears = AudioListener3D.new()
+	ears.name = "Ears"
+	ears.top_level = true
+	ears.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	add_child(ears)
+	ears.make_current()
 	Game.player = self
 
 
@@ -763,12 +770,6 @@ func _build_camera() -> void:
 	camera.near = 0.08
 	camera.far = 420.0
 	spring_arm.add_child(camera)
-
-	ears = AudioListener3D.new()
-	ears.top_level = true
-	ears.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	add_child(ears)
-	ears.make_current()
 
 	lantern = SpotLight3D.new()
 	lantern.light_color = Color(1.0, 0.82, 0.58)

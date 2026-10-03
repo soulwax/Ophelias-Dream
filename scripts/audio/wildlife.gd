@@ -13,6 +13,7 @@ const NATURE := "res://assets/audio/nature/"
 const NEAR_TREES := 3
 const RUSTLE_REACH := 45.0
 
+var _trees := PackedVector3Array()
 var _rustles: Array[AudioStreamPlayer3D] = []
 var _rustle_tree: Array[int] = []
 var _rustle_gain: Array[float] = []
@@ -61,7 +62,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if Game.trail == null or Game.trail.flora == null or Game.weather == null:
 		return
-	var trees := Game.trail.flora.trees
+	# Read once the authored level has been laid over the built one.
+	if _trees.is_empty():
+		_trees = Game.trail.flora.tree_positions()
+	var trees := _trees
 	if trees.is_empty():
 		return
 	var listener := get_viewport().get_audio_listener_3d()

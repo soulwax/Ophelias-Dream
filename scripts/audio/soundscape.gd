@@ -47,6 +47,38 @@ func _ready() -> void:
 		_snap_clip = load("res://assets/audio/snap.wav")
 	Game.soundscape = self
 	Game.closeness_changed.connect(_on_closeness)
+	# After the authored level is laid over the built one, so the zones sit
+	# where the house finally stands.
+	_build_rooms.call_deferred()
+
+
+# Reverb zones over the house's rooms: any 3D sound made inside one is also
+# sent to that room's reverb bus (Settings builds the buses).
+func _build_rooms() -> void:
+	if Game.house == null:
+		return
+	for zone in Game.house.acoustic_zones():
+		var area := Area3D.new()
+		area.name = zone[0]
+		area.monitoring = false
+		area.monitorable = true
+		# Sounds look for zones on their area_mask, layer 1 by default.
+		area.collision_layer = 1
+		area.collision_mask = 0
+		area.reverb_bus_enabled = true
+		area.reverb_bus_name = zone[1]
+		area.reverb_bus_amount = zone[2]
+		area.reverb_bus_uniformity = 0.4
+		for box in zone[3]:
+			var volume: AABB = box
+			var shape := CollisionShape3D.new()
+			var cube := BoxShape3D.new()
+			cube.size = volume.size
+			shape.shape = cube
+			shape.position = volume.get_center()
+			area.add_child(shape)
+		add_child(area)
+		area.global_transform = Game.house.global_transform
 
 
 ## One footfall at a point. surface: "snow", "wood" or "stone". force 0..1:
