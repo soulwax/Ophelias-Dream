@@ -127,6 +127,8 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - *The Listener (2-117)* perceives only `Breath.plume`. Space (`hold_breath`) suppresses the steam, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp.
 
 **Player model**: `scripts/player/player.gd` instantiates `assets/characters/styloo_elf/elf.glb` at 0.8 scale, with its original materials. The bundled bow and arrows were removed from the GLB by `tools/prepare_elf.py`. `elf_animations.res` contains eight movement clips retargeted from the hunter's shared animation library by `tools/retarget_elf.gd`. `Breath` is attached to `DEF-spine.006` at the mouth; `FootLock` watches `DEF-foot.L/R` for contacts. The model has no leg IK or separate face, hair, and cloth simulation.
+- `Grace` (`grace.gd`, a SkeletonModifier3D after `FootLock`) layers her carriage over the clips: in the walk, an arm counter-swing read from the thighs, soft elbows, and shoulders turning against the hips with the head held level; a lifted chest; and, after `Tune.TIPTOE_AFTER` seconds standing, a recurring rise onto her toes. Tuning is in `Tune.GRACE_*` / `TIPTOE_*`.
+- Inside a modifier, global bone poses go stale once a parent is written, so `Grace` writes local rotations conjugated through each parent's clip pose. For the same reason, bone attachments don't show its children's changes; `godot --path . -s tools/grace_probe.gd` (needs a window) renders side views with it on and off into `build/grace/`.
 
 **Hunter model**: `scripts/hunter/hunter.gd` still uses the Quaternius `Master_Rigged.tscn` from `addons/quaternius_ik_rigged/`. Keep the shared `UAL1_Standard.glb` animation source and male meshes when cleaning assets.
 

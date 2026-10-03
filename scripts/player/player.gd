@@ -26,6 +26,7 @@ var footprints: Footprints
 var stride: Stride
 var kicks: SnowKick
 var foot_lock: FootLock
+var grace: Grace
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -133,6 +134,8 @@ func _physics_process(delta: float) -> void:
 		_sway = 0.0
 		if stride:
 			stride.update(_ground_speed())
+		if grace:
+			grace.speed = _ground_speed()
 		_breathe(delta, false)
 		_carry(delta, false)
 		_move_camera(delta)
@@ -484,6 +487,9 @@ func _animate(delta: float, moving: bool, sprinting: bool) -> void:
 	if stride:
 		stride.update(_ground_speed())
 		stride.posture(_air_weight, velocity.y / Tune.JUMP_VELOCITY, _slide_weight)
+	if grace:
+		grace.speed = _ground_speed()
+		grace.poise = (1.0 - _air_weight) * (1.0 - _slide_weight) * (0.0 if exhaust_left > 0.0 else 1.0)
 	# A slight side-to-side carry in time with her steps.
 	_sway = 0.0 if not moving else sin(_stride_phase) * (0.012 if sprinting else 0.02)
 
@@ -730,3 +736,4 @@ func _build_model() -> void:
 			return global_position.y
 		return trail.ground.height_at(point.x, point.z)
 	foot_lock.planted.connect(_on_planted)
+	grace = Grace.fit(skeleton)

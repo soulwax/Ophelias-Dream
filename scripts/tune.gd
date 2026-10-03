@@ -19,6 +19,16 @@ const STRIDE_BRAKE := 11.0
 const STRIDE_WALK := 1.02
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
+# Her carriage over the clips (Grace), in radians unless noted.
+const GRACE_ARM_SWING := 0.34
+const GRACE_COUNTER_TURN := 0.09
+const GRACE_CHEST_LIFT := 0.05
+# Standing still this long (s) she rises onto her toes, once per cycle (s).
+const TIPTOE_AFTER := 5.0
+const TIPTOE_CYCLE := 7.5
+# Most her heels lift her (skeleton metres) and the steepest foot pitch.
+const TIPTOE_LIFT := 0.075
+const TIPTOE_PITCH := 1.3
 # Per-step speed swing: checks on impact, surges on push-off.
 const STEP_SURGE_WALK := 0.03
 const STEP_SURGE_SPRINT := 0.12
