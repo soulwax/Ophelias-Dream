@@ -11,6 +11,7 @@ var trail: Trail
 
 var spring_arm: SpringArm3D
 var camera: Camera3D
+var ears: AudioListener3D
 var lantern: SpotLight3D
 var visual: Node3D
 var animation_player: AnimationPlayer
@@ -281,28 +282,38 @@ func _land(fall_speed: float) -> void:
 	_glide *= lerpf(0.97, 0.7, power)
 	_since_plant = 0.0
 	_both_feet(maxf(power, 0.45))
-	if Game.soundscape:
-		Game.soundscape.play_step(true, indoors())
 
 
 # Both boots at once: takeoff and landing.
 func _both_feet(power: float) -> void:
-	if indoors():
-		if Game.soundscape:
-			Game.soundscape.play_step(true, true)
-		return
 	var forward := Vector3(_glide.x, 0.0, _glide.z)
 	forward = forward.normalized() if forward.length() > 0.1 else -global_transform.basis.z
 	var side := Vector3(forward.z, 0.0, -forward.x)
 	for left in [true, false]:
 		var at := global_position + side * (0.12 if left else -0.12)
+		var surface := _surface_at(at)
+		if Game.soundscape:
+			Game.soundscape.play_step(at, surface, power)
+		if surface != "snow":
+			continue
 		var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else at.y
 		if kicks:
 			kicks.kick(Vector3(at.x, ground_y + 0.05, at.z), power, -forward)
 		if footprints:
 			footprints.stamp(Vector3(at.x, ground_y, at.z), atan2(forward.x, forward.z), true, left)
-	if Game.soundscape:
-		Game.soundscape.play_step(true)
+
+
+# What is under a foot: the surface its collider is tagged with (the cabin's
+# planks, the porch and cellar stone), else snow outside and boards within.
+func _surface_at(at: Vector3) -> String:
+	if not is_inside_tree():
+		return "snow"
+	var query := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 0.4, at + Vector3.DOWN * 0.5, Tune.LAYER_WORLD)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	var body: Object = hit.get("collider")
+	if body and body.has_meta("surface"):
+		return str(body.get_meta("surface"))
+	return "wood" if indoors() else "snow"
 
 
 func _start_slide() -> void:
@@ -424,7 +435,7 @@ func _stumble() -> void:
 	_jolt -= 0.09
 	strain = 1.0
 	if Game.soundscape:
-		Game.soundscape.play_step(true, indoors())
+		Game.soundscape.play_step(global_position, _surface_at(global_position), 1.0)
 
 
 # Within each step her speed checks as the foot lands and surges as it
@@ -455,13 +466,13 @@ func _footfall(left: bool, at: Vector3, speed: float) -> void:
 	_left_foot = left
 	var heavy := speed > 4.0
 	var power := clampf(speed / Tune.SPRINT_SPEED, 0.2, 1.0)
-	var inside := indoors()
+	var surface := _surface_at(at)
 	if Game.soundscape:
-		Game.soundscape.play_step(heavy, inside)
+		Game.soundscape.play_step(at, surface, clampf((speed - 1.0) / (Tune.SPRINT_SPEED - 1.0), 0.0, 1.0))
 	_jolt -= lerpf(0.004, 0.026, power * power)
 	_roll_kick += (1.0 if left else -1.0) * lerpf(0.001, 0.01, power)
-	# Boards and tile take no prints and throw no powder.
-	if inside:
+	# Boards and stone take no prints and throw no powder.
+	if surface != "snow":
 		return
 	var forward := Vector3(_glide.x, 0.0, _glide.z).normalized()
 	var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else global_position.y
@@ -511,6 +522,10 @@ func _apply_look() -> void:
 	if camera:
 		var shake := Game.weather.gust * 0.012 if Game.weather else 0.0
 		camera.rotation.z = (sin(Time.get_ticks_msec() * 0.009) * shake + _roll_kick) * Game.settings.camera_shake
+	# She hears from her own head, facing where the camera looks, not from
+	# the camera three metres behind her.
+	if ears:
+		ears.global_transform = Transform3D(turn, body + Vector3(0.0, 1.55 - 0.45 * _slide_weight, 0.0))
 
 
 # The ground mesh is one-sided, so a camera that slips under a slope sees
@@ -736,6 +751,12 @@ func _build_camera() -> void:
 	camera.near = 0.08
 	camera.far = 420.0
 	spring_arm.add_child(camera)
+
+	ears = AudioListener3D.new()
+	ears.top_level = true
+	ears.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	add_child(ears)
+	ears.make_current()
 
 	lantern = SpotLight3D.new()
 	lantern.light_color = Color(1.0, 0.82, 0.58)
