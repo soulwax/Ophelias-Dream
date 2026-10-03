@@ -73,6 +73,34 @@ func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: 
 			z += step
 		x += step
 	_horizon(ground)
+	_grassland(ground, curve, reserved, seed_value)
+
+
+func _grassland(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: int) -> void:
+	var patches := Node3D.new()
+	patches.name = "Grassland"
+	patches.add_to_group(EditableLevel.AUTHORING_GROUP)
+	add_child(patches)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value + 46171
+	var files: Array[String] = ["SM_Env_Grass_01.fbx", "SM_Env_Moss_Lumps_01.fbx", "SM_Env_Moss_Lumps_03.fbx"]
+	var count: int = 0
+	for z in range(int(Tune.FENCE_MIN_Z + 8.0), int(Tune.FENCE_MAX_Z - 8.0), 4):
+		for x in range(int(Tune.FENCE_MIN_X + 8.0), int(Tune.FENCE_MAX_X - 8.0), 4):
+			var at := Vector3(float(x) + rng.randf_range(-1.5, 1.5), 0, float(z) + rng.randf_range(-1.5, 1.5))
+			var clearance := _off_path(curve, at)
+			if count >= 260 or clearance < 3.0 or clearance > 16.0 or _blocked(at, 3.0, reserved):
+				continue
+			if _density.get_noise_2d(at.x, at.z) < -0.12 or rng.randf() > 0.65:
+				continue
+			var plant := PropFactory.spawn(files[rng.randi() % files.size()])
+			plant.name = "GrassPatch_%03d" % count
+			at.y = ground.height_at(at.x, at.z)
+			plant.position = at
+			plant.rotation.y = rng.randf() * TAU
+			plant.scale = Vector3.ONE * rng.randf_range(0.85, 1.5)
+			patches.add_child(plant)
+			count += 1
 
 
 func _prop(ground: Ground, file_name: String, at: Vector3, scale: float, trunk: bool) -> void:

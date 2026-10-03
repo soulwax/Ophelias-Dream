@@ -1,0 +1,217 @@
+[
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_MoorGrass01a\\Unity\\Rocket\\PAD_SV_GrassSet_MoorGrass01a\\HDRP\\SM_PAD_SV_MoorGrass01a_c1_LOD0.fbx",
+    "file": "SM_PAD_SV_MoorGrass01a_c1_LOD0.fbx",
+    "sha256": "17DB91F95B8F0C7A38F477AFAB4136D864CBBBFD20BCEAABBFA3BAF39D6E414E"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_MoorGrass01a\\Unity\\Rocket\\PAD_SV_GrassSet_MoorGrass01a\\Textures\\T_PAD_GrassSet_2048_AO.png",
+    "file": "T_PAD_GrassSet_2048_AO.png",
+    "sha256": "F43B57C583493A39FDEFEB31DBEC306508F3D157D93DFE5AE56E20E0E37A8335"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_MoorGrass01a\\Unity\\Rocket\\PAD_SV_GrassSet_MoorGrass01a\\Textures\\T_PAD_GrassSet_2048_B.png",
+    "file": "T_PAD_GrassSet_2048_B.png",
+    "sha256": "E69281259932DFFB8FC6AAE4A93A3FAFA87B2318CFB98F437B4982C9AE4AEEC3"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_MoorGrass01a\\Unity\\Rocket\\PAD_SV_GrassSet_MoorGrass01a\\Textures\\T_PAD_GrassSet_2048_MS.png",
+    "file": "T_PAD_GrassSet_2048_MS.png",
+    "sha256": "8D7443A0172884F8F2223E7213E81DE5C0E493E6FCA803B811F2A503AF5BEDA7"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_MoorGrass01a\\Unity\\Rocket\\PAD_SV_GrassSet_MoorGrass01a\\Textures\\T_PAD_GrassSet_2048_OpenGL_N.png",
+    "file": "T_PAD_GrassSet_2048_OpenGL_N.png",
+    "sha256": "A4C2275DB1838136B546D2216C0292CC81C58B4D204BEFB3A5253925CAFCE100"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_LadyFern01b\\Unity\\Rocket\\PAD_SV_GrassSet_LadyFern01b\\HDRP\\SM_PAD_SV_LadyFern01b_c1_LOD0.fbx",
+    "file": "SM_PAD_SV_LadyFern01b_c1_LOD0.fbx",
+    "sha256": "4527E55D58DFA6D8E1559E6AF954C0A3B00C7F69D653EF05CCA1BA0E0A3E1A10"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_LadyFern01b\\Unity\\Rocket\\PAD_SV_GrassSet_LadyFern01b\\Textures\\T_PAD_GrassSet_2048_AO.png",
+    "file": "T_PAD_GrassSet_2048_AO.png",
+    "sha256": "F43B57C583493A39FDEFEB31DBEC306508F3D157D93DFE5AE56E20E0E37A8335"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_LadyFern01b\\Unity\\Rocket\\PAD_SV_GrassSet_LadyFern01b\\Textures\\T_PAD_GrassSet_2048_B.png",
+    "file": "T_PAD_GrassSet_2048_B.png",
+    "sha256": "E69281259932DFFB8FC6AAE4A93A3FAFA87B2318CFB98F437B4982C9AE4AEEC3"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_LadyFern01b\\Unity\\Rocket\\PAD_SV_GrassSet_LadyFern01b\\Textures\\T_PAD_GrassSet_2048_MS.png",
+    "file": "T_PAD_GrassSet_2048_MS.png",
+    "sha256": "8D7443A0172884F8F2223E7213E81DE5C0E493E6FCA803B811F2A503AF5BEDA7"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_LadyFern01b\\Unity\\Rocket\\PAD_SV_GrassSet_LadyFern01b\\Textures\\T_PAD_GrassSet_2048_OpenGL_N.png",
+    "file": "T_PAD_GrassSet_2048_OpenGL_N.png",
+    "sha256": "A4C2275DB1838136B546D2216C0292CC81C58B4D204BEFB3A5253925CAFCE100"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_Grass01b\\Unity\\Rocket\\PAD_SV_GrassSet_Grass01b\\HDRP\\SM_PAD_SV_Grass01b_c1_LOD0.fbx",
+    "file": "SM_PAD_SV_Grass01b_c1_LOD0.fbx",
+    "sha256": "14D604996B0F014E0DE79AE2FE236762E76070E172CC91A3CCF4235376363CB4"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_Grass01b\\Unity\\Rocket\\PAD_SV_GrassSet_Grass01b\\Textures\\T_PAD_GrassSet_2048_AO.png",
+    "file": "T_PAD_GrassSet_2048_AO.png",
+    "sha256": "F43B57C583493A39FDEFEB31DBEC306508F3D157D93DFE5AE56E20E0E37A8335"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_Grass01b\\Unity\\Rocket\\PAD_SV_GrassSet_Grass01b\\Textures\\T_PAD_GrassSet_2048_B.png",
+    "file": "T_PAD_GrassSet_2048_B.png",
+    "sha256": "E69281259932DFFB8FC6AAE4A93A3FAFA87B2318CFB98F437B4982C9AE4AEEC3"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_Grass01b\\Unity\\Rocket\\PAD_SV_GrassSet_Grass01b\\Textures\\T_PAD_GrassSet_2048_MS.png",
+    "file": "T_PAD_GrassSet_2048_MS.png",
+    "sha256": "8D7443A0172884F8F2223E7213E81DE5C0E493E6FCA803B811F2A503AF5BEDA7"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\PAD_SV_GrassSet_Grass01b\\Unity\\Rocket\\PAD_SV_GrassSet_Grass01b\\Textures\\T_PAD_GrassSet_2048_OpenGL_N.png",
+    "file": "T_PAD_GrassSet_2048_OpenGL_N.png",
+    "sha256": "A4C2275DB1838136B546D2216C0292CC81C58B4D204BEFB3A5253925CAFCE100"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\HDRP\\SM_MVV_Pine03_c1_LOD0.fbx",
+    "file": "SM_MVV_Pine03_c1_LOD0.fbx",
+    "sha256": "EEC87B7E6808220019958FCE2E94DEBF4CF3FD61B1D7AA1BF38022094506C67A"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_Pine_2048_AO.png",
+    "file": "T_MVV_Pine_2048_AO.png",
+    "sha256": "16DAF7A316DD8D2AE79A9DB1D0961DD78C7E8AC48EA9250C747117ADF86A20A6"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_Pine_2048_B.png",
+    "file": "T_MVV_Pine_2048_B.png",
+    "sha256": "7FAE91F2EB1DF6875558550B5470941A21E945FF2915E8C3D68E877B7103346B"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_Pine_2048_MS.png",
+    "file": "T_MVV_Pine_2048_MS.png",
+    "sha256": "F57CA1FB2A21AB3C7DA1B0AC1ED3859B816A4ED6EB7B09700419E86F0B0E1C8E"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_Pine_2048_OpenGL_N.png",
+    "file": "T_MVV_Pine_2048_OpenGL_N.png",
+    "sha256": "098CEDC850DA67C0B697FB5D51188716F3AFD5E6B791523711C5D67C5AF2383B"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_PineLeaves_2048_AO.png",
+    "file": "T_MVV_PineLeaves_2048_AO.png",
+    "sha256": "573BBFDFEBAD98443DD1E21DE4DE1F4A65DA7468936A0A7E2232DB867C177B4F"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_PineLeaves_2048_B.png",
+    "file": "T_MVV_PineLeaves_2048_B.png",
+    "sha256": "B359565FF0F0DF8F424CAC61CDC08FC7C88DF8213F3378E6099DDFB95350C6E4"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_PineLeaves_2048_MS.png",
+    "file": "T_MVV_PineLeaves_2048_MS.png",
+    "sha256": "B283D31A91B37991C1C8C1B3EE4E48CC9ADDCA17DF7E4098A2A5EA3F9F7E818D"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_PineTreeSet_Pine03\\Unity\\Rocket\\MVV_PineTreeSet_Pine03\\Textures\\T_MVV_PineLeaves_2048_OpenGL_N.png",
+    "file": "T_MVV_PineLeaves_2048_OpenGL_N.png",
+    "sha256": "15EF540F5D735116C549BFB04731019B1BCFC99163C20818AD6CEBCDB843A462"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_BushesSet_Bush03_B_9577c737\\MVV_BushesSet_Bush03_B\\Unity\\Rocket\\MVV_BushesSet_Bush03_B\\HDRP\\SM_MVV_Bush03_B_c1_LOD0.fbx",
+    "file": "SM_MVV_Bush03_B_c1_LOD0.fbx",
+    "sha256": "E0D8D13144116EFF836E59015D5A784838AADCF6B5965F41993471AFBB5F9B43"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_BushesSet_Bush03_B_9577c737\\MVV_BushesSet_Bush03_B\\Unity\\Rocket\\MVV_BushesSet_Bush03_B\\Textures\\T_MVV_Bushes_2048_AO.png",
+    "file": "T_MVV_Bushes_2048_AO.png",
+    "sha256": "1ECBAD05AC444CF45477656DA11C6036C96A8E5400D487AC60E82B9AE2DCBFCB"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_BushesSet_Bush03_B_9577c737\\MVV_BushesSet_Bush03_B\\Unity\\Rocket\\MVV_BushesSet_Bush03_B\\Textures\\T_MVV_Bushes_2048_B.png",
+    "file": "T_MVV_Bushes_2048_B.png",
+    "sha256": "5913801EFADF0F44A007244ED77EB5B87C0B54297E43781A38C7734037FA81A5"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_BushesSet_Bush03_B_9577c737\\MVV_BushesSet_Bush03_B\\Unity\\Rocket\\MVV_BushesSet_Bush03_B\\Textures\\T_MVV_Bushes_2048_MS.png",
+    "file": "T_MVV_Bushes_2048_MS.png",
+    "sha256": "0C84C572B3F1CE214F6E08C7F043256CD6EFA2142EDADC662F7742DB4A787DFF"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_BushesSet_Bush03_B_9577c737\\MVV_BushesSet_Bush03_B\\Unity\\Rocket\\MVV_BushesSet_Bush03_B\\Textures\\T_MVV_Bushes_2048_OpenGL_N.png",
+    "file": "T_MVV_Bushes_2048_OpenGL_N.png",
+    "sha256": "B1BAD075CD3CBB42B394FD2B2BF62C3D0DB914A6025430ED4B0887DC6DB5C2D6"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\HDRP\\SM_MVV_Pine02_c1_LOD0.fbx",
+    "file": "SM_MVV_Pine02_c1_LOD0.fbx",
+    "sha256": "8966929CD31DF001C230BDF818FBFF4C0530173A3D98911A03AD3DDF775154D4"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_Pine_2048_AO.png",
+    "file": "T_MVV_Pine_2048_AO.png",
+    "sha256": "16DAF7A316DD8D2AE79A9DB1D0961DD78C7E8AC48EA9250C747117ADF86A20A6"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_Pine_2048_B.png",
+    "file": "T_MVV_Pine_2048_B.png",
+    "sha256": "7FAE91F2EB1DF6875558550B5470941A21E945FF2915E8C3D68E877B7103346B"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_Pine_2048_MS.png",
+    "file": "T_MVV_Pine_2048_MS.png",
+    "sha256": "F57CA1FB2A21AB3C7DA1B0AC1ED3859B816A4ED6EB7B09700419E86F0B0E1C8E"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_Pine_2048_OpenGL_N.png",
+    "file": "T_MVV_Pine_2048_OpenGL_N.png",
+    "sha256": "098CEDC850DA67C0B697FB5D51188716F3AFD5E6B791523711C5D67C5AF2383B"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_PineLeaves_2048_AO.png",
+    "file": "T_MVV_PineLeaves_2048_AO.png",
+    "sha256": "573BBFDFEBAD98443DD1E21DE4DE1F4A65DA7468936A0A7E2232DB867C177B4F"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_PineLeaves_2048_B.png",
+    "file": "T_MVV_PineLeaves_2048_B.png",
+    "sha256": "B359565FF0F0DF8F424CAC61CDC08FC7C88DF8213F3378E6099DDFB95350C6E4"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_PineLeaves_2048_MS.png",
+    "file": "T_MVV_PineLeaves_2048_MS.png",
+    "sha256": "B283D31A91B37991C1C8C1B3EE4E48CC9ADDCA17DF7E4098A2A5EA3F9F7E818D"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\MVV_PineTreeSet_Pine02_4fc3a2e7\\MVV_PineTreeSet_Pine02\\Unity\\Rocket\\MVV_PineTreeSet_Pine02\\Textures\\T_MVV_PineLeaves_2048_OpenGL_N.png",
+    "file": "T_MVV_PineLeaves_2048_OpenGL_N.png",
+    "sha256": "15EF540F5D735116C549BFB04731019B1BCFC99163C20818AD6CEBCDB843A462"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\PAD_SV_GrassSet_Grass02a_00201e0e\\PAD_SV_GrassSet_Grass02a\\Unity\\Rocket\\PAD_SV_GrassSet_Grass02a\\HDRP\\SM_PAD_SV_Grass02a_c1_LOD0.fbx",
+    "file": "SM_PAD_SV_Grass02a_c1_LOD0.fbx",
+    "sha256": "3345110E890A8E4059018BD0942C7E5B62B50F9048D05C5187E9DE2CE8711F66"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\PAD_SV_GrassSet_Grass02a_00201e0e\\PAD_SV_GrassSet_Grass02a\\Unity\\Rocket\\PAD_SV_GrassSet_Grass02a\\Textures\\T_PAD_GrassSet_2048_AO.png",
+    "file": "T_PAD_GrassSet_2048_AO.png",
+    "sha256": "F43B57C583493A39FDEFEB31DBEC306508F3D157D93DFE5AE56E20E0E37A8335"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\PAD_SV_GrassSet_Grass02a_00201e0e\\PAD_SV_GrassSet_Grass02a\\Unity\\Rocket\\PAD_SV_GrassSet_Grass02a\\Textures\\T_PAD_GrassSet_2048_B.png",
+    "file": "T_PAD_GrassSet_2048_B.png",
+    "sha256": "E69281259932DFFB8FC6AAE4A93A3FAFA87B2318CFB98F437B4982C9AE4AEEC3"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\PAD_SV_GrassSet_Grass02a_00201e0e\\PAD_SV_GrassSet_Grass02a\\Unity\\Rocket\\PAD_SV_GrassSet_Grass02a\\Textures\\T_PAD_GrassSet_2048_MS.png",
+    "file": "T_PAD_GrassSet_2048_MS.png",
+    "sha256": "8D7443A0172884F8F2223E7213E81DE5C0E493E6FCA803B811F2A503AF5BEDA7"
+  },
+  {
+    "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\PAD_SV_GrassSet_Grass02a_00201e0e\\PAD_SV_GrassSet_Grass02a\\Unity\\Rocket\\PAD_SV_GrassSet_Grass02a\\Textures\\T_PAD_GrassSet_2048_OpenGL_N.png",
+    "file": "T_PAD_GrassSet_2048_OpenGL_N.png",
+    "sha256": "A4C2275DB1838136B546D2216C0292CC81C58B4D204BEFB3A5253925CAFCE100"
+  }
+]

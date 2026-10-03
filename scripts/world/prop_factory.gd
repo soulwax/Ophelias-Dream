@@ -8,6 +8,9 @@ static var _materials: Dictionary = {}
 
 
 static func spawn(file_name: String) -> Node3D:
+	var premium := PremiumFlora.spawn(file_name)
+	if premium:
+		return premium
 	var packed := _load_scene(file_name)
 	if packed == null:
 		return _fallback(file_name)
