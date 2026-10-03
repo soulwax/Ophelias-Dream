@@ -20,6 +20,9 @@ func _ready() -> void:
 	var shader := load("res://shaders/footprint.gdshader") as Shader
 	var quad := QuadMesh.new()
 	quad.size = Vector2(1.0, 1.0)
+	# Enough verts for the sole to sink and the berm to rise.
+	quad.subdivide_width = 16
+	quad.subdivide_depth = 24
 	for i in POOL:
 		var mesh_instance := MeshInstance3D.new()
 		mesh_instance.mesh = quad
@@ -30,6 +33,7 @@ func _ready() -> void:
 		material.render_priority = 2
 		mesh_instance.material_override = material
 		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mesh_instance.extra_cull_margin = 0.2
 		mesh_instance.visible = false
 		add_child(mesh_instance)
 		_quads.append(mesh_instance)
@@ -48,10 +52,11 @@ func stamp(at: Vector3, yaw: float, heavy: bool, flip: bool) -> void:
 	var forward := Vector3(sin(yaw), 0.0, cos(yaw))
 	var right := Vector3(forward.z, 0.0, -forward.x)
 	var normal := Vector3.UP
-	var planted := Vector3(at.x, at.y + 0.018, at.z)
+	# Just clear of the snow. The shader sinks the sole and lifts the berm.
+	var planted := Vector3(at.x, at.y + 0.014, at.z)
 	if Game.trail != null and Game.trail.ground != null:
 		var ground: Ground = Game.trail.ground
-		planted.y = ground.height_at(at.x, at.z) + 0.012
+		planted.y = ground.height_at(at.x, at.z) + 0.014
 		var hx := ground.height_at(at.x + 0.3, at.z) - ground.height_at(at.x - 0.3, at.z)
 		var hz := ground.height_at(at.x, at.z + 0.3) - ground.height_at(at.x, at.z - 0.3)
 		normal = Vector3(-hx, 0.6, -hz).normalized()

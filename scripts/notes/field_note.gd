@@ -43,7 +43,8 @@ func _build() -> void:
 	var marker := Label3D.new()
 	marker.name = "Mark"
 	var record := entry != null and entry.record_of != ""
-	marker.text = "record" if record else "note"
+	var house_page := entry != null and not entry.counts and not record
+	marker.text = "record" if record else ("page" if house_page else "note")
 	marker.font_size = 42
 	marker.modulate = Color(0.93, 0.86, 0.7)
 	marker.outline_modulate = Color(0, 0, 0)

@@ -287,6 +287,38 @@ func add_authoring() -> void:
 	var doorstep_marker := root.get_node_or_null("Doorstep")
 	if doorstep_marker:
 		doorstep_marker.add_to_group(EditableLevel.AUTHORING_GROUP)
+	_add_traces(root)
+
+
+## Pages and objects that disagree with the trail notes. Last under Authoring,
+## and itself authoring, so an older snapshot keeps the whole set.
+func _add_traces(authoring: Node3D) -> void:
+	var traces := Node3D.new()
+	traces.name = "Traces"
+	traces.add_to_group(EditableLevel.AUTHORING_GROUP)
+	authoring.add_child(traces)
+	_trace_page(traces, "NightstandPage", Vector3(-3.85, 0.68, 2.82), NoteCatalog.bedside())
+	var desk := _morgue_desk()
+	_trace_page(traces, "Intake", desk + Vector3(0.12, 0.76, -0.08), NoteCatalog.intake())
+	var wax := HouseKit.paint(Color(0.86, 0.78, 0.62), 0.55)
+	var soot := HouseKit.paint(Color(0.12, 0.1, 0.09), 0.85)
+	HouseKit.box(traces, "CandleStub", Vector3(-4.28, 0.655, 2.78), Vector3(0.045, 0.07, 0.045), wax)
+	HouseKit.box(traces, "CandleSoot", Vector3(-4.28, 0.695, 2.78), Vector3(0.04, 0.018, 0.04), soot)
+	var wool := HouseKit.paint(Color(0.38, 0.16, 0.14), 0.92)
+	HouseKit.box(traces, "Mat", Vector3(0.0, -0.004, 3.95), Vector3(0.92, 0.012, 0.48), wool)
+
+
+func _trace_page(parent: Node3D, page_name: String, at: Vector3, entry: NoteEntry) -> void:
+	var page := FieldNote.new()
+	page.name = page_name
+	page.entry = entry
+	page.position = at
+	parent.add_child(page)
+
+
+func _morgue_desk() -> Vector3:
+	var room := MORGUE.grow(-MASONRY * 0.5)
+	return Vector3(room.position.x + 1.2, CELLAR_FLOOR, room.end.y - 0.55)
 
 
 func _marker(parent: Node3D, marker_name: String, at: Vector3, facing: Vector3, extent: float) -> void:

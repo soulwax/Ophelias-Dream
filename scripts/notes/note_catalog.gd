@@ -32,6 +32,28 @@ static func all() -> Array[NoteEntry]:
 	return notes
 
 
+## Left on the nightstand. It knows the bed. It does not know who is reading.
+static func bedside() -> NoteEntry:
+	var entry := _make(
+		"by the bed",
+		"The lantern was already burning. I did not light it. The candle on this stand is burned to the tin. I left it that way so I would know if I had been here before.\n\nThe wool is still warm. It is not from me. I do not know your name. I am writing this before I go out to the step.",
+		0.12
+	)
+	entry.counts = false
+	return entry
+
+
+## On the mortuary desk. The height matches neither sheet in the Listener's file.
+static func intake() -> NoteEntry:
+	var entry := _make(
+		"intake",
+		"Length under the sheet: 1.6 m. Brought down from the step. Initial, as copied from the strap: R. The rest of the name was not taken down. A second stroke was started and left.",
+		0.06
+	)
+	entry.counts = false
+	return entry
+
+
 static func _make(title: String, body: String, corruption: float) -> NoteEntry:
 	var entry := NoteEntry.new()
 	entry.title = title
