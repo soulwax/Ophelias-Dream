@@ -32,6 +32,16 @@ func _ready() -> void:
 	var trail := Trail.new()
 	trail.name = "Trail"
 	trail.seed_value = chosen_seed
+	var use_snapshot := snapshot != null and not (baking and not repacking)
+	var shift := EditableLevel.route_shift(snapshot if use_snapshot else null)
+	if use_snapshot:
+		var route := snapshot.get_node_or_null("Trail/Route") as Path3D
+		if route and route.curve and route.curve.point_count >= 2:
+			trail.authored_curve = route.curve
+		var start := snapshot.get_node_or_null("Trail/Route/Start") as Marker3D
+		if start:
+			trail.authored_start = start.position
+			trail.use_authored_start = true
 	add_child(trail)
 	Game.mark("build player")
 	var player := Player.new()
@@ -56,13 +66,20 @@ func _ready() -> void:
 	add_child(hud)
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player, hunter]
+	var built_house := trail.house.transform
+	var built_exit := trail.exit_point
+	var redrawn: bool = shift["curve"] or shift["start"]
+	var retain: Array[Node] = []
+	if redrawn:
+		retain = trail.route_derived()
 	# The previous bake stored the containment page as a trail child, in the
 	# slot Anomalies now uses. Hold that branch aside until the snapshot
 	# actually contains it, so the page is not painted onto the markers.
-	var parked_anomalies := _park_anomalies(snapshot if not baking or repacking else null, trail)
+	var parked := _park_anomalies(snapshot if use_snapshot else null, trail)
 	if repacking and snapshot:
-		EditableLevel.apply(snapshot, editable_nodes)
-		_restore_anomalies(trail, parked_anomalies)
+		EditableLevel.apply(snapshot, editable_nodes, retain)
+		_restore_parked(trail, parked)
+		_settle_route(trail, shift, built_house, built_exit)
 		player.set_process(false)
 		player.set_physics_process(false)
 		hunter.set_physics_process(false)
@@ -73,11 +90,13 @@ func _ready() -> void:
 		_finish_bake.call_deferred(editable_nodes, chosen_seed)
 		return
 	if snapshot:
-		EditableLevel.apply(snapshot, editable_nodes)
-		_restore_anomalies(trail, parked_anomalies)
+		EditableLevel.apply(snapshot, editable_nodes, retain)
+		_restore_parked(trail, parked)
+		_settle_route(trail, shift, built_house, built_exit)
 		player.apply_authored_spawn()
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
+	trail.adopt_markers()
 	director.layout()
 	Game.begin_intro()
 	if _capture:
@@ -115,21 +134,37 @@ func _shoot() -> void:
 	get_tree().quit()
 
 
-func _park_anomalies(snapshot: Node, trail: Trail) -> Node:
+func _park_anomalies(snapshot: Node, trail: Trail) -> Array[Node]:
+	var parked: Array[Node] = []
 	if snapshot == null:
-		return null
+		return parked
 	var authored := snapshot.get_node_or_null("Trail")
 	if authored and authored.get_node_or_null("Anomalies"):
-		return null
-	var anomalies := trail.get_node_or_null("Anomalies")
-	if anomalies:
-		trail.remove_child(anomalies)
-	return anomalies
+		return parked
+	# Route sits after Anomalies. Lift it first so it does not slide into
+	# the slot the old snapshot still uses for something else.
+	for branch_name in ["Route", "Anomalies"]:
+		var branch := trail.get_node_or_null(branch_name)
+		if branch:
+			trail.remove_child(branch)
+			parked.append(branch)
+	parked.reverse()
+	return parked
 
 
-func _restore_anomalies(trail: Trail, anomalies: Node) -> void:
-	if anomalies:
-		trail.add_child(anomalies)
+func _restore_parked(trail: Trail, parked: Array[Node]) -> void:
+	for branch in parked:
+		trail.add_child(branch)
+
+
+func _settle_route(trail: Trail, shift: Dictionary, built_house: Transform3D, built_exit: Vector3) -> void:
+	if shift["curve"] or shift["start"]:
+		trail.house.transform = built_house
+	if shift["curve"]:
+		var exit_marker := trail.get_node_or_null("Route/Exit") as Marker3D
+		if exit_marker:
+			exit_marker.global_position = built_exit
+		trail.exit_point = built_exit
 
 
 func _resolve_seed(snapshot: Node) -> int:

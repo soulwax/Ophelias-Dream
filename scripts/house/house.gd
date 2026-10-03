@@ -141,8 +141,27 @@ func acoustic_zones() -> Array:
 	]
 
 
-## Which room a point is in ("" outside the house).
+## Which room a point is in ("" outside the house). The Authoring/Rooms boxes
+## are what you drag; the smallest one that holds the point wins.
 func room_at(world_point: Vector3) -> String:
+	var rooms := get_node_or_null("Authoring/Rooms")
+	if rooms and rooms.get_child_count() > 0:
+		var best := ""
+		var best_volume := INF
+		for child in rooms.get_children():
+			var shape := child as CollisionShape3D
+			if shape == null or not shape.shape is BoxShape3D:
+				continue
+			var box := shape.shape as BoxShape3D
+			var local := shape.to_local(world_point)
+			var half := box.size * 0.5
+			if absf(local.x) > half.x + 0.06 or absf(local.y) > half.y + 0.06 or absf(local.z) > half.z + 0.06:
+				continue
+			var volume := box.size.x * box.size.y * box.size.z
+			if volume < best_volume:
+				best_volume = volume
+				best = shape.name
+		return best
 	var local := to_local(world_point)
 	if local.y > -0.6:
 		for room in GROUND_ROOMS:
@@ -170,6 +189,8 @@ func _keep_light(room: String, lamp: OmniLight3D) -> void:
 
 ## True for points inside any room, ground floor or cellar.
 func contains(world_point: Vector3) -> bool:
+	if room_at(world_point) != "":
+		return true
 	var local := to_local(world_point)
 	for volume in _volumes:
 		if volume.grow(0.12).has_point(local):
@@ -251,6 +272,21 @@ func add_authoring() -> void:
 	root.add_child(path)
 	_reverb_area(root, "RoomTone", "Room", 0.32, [_volumes[0]])
 	_reverb_area(root, "CellarTone", "Cellar", 0.5, _volumes.slice(1))
+	var rooms := Node3D.new()
+	rooms.name = "Rooms"
+	rooms.add_to_group(EditableLevel.AUTHORING_GROUP)
+	root.add_child(rooms)
+	for room_name in GROUND_ROOMS:
+		_room_box(rooms, room_name, GROUND_ROOMS[room_name] as Rect2, -0.5, CEILING)
+	_room_box(rooms, "stair", Rect2(STAIR_BOTTOM_X, -3.5, 0.97 - STAIR_BOTTOM_X, 1.4), CELLAR_FLOOR - 0.2, -0.55)
+	_room_box(rooms, "landing", LANDING, CELLAR_FLOOR - 0.2, -0.55)
+	_room_box(rooms, "corridor", CORRIDOR, CELLAR_FLOOR - 0.2, -0.55)
+	_room_box(rooms, "janitor", JANITOR, CELLAR_FLOOR - 0.2, -0.55)
+	_room_box(rooms, "morgue", MORGUE, CELLAR_FLOOR - 0.2, -0.55)
+	_marker(root, "Doorstep", Vector3(0.0, -PLINTH, 6.5), Vector3(0.0, 0.0, 1.0), 0.45)
+	var doorstep_marker := root.get_node_or_null("Doorstep")
+	if doorstep_marker:
+		doorstep_marker.add_to_group(EditableLevel.AUTHORING_GROUP)
 
 
 func _marker(parent: Node3D, marker_name: String, at: Vector3, facing: Vector3, extent: float) -> void:
@@ -262,6 +298,19 @@ func _marker(parent: Node3D, marker_name: String, at: Vector3, facing: Vector3, 
 		flat = Vector3.FORWARD
 	marker.transform = Transform3D(Basis.looking_at(flat.normalized(), Vector3.UP), at)
 	parent.add_child(marker)
+
+
+func _room_box(parent: Node3D, room_name: String, rect: Rect2, y0: float, y1: float) -> void:
+	var shape := CollisionShape3D.new()
+	shape.name = room_name
+	var box := BoxShape3D.new()
+	var height := maxf(0.2, y1 - y0)
+	box.size = Vector3(rect.size.x, height, rect.size.y)
+	shape.shape = box
+	shape.position = Vector3(rect.position.x + rect.size.x * 0.5, (y0 + y1) * 0.5, rect.position.y + rect.size.y * 0.5)
+	shape.debug_color = Color(0.45, 0.62, 0.85, 0.28)
+	shape.debug_fill = true
+	parent.add_child(shape)
 
 
 func _reverb_area(parent: Node3D, area_name: String, bus: String, amount: float, boxes: Array) -> void:
@@ -288,6 +337,9 @@ func _reverb_area(parent: Node3D, area_name: String, bus: String, amount: float,
 
 ## Out in the snow in front of the door: where something waits.
 func doorstep() -> Vector3:
+	var marker := get_node_or_null("Authoring/Doorstep") as Marker3D
+	if marker:
+		return marker.global_position
 	return to_global(Vector3(0.0, -PLINTH, 6.5))
 
 

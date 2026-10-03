@@ -16,6 +16,17 @@ static func bake(nodes: Array[Node], seed_value: int) -> Error:
 	var root := Node3D.new()
 	root.name = "EditableLevel"
 	root.set_meta("seed", seed_value)
+	for node in nodes:
+		if node is Trail:
+			var route := node.get_node_or_null("Route") as Path3D
+			if route and route.curve:
+				var points := PackedVector3Array()
+				for index in route.curve.point_count:
+					points.append(route.curve.get_point_position(index))
+				root.set_meta("route_points", points)
+			var start := node.get_node_or_null("Route/Start") as Marker3D
+			if start:
+				root.set_meta("route_start", start.position)
 	for index in nodes.size():
 		var node := nodes[index]
 		if node is Player or node is Hunter:
@@ -56,7 +67,7 @@ static func _save_hierarchy(root: Node3D) -> Error:
 	if result != OK:
 		return result
 	var landmarks := _group_landmarks(trail, root)
-	for name in ["Ground", "Fence", "Flora", "Anomalies"]:
+	for name in ["Ground", "Fence", "Flora", "Anomalies", "Route"]:
 		var branch := trail.get_node_or_null(name)
 		if branch:
 			result = _nest_scene(trail, branch, "%s.scn" % name.to_snake_case(), root)
@@ -87,7 +98,7 @@ static func _group_landmarks(trail: Node3D, root: Node3D) -> Node3D:
 	trail.add_child(group)
 	group.owner = root
 	for child in trail.get_children():
-		if child == group or child.name in ["Ground", "House", "Fence", "Flora", "Anomalies"]:
+		if child == group or child.name in ["Ground", "House", "Fence", "Flora", "Anomalies", "Route"]:
 			continue
 		child.owner = null
 		child.reparent(group, false)
@@ -166,12 +177,42 @@ static func _descendant_path(ancestor: Node, descendant: Node, top_index: int) -
 	return result
 
 
-static func apply(snapshot: Node, generated: Array[Node]) -> void:
+# True when the saved route no longer matches the field that was baked with it.
+# Redrawing the path or sliding its start rebuilds the snow, the pines and the
+# landmarks; moving the exit marker does not.
+static func route_shift(snapshot: Node) -> Dictionary:
+	var shift := {"curve": false, "start": false}
+	if snapshot == null or not snapshot.has_meta("route_points"):
+		return shift
+	var route := snapshot.get_node_or_null("Trail/Route") as Path3D
+	if route == null or route.curve == null:
+		return shift
+	var saved: PackedVector3Array = snapshot.get_meta("route_points")
+	if saved.size() != route.curve.point_count:
+		shift["curve"] = true
+	else:
+		for index in saved.size():
+			if saved[index].distance_squared_to(route.curve.get_point_position(index)) > 0.0001:
+				shift["curve"] = true
+				break
+	if snapshot.has_meta("route_start"):
+		var start := route.get_node_or_null("Start") as Marker3D
+		var saved_start: Vector3 = snapshot.get_meta("route_start")
+		if start and start.position.distance_squared_to(saved_start) > 0.0001:
+			shift["start"] = true
+	return shift
+
+
+static func apply(snapshot: Node, generated: Array[Node], retain_roots: Array[Node] = []) -> void:
 	var originals: Dictionary = {}
 	for index in generated.size():
 		_index_tree(generated[index], PackedInt32Array([index]), originals)
+	var retain: Dictionary = {}
+	for root in retain_roots:
+		if root:
+			retain[root.get_instance_id()] = true
 	var authored: Dictionary = {}
-	_apply_tree(snapshot, originals, authored)
+	_apply_tree(snapshot, originals, authored, retain)
 	# A removed visual or collision node should stay removed at run time. Scripted
 	# nodes remain alive because gameplay can still hold references to them.
 	var keep_authoring: Dictionary = {}
@@ -230,17 +271,17 @@ static func _index_tree(node: Node, index_path: PackedInt32Array, lookup: Dictio
 		_index_tree(node.get_child(index), path, lookup)
 
 
-static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary) -> void:
+static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary, retain: Dictionary) -> void:
 	for child in node.get_children():
 		if child.get_meta("generated_group", false):
-			_apply_tree(child, originals, authored)
+			_apply_tree(child, originals, authored, retain)
 			continue
 		var path: PackedInt32Array = child.get_meta(SOURCE_PATH, PackedInt32Array())
 		if path.is_empty():
 			# A hand-added node belongs to the nearest generated parent.
 			var parent_path: PackedInt32Array = node.get_meta(SOURCE_PATH, node.get_meta(GROUP_PARENT_PATH, PackedInt32Array()))
 			var target_parent := originals.get(_key(parent_path)) as Node
-			if target_parent:
+			if target_parent and not _is_retained(target_parent, retain):
 				var addition := child.duplicate(0)
 				_clear_tags(addition)
 				target_parent.add_child(addition)
@@ -248,6 +289,9 @@ static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary)
 		var key := _key(path)
 		authored[key] = true
 		var target := originals.get(key) as Node
+		if target and _is_retained(target, retain):
+			_mark_descendants(target, path, authored)
+			continue
 		if target:
 			_copy_editable_properties(child, target)
 			if child.get_meta("preview_actor", false) or (child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR)):
@@ -256,7 +300,16 @@ static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary)
 				_sync_instance_children(child, target)
 		if child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR):
 			continue
-		_apply_tree(child, originals, authored)
+		_apply_tree(child, originals, authored, retain)
+
+
+static func _is_retained(node: Node, retain: Dictionary) -> bool:
+	var current := node
+	while current:
+		if retain.has(current.get_instance_id()):
+			return true
+		current = current.get_parent()
+	return false
 
 
 static func _sync_instance_children(source: Node, target: Node) -> void:

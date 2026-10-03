@@ -13,6 +13,10 @@ var exit_point: Vector3 = Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var _reserved: Array[Vector3] = []
 var seed_value := 1701
+# Set before the trail enters the tree, from the editable level's Route.
+var authored_curve: Curve3D
+var authored_start := Vector3(0.0, 0.0, 10.0)
+var use_authored_start := false
 
 
 func _ready() -> void:
@@ -53,7 +57,25 @@ func _ready() -> void:
 	anomalies.name = "Anomalies"
 	anomalies.add_to_group(EditableLevel.AUTHORING_GROUP)
 	add_child(anomalies)
+	_add_route()
 	Game.trail = self
+
+
+# The snow, the pines and the props laid along the path. Kept as built when
+# the route in the editor no longer matches the baked field.
+func route_derived() -> Array[Node]:
+	var derived: Array[Node] = []
+	for child in get_children():
+		if child.name in ["Ground", "Flora"] or child.name not in ["House", "Fence", "Anomalies", "Route"]:
+			derived.append(child)
+	return derived
+
+
+func adopt_markers() -> void:
+	var exit_marker := get_node_or_null("Route/Exit") as Marker3D
+	if exit_marker:
+		exit_point = exit_marker.global_position
+		exit_offset = offset_of(exit_point)
 
 
 func offset_of(world_position: Vector3) -> float:
@@ -76,25 +98,47 @@ func on_ground(at: Vector3) -> Vector3:
 
 
 func _build_curve() -> void:
-	curve = Curve3D.new()
+	if authored_curve and authored_curve.point_count >= 2:
+		curve = authored_curve.duplicate() as Curve3D
+	else:
+		curve = Curve3D.new()
+		var points: Array[Vector3] = [
+			Vector3(0, 0, 52),
+			Vector3(0, 0, 10),
+			Vector3(12, 0, -14),
+			Vector3(-9, 0, -40),
+			Vector3(15, 0, -68),
+			Vector3(-13, 0, -100),
+			Vector3(7, 0, -134),
+			Vector3(-6, 0, -166),
+			Vector3(10, 0, -200),
+		]
+		for point in points:
+			curve.add_point(point)
 	curve.bake_interval = 0.4
-	var points: Array[Vector3] = [
-		Vector3(0, 0, 52),
-		Vector3(0, 0, 10),
-		Vector3(12, 0, -14),
-		Vector3(-9, 0, -40),
-		Vector3(15, 0, -68),
-		Vector3(-13, 0, -100),
-		Vector3(7, 0, -134),
-		Vector3(-6, 0, -166),
-		Vector3(10, 0, -200),
-	]
-	for point in points:
-		curve.add_point(point)
 	length = curve.get_baked_length()
-	player_start_offset = curve.get_closest_offset(Vector3(0, 0, 10))
+	var start_at := authored_start if use_authored_start else Vector3(0.0, 0.0, 10.0)
+	player_start_offset = curve.get_closest_offset(start_at)
 	exit_offset = length - Tune.EXIT_MARGIN
 	exit_point = curve.sample_baked(exit_offset)
+
+
+func _add_route() -> void:
+	var route := Path3D.new()
+	route.name = "Route"
+	route.add_to_group(EditableLevel.AUTHORING_GROUP)
+	route.curve = curve.duplicate() as Curve3D
+	add_child(route)
+	var start := Marker3D.new()
+	start.name = "Start"
+	start.gizmo_extents = 0.7
+	start.position = curve.sample_baked(player_start_offset)
+	route.add_child(start)
+	var exit_marker := Marker3D.new()
+	exit_marker.name = "Exit"
+	exit_marker.gizmo_extents = 0.7
+	exit_marker.position = curve.sample_baked(exit_offset)
+	route.add_child(exit_marker)
 
 
 # Where the house stands: well off the trail start, front door facing it.
