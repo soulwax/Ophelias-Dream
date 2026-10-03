@@ -1,7 +1,8 @@
 class_name Haunting
 extends Node3D
 
-## The house is awake while she is in it. Tension builds the longer she stays
+## The house is not one of the things in the field. It keeps her inside, where
+## the one on the step can wait. Tension builds the longer she stays
 ## and drains away outside; at intervals that shorten with it, the house does
 ## something, chosen for the room she is in:
 ##

@@ -1,6 +1,11 @@
 class_name Hunter
 extends Node3D
 
+# The one in the tree line. It wants her still: watched, it leaves, and before
+# the third page it only stands where she is not looking. After that it walks
+# to her. It will not cross the threshold. It waits on the step, and the
+# waiting counts. The body is the Quaternius male rig, cloaked to a silhouette.
+
 var trail: Trail
 var offset: float = 0.0
 var model: Node3D
@@ -27,7 +32,7 @@ func _physics_process(delta: float) -> void:
 	if Game.phase == Game.Phase.INTRO or Game.phase == Game.Phase.PAUSED:
 		return
 	if Game.phase == Game.Phase.CAUGHT or Game.phase == Game.Phase.ESCAPED:
-		_play("Idle_Talking")
+		_play("Idle")
 		return
 	if _reached_exit():
 		Game.escape()
@@ -64,10 +69,11 @@ func _stalk(delta: float) -> void:
 		if Game.soundscape and randf() < 0.35:
 			Game.soundscape.play_snap(global_position + Vector3.UP * 0.3, Loudness.BRANCH_SNAP - 8.0)
 		return
-	Game.set_closeness(clampf(0.16 - distance / 220.0, 0.0, 0.16))
-	_play("Idle_Talking")
+	# Near enough to feel, not near enough to be the chase. The eyes are the tell.
+	Game.set_closeness(clampf(lerpf(0.46, 0.34, distance / 30.0), 0.34, 0.46))
+	_play("Idle")
 	if eyes:
-		eyes.visible = false
+		eyes.visible = true
 	if model:
 		model.visible = true
 
@@ -110,7 +116,10 @@ func _pursue(delta: float) -> void:
 		# Felt through the walls, never touching her.
 		Game.set_closeness(minf(presence, 0.5))
 	elif distance < Tune.CATCH_GAP and threat >= 0.48:
-		Game.catch_player()
+		Game.catch_player(
+			"You stopped",
+			"The one from the trees does not hurry until it knows you have stopped. The snow closed over the place you were."
+		)
 
 
 func _threat() -> float:
@@ -148,8 +157,8 @@ func _appear() -> void:
 	if model:
 		model.visible = true
 	if eyes:
-		eyes.visible = false
-	_play("Idle_Talking")
+		eyes.visible = true
+	_play("Idle")
 
 
 func _hide() -> void:
@@ -290,6 +299,9 @@ func _play(clip: String) -> void:
 				break
 		if resolved == "" and clip == "Sprint":
 			_play("Jog_Fwd")
+			return
+		if resolved == "" and clip == "Idle":
+			_play("Idle_Talking")
 			return
 	if resolved == "" or resolved == _clip:
 		return

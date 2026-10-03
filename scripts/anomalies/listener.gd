@@ -41,7 +41,7 @@ func record() -> NoteEntry:
 		"OBJECT 2-117 — \"THE LISTENER\"",
 		"Class: Persistent. Do not attempt recovery.\n\n"
 		+ "Description: A humanoid accretion of hoarfrost, approx. 2.4 m. It has no auditory organs and no eyes we have been able to find. It responds exclusively to visible exhaled vapour.\n\n"
-		+ "It does not follow people. It goes to where the breath was.\n\n"
+		+ "It is not the figure in the tree line. That one wants the person. This one cannot tell a person from the steam. It does not follow people. It goes to where the breath was.\n\n"
 		+ "Calm breathing in these temperatures is visible at roughly ten metres. Breathing after exertion is visible at forty.\n\n"
 		+ "Incident 2-117-04: Agent [redacted] stood within arm's reach of the object for one minute and forty seconds holding her breath. It did not register her. When she exhaled it was already turning.\n\n"
 		+ "Procedure: If you see it, stop running. Running makes the plume. Hold your breath, walk, and plan where you will let it out."
@@ -111,7 +111,9 @@ func _physics_process(delta: float) -> void:
 		_:
 			dread = pressure * 0.35
 	hint = ""
-	if distance < 30.0:
+	# It only announces itself once it has turned toward a breath. Drifting,
+	# it is just a figure, and the one in the trees keeps the warning.
+	if distance < 30.0 and _mood in [Mood.HUNT, Mood.LISTEN]:
 		hint = "Hold your breath." if understood() else "Something is listening."
 	_listen_pose(delta)
 	if _hiss:

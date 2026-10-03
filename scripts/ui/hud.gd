@@ -112,10 +112,14 @@ func _warning_line() -> String:
 		return "It is close."
 	if near > 0.55:
 		return "Do not stop."
-	if Game.anomaly_hint != "":
+	# Whichever pressure is actually stronger speaks. A distant listener
+	# does not talk over the figure standing in the trees.
+	if Game.anomaly_hint != "" and Game.dread > near:
 		return Game.anomaly_hint
 	if near > 0.32:
 		return "Something is on the trail."
+	if Game.anomaly_hint != "":
+		return Game.anomaly_hint
 	return ""
 
 
