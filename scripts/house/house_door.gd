@@ -15,6 +15,7 @@ var _motion := DoorHingeDynamics.new()
 var _audio: Dictionary = {}
 var _open := false
 var _was_moving := false
+var _was_blocked := false
 var _size := Vector3.ONE
 var _handle_at := Vector3.ZERO
 var _hinge := -1.0
@@ -87,6 +88,9 @@ func _physics_process(delta: float) -> void:
 		return
 	var before := _motion.angle
 	_motion.step(delta, _pivot, _body, _shape)
+	if _motion.blocked and not _was_blocked and _motion.pace > 0.9:
+		Game.interaction_feedback.emit("Door is blocked", false)
+	_was_blocked = _motion.blocked
 	var moving := absf(_motion.angle - before) > 0.0005
 	if moving and not _was_moving:
 		_play("creak")
