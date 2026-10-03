@@ -112,11 +112,20 @@ static func box(parent: Node3D, name: String, center: Vector3, size: Vector3, ma
 	return instance
 
 
-## A box you collide with.
+## A box you collide with. Its body carries the material's "surface" tag
+## (see surface()), which decides what her footsteps sound like on it.
 static func solid(parent: Node3D, name: String, center: Vector3, size: Vector3, material: Material, yaw: float = 0.0) -> MeshInstance3D:
 	var instance := box(parent, name, center, size, material, yaw)
-	blocker(parent, name + "Body", center, size, yaw)
+	var body := blocker(parent, name + "Body", center, size, yaw)
+	if material and material.has_meta("surface"):
+		body.set_meta("surface", material.get_meta("surface"))
 	return instance
+
+
+## Tags a material with what it is underfoot: "wood", "stone" or "snow".
+static func surface(material: Material, kind: String) -> Material:
+	material.set_meta("surface", kind)
+	return material
 
 
 ## Collision only.
@@ -221,6 +230,8 @@ static func stair(parent: Node3D, name: String, top: Vector3, bottom: Vector3, w
 	body.name = name + "Ramp"
 	body.collision_layer = Tune.LAYER_WORLD
 	body.collision_mask = 0
+	if tread and tread.has_meta("surface"):
+		body.set_meta("surface", tread.get_meta("surface"))
 	var middle := (top + bottom) * 0.5 + Vector3(0.0, -0.06, 0.0)
 	body.transform = Transform3D(Basis(Vector3.BACK, atan2(rise, run)), middle)
 	var shape := CollisionShape3D.new()

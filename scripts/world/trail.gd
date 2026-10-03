@@ -4,6 +4,7 @@ extends Node3D
 var curve: Curve3D
 var ground: Ground
 var house: House
+var flora: Flora
 var length: float = 1.0
 var player_start_offset: float = 0.0
 var exit_offset: float = 1.0

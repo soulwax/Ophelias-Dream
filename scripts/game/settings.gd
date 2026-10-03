@@ -86,11 +86,8 @@ var _focused := true
 
 func _ready() -> void:
 	for bus in BUSES:
-		if AudioServer.get_bus_index(bus) < 0:
-			AudioServer.add_bus()
-			var index := AudioServer.bus_count - 1
-			AudioServer.set_bus_name(index, bus)
-			AudioServer.set_bus_send(index, "Master")
+		_bus(bus, "Master")
+	_build_mix()
 	for pair in ACTIONS:
 		_default_keys[pair[0]] = InputMap.action_get_events(pair[0]).duplicate()
 	load_saved()
@@ -290,6 +287,64 @@ static func _decode(code: String) -> InputEvent:
 
 
 # --- Display and sound --------------------------------------------------
+
+func _bus(bus: String, send: String) -> int:
+	var index := AudioServer.get_bus_index(bus)
+	if index < 0:
+		AudioServer.add_bus()
+		index = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(index, bus)
+	AudioServer.set_bus_send(index, send)
+	return index
+
+
+# The fixed parts of the mix. The rooms' reverbs feed the Effects level they
+# come from; the storm's bus gets the low-pass the walls close down (Weather
+# drives it); nothing that stacks up (a gust under a hard knock) may clip.
+func _build_mix() -> void:
+	var room := AudioEffectReverb.new()
+	room.predelay_msec = 8.0
+	room.room_size = 0.28
+	room.damping = 0.72
+	room.spread = 0.8
+	room.hipass = 0.08
+	room.dry = 0.0
+	room.wet = 0.55
+	var cellar := AudioEffectReverb.new()
+	cellar.predelay_msec = 18.0
+	cellar.room_size = 0.58
+	cellar.damping = 0.32
+	cellar.spread = 0.9
+	cellar.hipass = 0.12
+	cellar.dry = 0.0
+	cellar.wet = 0.65
+	for pair in [["Room", room], ["Cellar", cellar]]:
+		var index := _bus(pair[0], "Effects")
+		if AudioServer.get_bus_effect_count(index) == 0:
+			AudioServer.add_bus_effect(index, pair[1])
+	# Everything heard from outside the walls (storm, trees, birds) rides on
+	# Outside, under the Ambience level; the window whistle does not.
+	var outside := _bus("Outside", "Ambience")
+	if AudioServer.get_bus_effect_count(outside) == 0:
+		var walls := AudioEffectLowPassFilter.new()
+		walls.cutoff_hz = 20000.0
+		walls.resonance = 0.5
+		AudioServer.add_bus_effect(outside, walls)
+	var master := AudioServer.get_bus_index("Master")
+	if AudioServer.get_bus_effect_count(master) == 0:
+		var limiter := AudioEffectHardLimiter.new()
+		limiter.ceiling_db = -0.5
+		AudioServer.add_bus_effect(master, limiter)
+
+
+## The Outside bus's low-pass: 20 kHz in the open, a few hundred Hz behind walls.
+func set_walls(cutoff_hz: float) -> void:
+	var outside := AudioServer.get_bus_index("Outside")
+	if outside < 0 or AudioServer.get_bus_effect_count(outside) == 0:
+		return
+	var walls := AudioServer.get_bus_effect(outside, 0) as AudioEffectLowPassFilter
+	if walls:
+		walls.cutoff_hz = cutoff_hz
 
 func _apply_display() -> void:
 	Engine.max_fps = max_fps

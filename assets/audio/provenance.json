@@ -1,0 +1,1225 @@
+{
+	"note": "Recorded sounds for Run Away. All sources are CC0 1.0 (public domain); credit is not required but is kept here. Regenerate with tools/fetch_sounds.py then tools/make_soundscape.py.",
+	"files": {
+		"nature/crow_00.wav": {
+			"source": "freesound",
+			"id": "334231",
+			"page": "https://freesound.org/s/334231/",
+			"title": "21st January, Crow, Watsons Bay.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.670-0.990s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_01.wav": {
+			"source": "freesound",
+			"id": "334231",
+			"page": "https://freesound.org/s/334231/",
+			"title": "21st January, Crow, Watsons Bay.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.430-6.290s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_02.wav": {
+			"source": "freesound",
+			"id": "334231",
+			"page": "https://freesound.org/s/334231/",
+			"title": "21st January, Crow, Watsons Bay.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "7.290-8.105s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_03.wav": {
+			"source": "freesound",
+			"id": "334231",
+			"page": "https://freesound.org/s/334231/",
+			"title": "21st January, Crow, Watsons Bay.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "9.750-11.110s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_04.wav": {
+			"source": "freesound",
+			"id": "334231",
+			"page": "https://freesound.org/s/334231/",
+			"title": "21st January, Crow, Watsons Bay.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "18.635-19.500s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_05.wav": {
+			"source": "freesound",
+			"id": "334231",
+			"page": "https://freesound.org/s/334231/",
+			"title": "21st January, Crow, Watsons Bay.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "25.230-26.360s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_06.wav": {
+			"source": "freesound",
+			"id": "252685",
+			"page": "https://freesound.org/s/252685/",
+			"title": "Crow call NK.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.025-0.310s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_07.wav": {
+			"source": "freesound",
+			"id": "252685",
+			"page": "https://freesound.org/s/252685/",
+			"title": "Crow call NK.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.330-0.625s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/crow_08.wav": {
+			"source": "freesound",
+			"id": "252685",
+			"page": "https://freesound.org/s/252685/",
+			"title": "Crow call NK.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.645-0.930s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_00.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.180-1.070s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_01.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.825-6.020s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_02.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "14.190-15.225s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_03.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "20.755-20.855s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_04.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "23.695-23.840s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_05.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "26.375-27.410s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_06.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "29.110-29.225s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/flump_07.wav": {
+			"source": "freesound",
+			"id": "116136",
+			"page": "https://freesound.org/s/116136/",
+			"title": "Snow falling from the trees 2-12-2010.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "35.895-36.835s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_00.wav": {
+			"source": "freesound",
+			"id": "675958",
+			"page": "https://freesound.org/s/675958/",
+			"title": "S28-17 Raven scolding.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.225-0.550s",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_01.wav": {
+			"source": "freesound",
+			"id": "675958",
+			"page": "https://freesound.org/s/675958/",
+			"title": "S28-17 Raven scolding.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "3.795-4.065s",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_02.wav": {
+			"source": "freesound",
+			"id": "675958",
+			"page": "https://freesound.org/s/675958/",
+			"title": "S28-17 Raven scolding.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.715-6.185s",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_03.wav": {
+			"source": "freesound",
+			"id": "675958",
+			"page": "https://freesound.org/s/675958/",
+			"title": "S28-17 Raven scolding.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "7.795-8.045s",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_04.wav": {
+			"source": "freesound",
+			"id": "675958",
+			"page": "https://freesound.org/s/675958/",
+			"title": "S28-17 Raven scolding.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "9.845-10.145s",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_05.wav": {
+			"source": "freesound",
+			"id": "864903",
+			"page": "https://freesound.org/s/864903/",
+			"title": "Raven on roof of Office Supply Centre",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.520-2.365s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_06.wav": {
+			"source": "freesound",
+			"id": "864903",
+			"page": "https://freesound.org/s/864903/",
+			"title": "Raven on roof of Office Supply Centre",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "2.385-2.795s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/raven_07.wav": {
+			"source": "freesound",
+			"id": "864903",
+			"page": "https://freesound.org/s/864903/",
+			"title": "Raven on roof of Office Supply Centre",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "3.175-3.750s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/tree_creak_00.wav": {
+			"source": "freesound",
+			"id": "95264",
+			"page": "https://freesound.org/s/95264/",
+			"title": "tree_creak_06.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.645-2.185s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/tree_creak_01.wav": {
+			"source": "freesound",
+			"id": "95264",
+			"page": "https://freesound.org/s/95264/",
+			"title": "tree_creak_06.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "3.560-3.825s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/tree_creak_02.wav": {
+			"source": "freesound",
+			"id": "95264",
+			"page": "https://freesound.org/s/95264/",
+			"title": "tree_creak_06.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "4.455-5.240s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/tree_creak_03.wav": {
+			"source": "freesound",
+			"id": "95264",
+			"page": "https://freesound.org/s/95264/",
+			"title": "tree_creak_06.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.260-6.075s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/tree_creak_04.wav": {
+			"source": "freesound",
+			"id": "95264",
+			"page": "https://freesound.org/s/95264/",
+			"title": "tree_creak_06.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "6.095-6.885s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"nature/trees_0.ogg": {
+			"source": "bigsoundbank",
+			"id": "1051",
+			"page": "https://bigsoundbank.com/search?q=1051",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "3.0-73.0s",
+			"processing": "seamless loop, levelled"
+		},
+		"nature/trees_1.ogg": {
+			"source": "bigsoundbank",
+			"id": "1051",
+			"page": "https://bigsoundbank.com/search?q=1051",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "78.0-148.0s",
+			"processing": "seamless loop, levelled"
+		},
+		"nature/trees_2.ogg": {
+			"source": "freesound",
+			"id": "140047",
+			"page": "https://freesound.org/s/140047/",
+			"title": "A tree is creaking in the patagonian forest of Argentina in a deep creaky sound. (Argentina, Tierra del Fuego).",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "40.0-130.0s, channel 0",
+			"processing": "seamless loop, levelled"
+		},
+		"steps/above_00.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.350-0.710s",
+			"processing": "wood step heard through the floor: low-passed, one early reflection"
+		},
+		"steps/above_01.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "1.080-1.325s",
+			"processing": "wood step heard through the floor: low-passed, one early reflection"
+		},
+		"steps/above_02.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "1.710-1.990s",
+			"processing": "wood step heard through the floor: low-passed, one early reflection"
+		},
+		"steps/above_03.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "2.305-2.670s",
+			"processing": "wood step heard through the floor: low-passed, one early reflection"
+		},
+		"steps/above_04.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.870-1.285s",
+			"processing": "wood step heard through the floor: low-passed, one early reflection"
+		},
+		"steps/above_05.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "4.130-4.500s",
+			"processing": "wood step heard through the floor: low-passed, one early reflection"
+		},
+		"steps/creak_00.wav": {
+			"source": "freesound",
+			"id": "506665",
+			"page": "https://freesound.org/s/506665/",
+			"title": "Wood Creak Single V10",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.040-0.565s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_01.wav": {
+			"source": "freesound",
+			"id": "264306",
+			"page": "https://freesound.org/s/264306/",
+			"title": "Floor Creak 1.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.745-1.285s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_02.wav": {
+			"source": "freesound",
+			"id": "264306",
+			"page": "https://freesound.org/s/264306/",
+			"title": "Floor Creak 1.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "2.350-2.755s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_03.wav": {
+			"source": "freesound",
+			"id": "264306",
+			"page": "https://freesound.org/s/264306/",
+			"title": "Floor Creak 1.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "4.245-4.785s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_04.wav": {
+			"source": "freesound",
+			"id": "264306",
+			"page": "https://freesound.org/s/264306/",
+			"title": "Floor Creak 1.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.480-6.085s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_05.wav": {
+			"source": "freesound",
+			"id": "264306",
+			"page": "https://freesound.org/s/264306/",
+			"title": "Floor Creak 1.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "7.530-8.080s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_06.wav": {
+			"source": "bigsoundbank",
+			"id": "0518",
+			"page": "https://bigsoundbank.com/search?q=0518",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.775-0.930s",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_07.wav": {
+			"source": "bigsoundbank",
+			"id": "0518",
+			"page": "https://bigsoundbank.com/search?q=0518",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "3.440-3.770s",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_08.wav": {
+			"source": "bigsoundbank",
+			"id": "0518",
+			"page": "https://bigsoundbank.com/search?q=0518",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "4.045-4.280s",
+			"processing": "levelled one-shot"
+		},
+		"steps/creak_09.wav": {
+			"source": "bigsoundbank",
+			"id": "0518",
+			"page": "https://bigsoundbank.com/search?q=0518",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "4.735-4.935s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_00.wav": {
+			"source": "bigsoundbank",
+			"id": "2890",
+			"page": "https://bigsoundbank.com/search?q=2890",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "6.250-6.810s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_01.wav": {
+			"source": "bigsoundbank",
+			"id": "2890",
+			"page": "https://bigsoundbank.com/search?q=2890",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "14.930-15.300s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_02.wav": {
+			"source": "bigsoundbank",
+			"id": "2890",
+			"page": "https://bigsoundbank.com/search?q=2890",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "25.760-25.890s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_03.wav": {
+			"source": "bigsoundbank",
+			"id": "2890",
+			"page": "https://bigsoundbank.com/search?q=2890",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "29.295-29.610s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_04.wav": {
+			"source": "bigsoundbank",
+			"id": "2890",
+			"page": "https://bigsoundbank.com/search?q=2890",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "38.390-38.950s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_05.wav": {
+			"source": "bigsoundbank",
+			"id": "2890",
+			"page": "https://bigsoundbank.com/search?q=2890",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "43.180-43.740s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_06.wav": {
+			"source": "bigsoundbank",
+			"id": "0208",
+			"page": "https://bigsoundbank.com/search?q=0208",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.110-0.390s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_07.wav": {
+			"source": "bigsoundbank",
+			"id": "0208",
+			"page": "https://bigsoundbank.com/search?q=0208",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "3.125-3.245s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_08.wav": {
+			"source": "bigsoundbank",
+			"id": "0208",
+			"page": "https://bigsoundbank.com/search?q=0208",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "8.085-8.385s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_09.wav": {
+			"source": "bigsoundbank",
+			"id": "0208",
+			"page": "https://bigsoundbank.com/search?q=0208",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "10.570-10.930s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_10.wav": {
+			"source": "bigsoundbank",
+			"id": "0208",
+			"page": "https://bigsoundbank.com/search?q=0208",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "20.990-21.100s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_11.wav": {
+			"source": "bigsoundbank",
+			"id": "3363",
+			"page": "https://bigsoundbank.com/search?q=3363",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "2.180-2.450s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_12.wav": {
+			"source": "bigsoundbank",
+			"id": "3363",
+			"page": "https://bigsoundbank.com/search?q=3363",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "4.260-4.365s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_13.wav": {
+			"source": "bigsoundbank",
+			"id": "3363",
+			"page": "https://bigsoundbank.com/search?q=3363",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "5.925-6.070s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_14.wav": {
+			"source": "bigsoundbank",
+			"id": "3363",
+			"page": "https://bigsoundbank.com/search?q=3363",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "9.890-9.970s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_15.wav": {
+			"source": "freesound",
+			"id": "613849",
+			"page": "https://freesound.org/s/613849/",
+			"title": "Footsteps_Mountain_Boots_Snow_Walk_Mono.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.010-0.355s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_16.wav": {
+			"source": "freesound",
+			"id": "613849",
+			"page": "https://freesound.org/s/613849/",
+			"title": "Footsteps_Mountain_Boots_Snow_Walk_Mono.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.025-1.320s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_17.wav": {
+			"source": "freesound",
+			"id": "613849",
+			"page": "https://freesound.org/s/613849/",
+			"title": "Footsteps_Mountain_Boots_Snow_Walk_Mono.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.910-2.180s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_18.wav": {
+			"source": "freesound",
+			"id": "613849",
+			"page": "https://freesound.org/s/613849/",
+			"title": "Footsteps_Mountain_Boots_Snow_Walk_Mono.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "2.770-3.050s",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_19.wav": {
+			"source": "freesound",
+			"id": "554726",
+			"page": "https://freesound.org/s/554726/",
+			"title": "720e SFX footsteps (boots) on snow 21-01-17 0040.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.720-0.830s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_20.wav": {
+			"source": "freesound",
+			"id": "554726",
+			"page": "https://freesound.org/s/554726/",
+			"title": "720e SFX footsteps (boots) on snow 21-01-17 0040.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "10.820-11.100s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_21.wav": {
+			"source": "freesound",
+			"id": "554726",
+			"page": "https://freesound.org/s/554726/",
+			"title": "720e SFX footsteps (boots) on snow 21-01-17 0040.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "30.535-30.825s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_22.wav": {
+			"source": "freesound",
+			"id": "554726",
+			"page": "https://freesound.org/s/554726/",
+			"title": "720e SFX footsteps (boots) on snow 21-01-17 0040.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "47.860-48.140s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/snow_23.wav": {
+			"source": "freesound",
+			"id": "554726",
+			"page": "https://freesound.org/s/554726/",
+			"title": "720e SFX footsteps (boots) on snow 21-01-17 0040.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "67.390-67.670s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_00.wav": {
+			"source": "bigsoundbank",
+			"id": "0606",
+			"page": "https://bigsoundbank.com/search?q=0606",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.340-0.570s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_01.wav": {
+			"source": "bigsoundbank",
+			"id": "0606",
+			"page": "https://bigsoundbank.com/search?q=0606",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "2.675-3.030s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_02.wav": {
+			"source": "bigsoundbank",
+			"id": "0606",
+			"page": "https://bigsoundbank.com/search?q=0606",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "4.225-4.550s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_03.wav": {
+			"source": "bigsoundbank",
+			"id": "0606",
+			"page": "https://bigsoundbank.com/search?q=0606",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "6.345-6.605s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_04.wav": {
+			"source": "bigsoundbank",
+			"id": "0606",
+			"page": "https://bigsoundbank.com/search?q=0606",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "7.900-8.200s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_05.wav": {
+			"source": "bigsoundbank",
+			"id": "0514",
+			"page": "https://bigsoundbank.com/search?q=0514",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "1.075-1.225s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_06.wav": {
+			"source": "bigsoundbank",
+			"id": "0514",
+			"page": "https://bigsoundbank.com/search?q=0514",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "1.780-2.060s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_07.wav": {
+			"source": "bigsoundbank",
+			"id": "0514",
+			"page": "https://bigsoundbank.com/search?q=0514",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "2.475-2.720s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_08.wav": {
+			"source": "bigsoundbank",
+			"id": "0514",
+			"page": "https://bigsoundbank.com/search?q=0514",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "3.180-3.510s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_09.wav": {
+			"source": "freesound",
+			"id": "521590",
+			"page": "https://freesound.org/s/521590/",
+			"title": "Hiking Boot Footsteps on Stone",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.090-0.220s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_10.wav": {
+			"source": "freesound",
+			"id": "521590",
+			"page": "https://freesound.org/s/521590/",
+			"title": "Hiking Boot Footsteps on Stone",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.685-0.785s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_11.wav": {
+			"source": "freesound",
+			"id": "521590",
+			"page": "https://freesound.org/s/521590/",
+			"title": "Hiking Boot Footsteps on Stone",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.250-1.330s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_12.wav": {
+			"source": "freesound",
+			"id": "677069",
+			"page": "https://freesound.org/s/677069/",
+			"title": "Footsteps stone + sneaker",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.030-0.490s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_13.wav": {
+			"source": "freesound",
+			"id": "677069",
+			"page": "https://freesound.org/s/677069/",
+			"title": "Footsteps stone + sneaker",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.185-1.475s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_14.wav": {
+			"source": "freesound",
+			"id": "677069",
+			"page": "https://freesound.org/s/677069/",
+			"title": "Footsteps stone + sneaker",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "2.340-2.790s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_15.wav": {
+			"source": "freesound",
+			"id": "677069",
+			"page": "https://freesound.org/s/677069/",
+			"title": "Footsteps stone + sneaker",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "4.180-4.555s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_16.wav": {
+			"source": "freesound",
+			"id": "677069",
+			"page": "https://freesound.org/s/677069/",
+			"title": "Footsteps stone + sneaker",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.380-5.840s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_17.wav": {
+			"source": "freesound",
+			"id": "813622",
+			"page": "https://freesound.org/s/813622/",
+			"title": "Footsteps - Stone, Rock, Concrete, Cement",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.025-0.165s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_18.wav": {
+			"source": "freesound",
+			"id": "813622",
+			"page": "https://freesound.org/s/813622/",
+			"title": "Footsteps - Stone, Rock, Concrete, Cement",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.035-1.175s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_19.wav": {
+			"source": "freesound",
+			"id": "813622",
+			"page": "https://freesound.org/s/813622/",
+			"title": "Footsteps - Stone, Rock, Concrete, Cement",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "3.450-3.575s",
+			"processing": "levelled one-shot"
+		},
+		"steps/stone_20.wav": {
+			"source": "freesound",
+			"id": "813622",
+			"page": "https://freesound.org/s/813622/",
+			"title": "Footsteps - Stone, Rock, Concrete, Cement",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "4.795-4.915s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_00.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.350-0.710s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_01.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "1.080-1.325s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_02.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "1.710-1.990s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_03.wav": {
+			"source": "bigsoundbank",
+			"id": "0165",
+			"page": "https://bigsoundbank.com/search?q=0165",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "2.305-2.670s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_04.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "0.870-1.285s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_05.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "4.130-4.500s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_06.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "6.655-7.000s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_07.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "9.175-9.630s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_08.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "11.700-12.075s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_09.wav": {
+			"source": "bigsoundbank",
+			"id": "0376",
+			"page": "https://bigsoundbank.com/search?q=0376",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "14.185-14.615s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_10.wav": {
+			"source": "freesound",
+			"id": "614291",
+			"page": "https://freesound.org/s/614291/",
+			"title": "Boot Footsteps on wooden surface",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.145-1.365s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_11.wav": {
+			"source": "freesound",
+			"id": "614291",
+			"page": "https://freesound.org/s/614291/",
+			"title": "Boot Footsteps on wooden surface",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "3.485-3.945s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_12.wav": {
+			"source": "freesound",
+			"id": "614291",
+			"page": "https://freesound.org/s/614291/",
+			"title": "Boot Footsteps on wooden surface",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "5.700-5.855s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_13.wav": {
+			"source": "freesound",
+			"id": "614291",
+			"page": "https://freesound.org/s/614291/",
+			"title": "Boot Footsteps on wooden surface",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "7.855-8.005s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_14.wav": {
+			"source": "freesound",
+			"id": "614291",
+			"page": "https://freesound.org/s/614291/",
+			"title": "Boot Footsteps on wooden surface",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "10.150-10.425s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_15.wav": {
+			"source": "freesound",
+			"id": "614291",
+			"page": "https://freesound.org/s/614291/",
+			"title": "Boot Footsteps on wooden surface",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "14.540-14.780s",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_16.wav": {
+			"source": "freesound",
+			"id": "142000",
+			"page": "https://freesound.org/s/142000/",
+			"title": "Steps on a wooden floor",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.035-0.480s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_17.wav": {
+			"source": "freesound",
+			"id": "142000",
+			"page": "https://freesound.org/s/142000/",
+			"title": "Steps on a wooden floor",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.725-1.185s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_18.wav": {
+			"source": "freesound",
+			"id": "142000",
+			"page": "https://freesound.org/s/142000/",
+			"title": "Steps on a wooden floor",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "1.350-1.715s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/wood_19.wav": {
+			"source": "freesound",
+			"id": "142000",
+			"page": "https://freesound.org/s/142000/",
+			"title": "Steps on a wooden floor",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "2.575-3.020s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"weather/breeze_0.ogg": {
+			"source": "bigsoundbank",
+			"id": "0595",
+			"page": "https://bigsoundbank.com/search?q=0595",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "2.0-42.0s",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/breeze_1.ogg": {
+			"source": "bigsoundbank",
+			"id": "0595",
+			"page": "https://bigsoundbank.com/search?q=0595",
+			"title": "",
+			"author": "Joseph Sardin (BigSoundBank)",
+			"license": "CC0 1.0",
+			"taken": "45.0-85.0s",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/howl.ogg": {
+			"source": "freesound",
+			"id": "256862",
+			"page": "https://freesound.org/s/256862/",
+			"title": "Howling Wind",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "0.5-22.5s, channel 0",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/storm_0.ogg": {
+			"source": "freesound",
+			"id": "35480",
+			"page": "https://freesound.org/s/35480/",
+			"title": "DMP013016 HEAVY SNOW STORM MS.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "10.0-120.0s, channel 0",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/storm_1.ogg": {
+			"source": "freesound",
+			"id": "35480",
+			"page": "https://freesound.org/s/35480/",
+			"title": "DMP013016 HEAVY SNOW STORM MS.wav",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "95.0-205.0s, channel 1",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/storm_2.ogg": {
+			"source": "freesound",
+			"id": "505999",
+			"page": "https://freesound.org/s/505999/",
+			"title": "Howling winter storm ambient sounds",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "20.0-130.0s, channel 0",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/storm_3.ogg": {
+			"source": "freesound",
+			"id": "505999",
+			"page": "https://freesound.org/s/505999/",
+			"title": "Howling winter storm ambient sounds",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "190.0-300.0s, channel 1",
+			"processing": "seamless loop, levelled"
+		},
+		"weather/window.ogg": {
+			"source": "freesound",
+			"id": "69512",
+			"page": "https://freesound.org/s/69512/",
+			"title": "Winter wind whistling through window.mp3",
+			"author": "",
+			"license": "CC0 1.0",
+			"taken": "30.0-120.0s, channel 0",
+			"processing": "seamless loop, levelled"
+		}
+	}
+}

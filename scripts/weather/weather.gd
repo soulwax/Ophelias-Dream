@@ -47,7 +47,7 @@ func _process(delta: float) -> void:
 		_atmosphere.shelter = _shelter
 		_atmosphere.apply_storm(intensity)
 	if _audio:
-		_audio.apply(intensity * (0.3 if inside else 1.0), gust * (0.3 if inside else 1.0))
+		_audio.apply(intensity, gust, wind, _shelter)
 
 
 func _advance(delta: float) -> void:
