@@ -10,6 +10,10 @@ var _warning: Label
 var _prompt_plate: PanelContainer
 var _prompt: HBoxContainer
 var _prompt_caption: Label
+var _prompt_target: Node3D
+var _prompt_tween: Tween
+var _feedback_text := ""
+var _feedback_left := 0.0
 var _breath: Control
 var _breath_fill: ColorRect
 var _breath_label: Label
@@ -25,10 +29,12 @@ func _ready() -> void:
 	layer = 20
 	_build()
 	Game.phase_changed.connect(_on_phase)
+	Game.interaction_feedback.connect(_on_interaction_feedback)
 	_on_phase(Game.phase)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_feedback_left = maxf(0.0, _feedback_left - delta)
 	var playing := Game.phase == Game.Phase.PLAYING
 	_warning.text = _warning_line()
 	_warning_plate.visible = _warning.text != "" and playing
@@ -117,24 +123,53 @@ func _refresh_prompt() -> void:
 	var show := false
 	var caption := ""
 	var key := Game.settings.key_label("interact")
+	var target: Node3D
 	if Game.phase == Game.Phase.PLAYING and Game.player and Game.settings.show_prompts:
 		var thing := Game.player.nearby_interactable()
-		if Game.player.nearby_note():
+		var note := Game.player.nearby_note()
+		if note:
 			show = true
 			caption = "Read the note"
+			target = note
 		elif thing:
 			show = true
 			caption = str(thing.call("interact_label"))
+			target = thing
 		elif _against_wire():
 			show = true
 			key = ""
 			caption = "The fence does not give."
+		if _feedback_left > 0.0 and _feedback_text != "":
+			show = true
+			key = ""
+			caption = _feedback_text
 	_prompt_plate.visible = show
+	if target != _prompt_target:
+		_prompt_target = target
+		if target:
+			_pulse_prompt(false)
 	if not show:
 		return
 	_prompt.get_child(0).visible = key != ""
 	UiChrome.set_key(_prompt, key)
 	_prompt_caption.text = caption
+
+
+func _on_interaction_feedback(message: String, succeeded: bool) -> void:
+	_feedback_text = message
+	_feedback_left = 0.65 if message != "" else 0.0
+	_pulse_prompt(succeeded)
+
+
+func _pulse_prompt(succeeded: bool) -> void:
+	if _prompt_tween and _prompt_tween.is_running():
+		_prompt_tween.kill()
+	_prompt_plate.pivot_offset = _prompt_plate.size * 0.5
+	_prompt_plate.scale = Vector2.ONE * (1.06 if succeeded else 0.94)
+	_prompt_plate.modulate = Color(1.0, 0.9, 0.68) if succeeded else Color(1.0, 1.0, 1.0, 0.65)
+	_prompt_tween = create_tween().set_parallel(true)
+	_prompt_tween.tween_property(_prompt_plate, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_prompt_tween.tween_property(_prompt_plate, "modulate", Color.WHITE, 0.24)
 
 
 func _against_wire() -> bool:

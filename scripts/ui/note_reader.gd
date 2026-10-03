@@ -7,6 +7,8 @@ var _title: Label
 var _count: Label
 var _body: Label
 var _scroll: ScrollContainer
+var _panel: PanelContainer
+var _entry_tween: Tween
 var _danger: Label
 var _close_keys: HBoxContainer
 var _breath_keys: HBoxContainer
@@ -78,6 +80,14 @@ func _open() -> void:
 	UiChrome.set_key(_close_keys, Game.settings.key_label("interact"))
 	UiChrome.set_key(_breath_keys, Game.settings.key_label("hold_breath"))
 	visible = true
+	if _entry_tween and _entry_tween.is_running():
+		_entry_tween.kill()
+	_panel.pivot_offset = _panel.size * 0.5
+	_panel.scale = Vector2.ONE * 0.94
+	_panel.modulate.a = 0.0
+	_entry_tween = create_tween().set_parallel(true)
+	_entry_tween.tween_property(_panel, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_entry_tween.tween_property(_panel, "modulate:a", 1.0, 0.17)
 
 
 func _build() -> void:
@@ -88,18 +98,18 @@ func _build() -> void:
 	dim.gui_input.connect(_close_from_dim)
 	add_child(dim)
 
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -400
-	panel.offset_right = 400
-	panel.offset_top = -280
-	panel.offset_bottom = 280
-	panel.add_theme_stylebox_override("panel", UiChrome.paper(32))
-	add_child(panel)
+	_panel = PanelContainer.new()
+	_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_panel.offset_left = -400
+	_panel.offset_right = 400
+	_panel.offset_top = -280
+	_panel.offset_bottom = 280
+	_panel.add_theme_stylebox_override("panel", UiChrome.paper(32))
+	add_child(_panel)
 
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 14)
-	panel.add_child(box)
+	_panel.add_child(box)
 
 	_count = UiChrome.label("Note 1 of 5", 13, Color(0.4, 0.32, 0.24))
 	box.add_child(_count)

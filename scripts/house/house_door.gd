@@ -15,8 +15,14 @@ var _motion := DoorHingeDynamics.new()
 var _audio: Dictionary = {}
 var _open := false
 var _was_moving := false
+var _was_blocked := false
 var _size := Vector3.ONE
 var _handle_at := Vector3.ZERO
+var _hinge := -1.0
+var _swing_angle := 0.0
+var _one_sided := false
+var _handles: Array[Node3D] = []
+var _handle_tweens: Array[Tween] = []
 
 
 ## size: width, height, thickness. hinge: -1 hinges on local -X, +1 on +X.
@@ -33,6 +39,8 @@ static func make(parent: Node3D, name: String, at: Vector3, yaw: float, size: Ve
 
 
 func interact_label() -> String:
+	if not _open and blocked_label() != "":
+		return blocked_label()
 	return ("Close the " if _open else "Open the ") + label.to_lower()
 
 
@@ -40,10 +48,14 @@ func interact_point() -> Vector3:
 	return to_global(_handle_at)
 
 
-func interact() -> void:
+func interact() -> bool:
+	if not _open and not _aim_open_away_from_player():
+		return false
 	_open = not _open
 	_motion.request(_open)
+	_press_handle()
 	_play("handle")
+	return true
 
 
 var is_open: bool:
@@ -54,6 +66,8 @@ var is_open: bool:
 ## The house moves it: slowly, no hand on the handle, a long creak.
 func drift(open: bool, creak: AudioStream = null) -> void:
 	if open == _open:
+		return
+	if open and not _aim_open_away_from_player():
 		return
 	_open = open
 	_motion.request(open, 0.22)
@@ -74,6 +88,9 @@ func _physics_process(delta: float) -> void:
 		return
 	var before := _motion.angle
 	_motion.step(delta, _pivot, _body, _shape)
+	if _motion.blocked and not _was_blocked and _motion.pace > 0.9:
+		Game.interaction_feedback.emit("Door is blocked", false)
+	_was_blocked = _motion.blocked
 	var moving := absf(_motion.angle - before) > 0.0005
 	if moving and not _was_moving:
 		_play("creak")
@@ -84,6 +101,9 @@ func _physics_process(delta: float) -> void:
 
 func _build(size: Vector3, style: String, material: Material, hinge: float, swing: float) -> void:
 	_size = size
+	_hinge = hinge
+	_swing_angle = absf(deg_to_rad(swing))
+	_one_sided = style == "chamber"
 	_pivot = Node3D.new()
 	_pivot.name = "HingePivot"
 	_pivot.position = Vector3(hinge * size.x * 0.5, 0.0, 0.0)
@@ -110,9 +130,45 @@ func _build(size: Vector3, style: String, material: Material, hinge: float, swin
 	_body.add_child(_shape)
 	leaf.add_child(_body)
 	# Positive swing turns the free edge toward -Z.
-	_motion.configure(deg_to_rad(swing) * -hinge)
+	_motion.configure(_swing_angle * -hinge)
 	_handle_at = Vector3(-hinge * size.x * 0.36, minf(1.0, size.y * 0.5), 0.0)
 	_audio = DoorAudio.add_cues(self, "steel" if style != "plank" else ("front" if size.x > 0.95 else "light"), _handle_at)
+
+
+func _aim_open_away_from_player() -> bool:
+	if blocked_label() != "":
+		return false
+	# Pick a side only while shut; changing the stop mid-swing would snap the leaf.
+	if not _one_sided and Game.player and absf(_motion.angle) <= 0.002:
+		_motion.open_rotation = _away_angle()
+	return true
+
+
+func blocked_label() -> String:
+	if _one_sided or Game.player == null:
+		return ""
+	if absf(to_local(Game.player.global_position).z) < 0.05:
+		return "Step clear of the door"
+	if absf(_motion.angle) > 0.002 and _motion.angle * _away_angle() < 0.0:
+		return "Let the door close first"
+	return ""
+
+
+func _away_angle() -> float:
+	var player_z := to_local(Game.player.global_position).z
+	return _swing_angle * _hinge * (-1.0 if player_z > 0.0 else 1.0)
+
+
+func _press_handle() -> void:
+	for tween in _handle_tweens:
+		if tween and tween.is_running():
+			tween.kill()
+	_handle_tweens.clear()
+	for handle in _handles:
+		var tween := create_tween()
+		tween.tween_property(handle, "rotation:z", -_hinge * 0.32, 0.08).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(handle, "rotation:z", 0.0, 0.17).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_handle_tweens.append(tween)
 
 
 func _play(cue: String) -> void:
@@ -171,4 +227,5 @@ func _lever(leaf: Node3D, size: Vector3, hinge: float, metal: Material) -> void:
 	for face in [-1.0, 1.0]:
 		var z: float = float(face) * (size.z * 0.5 + 0.03)
 		HouseKit.box(leaf, "Rose_%d" % int(face), Vector3(x, y, face * (size.z * 0.5 + 0.006)), Vector3(0.06, 0.06, 0.012), metal)
-		HouseKit.box(leaf, "Lever_%d" % int(face), Vector3(x + hinge * 0.055, y, z), Vector3(0.12, 0.022, 0.022), metal)
+		var handle := HouseKit.box(leaf, "Lever_%d" % int(face), Vector3(x + hinge * 0.055, y, z), Vector3(0.12, 0.022, 0.022), metal)
+		_handles.append(handle)
