@@ -49,6 +49,7 @@ func _ready() -> void:
 	add_child(director)
 	Game.mark("build weather")
 	add_child(Weather.new())
+	add_child(Wildlife.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
 	var hud := Hud.new()

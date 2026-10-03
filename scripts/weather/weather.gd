@@ -12,7 +12,7 @@ var _gust_target := 0.0
 var _lull := 5.0
 var _layers: Array[SnowLayer] = []
 var _audio: StormAudio
-var _shelter := 0.0
+var shelter := 0.0
 var _atmosphere: Atmosphere
 
 
@@ -42,12 +42,12 @@ func _process(delta: float) -> void:
 		if inside:
 			layer.amount_ratio = 0.0
 	# Stepping through a door, the light changes over a breath, not a frame.
-	_shelter = move_toward(_shelter, 1.0 if inside else 0.0, delta * 1.4)
+	shelter = move_toward(shelter, 1.0 if inside else 0.0, delta * 1.4)
 	if _atmosphere:
-		_atmosphere.shelter = _shelter
+		_atmosphere.shelter = shelter
 		_atmosphere.apply_storm(intensity)
 	if _audio:
-		_audio.apply(intensity, gust, wind, _shelter)
+		_audio.apply(intensity, gust, wind, shelter)
 
 
 func _advance(delta: float) -> void:

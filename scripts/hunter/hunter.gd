@@ -62,7 +62,7 @@ func _stalk(delta: float) -> void:
 	if _watched > 0.55 or distance < 7.5 or _visible_for <= 0.0:
 		_hide()
 		if Game.soundscape and randf() < 0.35:
-			Game.soundscape.play_snap(-14.0)
+			Game.soundscape.play_snap(global_position + Vector3.UP * 0.3, Loudness.BRANCH_SNAP - 8.0)
 		return
 	Game.set_closeness(clampf(0.16 - distance / 220.0, 0.0, 0.16))
 	_play("Idle_Talking")
@@ -221,7 +221,8 @@ func _ambience(delta: float, distance: float, threat: float) -> void:
 	if _snap_in > 0.0:
 		return
 	_snap_in = randf_range(lerpf(11.0, 4.0, threat), lerpf(18.0, 7.0, threat))
-	Game.soundscape.play_snap(lerpf(-12.0, -4.0, threat))
+	# Where it is: a branch underfoot, heavier as it closes in.
+	Game.soundscape.play_snap(global_position + Vector3.UP * 0.3, Loudness.BRANCH_SNAP + lerpf(-6.0, 2.0, threat))
 
 
 func _build_model() -> void:
