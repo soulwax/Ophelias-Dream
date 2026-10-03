@@ -459,6 +459,14 @@ func _apply_look() -> void:
 		camera.rotation.z = sin(Time.get_ticks_msec() * 0.009) * shake + _roll_kick
 
 
+func apply_authored_spawn() -> void:
+	if OS.get_environment("RUN_SPAWN") != "":
+		_place()
+		return
+	_yaw = rotation.y
+	_facing = _yaw
+
+
 # The ground mesh is one-sided, so a camera that slips under a slope sees
 # straight through it. Walk the boom outward and stop before it goes under.
 func _fit_boom_to_ground() -> void:

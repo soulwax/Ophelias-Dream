@@ -1,0 +1,7 @@
+# Editing the Level in Godot
+
+Open `scenes/main.tscn` to see the whole level. Open its `EditableLevel` instance (`scenes/editable_level.scn`) to select and edit terrain, cabin pieces, fence sections, props, lights, and actor placement. Save the level scene before playing; the game applies its saved Inspector properties to the matching gameplay nodes at startup. Transforms, meshes, materials, collision shapes, lights, and visibility carry over. Imported prop children are editable in the scene tree; actor rig internals belong to their source assets. You can add ordinary scene nodes under an existing generated parent. Delete matching collision bodies when removing solid props. Gameplay nodes such as doors should be moved or hidden, since their scripts still need to exist.
+
+Select `Main` in `scenes/main.tscn` to edit **World Seed**. The default `-1` chooses a fresh seed each time you click **Randomize / rebuild editable level**. A nonnegative number produces a repeatable layout. The resolved seed is stored in the editable scene so the level you edit matches the level you play.
+
+Rebuilding replaces `scenes/editable_level.scn`, including any hand edits. Save a copy before regenerating a layout you want to keep. Changes to generator code in `scripts/world/` or `scripts/house/` also require a rebuild so node correspondence remains valid. Terrain height sampling remains procedural; move props, walls, lights, and the player preview for hand placement. The hunter follows its AI after play starts.

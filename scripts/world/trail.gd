@@ -11,13 +11,16 @@ var exit_point: Vector3 = Vector3.ZERO
 
 var _rng := RandomNumberGenerator.new()
 var _reserved: Array[Vector3] = []
+var seed_value := 1701
 
 
 func _ready() -> void:
-	_rng.seed = 1701
+	_rng.seed = seed_value
 	_build_curve()
 	var house_frame := _house_frame()
 	ground = Ground.new()
+	ground.name = "Ground"
+	ground.seed_value = seed_value
 	# A level pad for the house and the cellar under the snow, and a cut
 	# where the stair well goes down through it.
 	# Level well past the cellar: the 3 m grid starts blending a whole cell
@@ -36,12 +39,14 @@ func _ready() -> void:
 		for z in range(-10, 11, 3):
 			_reserve(house.to_global(Vector3(x, 0.0, z)))
 	var fence := Fence.new()
+	fence.name = "Fence"
 	fence.ground = ground
 	add_child(fence)
 	_build_landmarks()
 	var flora := Flora.new()
+	flora.name = "Flora"
 	add_child(flora)
-	flora.grow(ground, curve, _reserved)
+	flora.grow(ground, curve, _reserved, seed_value)
 	Game.trail = self
 
 
@@ -113,6 +118,7 @@ func _build_landmarks() -> void:
 		at.y += 0.04
 		_reserve(at)
 		var page := FieldNote.new()
+		page.name = "FieldNote_%d" % index
 		page.entry = notes[index]
 		page.position = at
 		add_child(page)
@@ -168,6 +174,7 @@ func _prop(
 	trunk: bool = false
 ) -> void:
 	var node := PropFactory.spawn(file_name)
+	node.name = file_name.get_basename()
 	node.scale = Vector3.ONE * Tune.PROP_SCALE * scale
 	node.position = at
 	var yaw := frame.basis.get_euler().y + _rng.randf_range(-0.4, 0.4)

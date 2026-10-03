@@ -40,6 +40,7 @@ func _run(from: Vector3, to: Vector3, bounds: AABB, along_x: bool, span: float) 
 		var at := from.lerp(to, (float(i) + 0.5) / float(count))
 		at.y = ground.height_at(at.x, at.z) if ground else 0.0
 		var node := PropFactory.spawn(SEGMENTS[i % SEGMENTS.size()])
+		node.name = "FenceSegment_%d" % i
 		node.rotation.y = yaw
 		var center := bounds.get_center()
 		node.position = at - node.transform.basis * Vector3(center.x, bounds.position.y, center.z)
@@ -50,6 +51,7 @@ func _run(from: Vector3, to: Vector3, bounds: AABB, along_x: bool, span: float) 
 func _end_post(at: Vector3) -> void:
 	at.y = ground.height_at(at.x, at.z) if ground else 0.0
 	var node := PropFactory.spawn("SM_Bld_Fence_End_01.fbx")
+	node.name = "FenceEnd"
 	var bounds := _bounds(node)
 	var center := bounds.get_center()
 	node.position = at - Vector3(center.x, bounds.position.y, center.z)
