@@ -51,6 +51,11 @@ func _ready() -> void:
 		var path: String = AUDIO % id
 		if ResourceLoader.exists(path):
 			_sounds[id] = load(path)
+	# Recorded boots on the boards above, dulled by the floor between.
+	for index in 6:
+		var above := "res://assets/audio/steps/above_%02d.wav" % index
+		if ResourceLoader.exists(above):
+			_sounds["steps_above_%d" % index] = load(above)
 
 
 func _process(delta: float) -> void:
@@ -193,7 +198,10 @@ func _steps() -> void:
 	var count := randi_range(5, path.size())
 	var start := path.size() - count
 	for i in range(start, path.size()):
-		_play("house_step_above_%d" % (i % 3), house.to_global(path[i]), -4.0, randf_range(0.9, 1.1))
+		var tread := "steps_above_%d" % (i % 6)
+		if not _sounds.has(tread):
+			tread = "house_step_above_%d" % (i % 3)
+		_play(tread, house.to_global(path[i]), -4.0, randf_range(0.9, 1.1))
 		await get_tree().create_timer(randf_range(0.5, 0.68)).timeout
 		if not is_inside_tree():
 			return
