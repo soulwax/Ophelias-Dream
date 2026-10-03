@@ -32,8 +32,11 @@ static func build(player: AnimationPlayer, model: Node) -> Stride:
 	# bands she crosses while speeding up or slowing down.
 	stride._gaits = [
 		[IDLE, 0.0, 0.0],
-		["Walk_Formal", 1.2, Tune.STRIDE_WALK],
-		["Jog_Fwd", 2.0, Tune.STRIDE_JOG],
+		# A plateau over the walking pace, so it stays Walk_Formal and the
+		# playback rate rises with her. The jog only begins past that.
+		["Walk_Formal", 1.05, Tune.STRIDE_WALK],
+		["Walk_Formal", 1.95, Tune.STRIDE_WALK],
+		["Jog_Fwd", 2.2, Tune.STRIDE_JOG],
 		["Jog_Fwd", 3.2, Tune.STRIDE_JOG],
 		["Sprint", 4.6, Tune.STRIDE_SPRINT],
 		["Sprint", Tune.SPRINT_SPEED, Tune.STRIDE_SPRINT],

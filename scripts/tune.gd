@@ -3,22 +3,24 @@ extends RefCounted
 
 # Balance for one run of the ridge. Change feel here, not in the systems.
 
-const WALK_SPEED := 2.55
+# Formal walk, half again as quick as the quiet pace, still one clip.
+# The jog only starts once she is clearly faster than this.
+const WALK_SPEED := 1.83
 const SPRINT_SPEED := 6.85
 const HUNTER_CREEP := 1.4
 const HUNTER_CHASE := 5.7
 # Momentum (m/s per second): quick to get going, a short coast to a stop,
 # hard braking when she reverses.
-const STRIDE_ACCEL_WALK := 7.0
+const STRIDE_ACCEL_WALK := 4.2
 const STRIDE_ACCEL_SPRINT := 9.5
-const STRIDE_COAST := 6.0
+const STRIDE_COAST := 3.6
 const STRIDE_BRAKE := 11.0
 # Natural ground speed of each clip at playback 1 (tools/stride_probe.gd).
 const STRIDE_WALK := 1.02
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
 # Per-step speed swing: checks on impact, surges on push-off.
-const STEP_SURGE_WALK := 0.06
+const STEP_SURGE_WALK := 0.03
 const STEP_SURGE_SPRINT := 0.12
 
 # Jump: instant takeoff, cut short by letting go, forgiving at edges and on

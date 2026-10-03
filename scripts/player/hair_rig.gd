@@ -20,7 +20,7 @@ const MODEL := "res://assets/characters/hair.glb"
 const GUIDES := "res://assets/characters/hair_guides.json"
 const STEP := 1.0 / 60.0
 const GRAVITY := Vector3(0.0, -9.8, 0.0)
-const DAMPING := 0.045
+const DAMPING := 0.07
 const ITERATIONS := 3
 
 var _skeleton: Skeleton3D
@@ -263,10 +263,11 @@ func _step(carried: Transform3D, wind: Vector3) -> void:
 			prev[i] = pos[i]
 		for i in range(scalp, _points):
 			var p := pos[i]
-			var moved := p + (p - prev[i]) * keep + pull
-			# The styling holds near the roots and gives way toward the tips.
 			var t := float(i - scalp) / float(_points - scalp)
-			moved += (carried * rest[i] - moved) * lerpf(0.09, 0.004, sqrt(t))
+			# Wind and gravity catch the tips. The roots stay with the head.
+			var moved := p + (p - prev[i]) * keep + pull * lerpf(0.15, 1.0, t)
+			# Roots keep the style. Tips barely remember it, so they trail.
+			moved += (carried * rest[i] - moved) * lerpf(0.14, 0.0012, sqrt(t))
 			prev[i] = p
 			pos[i] = moved
 		for _iteration in ITERATIONS:
@@ -293,7 +294,7 @@ func _step(carried: Transform3D, wind: Vector3) -> void:
 			_collide(pos, scalp)
 		# A light smoothing pass: hair has no kinks of its own, only jitter.
 		for i in range(scalp, _points - 1):
-			pos[i] = pos[i].lerp((pos[i - 1] + pos[i + 1]) * 0.5, 0.15)
+			pos[i] = pos[i].lerp((pos[i - 1] + pos[i + 1]) * 0.5, 0.05)
 		_pos[g] = pos
 		_prev[g] = prev
 

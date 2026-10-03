@@ -536,7 +536,7 @@ func _carry(delta: float, sprinting: bool) -> void:
 	if flat.length() > 0.35:
 		var before := _facing
 		var target_yaw := atan2(-flat.x, -flat.z)
-		_facing = lerp_angle(_facing, target_yaw, 1.0 - exp(-delta * (9.0 if sprinting else 6.0)))
+		_facing = lerp_angle(_facing, target_yaw, 1.0 - exp(-delta * (9.0 if sprinting else 3.6)))
 		turn_rate = angle_difference(before, _facing) / maxf(delta, 0.0001)
 	var accel := (_glide - _last_glide) / maxf(delta, 0.0001)
 	_last_glide = _glide

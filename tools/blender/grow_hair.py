@@ -261,16 +261,17 @@ def grow(root: Vector, normal: Vector, length: float, layer: float) -> list:
 					points.append(p + direction * SEGMENT)
 					travelled += SEGMENT
 					continue
-		# Hanging: it straightens quickly under its own weight, and nothing
-		# keeps it moving sideways once it is off the head.
-		direction = Vector((direction.x * 0.35, direction.y, direction.z * 0.5))
-		direction = (direction * 0.5 + DOWN * 0.5).normalized()
-		q = push_out(p + direction * SEGMENT, layer)
+		# Hanging: gravity bends the comb, it does not erase it. The wave
+		# is only a placement offset, so it cannot spiral the strand.
+		direction = (direction * 0.84 + DOWN * 0.16).normalized()
+		sideways = direction.cross(DOWN)
+		sideways = sideways.normalized() if sideways.length > 1e-6 else Vector((1.0, 0.0, 0.0))
+		wave = sideways * math.sin(travelled * 14.0 + layer * 6.0) * 0.008
+		q = push_out(p + direction * SEGMENT + wave, layer)
 		step = q - p
 		if step.length < 1e-6:
 			break
-		direction = step.normalized()
-		points.append(p + direction * SEGMENT)
+		points.append(q)
 		travelled += SEGMENT
 	return points
 
@@ -349,7 +350,7 @@ def main() -> None:
 		edge = 1.0 - smoothstep(0.0, 0.03, root.y - hairline(root))
 		length = LENGTH * rng.uniform(0.86, 1.04) * (1.0 - 0.25 * edge)
 		path = grow(root, normal, length, layer)
-		path = clump(path, guide_path, root - guide_root, rng.uniform(0.35, 0.7))
+		path = clump(path, guide_path, root - guide_root, rng.uniform(0.55, 0.85))
 		path = [path[0]] + [push_out(p, layer) for p in path[1:]]
 		width = rng.uniform(0.012, 0.022) * (1.0 - 0.4 * edge)
 		card(bm, uv_layer, guide_layer, color_layer, normals, path, width, tone * rng.uniform(0.92, 1.06) * (0.9 + 0.1 * layer / 0.008), guide)
