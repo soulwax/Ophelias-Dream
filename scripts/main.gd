@@ -73,6 +73,8 @@ func _ready() -> void:
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
 	Game.begin_intro()
+	if OS.get_environment("RUN_TEMP_REC") != "":
+		_temp_record.call_deferred(float(OS.get_environment("RUN_TEMP_REC")))
 	if _capture:
 		Game.set_phase(Game.Phase.PLAYING)
 		# Dev hook: RUN_MENU=<page> opens the Esc menu on that page for the shot.
@@ -105,6 +107,33 @@ func _shoot() -> void:
 	if path == "":
 		path = "user://run_shot.png"
 	image.save_png(path)
+	get_tree().quit()
+
+
+func _temp_record(seconds: float) -> void:
+	Game.set_phase(Game.Phase.PLAYING)
+	var record := AudioEffectRecord.new()
+	AudioServer.add_bus_effect(0, record)
+	record.set_recording_active(true)
+	await get_tree().create_timer(0.5).timeout
+	var flora := Game.trail.flora.tree_positions().size()
+	var house := get_tree().get_nodes_in_group("x").size()
+	print("TEMP trees ", flora, " listener ", get_viewport().get_audio_listener_3d(), " buses ", AudioServer.bus_count)
+	for i in AudioServer.bus_count:
+		print("TEMP bus ", AudioServer.get_bus_name(i), " -> ", AudioServer.get_bus_send(i), " fx ", AudioServer.get_bus_effect_count(i))
+	var players := 0
+	var playing := 0
+	for node in find_children("*", "AudioStreamPlayer3D", true, false):
+		players += 1
+		if (node as AudioStreamPlayer3D).playing:
+			playing += 1
+	print("TEMP 3d players ", players, " playing ", playing, " zones ", find_children("*Tone", "Area3D", true, false).size(), " house ", house)
+	await get_tree().create_timer(seconds).timeout
+	record.set_recording_active(false)
+	var clip := record.get_recording()
+	if clip:
+		clip.save_to_wav(OS.get_environment("RUN_TEMP_WAV"))
+		print("TEMP saved ", clip.get_length(), " s")
 	get_tree().quit()
 
 
