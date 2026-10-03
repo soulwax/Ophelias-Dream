@@ -56,6 +56,7 @@ func _loop(file_name: String, volume_db: float) -> AudioStreamPlayer:
 func _one_shot(file_name: String, volume_db: float) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
 	player.volume_db = volume_db
+	player.bus = "Ambience"
 	var path := "res://assets/audio/" + file_name
 	if ResourceLoader.exists(path) or FileAccess.file_exists(path):
 		player.stream = load(path)

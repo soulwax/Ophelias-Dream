@@ -18,6 +18,8 @@ var _atmosphere: Atmosphere
 
 func _ready() -> void:
 	Game.weather = self
+	# It follows the camera every frame, outside the physics tick.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_audio = StormAudio.new()
 	add_child(_audio)
 	_build_layers()

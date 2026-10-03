@@ -30,14 +30,15 @@ static func paper(margin: int = 28) -> StyleBoxFlat:
 	return style
 
 
-static func keycap() -> StyleBoxFlat:
+static func keycap(on_paper := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(1, 1, 1, 0.12)
+	var ink := PAPER_INK if on_paper else Color.WHITE
+	style.bg_color = Color(ink.r, ink.g, ink.b, 0.1 if on_paper else 0.12)
 	style.set_corner_radius_all(4)
 	style.set_content_margin_all(6)
 	style.content_margin_left = 8
 	style.content_margin_right = 8
-	style.border_color = Color(1, 1, 1, 0.16)
+	style.border_color = Color(ink.r, ink.g, ink.b, 0.3 if on_paper else 0.16)
 	style.set_border_width_all(1)
 	return style
 
@@ -61,22 +62,84 @@ static func label(text: String, size: int, color: Color = INK) -> Label:
 	return node
 
 
-static func key_row(keys: String, caption: String) -> HBoxContainer:
+static func key_row(keys: String, caption: String, on_paper := false) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var cap := PanelContainer.new()
-	cap.add_theme_stylebox_override("panel", keycap())
+	cap.add_theme_stylebox_override("panel", keycap(on_paper))
 	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cap.custom_minimum_size = Vector2(64, 28)
-	var key := label(keys, 14, INK)
+	var key := label(keys, 14, PAPER_INK if on_paper else INK)
 	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cap.add_child(key)
 	row.add_child(cap)
-	row.add_child(label(caption, 16, MUTED))
+	row.add_child(label(caption, 16, Color(PAPER_INK.r, PAPER_INK.g, PAPER_INK.b, 0.72) if on_paper else MUTED))
 	row.custom_minimum_size.x = 210
 	return row
+
+
+# Relabels the keycap of a key_row, for keys that follow the bindings.
+static func set_key(row: HBoxContainer, keys: String) -> void:
+	var cap := row.get_child(0) as PanelContainer
+	if cap and cap.get_child_count() > 0:
+		(cap.get_child(0) as Label).text = keys
+
+
+# The look of the Esc menu's own controls: sliders, toggles, dropdowns and
+# the scroll bar, in the plate palette.
+static func menu_theme() -> Theme:
+	var theme := Theme.new()
+	theme.set_color("font_color", "Label", INK)
+	for kind in ["Button", "OptionButton", "CheckButton"]:
+		theme.set_font_size("font_size", kind, 15)
+		theme.set_color("font_color", kind, INK)
+		theme.set_color("font_hover_color", kind, Color.WHITE)
+		theme.set_color("font_pressed_color", kind, Color.WHITE)
+		theme.set_color("font_hover_pressed_color", kind, Color.WHITE)
+		theme.set_color("font_focus_color", kind, INK)
+	for kind in ["Button", "OptionButton"]:
+		theme.set_stylebox("normal", kind, button_style(Color(1, 1, 1, 0.08)))
+		theme.set_stylebox("hover", kind, button_style(Color(1, 1, 1, 0.16)))
+		theme.set_stylebox("pressed", kind, button_style(Color(1, 1, 1, 0.24)))
+		theme.set_stylebox("hover_pressed", kind, button_style(Color(1, 1, 1, 0.24)))
+		theme.set_stylebox("focus", kind, StyleBoxEmpty.new())
+	for state in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+		theme.set_stylebox(state, "CheckButton", StyleBoxEmpty.new())
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(1, 1, 1, 0.12)
+	track.set_corner_radius_all(3)
+	track.content_margin_top = 3
+	track.content_margin_bottom = 3
+	theme.set_stylebox("slider", "HSlider", track)
+	var fill := track.duplicate() as StyleBoxFlat
+	fill.bg_color = Color(PAPER.r, PAPER.g, PAPER.b, 0.7)
+	theme.set_stylebox("grabber_area", "HSlider", fill)
+	var lit := fill.duplicate() as StyleBoxFlat
+	lit.bg_color = PAPER
+	theme.set_stylebox("grabber_area_highlight", "HSlider", lit)
+	var menu := plate(8, 6)
+	menu.bg_color = Color(0.08, 0.09, 0.11, 0.98)
+	theme.set_stylebox("panel", "PopupMenu", menu)
+	theme.set_stylebox("hover", "PopupMenu", button_style(Color(1, 1, 1, 0.14)))
+	theme.set_color("font_color", "PopupMenu", MUTED)
+	theme.set_color("font_hover_color", "PopupMenu", Color.WHITE)
+	theme.set_font_size("font_size", "PopupMenu", 15)
+	var bar := StyleBoxFlat.new()
+	bar.bg_color = Color(1, 1, 1, 0.05)
+	bar.set_corner_radius_all(3)
+	bar.content_margin_left = 3
+	bar.content_margin_right = 3
+	theme.set_stylebox("scroll", "VScrollBar", bar)
+	var thumb := bar.duplicate() as StyleBoxFlat
+	thumb.bg_color = Color(1, 1, 1, 0.22)
+	theme.set_stylebox("grabber", "VScrollBar", thumb)
+	var thumb_lit := bar.duplicate() as StyleBoxFlat
+	thumb_lit.bg_color = Color(1, 1, 1, 0.36)
+	theme.set_stylebox("grabber_highlight", "VScrollBar", thumb_lit)
+	theme.set_stylebox("grabber_pressed", "VScrollBar", thumb_lit)
+	return theme
 
 
 static func text_button(text: String) -> Button:

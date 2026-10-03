@@ -8,13 +8,15 @@ var _count: Label
 var _body: Label
 var _scroll: ScrollContainer
 var _danger: Label
+var _close_keys: HBoxContainer
+var _breath_keys: HBoxContainer
 var _entry: NoteEntry
 var _stable: String = ""
 var _accum: float = 0.0
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build()
 	visible = false
@@ -73,6 +75,8 @@ func _open() -> void:
 	_title.text = _entry.title
 	_body.text = ""
 	_scroll.scroll_vertical = 0
+	UiChrome.set_key(_close_keys, Game.settings.key_label("interact"))
+	UiChrome.set_key(_breath_keys, Game.settings.key_label("hold_breath"))
 	visible = true
 
 
@@ -121,8 +125,10 @@ func _build() -> void:
 	footer.add_theme_constant_override("separation", 12)
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(footer)
-	footer.add_child(UiChrome.key_row("E", "Close the page"))
-	footer.add_child(UiChrome.key_row("RMB", "Hold breath"))
+	_close_keys = UiChrome.key_row("E", "Close the page", true)
+	footer.add_child(_close_keys)
+	_breath_keys = UiChrome.key_row("RMB", "Hold breath", true)
+	footer.add_child(_breath_keys)
 	var close := UiChrome.paper_button("Close")
 	# Keys pressed while she reads must never press the button.
 	close.focus_mode = Control.FOCUS_NONE

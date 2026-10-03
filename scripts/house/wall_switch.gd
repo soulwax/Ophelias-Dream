@@ -59,6 +59,7 @@ func _build() -> void:
 	add_child(_toggle)
 	HouseKit.box(_toggle, "Dolly", Vector3(0.0, 0.0, 0.01), Vector3(0.02, 0.045, 0.02), HouseKit.paint(Color("1c1c1c"), 0.5))
 	_click = AudioStreamPlayer3D.new()
+	_click.bus = "Effects"
 	_click.stream = load(DoorAudio.HANDLE) as AudioStream if ResourceLoader.exists(DoorAudio.HANDLE) else null
 	_click.volume_db = -8.0
 	_click.pitch_scale = 1.4

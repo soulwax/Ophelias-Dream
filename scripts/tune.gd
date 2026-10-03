@@ -9,12 +9,28 @@ const WALK_SPEED := 1.83
 const SPRINT_SPEED := 6.85
 const HUNTER_CREEP := 1.4
 const HUNTER_CHASE := 5.7
-# Momentum (m/s per second): quick to get going, a short coast to a stop,
-# hard braking when she reverses.
-const STRIDE_ACCEL_WALK := 4.2
-const STRIDE_ACCEL_SPRINT := 9.5
-const STRIDE_COAST := 3.6
-const STRIDE_BRAKE := 11.0
+# Momentum (m/s per second). Speed and heading move separately: she gets
+# going at once, eases off a sprint, skids a short way to a stop, and plants
+# and brakes when asked to reverse.
+const STRIDE_ACCEL_WALK := 9.0
+const STRIDE_ACCEL_SPRINT := 12.0
+const STRIDE_EASE := 6.0
+const STRIDE_STOP_WALK := 14.0
+const STRIDE_STOP_SPRINT := 12.0
+const STRIDE_BRAKE := 20.0
+# Heading (rad/s): nearly instant at a walk, a committed sweep at a sprint,
+# where hard cornering also bleeds speed (share of speed per radian). Mouse
+# steering bleeds less than she regains; a hard key turn dips for a moment.
+const TURN_RATE_WALK := 14.0
+const TURN_RATE_SPRINT := 6.5
+const TURN_BLEED := 0.35
+# Turning further than this (rad) at speed is a reversal; below PIVOT_SPEED
+# (m/s) she simply sets off the new way.
+const REVERSE_ANGLE := 2.4
+const PIVOT_SPEED := 0.9
+# How quickly her body turns to face where she is going (1/s).
+const FACE_RATE_WALK := 7.5
+const FACE_RATE_SPRINT := 10.0
 # Natural ground speed of the movement clips at playback 1.
 const STRIDE_WALK := 1.02
 const STRIDE_JOG := 3.2
@@ -31,7 +47,7 @@ const TIPTOE_LIFT := 0.075
 const TIPTOE_PITCH := 1.3
 # Per-step speed swing: checks on impact, surges on push-off.
 const STEP_SURGE_WALK := 0.03
-const STEP_SURGE_SPRINT := 0.12
+const STEP_SURGE_SPRINT := 0.06
 
 # Jump: instant takeoff, cut short by letting go, forgiving at edges and on
 # early presses, a little heavier on the way down.
@@ -40,8 +56,11 @@ const JUMP_CUT := 0.5
 const JUMP_STAMINA := 0.45
 const COYOTE := 0.12
 const JUMP_BUFFER := 0.14
-const AIR_CONTROL := 0.35
 const FALL_GRAVITY := 1.3
+# In the air she keeps her momentum: keys nudge it (m/s per second) but
+# never slow her below the speed she left the ground with.
+const AIR_ACCEL := 5.0
+const AIR_DRAG := 0.6
 
 # Slide out of a sprint: a kick of speed, low snow friction, gravity along
 # the slope, a little steering.
@@ -73,7 +92,10 @@ const REVEAL_BODY := 36.0
 
 const INTRO_TIME := 3.2
 const TYPE_CPS := 42.0
+# Radians per screen pixel at sensitivity 1, and the pitch range (rad).
 const MOUSE_SENS := 0.0022
+const PITCH_DOWN := -0.87
+const PITCH_UP := 0.38
 
 const PROP_SCALE := 1.0
 const ACTOR_SCALE := 1.0

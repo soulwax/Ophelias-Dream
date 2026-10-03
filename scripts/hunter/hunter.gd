@@ -176,6 +176,8 @@ func _move_to(at: Vector3) -> void:
 	at.y = trail.ground.height_at(at.x, at.z) if trail.ground else 0.0
 	global_position = at
 	_face(Game.player.global_position)
+	# A jump to a new spot, not a glide across the field.
+	reset_physics_interpolation()
 
 
 func _clamp_inside(at: Vector3) -> Vector3:

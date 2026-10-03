@@ -58,7 +58,7 @@ func apply_storm(strength: float) -> void:
 	_env.volumetric_fog_length = lerpf(90.0, 70.0, t)
 	_env.background_color = Color(0.62, 0.7, 0.78).lerp(Color(0.7, 0.75, 0.8), t)
 	_env.ambient_light_energy = lerpf(0.9, 0.72, t) * lerpf(1.0, 0.07, shelter)
-	_env.adjustment_brightness = lerpf(1.05, 0.98, t) * lerpf(1.0, 0.94, shelter)
+	_env.adjustment_brightness = lerpf(1.05, 0.98, t) * lerpf(1.0, 0.94, shelter) * (Game.settings.brightness if Game.settings else 1.0)
 	_env.fog_density *= lerpf(1.0, 0.35, shelter)
 	_env.adjustment_saturation = lerpf(0.8, 0.62, t)
 	if _sun:

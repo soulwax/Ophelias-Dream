@@ -20,6 +20,7 @@ static func add_cues(parent: Node3D, style: String, at: Vector3) -> Dictionary:
 	for cue in paths:
 		var player := AudioStreamPlayer3D.new()
 		player.name = "%sAudio" % str(cue).capitalize()
+		player.bus = "Effects"
 		if ResourceLoader.exists(paths[cue]):
 			player.stream = load(paths[cue]) as AudioStream
 		player.position = at
