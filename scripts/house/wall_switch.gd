@@ -10,6 +10,9 @@ var glowing: Array[Node3D] = []
 var on := true
 var _toggle: Node3D
 var _click: AudioStreamPlayer3D
+var _toggle_tween: Tween
+var _light_tween: Tween
+var _light_energy: Dictionary = {}
 
 
 static func make(parent: Node3D, name: String, at: Vector3, yaw: float, switch_label: String, switched: Array[Light3D], lit: Array[Node3D] = []) -> WallSwitch:
@@ -33,17 +36,29 @@ func interact_point() -> Vector3:
 	return global_position
 
 
-func interact() -> void:
+func interact() -> bool:
 	on = not on
+	if _toggle_tween and _toggle_tween.is_running():
+		_toggle_tween.kill()
+	_toggle_tween = create_tween()
+	_toggle_tween.tween_property(_toggle, "rotation:x", -0.35 if on else 0.35, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if _light_tween and _light_tween.is_running():
+		_light_tween.kill()
+	_light_tween = create_tween().set_parallel(true)
 	for lamp in lights:
 		if is_instance_valid(lamp):
-			lamp.visible = on
+			if not _light_energy.has(lamp):
+				_light_energy[lamp] = lamp.light_energy
+			if on:
+				lamp.visible = true
+			_light_tween.tween_property(lamp, "light_energy", float(_light_energy[lamp]) if on else 0.0, 0.12)
 	for node in glowing:
 		if is_instance_valid(node):
 			node.visible = on
-	_toggle.rotation.x = -0.35 if on else 0.35
 	if _click and _click.stream:
+		_click.pitch_scale = randf_range(1.32, 1.48)
 		_click.play()
+	return true
 
 
 func _ready() -> void:

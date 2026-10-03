@@ -4,6 +4,7 @@ enum Phase { BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED }
 
 signal phase_changed(next: Phase)
 signal closeness_changed(value: float)
+signal interaction_feedback(message: String, succeeded: bool)
 
 var phase: Phase = Phase.BOOT
 var closeness: float = 0.0

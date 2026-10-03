@@ -112,7 +112,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			var thing := nearby_interactable()
 			if thing:
-				thing.call("interact")
+				var accepted := thing.call("interact") == true
+				var feedback := ""
+				if not accepted and thing is HouseDoor:
+					feedback = (thing as HouseDoor).blocked_label()
+				Game.interaction_feedback.emit(feedback, accepted)
 				get_viewport().set_input_as_handled()
 	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
