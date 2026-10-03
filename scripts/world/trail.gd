@@ -4,6 +4,7 @@ extends Node3D
 var curve: Curve3D
 var ground: Ground
 var house: House
+var flora: Flora
 var length: float = 1.0
 var player_start_offset: float = 0.0
 var exit_offset: float = 1.0
@@ -39,7 +40,7 @@ func _ready() -> void:
 	fence.ground = ground
 	add_child(fence)
 	_build_landmarks()
-	var flora := Flora.new()
+	flora = Flora.new()
 	add_child(flora)
 	flora.grow(ground, curve, _reserved)
 	Game.trail = self

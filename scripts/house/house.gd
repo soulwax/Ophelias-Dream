@@ -11,6 +11,11 @@ extends Node3D
 ## walls; the terrain is flattened over it and holed only under the house.
 
 const PLINTH := 0.4
+# Ground-floor windows: wall centre at the boards and the yaw it faces out.
+const WINDOWS := [
+	[Vector3(-2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, -3.5), PI],
+	[Vector3(-4.5, 0.0, 2.0), -PI * 0.5], [Vector3(4.5, 0.0, 1.8), PI * 0.5], [Vector3(4.5, 0.0, -1.5), PI * 0.5],
+]
 const CEILING := 2.75
 const WALL_TOP := 2.95
 const EXTERIOR := 0.24
@@ -60,13 +65,13 @@ var _timber: Material
 
 func _ready() -> void:
 	_plank_out = HouseKit.scan("weathered_plank_siding", Color(0.62, 0.54, 0.47))
-	_plank_floor = HouseKit.scan("weathered_plank_siding", Color(0.55, 0.4, 0.29), 0.7)
+	_plank_floor = HouseKit.surface(HouseKit.scan("weathered_plank_siding", Color(0.55, 0.4, 0.29), 0.7), "wood")
 	# Clean warm paint upstairs; the scanned plaster is grimy enough for the
 	# cellar's limewash once lifted toward white.
 	_plaster = HouseKit.paint(Color("d9d2c3"), 0.92)
 	_limewash = HouseKit.scan("white_plaster_rough_01", Color(1.0, 1.0, 0.97), 1.4)
-	_concrete = HouseKit.scan("white_plaster_rough_01", Color(0.42, 0.42, 0.42), 2.0)
-	_stone = HouseKit.scan("white_plaster_rough_01", Color(0.45, 0.46, 0.48), 0.6)
+	_concrete = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.42, 0.42, 0.42), 2.0), "stone")
+	_stone = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.45, 0.46, 0.48), 0.6), "stone")
 	_timber = HouseKit.paint(Color("4a3222"), 0.8)
 	_volumes = [
 		AABB(Vector3(-4.5, -0.3, -3.5), Vector3(9.0, 3.2, 7.0)),
@@ -82,10 +87,53 @@ func _ready() -> void:
 	_build_cellar()
 	_furnish()
 	_light_house()
+	_acoustics()
 	haunting = Haunting.new()
 	haunting.name = "Haunting"
 	haunting.house = self
 	add_child(haunting)
+
+
+## Every window as [world centre, world outward normal]: where the wind
+## whistles in.
+func windows() -> Array:
+	var found := []
+	for spot in WINDOWS:
+		var yaw: float = spot[1]
+		var normal := (global_transform.basis * Vector3(sin(yaw), 0.0, cos(yaw))).normalized()
+		found.append([to_global((spot[0] as Vector3) + Vector3(0.0, 1.47, 0.0)), normal])
+	return found
+
+
+# The rooms answer what sounds in them: a short, soft ring in the timber
+# rooms, a longer, harder one in the stone cellar. Any 3D sound made inside
+# a zone is sent to its reverb bus (made by Settings).
+func _acoustics() -> void:
+	_reverb_zone("RoomTone", [_volumes[0]], "Room", 0.32)
+	_reverb_zone("CellarTone", _volumes.slice(1), "Cellar", 0.5)
+
+
+func _reverb_zone(zone: String, boxes: Array, bus: String, amount: float) -> void:
+	var area := Area3D.new()
+	area.name = zone
+	area.monitoring = false
+	area.monitorable = true
+	# Sounds look for zones on their area_mask, layer 1 by default.
+	area.collision_layer = 1
+	area.collision_mask = 0
+	area.reverb_bus_enabled = true
+	area.reverb_bus_name = bus
+	area.reverb_bus_amount = amount
+	area.reverb_bus_uniformity = 0.4
+	for box in boxes:
+		var volume: AABB = box
+		var shape := CollisionShape3D.new()
+		var cube := BoxShape3D.new()
+		cube.size = volume.size
+		shape.shape = cube
+		shape.position = volume.get_center()
+		area.add_child(shape)
+	add_child(area)
 
 
 ## Which room a point is in ("" outside the house).
@@ -197,7 +245,7 @@ func _build_ground_floor() -> void:
 	HouseKit.wall(root, "BackWall", Vector2(4.62, -3.5), Vector2(-4.62, -3.5), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 1.72)], _plaster, _plank_out)
 	HouseKit.wall(root, "WestWall", Vector2(-4.5, -3.38), Vector2(-4.5, 3.38), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 5.38)], _plaster, _plank_out)
 	HouseKit.wall(root, "EastWall", Vector2(4.5, 3.38), Vector2(4.5, -3.38), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 1.58), _at(window, 4.88)], _plaster, _plank_out)
-	for spot in [[Vector3(-2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, -3.5), PI], [Vector3(-4.5, 0.0, 2.0), -PI * 0.5], [Vector3(4.5, 0.0, 1.8), PI * 0.5], [Vector3(4.5, 0.0, -1.5), PI * 0.5]]:
+	for spot in WINDOWS:
 		_glaze(root, spot[0], spot[1], window)
 	# Partitions.
 	HouseKit.wall(root, "BedroomWall", Vector2(-1.2, 0.4), Vector2(-1.2, 3.44), 0.0, CEILING, PARTITION, _plaster, [{"at": 1.6, "width": 0.92, "height": 2.05}])
