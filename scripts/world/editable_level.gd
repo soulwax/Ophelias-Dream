@@ -294,6 +294,10 @@ static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary,
 			continue
 		if target:
 			_copy_editable_properties(child, target)
+			# Keep authored placement, but retire the old mesh/material hierarchy.
+			if target.get_meta("premium_flora", false):
+				_mark_descendants(target, path, authored)
+				continue
 			if child.get_meta("preview_actor", false) or (child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR)):
 				_mark_descendants(target, path, authored)
 			if child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR) and not node.get_meta("preview_actor", false):
