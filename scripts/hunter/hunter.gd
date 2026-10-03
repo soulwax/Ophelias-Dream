@@ -118,7 +118,7 @@ func _pursue(delta: float) -> void:
 	elif distance < Tune.CATCH_GAP and threat >= 0.48:
 		Game.catch_player(
 			"You stopped",
-			"The one from the trees does not hurry until it knows you have stopped. The snow closed over the place you were."
+			"The snow where you were is pressed flat. Nothing leads away."
 		)
 
 
