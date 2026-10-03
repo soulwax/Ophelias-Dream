@@ -38,41 +38,87 @@ static func _hide_lods(root: Node) -> void:
 
 
 static func _paint(root: Node, file_name: String) -> void:
-	var mat := _foliage_material(file_name)
-	if mat == null:
-		mat = _material_for(file_name)
 	for mesh_instance in root.find_children("*", "MeshInstance3D", true, false):
+		var part := (mesh_instance as MeshInstance3D).name
+		var mat := _surface_material(file_name, part)
+		if mat == null:
+			mat = _material_for(file_name)
 		(mesh_instance as MeshInstance3D).material_override = mat
 
 
-static func _foliage_material(file_name: String) -> StandardMaterial3D:
-	var texture_name := ""
+static func _surface_material(file_name: String, mesh_name: String) -> StandardMaterial3D:
+	var part := mesh_name.to_lower()
+	if "branch" in part:
+		return _card_material("Branches_01.tga")
+	if "moss" in file_name.to_lower():
+		return _atlas_material()
+	var texture_name := _card_for(file_name)
+	if texture_name == "":
+		return null
+	return _card_material(texture_name)
+
+
+static func _card_for(file_name: String) -> String:
 	match file_name:
-		"SM_Env_Bush_01.fbx":
-			texture_name = "Alpine_Bush_01.tga"
-		"SM_Env_Bush_02.fbx":
-			texture_name = "Alpine_Bush_02.tga"
+		"SM_Env_Pine_04.fbx":
+			return "pine04.tga"
+		"SM_Env_Pine_05.fbx":
+			return "pine05.tga"
+		"SM_Env_Pine_03.fbx":
+			return "TreePine_03.tga"
+		"SM_Env_Pine_02.fbx":
+			return "TreePine_02.tga"
+		"SM_Env_Pine_01.fbx":
+			return "TreePine_01.tga"
+		"SM_Env_Bush_01.fbx", "SM_Env_Bush_01_Alt.fbx":
+			return "Alpine_Bush_01.tga"
+		"SM_Env_Bush_02.fbx", "SM_Env_Bush_02_Alt.fbx":
+			return "Alpine_Bush_02.tga"
 		"SM_Env_Grass_01.fbx":
-			texture_name = "Alpine_Grass_01.tga"
-		"SM_Env_Flowers_01.fbx":
-			texture_name = "Flowers_01.tga"
+			return "Alpine_Grass_01.tga"
 		_:
-			return null
-	var path := ROOT + "foliage/" + texture_name
-	if not ResourceLoader.exists(path) and not FileAccess.file_exists(path):
+			return ""
+
+
+static func _card_material(texture_name: String) -> StandardMaterial3D:
+	var path := _texture_path(texture_name)
+	if path == "":
 		return null
 	if _materials.has(path):
 		return _materials[path]
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = load(path)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-	mat.alpha_scissor_threshold = 0.35
+	mat.alpha_scissor_threshold = 0.3
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.roughness = 0.9
 	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_materials[path] = mat
 	return mat
+
+
+static func _atlas_material() -> StandardMaterial3D:
+	var path := ROOT + "textures/PolygonNatureBiomesS2_Alpine_Texture_01.png"
+	if _materials.has(path):
+		return _materials[path]
+	var mat := StandardMaterial3D.new()
+	if ResourceLoader.exists(path) or FileAccess.file_exists(path):
+		mat.albedo_texture = load(path)
+	mat.roughness = 0.94
+	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	_materials[path] = mat
+	return mat
+
+
+static func _texture_path(texture_name: String) -> String:
+	var foliage := ROOT + "foliage/" + texture_name
+	if ResourceLoader.exists(foliage) or FileAccess.file_exists(foliage):
+		return foliage
+	var textures := ROOT + "textures/" + texture_name
+	if ResourceLoader.exists(textures) or FileAccess.file_exists(textures):
+		return textures
+	return ""
 
 
 static func _material_for(file_name: String) -> StandardMaterial3D:

@@ -140,13 +140,13 @@ func _build() -> void:
 	normals.fill(Vector3.ZERO)
 	var indices := PackedInt32Array()
 	var faces := PackedVector3Array()
-	indices.resize(cells_x * cells_z * 6)
-	faces.resize(cells_x * cells_z * 6)
-	var cursor := 0
+	var kept := PackedByteArray()
+	kept.resize(cells_x * cells_z)
 	for z in cells_z:
 		for x in cells_x:
 			if not cuts.is_empty() and _cut(_origin_x + float(x) * _step_x, _origin_z + float(z) * _step_z, _step_x, _step_z):
 				continue
+			kept[z * cells_x + x] = 1
 			var i00 := z * _points_x + x
 			var i10 := i00 + 1
 			var i01 := i00 + _points_x
@@ -158,15 +158,12 @@ func _build() -> void:
 				var a: int = tri[0]
 				var b: int = tri[1]
 				var c: int = tri[2]
-				indices[cursor] = a
-				faces[cursor] = vertices[a]
-				cursor += 1
-				indices[cursor] = b
-				faces[cursor] = vertices[b]
-				cursor += 1
-				indices[cursor] = c
-				faces[cursor] = vertices[c]
-				cursor += 1
+				indices.append(a)
+				indices.append(b)
+				indices.append(c)
+				faces.append(vertices[a])
+				faces.append(vertices[b])
+				faces.append(vertices[c])
 				# Reversed operands keep the normal pointing up for this winding.
 				var face_normal := (vertices[c] - vertices[a]).cross(vertices[b] - vertices[a])
 				normals[a] += face_normal
@@ -177,8 +174,69 @@ func _build() -> void:
 			normals[i] = Vector3.UP
 		else:
 			normals[i] = normals[i].normalized()
-	indices.resize(cursor)
-	faces.resize(cursor)
+	# The walkable surface is the top. The pack continues SNOW_DEPTH straight
+	# down, with a wall wherever a cell was cut out, so the depth is real.
+	var grid := vertices.size()
+	var bottom := PackedVector3Array()
+	bottom.resize(grid)
+	var bottom_normals := PackedVector3Array()
+	bottom_normals.resize(grid)
+	for i in grid:
+		var top := vertices[i]
+		bottom[i] = Vector3(top.x, top.y - Tune.SNOW_DEPTH, top.z)
+		bottom_normals[i] = -normals[i]
+	vertices.append_array(bottom)
+	normals.append_array(bottom_normals)
+	var top_indices := indices.duplicate()
+	for i in range(0, top_indices.size(), 3):
+		indices.append(top_indices[i] + grid)
+		indices.append(top_indices[i + 2] + grid)
+		indices.append(top_indices[i + 1] + grid)
+	var lips: Array[Vector3] = []
+	for z in cells_z:
+		for x in cells_x:
+			if kept[z * cells_x + x] == 0:
+				continue
+			var i00 := z * _points_x + x
+			var i10 := i00 + 1
+			var i01 := i00 + _points_x
+			var i11 := i01 + 1
+			if not _cell(kept, cells_x, cells_z, x - 1, z):
+				lips.append(vertices[i01])
+				lips.append(vertices[i00])
+			if not _cell(kept, cells_x, cells_z, x + 1, z):
+				lips.append(vertices[i10])
+				lips.append(vertices[i11])
+			if not _cell(kept, cells_x, cells_z, x, z - 1):
+				lips.append(vertices[i00])
+				lips.append(vertices[i10])
+			if not _cell(kept, cells_x, cells_z, x, z + 1):
+				lips.append(vertices[i11])
+				lips.append(vertices[i01])
+	var lip := 0
+	while lip < lips.size():
+		var top_a := lips[lip]
+		var top_b := lips[lip + 1]
+		lip += 2
+		var outward := Vector3.UP.cross(top_b - top_a)
+		if outward.length_squared() < 0.0001:
+			continue
+		outward = outward.normalized()
+		var base := vertices.size()
+		vertices.append(top_a)
+		vertices.append(top_b)
+		vertices.append(Vector3(top_b.x, top_b.y - Tune.SNOW_DEPTH, top_b.z))
+		vertices.append(Vector3(top_a.x, top_a.y - Tune.SNOW_DEPTH, top_a.z))
+		normals.append(outward)
+		normals.append(outward)
+		normals.append(outward)
+		normals.append(outward)
+		indices.append(base)
+		indices.append(base + 1)
+		indices.append(base + 2)
+		indices.append(base)
+		indices.append(base + 2)
+		indices.append(base + 3)
 
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -207,12 +265,19 @@ func _build() -> void:
 	add_child(body)
 
 
+func _cell(kept: PackedByteArray, cells_x: int, cells_z: int, x: int, z: int) -> bool:
+	if x < 0 or z < 0 or x >= cells_x or z >= cells_z:
+		return false
+	return kept[z * cells_x + x] != 0
+
+
 func _material() -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = load("res://shaders/snow_ground.gdshader")
 	if ResourceLoader.exists("res://assets/environment/Snow_01.png"):
 		material.set_shader_parameter("snow_tex", load("res://assets/environment/Snow_01.png"))
 	material.set_shader_parameter("dirt_tex", _dirt_texture())
+	material.set_shader_parameter("snow_depth", Tune.SNOW_DEPTH)
 	return material
 
 

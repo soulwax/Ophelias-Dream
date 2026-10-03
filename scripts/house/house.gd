@@ -163,12 +163,13 @@ static func stair_cut() -> Rect2:
 
 ## The terrain leaves out whole 3 m cells around the stair well; outside the
 ## walls this level snow fills them back in, a centimetre under the real snow
-## so it only shows where the terrain is gone.
+## so it only shows where the terrain is gone. Same depth as the field.
 func add_snow_patch(snow: Material) -> void:
 	var root := _group("SnowPatch")
 	# Only as far as a cell the cut can remove: one 3 m cell diagonal.
 	var around := stair_cut().grow(4.5)
-	HouseKit.slab(root, "Snow", around, -PLINTH - 0.3, -PLINTH - 0.01, snow, [FOOTPRINT])
+	var top := -PLINTH - 0.01
+	HouseKit.slab(root, "Snow", around, top - Tune.SNOW_DEPTH, top, snow, [FOOTPRINT])
 
 
 func _room_volume(rect: Rect2) -> AABB:

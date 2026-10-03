@@ -135,6 +135,11 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - *Hair*: two layers.
   - `Outfit._build_crown`: ~150 short rigid cards attached to the Head bone, combed away from the side part. A per-angle hairline keeps them off the face. Their normals point out from the skull centre, so the layer shades as one mass.
   - Long simulated locks, whose three skull rows are rigidly carried (`Cloth.pinned_rows`) so they can't drift from the scalp.
+- *Blender head sculpt* (`blender -b --factory-startup -P tools/blender/sculpt_head.py`, Blender 5.2): it reads the rig's source glTF without modifying it. In Blender, Godot rest = (bx, bz, −by), and the source bones keep Unreal names (`neck_01`).
+  - It writes `assets/characters/hair_crown.glb`: ~510 strands grown on her real scalp polygons, re-projected onto the head each step, carded with scalp normals and root-to-tip vertex colours. The colour attribute must be set as active and render or the exporter drops it. When the file exists, `Outfit` uses it instead of `_build_crown`.
+  - It writes `assets/characters/face_shapes.json`: eyelid and brow offsets keyed by rest position.
+  - `Face` (`face.gd`) rebuilds the face and brow meshes as copies with blend shapes `blink_L`, `blink_R`, `squint` and `brow_fear`, matched by rounded position. Relative blend arrays must hold **offsets**; absolute positions double the mesh. Only the standard surface arrays can be passed back.
+  - It animates irregular blinks (sometimes double, faster under strain or fear), a squint with strain, and brow fear with `Game.threat()`. Dev hook: `RUN_FACE=blink|squint|fear`.
 - *Cloth timing*: `Cloth` steps on `Skeleton3D.skeleton_updated`, not in `_process`. Modifier results are discarded after the skeleton update, so reading bones in `_process` misses the head turn, breathing and sway.
 - *Skirt fit*: the skirt starts just above the widest point of her hips, from her measured outline there (`Outfit._outline`, a radius per direction), with the top row tucked under the fitted shell. It has stiffer top rows (`Cloth.top_stiffness`), a modest A-line with 7 godet folds, and leg capsules from mid-thigh down. A pelvis capsule, or thigh capsules starting at the hip joints, shove the hip rows out into a shelf.
 

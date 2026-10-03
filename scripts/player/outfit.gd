@@ -199,7 +199,7 @@ func _zone(p: Vector3, uv: Vector2) -> Array:
 		var back := p.z < _head.z + 0.03
 		# The scalp layer stops well above the brow; the swept locks hide
 		# its edge.
-		if p.y > _head.y + 0.172 or (back and p.y > _neck_y + 0.075):
+		if p.y > _head.y + 0.2 or (back and p.y > _neck_y + 0.075):
 			return [HAIR_CAP, 0.01, true]
 		# The face keeps its own painted skin. Everything else up here is
 		# the dark base layer, so it gets a whisper-thin skin of her tone.
@@ -525,6 +525,11 @@ func _build_skirt() -> void:
 # part or the crown, laid over the skull, then falling down the back, over the
 # shoulders, or (the two framing locks) beside the face onto the coat.
 func _build_hair() -> void:
+	# Grown and draped in Blender on her real scalp (tools/blender/grow_hair.py):
+	# one skinned mesh with a sway spring. What follows is only the fallback.
+	if HairRig.available():
+		HairRig.fit(self, _strand_texture())
+		return
 	var top_y := -1.0
 	for p in _verts:
 		top_y = maxf(top_y, p.y)

@@ -72,6 +72,9 @@ const FENCE_MIN_Z := -224.0
 const FENCE_MAX_Z := 76.0
 const GROUND_PAD := 26.0
 const GROUND_CELL := 3.0
+# Vertical depth of the snowpack. The walkable surface stays put; the
+# snow continues this far down, and the shell shows at every cut edge.
+const SNOW_DEPTH := 0.2
 
 const LAYER_WORLD := 1
 const LAYER_ACTOR := 2

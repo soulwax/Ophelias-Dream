@@ -16,7 +16,7 @@ func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3]) -> void:
 	var trees := 0
 	var bushes := 0
 	var tufts := 0
-	var blooms := 0
+	var moss := 0
 	var rocks := 0
 	var mounds := 0
 	var deadfall := 0
@@ -25,7 +25,14 @@ func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3]) -> void:
 		"SM_Env_Pine_Stump_01.fbx",
 	]
 	var pines: Array[String] = [
-		"SM_Env_Pine_01.fbx", "SM_Env_Pine_02.fbx", "SM_Env_Pine_03.fbx", "SM_Env_Pine_05.fbx",
+		"SM_Env_Pine_04.fbx", "SM_Env_Pine_04.fbx",
+		"SM_Env_Pine_03.fbx", "SM_Env_Pine_05.fbx", "SM_Env_Pine_02.fbx",
+	]
+	var shrubs: Array[String] = [
+		"SM_Env_Bush_01_Alt.fbx", "SM_Env_Bush_01_Alt.fbx", "SM_Env_Bush_02.fbx",
+	]
+	var mosses: Array[String] = [
+		"SM_Env_Moss_Lumps_01.fbx", "SM_Env_Moss_Lumps_02.fbx", "SM_Env_Moss_Lumps_03.fbx",
 	]
 	var step := 9.0
 	var x := Tune.FENCE_MIN_X + 7.0
@@ -35,25 +42,24 @@ func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3]) -> void:
 			var at := Vector3(x + _rng.randf_range(-3.2, 3.2), 0.0, z + _rng.randf_range(-3.2, 3.2))
 			var noise := _density.get_noise_2d(at.x, at.z)
 			var clearance := _off_path(curve, at)
-			if trees < 90 and noise > 0.22 and clearance > 9.0 and not _blocked(at, 6.0, reserved):
+			if trees < 64 and noise > 0.18 and clearance > 9.0 and not _blocked(at, 6.0, reserved):
 				var pine := pines[_rng.randi() % pines.size()]
-				if _rng.randf() < 0.12:
+				if _rng.randf() < 0.1:
 					pine = "SM_Env_Pine_NoLeaves_01.fbx"
-				_prop(ground, pine, at, _rng.randf_range(0.9, 1.25), true)
+				_prop(ground, pine, at, _rng.randf_range(0.95, 1.3), true)
 				trees += 1
-				if bushes < 36 and _rng.randf() < 0.45:
-					var bush_at := at + Vector3(_rng.randf_range(-2.4, 2.4), 0.0, _rng.randf_range(-2.4, 2.4))
+				if bushes < 48 and _rng.randf() < 0.55:
+					var bush_at := at + Vector3(_rng.randf_range(-2.6, 2.6), 0.0, _rng.randf_range(-2.6, 2.6))
 					if _off_path(curve, bush_at) > 6.5 and not _blocked(bush_at, 2.0, reserved):
-						var bush := "SM_Env_Bush_01.fbx" if _rng.randf() < 0.5 else "SM_Env_Bush_02.fbx"
-						_prop(ground, bush, bush_at, _rng.randf_range(0.75, 1.05), false)
+						_prop(ground, shrubs[_rng.randi() % shrubs.size()], bush_at, _rng.randf_range(0.8, 1.15), false)
 						bushes += 1
-			if tufts < 64 and noise > -0.05 and clearance > 5.5 and _rng.randf() < 0.28 and not _blocked(at, 1.6, reserved):
-				var grass_at := at + Vector3(_rng.randf_range(-1.6, 1.6), 0.0, _rng.randf_range(-1.6, 1.6))
-				_prop(ground, "SM_Env_Grass_01.fbx", grass_at, _rng.randf_range(0.65, 1.0), false)
+			if tufts < 120 and noise > -0.08 and clearance > 5.0 and _rng.randf() < 0.4 and not _blocked(at, 1.6, reserved):
+				var grass_at := at + Vector3(_rng.randf_range(-1.8, 1.8), 0.0, _rng.randf_range(-1.8, 1.8))
+				_prop(ground, "SM_Env_Grass_01.fbx", grass_at, _rng.randf_range(0.7, 1.15), false)
 				tufts += 1
-			if blooms < 16 and noise > 0.35 and clearance > 6.0 and _rng.randf() < 0.08 and not _blocked(at, 1.8, reserved):
-				_prop(ground, "SM_Env_Flowers_01.fbx", at, _rng.randf_range(0.7, 0.95), false)
-				blooms += 1
+			if moss < 40 and noise > 0.05 and clearance > 6.0 and _rng.randf() < 0.14 and not _blocked(at, 2.0, reserved):
+				_prop(ground, mosses[_rng.randi() % mosses.size()], at, _rng.randf_range(0.65, 1.05), false)
+				moss += 1
 			if rocks < 70 and clearance > 7.0 and not _blocked(at, 2.4, reserved) and _rng.randf() < 0.16:
 				var rock_file := "SM_Env_Rock_0%d.fbx" % [1, 2, 5, 8][_rng.randi() % 4]
 				_prop(ground, rock_file, at, _rng.randf_range(0.55, 1.45), false)
@@ -71,6 +77,9 @@ func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3]) -> void:
 
 func _prop(ground: Ground, file_name: String, at: Vector3, scale: float, trunk: bool) -> void:
 	at.y = ground.height_at(at.x, at.z)
+	var lower := file_name.to_lower()
+	if "pine_03" in lower or "pine_05" in lower:
+		scale *= 1.45
 	var node := PropFactory.spawn(file_name)
 	node.scale = Vector3.ONE * Tune.PROP_SCALE * scale
 	node.position = at

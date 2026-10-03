@@ -27,6 +27,7 @@ var stride: Stride
 var kicks: SnowKick
 var foot_lock: FootLock
 var posture: Posture
+var face: Face
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -785,3 +786,10 @@ func _build_model() -> void:
 			return -camera.global_transform.basis.z if camera else Vector3.ZERO
 		posture.strain = func() -> float:
 			return strain
+	if outfit:
+		face = Face.fit(model, outfit.body)
+		if face:
+			face.strain = func() -> float:
+				return strain
+			face.fear = func() -> float:
+				return Game.threat()
