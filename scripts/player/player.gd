@@ -113,7 +113,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			var thing := nearby_interactable()
 			if thing:
-				var accepted := thing.call("interact") == true
+				var accepted: bool = thing.call("interact") == true
 				var feedback := ""
 				if not accepted and thing is HouseDoor:
 					feedback = (thing as HouseDoor).blocked_label()
