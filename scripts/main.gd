@@ -14,9 +14,10 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 	_capture = OS.get_environment("RUN_CAPTURE") == "1"
-	var baking := OS.get_cmdline_user_args().has("--bake-editor-level")
+	var repacking := OS.get_cmdline_user_args().has("--repack-editor-level")
+	var baking := repacking or OS.get_cmdline_user_args().has("--bake-editor-level")
 	var snapshot := get_node_or_null("EditableLevel")
-	var chosen_seed := _resolve_seed(null if baking else snapshot)
+	var chosen_seed := _resolve_seed(null if baking and not repacking else snapshot)
 	if snapshot is Node3D:
 		(snapshot as Node3D).visible = false
 	Game.reset()
@@ -54,6 +55,14 @@ func _ready() -> void:
 	add_child(hud)
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player, hunter]
+	if repacking and snapshot:
+		EditableLevel.apply(snapshot, editable_nodes)
+		player.set_process(false)
+		player.set_physics_process(false)
+		hunter.set_physics_process(false)
+		snapshot.queue_free()
+		_finish_repack.call_deferred(editable_nodes, chosen_seed)
+		return
 	if baking:
 		_finish_bake.call_deferred(editable_nodes, chosen_seed)
 		return
@@ -115,6 +124,11 @@ func _finish_bake(nodes: Array[Node], chosen_seed: int) -> void:
 	else:
 		print("Saved editable level with seed %d" % chosen_seed)
 	get_tree().quit(0 if result == OK else 1)
+
+
+func _finish_repack(nodes: Array[Node], chosen_seed: int) -> void:
+	await get_tree().process_frame
+	_finish_bake(nodes, chosen_seed)
 
 
 func _regenerate_editor_level() -> void:

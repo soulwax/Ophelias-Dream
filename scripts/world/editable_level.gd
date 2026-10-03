@@ -2,7 +2,9 @@ class_name EditableLevel
 extends RefCounted
 
 const SCENE_PATH := "res://scenes/editable_level.scn"
+const GENERATED_DIR := "res://scenes/generated/"
 const SOURCE_PATH := &"generated_index_path"
+const GROUP_PARENT_PATH := &"generated_parent_path"
 
 
 static func bake(nodes: Array[Node], seed_value: int) -> Error:
@@ -18,12 +20,112 @@ static func bake(nodes: Array[Node], seed_value: int) -> Error:
 		_strip_scripts(copy)
 		root.add_child(copy)
 		_tag_tree(node, copy, PackedInt32Array([index]), root)
-	var scene := PackedScene.new()
-	var result := scene.pack(root)
-	if result == OK:
-		result = ResourceSaver.save(scene, SCENE_PATH)
+	var result := _save_hierarchy(root)
 	root.free()
 	return result
+
+
+static func _save_hierarchy(root: Node3D) -> Error:
+	var directory := ProjectSettings.globalize_path(GENERATED_DIR + "house")
+	var result := DirAccess.make_dir_recursive_absolute(directory)
+	if result != OK:
+		return result
+	var trail := root.get_node_or_null("Trail") as Node3D
+	if trail == null:
+		return ERR_INVALID_DATA
+	var house := trail.get_node_or_null("House") as Node3D
+	if house == null:
+		return ERR_INVALID_DATA
+	var cellar := house.get_node_or_null("Cellar") as Node3D
+	if cellar and cellar.get_node_or_null("Morgue"):
+		result = _nest_scene(cellar, cellar.get_node("Morgue"), "house/morgue.scn", root)
+		if result != OK:
+			return result
+	for group_name in ["GroundFloor", "Roof", "Stair", "Cellar", "Furniture", "Lights", "Haunting", "SnowPatch"]:
+		var group := house.get_node_or_null(group_name)
+		if group:
+			result = _nest_scene(house, group, "house/%s.scn" % group_name.to_snake_case(), root)
+			if result != OK:
+				return result
+	result = _nest_scene(trail, house, "house.scn", root)
+	if result != OK:
+		return result
+	var landmarks := _group_landmarks(trail, root)
+	for name in ["Ground", "Fence", "Flora"]:
+		var branch := trail.get_node_or_null(name)
+		if branch:
+			result = _nest_scene(trail, branch, "%s.scn" % name.to_snake_case(), root)
+			if result != OK:
+				return result
+	if landmarks:
+		result = _nest_scene(trail, landmarks, "landmarks.scn", root)
+		if result != OK:
+			return result
+	for name in ["Atmosphere", "Trail", "Player", "Hunter"]:
+		var branch := root.get_node_or_null(name)
+		if branch:
+			result = _nest_scene(root, branch, "%s.scn" % name.to_snake_case(), root)
+			if result != OK:
+				return result
+	var scene := PackedScene.new()
+	result = scene.pack(root)
+	if result == OK:
+		result = ResourceSaver.save(scene, SCENE_PATH)
+	return result
+
+
+static func _group_landmarks(trail: Node3D, root: Node3D) -> Node3D:
+	var group := Node3D.new()
+	group.name = "Landmarks"
+	group.set_meta("generated_group", true)
+	group.set_meta(GROUP_PARENT_PATH, trail.get_meta(SOURCE_PATH, PackedInt32Array()))
+	trail.add_child(group)
+	group.owner = root
+	for child in trail.get_children():
+		if child == group or child.name in ["Ground", "House", "Fence", "Flora"]:
+			continue
+		child.owner = null
+		child.reparent(group, false)
+		child.owner = root
+		if child.scene_file_path != "":
+			root.set_editable_instance(child, true)
+	return group
+
+
+static func _nest_scene(parent: Node, branch: Node, file_name: String, outer_root: Node) -> Error:
+	var index := branch.get_index()
+	_reown_for_scene(branch, branch, outer_root)
+	var packed := PackedScene.new()
+	var result := packed.pack(branch)
+	if result != OK:
+		return result
+	var path := GENERATED_DIR + file_name
+	result = ResourceSaver.save(packed, path)
+	if result != OK:
+		return result
+	var saved := ResourceLoader.load(path, "PackedScene", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene
+	if saved == null:
+		return ERR_CANT_OPEN
+	var instance := saved.instantiate()
+	parent.remove_child(branch)
+	branch.free()
+	parent.add_child(instance)
+	parent.move_child(instance, index)
+	instance.owner = outer_root
+	if parent == outer_root:
+		outer_root.set_editable_instance(instance, true)
+	return OK
+
+
+static func _reown_for_scene(node: Node, scene_root: Node, old_owner: Node) -> void:
+	for child in node.get_children():
+		if child.owner == old_owner:
+			child.owner = scene_root
+		if child.scene_file_path != "":
+			if not scene_root.get_meta("preview_actor", false):
+				scene_root.set_editable_instance(child, true)
+			continue
+		_reown_for_scene(child, scene_root, old_owner)
 
 
 static func _bake_actor(root: Node3D, actor: Node, index: int) -> void:
@@ -109,10 +211,13 @@ static func _index_tree(node: Node, index_path: PackedInt32Array, lookup: Dictio
 
 static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary) -> void:
 	for child in node.get_children():
+		if child.get_meta("generated_group", false):
+			_apply_tree(child, originals, authored)
+			continue
 		var path: PackedInt32Array = child.get_meta(SOURCE_PATH, PackedInt32Array())
 		if path.is_empty():
 			# A hand-added node belongs to the nearest generated parent.
-			var parent_path: PackedInt32Array = node.get_meta(SOURCE_PATH, PackedInt32Array())
+			var parent_path: PackedInt32Array = node.get_meta(SOURCE_PATH, node.get_meta(GROUP_PARENT_PATH, PackedInt32Array()))
 			var target_parent := originals.get(_key(parent_path)) as Node
 			if target_parent:
 				var addition := child.duplicate(0)
@@ -124,11 +229,11 @@ static func _apply_tree(node: Node, originals: Dictionary, authored: Dictionary)
 		var target := originals.get(key) as Node
 		if target:
 			_copy_editable_properties(child, target)
-			if child.get_meta("preview_actor", false) or child.scene_file_path != "":
+			if child.get_meta("preview_actor", false) or (child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR)):
 				_mark_descendants(target, path, authored)
-			if child.scene_file_path != "" and not node.get_meta("preview_actor", false):
+			if child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR) and not node.get_meta("preview_actor", false):
 				_sync_instance_children(child, target)
-		if child.scene_file_path != "":
+		if child.scene_file_path != "" and not child.scene_file_path.begins_with(GENERATED_DIR):
 			continue
 		_apply_tree(child, originals, authored)
 
