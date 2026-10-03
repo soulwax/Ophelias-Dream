@@ -26,8 +26,6 @@ var footprints: Footprints
 var stride: Stride
 var kicks: SnowKick
 var foot_lock: FootLock
-var posture: Posture
-var face: Face
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -64,7 +62,6 @@ var _trail_offset := Vector3.ZERO
 # Dev hook: RUN_AUTOPILOT=walk or sprint holds forward (and sprint), so
 # RUN_CAPTURE can photograph her mid-stride.
 var _autopilot := OS.get_environment("RUN_AUTOPILOT")
-var outfit: Outfit
 var breath: Breath
 # 0 calm .. 1 gasping. Climbs with sprinting and spent stamina, peaks just
 # after a long sprint ends, and only slowly settles.
@@ -211,8 +208,6 @@ func _physics_process(delta: float) -> void:
 	_since_plant += delta
 	if foot_lock:
 		foot_lock.body_speed = _ground_speed()
-	if posture:
-		posture.speed = _ground_speed()
 		foot_lock.suspended = _airborne or sliding
 	var surge := _step_surge() if on_floor and not sliding else 1.0
 	velocity.x = _glide.x * surge + push.x
@@ -651,59 +646,6 @@ func _steps(delta: float) -> void:
 	_footfall(left, global_position + side * (0.12 if left else -0.12), speed)
 
 
-func _cloak(root: Node) -> void:
-	var suit := _suit_material()
-	var eyes := _eye_material()
-	# Soft, warm brown brows, a little see-through so they read as hair on
-	# skin, not painted bars.
-	var hair := StandardMaterial3D.new()
-	hair.albedo_color = Color(0.3, 0.18, 0.11, 0.72)
-	hair.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	hair.roughness = 0.8
-	hair.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	for mesh_instance in root.find_children("*", "MeshInstance3D", true, false):
-		var instance := mesh_instance as MeshInstance3D
-		var mesh_name := instance.name.to_lower()
-		if "brow" in mesh_name:
-			instance.material_override = hair
-		elif "eye" in mesh_name:
-			instance.material_override = eyes
-		else:
-			instance.material_override = suit
-
-
-func _suit_material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_texture = load("res://assets/characters/girl_coat.png")
-	material.albedo_color = Color.WHITE
-	var normal_path := "res://addons/quaternius_ik_rigged/Godot - UE/T_Superhero_Female_Normal.png"
-	if ResourceLoader.exists(normal_path):
-		material.normal_enabled = true
-		material.normal_texture = load(normal_path)
-		material.normal_scale = 0.22
-	# Only her face shows through the clothes: give it skin, light scattering
-	# under the surface, a soft sheen, a faint rim against the snow.
-	material.roughness = 0.62
-	material.metallic = 0.0
-	material.metallic_specular = 0.3
-	material.subsurf_scatter_enabled = true
-	material.subsurf_scatter_strength = 0.35
-	material.subsurf_scatter_skin_mode = true
-	material.rim_enabled = true
-	material.rim = 0.12
-	material.rim_tint = 0.6
-	return material
-
-
-func _eye_material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	var path := "res://addons/quaternius_ik_rigged/Godot - UE/T_Eye_Brown.png"
-	if ResourceLoader.exists(path):
-		material.albedo_texture = load(path)
-	material.roughness = 0.28
-	return material
-
-
 func _build_body() -> void:
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
@@ -754,42 +696,37 @@ func _build_model() -> void:
 	visual = Node3D.new()
 	visual.name = "Visual"
 	add_child(visual)
-	var path := "res://addons/quaternius_ik_rigged/Models_with_rigging/Female_Rigged.tscn"
+	var path := "res://assets/characters/styloo_elf/elf.glb"
 	if not ResourceLoader.exists(path):
 		return
 	var packed := load(path) as PackedScene
 	var model := packed.instantiate()
-	model.scale = Vector3.ONE * Tune.ACTOR_SCALE
+	model.scale = Vector3.ONE * Tune.PLAYER_MODEL_SCALE
 	model.rotation.y = PI
 	visual.add_child(model)
-	animation_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
-	_cloak(model)
-	outfit = Outfit.dress(model)
-	if outfit:
-		breath = Breath.new()
-		outfit.attach("Head", breath, Transform3D(Basis(), outfit.mouth_rest))
-	if animation_player:
-		stride = Stride.build(animation_player, model)
-	var skeletons := model.find_children("*", "Skeleton3D", true, false)
-	if not skeletons.is_empty():
-		foot_lock = FootLock.fit(model, skeletons[0] as Skeleton3D)
-		foot_lock.ground = trail.ground if trail else null
-		# Feet land on the boards indoors, on the snow outside.
-		foot_lock.floor_at = func(point: Vector3) -> float:
-			if indoors() or trail == null or trail.ground == null:
-				return global_position.y
-			return trail.ground.height_at(point.x, point.z)
-		foot_lock.planted.connect(_on_planted)
-		posture = Posture.fit(skeletons[0] as Skeleton3D, foot_lock)
-		posture.breath = breath
-		posture.look = func() -> Vector3:
-			return -camera.global_transform.basis.z if camera else Vector3.ZERO
-		posture.strain = func() -> float:
-			return strain
-	if outfit:
-		face = Face.fit(model, outfit.body)
-		if face:
-			face.strain = func() -> float:
-				return strain
-			face.fear = func() -> float:
-				return Game.threat()
+	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skeleton == null:
+		return
+	var rig_root := skeleton.get_parent()
+	animation_player = AnimationPlayer.new()
+	animation_player.name = "AnimationPlayer"
+	rig_root.add_child(animation_player)
+	animation_player.root_node = NodePath("..")
+	animation_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
+	stride = Stride.build(animation_player, rig_root)
+	var mouth := BoneAttachment3D.new()
+	mouth.name = "Mouth"
+	mouth.bone_name = "DEF-spine.006"
+	skeleton.add_child(mouth)
+	var head := skeleton.find_bone(mouth.bone_name)
+	mouth.transform = skeleton.get_bone_global_rest(head).affine_inverse() * Transform3D(Basis(), Vector3(0.0, 1.91, 0.13))
+	breath = Breath.new()
+	mouth.add_child(breath)
+	foot_lock = FootLock.fit(model, skeleton, "DEF-foot.L", "DEF-foot.R")
+	foot_lock.ground = trail.ground if trail else null
+	# Feet land on the boards indoors, on the snow outside.
+	foot_lock.floor_at = func(point: Vector3) -> float:
+		if indoors() or trail == null or trail.ground == null:
+			return global_position.y
+		return trail.ground.height_at(point.x, point.z)
+	foot_lock.planted.connect(_on_planted)

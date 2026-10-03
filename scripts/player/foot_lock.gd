@@ -1,9 +1,9 @@
 class_name FootLock
 extends SkeletonModifier3D
 
-# Plants her feet. Runs after the animation and before the rig's leg IK:
+# Detects planted feet after animation; optional leg IK holds them in place:
 # when the animation sets a foot down, that spot on the terrain is locked and
-# the TwoBoneIK3D holds the foot there while the body travels over it. When
+# IK can hold the foot there while the body travels over it. When
 # the animation lifts the foot (or the leg would overstretch) the IK fades
 # out and the foot swings free to its next step. Each touchdown is reported,
 # so steps, prints and powder come from real contacts.
@@ -36,17 +36,17 @@ var _feet: Array = []
 var _last_msec := 0
 
 
-# model: the rig root holding the foot target markers and the leg IK nodes.
-static func fit(model: Node3D, skeleton: Skeleton3D) -> FootLock:
+# model: the rig root, which may also hold foot targets and leg IK nodes.
+static func fit(model: Node3D, skeleton: Skeleton3D, left_bone := "LeftFoot", right_bone := "RightFoot") -> FootLock:
 	var lock := FootLock.new()
 	lock.name = "FootLock"
 	lock._model = model
 	for side in ["L", "R"]:
-		var bone_name := "LeftFoot" if side == "L" else "RightFoot"
+		var bone_name := left_bone if side == "L" else right_bone
 		var ik := skeleton.get_node_or_null(side + "_LegIK3D") as SkeletonModifier3D
 		var target := model.get_node_or_null(side + "_foot_target") as Node3D
 		var bone := skeleton.find_bone(bone_name)
-		if ik == null or target == null or bone < 0:
+		if bone < 0:
 			continue
 		lock._feet.append({
 			"left": side == "L",
@@ -64,7 +64,8 @@ static func fit(model: Node3D, skeleton: Skeleton3D) -> FootLock:
 	# Modifiers run in child order; this one must see the pose before the IK.
 	var first := skeleton.get_child_count()
 	for foot in lock._feet:
-		first = mini(first, (foot["ik"] as Node).get_index())
+		if foot["ik"] != null:
+			first = mini(first, (foot["ik"] as Node).get_index())
 	skeleton.move_child(lock, first)
 	return lock
 
@@ -116,9 +117,10 @@ func _process_modification() -> void:
 		foot["locked"] = locked
 		var rate := delta / (BLEND_IN if locked else BLEND_OUT)
 		foot["weight"] = move_toward(foot["weight"], 1.0 if locked else 0.0, rate)
-		var target := foot["at"] as Vector3 if locked else _on_ground(animated, floor_y)
-		(foot["target"] as Node3D).global_position = target
-		(foot["ik"] as SkeletonModifier3D).influence = foot["weight"]
+		if foot["ik"] != null and foot["target"] != null:
+			var target := foot["at"] as Vector3 if locked else _on_ground(animated, floor_y)
+			(foot["target"] as Node3D).global_position = target
+			(foot["ik"] as SkeletonModifier3D).influence = foot["weight"]
 
 
 # The animated ankle, moved by however much the terrain under the foot

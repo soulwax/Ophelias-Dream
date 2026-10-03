@@ -6,7 +6,7 @@ Run Away is a third-person winter horror game using Godot 4.7, Forward+ renderin
 
 - `scenes/main.tscn` is the entry scene; `scripts/main.gd` constructs gameplay systems in code.
 - `scripts/` groups GDScript by responsibility: `player/`, `world/`, `house/`, `hunter/`, `weather/`, `anomalies/`, `audio/`, `notes/`, and `ui/`.
-- `assets/` contains models, textures, and audio; `addons/quaternius_ik_rigged/` contains character rigs. `shaders/` holds GPU shaders.
+- `assets/characters/styloo_elf/` contains the player model, textures, baked animations, and CC0 license. `addons/quaternius_ik_rigged/` supplies the hunter and shared animation source. `shaders/` holds GPU shaders.
 - `tools/` contains probes, asset generators, and diagnostic scripts. `docs/PLAN.md` records the original design; prefer current code when it disagrees.
 
 ## Build, Test, and Development Commands
@@ -18,6 +18,7 @@ godot --path .                  # Run the game
 godot --path . -e               # Open the editor
 godot --headless --path . --import # Import assets/register new classes
 godot --headless --path . -s tools/probe.gd # Inspect meshes/animations
+godot --headless --path . -s tools/retarget_elf.gd # Rebuild elf movement clips
 ./tools/run_blackbox.ps1         # Run with logs in build/blackbox/
 ```
 
@@ -54,4 +55,4 @@ History uses descriptive prose sentences without Conventional Commit prefixes. D
 
 ## Asset Hygiene
 
-Preserve vendor provenance and licensing records. Exclude `.godot/`, build outputs, and scratch screenshots from commits. Inspect asset generators before running them: some use hardcoded absolute paths.
+Preserve vendor provenance and licensing records. Exclude `.godot/`, build outputs, and scratch screenshots from commits. `tools/prepare_elf.py <original-elf.glb>` strips bundled weapons before importing the elf; inspect other asset generators' output paths before running them.

@@ -2,21 +2,23 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://coamrbrnco5yb"
-path.s3tc="res://.godot/imported/T_Superhero_Female_Roughness.png-5af28f6fdcb3fa7e156c8efc7c3360ad.s3tc.ctex"
+uid="uid://cdjw7n67ca627"
+path="res://.godot/imported/elf_elfSecond_color.png-6ef3939433c48e968c85bcf5326db97a.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
+}
+generator_parameters={
+"md5": "ad9ac59f361ba301dc2fe1b4cb85be47"
 }
 
 [deps]
 
-source_file="res://addons/quaternius_ik_rigged/Godot - UE/T_Superhero_Female_Roughness.png"
-dest_files=["res://.godot/imported/T_Superhero_Female_Roughness.png-5af28f6fdcb3fa7e156c8efc7c3360ad.s3tc.ctex"]
+source_file="res://assets/characters/styloo_elf/elf_elfSecond_color.png"
+dest_files=["res://.godot/imported/elf_elfSecond_color.png-6ef3939433c48e968c85bcf5326db97a.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -38,4 +40,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

@@ -27,6 +27,9 @@ $env:RUN_CAPTURE = "1"; $env:RUN_SHOT = "$PWD\shot.png"; godot --path .
 # Probe mesh bounds / animation names from the asset packs
 godot --headless --path . -s tools/probe.gd
 
+# Rebuild the elf's movement library from the shared hunter animation source
+godot --headless --path . -s tools/retarget_elf.gd
+
 # Windows export (preset "Windows Desktop", embedded PCK -> build/windows/Run Away.exe)
 godot --headless --path . --export-release "Windows Desktop" "build/windows/Run Away.exe"
 
@@ -38,7 +41,7 @@ This machine (ThinkPad, Iris Xe) has hard-frozen while running the game. `Game.l
 
 F3 toggles a debug label (hunter gap and stamina) in debug builds.
 
-`tools/*.py` are one-off asset generators: `make_storm.py` and `make_taps.py` synthesize WAVs into `assets/audio/`, and `paint_coat.py` (needs Pillow) retints the Quaternius body texture into `assets/characters/girl_coat.png`. They write to **hardcoded absolute paths** under `C:\Users\soulwax\Workspace\Godot\run`. `tools/prev_*.png` are scratch previews and are not part of the game.
+`tools/make_storm.py` and `tools/make_taps.py` synthesize WAVs into `assets/audio/`; inspect their output paths before running them. `tools/prepare_elf.py <original-elf.glb>` removes bow and arrow triangles from the Styloo source asset. `tools/prev_*.png` are scratch previews and are not part of the game.
 
 ## Architecture
 
@@ -63,18 +66,16 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 
 **Locomotion (`scripts/player/stride.gd`, `snow_kick.gd`)**:
 - `Stride` builds an `AnimationTree` from code. A BlendSpace1D (Idle, Walk_Formal, Jog_Fwd, Sprint) is driven by her ground speed, and a TimeScale sets the playback rate so the planted foot moves at that speed.
-- Natural clip speeds (`Tune.STRIDE_WALK/JOG/SPRINT`) were measured with `godot --headless --path . -s tools/stride_probe.gd`. The probe has to disable the rig's `TwoBoneIK3D` modifiers and let frames tick, because a bare `seek()` doesn't apply poses there.
+- The movement clips are baked to the elf skeleton in `assets/characters/styloo_elf/elf_animations.res`; regenerate with `tools/retarget_elf.gd` after changing clips.
 - A OneShot plays the exhaustion stumble (Hit_Chest).
 - Each running gait spans a plateau (two blend points with the same clip), so a steady speed plays one clip. Blending clips whose cycles differ muddles the legs.
-- `FootLock` (`foot_lock.gd`) is a `SkeletonModifier3D` moved in front of the rig's leg `TwoBoneIK3D` nodes, whose influence starts at 0.
-  - When the animated foot comes down (judged against its own recent low point, or at the bottom of its swing for brief sprint contacts, and only after it has really swung), it locks that terrain spot. The IK holds the foot there until the animation lifts it or the leg overreaches.
-  - It emits `planted(left, at)`, and `Player._on_planted` does all footfall effects: sound, prints, `SnowKick` powder and camera jolt. The distance-based trigger in `_steps` is only a fallback.
+- `FootLock` (`foot_lock.gd`) watches the elf's animated feet and emits `planted(left, at)` for sound, prints, `SnowKick` powder and camera jolt. The elf has no leg IK; the distance-based trigger in `_steps` is a fallback.
 - Per-step dynamics: `_step_surge()` swings speed within each step (`Tune.STEP_SURGE_*`), checking on landing and surging on push-off.
 - Jump (Space) and slide (Ctrl/C, from a sprint) are in `Player`.
   - Jumps have coyote time and a jump buffer, variable height, heavier falls, reduced air control, and landings scaled by fall speed.
   - Slides get a speed boost, snow friction, gravity along the slope and limited steering, and you can jump out of one.
-  - `Stride` adds layers on top of locomotion: an air pose (Jump_Start, sought by vertical velocity), a slide pose (Crouch_Idle), and a landing one-shot (Jump_Land). Clip phases were found with `tools/clip_probe.gd -- <clips>`.
-  - `FootLock.suspended` releases the feet in the air and during a slide.
+  - `Stride` adds layers on top of locomotion: an air pose (Jump_Start, sought by vertical velocity), a slide pose (Crouch_Idle), and a landing one-shot (Jump_Land).
+  - `FootLock.suspended` suppresses ground contact in the air and during a slide.
   - Hold breath is on right mouse button or F.
 - Dev hooks: `RUN_AUTOPILOT=walk|sprint|jump|slide` and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
 - Momentum is in `Player._momentum` (accelerate, coast, or brake on reversal), and `_slope_factor` slows her uphill.
@@ -98,7 +99,7 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - *Indoors*: `Game.indoors()` / `House.contains()`.
   - The camera boom drops to 1.75 m over the shoulder, and her model hides if the camera is crushed into her.
   - No snowfall; the storm is muffled.
-  - Floor-tap footsteps instead of snow, no prints or powder, and `FootLock.floor_at` plants feet on the boards.
+  - Floor-tap footsteps instead of snow, no prints or powder, and `FootLock.floor_at` reports contacts on the boards.
   - The hunter waits at `House.doorstep()` and cannot catch her inside. The Listener cannot perceive breath through walls.
 - *Assets*: from `merl`, CC0, under `assets/vendor/polyhaven/` (`provenance.json`) and `assets/derived/doors/audio/`.
 - *Dev hook*: `RUN_SPAWN=outside|bedroom|living|stair|cellar|janitor|morgue`.
@@ -125,29 +126,9 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - *Testing*: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script, so test them in the game.
 - *The Listener (2-117)* perceives only `Breath.plume`. Space (`hold_breath`) suppresses the steam, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp.
 
-**Wardrobe (`scripts/player/outfit.gd`, `cloth.gd`, `breath.gd`)**: `Outfit.dress(model)` dresses the walker in code, and every size it uses is measured from the body mesh's rest pose.
-- *Skinned shell*: a copy of her body mesh pushed out along the normals per zone, keeping the bone weights (coat bodice and sleeves, belt, jeans, a bare-neck skin layer whose tone is sampled from the face texture, and a scalp layer). It has two surfaces, fabric and skin.
-- *Boots*: lofted from measured foot slices and skinned to the Foot, Toes and LowerLeg binds.
-- *Cloth*: the coat skirt, hair locks and scarf are `Cloth`, a world-space Verlet grid pinned to a bone. It has a soft pull toward its rest shape, weighted bend links, capsule colliders, and a Catmull-Rom smoothed render. `panel` splits it into strips, and `card_uv`/`card_layers` turn the strips into hair cards.
-- *Breath*: `Breath` emits GPU steam at the mouth. `Player.strain` drives its rhythm; strain rises while sprinting and peaks just after a long sprint.
+**Player model**: `scripts/player/player.gd` instantiates `assets/characters/styloo_elf/elf.glb` at 0.8 scale, with its original materials. The bundled bow and arrows were removed from the GLB by `tools/prepare_elf.py`. `elf_animations.res` contains eight movement clips retargeted from the hunter's shared animation library by `tools/retarget_elf.gd`. `Breath` is attached to `DEF-spine.006` at the mouth; `FootLock` watches `DEF-foot.L/R` for contacts. The model has no leg IK or separate face, hair, and cloth simulation.
 
-- *Posture* (`posture.gd`): a `SkeletonModifier3D` placed before `FootLock`. It turns her head and neck toward the camera's look direction (clamped, and forward again when the camera looks behind her), opens the chest and lifts the shoulders with `Breath.fullness()` (scaled by strain), and sways the hips over her planted feet when she stands still.
-- *Hair*: two layers.
-  - `Outfit._build_crown`: ~150 short rigid cards attached to the Head bone, combed away from the side part. A per-angle hairline keeps them off the face. Their normals point out from the skull centre, so the layer shades as one mass.
-  - Long simulated locks, whose three skull rows are rigidly carried (`Cloth.pinned_rows`) so they can't drift from the scalp.
-- *Blender head sculpt* (`blender -b --factory-startup -P tools/blender/sculpt_head.py`, Blender 5.2): it reads the rig's source glTF without modifying it. In Blender, Godot rest = (bx, bz, −by), and the source bones keep Unreal names (`neck_01`).
-  - It writes `assets/characters/hair_crown.glb`: ~510 strands grown on her real scalp polygons, re-projected onto the head each step, carded with scalp normals and root-to-tip vertex colours. The colour attribute must be set as active and render or the exporter drops it. When the file exists, `Outfit` uses it instead of `_build_crown`.
-  - It writes `assets/characters/face_shapes.json`: eyelid and brow offsets keyed by rest position.
-  - `Face` (`face.gd`) rebuilds the face and brow meshes as copies with blend shapes `blink_L`, `blink_R`, `squint` and `brow_fear`, matched by rounded position. Relative blend arrays must hold **offsets**; absolute positions double the mesh. Only the standard surface arrays can be passed back.
-  - It animates irregular blinks (sometimes double, faster under strain or fear), a squint with strain, and brow fear with `Game.threat()`. Dev hook: `RUN_FACE=blink|squint|fear`.
-- *Cloth timing*: `Cloth` steps on `Skeleton3D.skeleton_updated`, not in `_process`. Modifier results are discarded after the skeleton update, so reading bones in `_process` misses the head turn, breathing and sway.
-- *Skirt fit*: the skirt starts just above the widest point of her hips, from her measured outline there (`Outfit._outline`, a radius per direction), with the top row tucked under the fitted shell. It has stiffer top rows (`Cloth.top_stiffness`), a modest A-line with 7 godet folds, and leg capsules from mid-thigh down. A pelvis capsule, or thigh capsules starting at the hip joints, shove the hip rows out into a shelf.
-
-Look at changes with `godot --path . --resolution 800x900 -s tools/outfit_preview.gd -- <out_dir>`, which renders PNGs from fixed angles, including moving shots. Shaders: `wear.gdshader` (dye in vertex colour, roughness in alpha, velvet sheen, lining on back faces) and `hair.gdshader` (alpha-scissor strands, anisotropic highlight). Two gotchas:
-- On `CPUParticles3D`/`GPUParticles3D`, never set `lifetime` or `amount` every frame: it restarts the emitter.
-- `MeshInstance3D` already has a `layers` property, so don't reuse that name.
-
-**Actors** both use the Quaternius rig in `addons/quaternius_ik_rigged/`: the player is `Female_Rigged.tscn` with the `girl_coat.png` texture, the hunter is `Master_Rigged.tscn` stretched and painted black. Clip names are resolved by suffix match with fallbacks (`Sprint`→`Jog_Fwd`, `Walk_Formal`→`Walk`), because the rig's animation libraries prefix the clip names.
+**Hunter model**: `scripts/hunter/hunter.gd` still uses the Quaternius `Master_Rigged.tscn` from `addons/quaternius_ik_rigged/`. Keep the shared `UAL1_Standard.glb` animation source and male meshes when cleaning assets.
 
 **Weather** follows the camera and drives several `SnowLayer` particle layers, `StormAudio`, and `Atmosphere.apply_storm(intensity)` from one gust/intensity model. `scripts/world/snowfall.gd` (`Snowfall`) is the older snow system and nothing instantiates it any more.
 

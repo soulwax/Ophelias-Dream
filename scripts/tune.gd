@@ -15,7 +15,7 @@ const STRIDE_ACCEL_WALK := 4.2
 const STRIDE_ACCEL_SPRINT := 9.5
 const STRIDE_COAST := 3.6
 const STRIDE_BRAKE := 11.0
-# Natural ground speed of each clip at playback 1 (tools/stride_probe.gd).
+# Natural ground speed of the movement clips at playback 1.
 const STRIDE_WALK := 1.02
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
@@ -67,6 +67,7 @@ const MOUSE_SENS := 0.0022
 
 const PROP_SCALE := 1.0
 const ACTOR_SCALE := 1.0
+const PLAYER_MODEL_SCALE := 0.8
 
 const FENCE_MIN_X := -150.0
 const FENCE_MAX_X := 150.0

@@ -5,15 +5,14 @@ extends RefCounted
 # real ground speed. Playback is scaled so a planted foot slides back at
 # exactly that speed, so she never skates. A one-shot stumble rides on top.
 #
-# Natural speeds (metres per second at playback 1) were measured from the
-# clips with tools/stride_probe.gd.
+# Natural speeds (metres per second at playback 1) live in Tune.
 
 const IDLE := "Idle"
 const STUMBLE := "Hit_Chest"
 const AIR := "Jump_Start"
 const LAND := "Jump_Land"
 const SLIDE := "Crouch_Idle"
-# Stretch of Jump_Start that is airborne (tools/clip_probe.gd): sprung at
+# Stretch of Jump_Start that is airborne: sprung at
 # 0.09 s, tucked highest near 0.35 s, legs reaching down by 1.2 s.
 const AIR_FROM := 0.09
 const AIR_TUCK := 0.36
