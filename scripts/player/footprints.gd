@@ -12,6 +12,8 @@ var _cursor := 0
 
 func _ready() -> void:
 	top_level = true
+	# Prints are pooled and jump to each new step; never interpolate the jump.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	global_transform = Transform3D.IDENTITY
 	_ages.resize(POOL)
 	_ages.fill(HOLD + FADE)

@@ -32,6 +32,7 @@ func place_near(at: Vector3, facing: Vector3) -> void:
 	global_position = at
 	var to := facing - at
 	rotation.y = atan2(to.x, to.z)
+	reset_physics_interpolation()
 
 
 func understood() -> bool:

@@ -17,6 +17,7 @@ var intro_left: float = Tune.INTRO_TIME
 var notes_found: int = 0
 var lean_graphics := true
 var blackbox: Blackbox
+var settings: Settings
 # Anomalies: the strongest pressure any of them puts on her this frame, the
 # HUD line that goes with it, and which ones she has read the record of.
 var director: AnomalyDirector
@@ -32,8 +33,6 @@ var _hunt_start_msec: int = -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	lean_graphics = _wants_lean_graphics()
-	print("graphics: ", "lean" if lean_graphics else "full", " on ", RenderingServer.get_video_adapter_name())
 	var blackbox_path := OS.get_environment("RUN_BLACKBOX")
 	if blackbox_path != "":
 		blackbox = Blackbox.open(blackbox_path)
@@ -50,8 +49,14 @@ func _ready() -> void:
 	_bind("jump", KEY_SPACE)
 	_bind("slide", KEY_CTRL)
 	_bind("slide", KEY_C)
-	_bind("hold_breath", KEY_F)
 	_bind_mouse("hold_breath", MOUSE_BUTTON_RIGHT)
+	_bind("hold_breath", KEY_F)
+	# After the defaults, so it knows what to reset the keys to.
+	settings = Settings.new()
+	settings.name = "Settings"
+	add_child(settings)
+	lean_graphics = _wants_lean_graphics()
+	print("graphics: ", "lean" if lean_graphics else "full", " on ", RenderingServer.get_video_adapter_name())
 
 
 func _process(delta: float) -> void:
@@ -146,6 +151,8 @@ func toggle_pause() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		set_phase(Phase.PAUSED)
 	elif phase == Phase.PAUSED:
+		if settings:
+			settings.save()
 		get_tree().paused = false
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		set_phase(Phase.PLAYING)
@@ -173,8 +180,18 @@ func escape() -> void:
 
 
 func restart() -> void:
+	if settings:
+		settings.save()
 	reset()
+	# The graphics detail setting is read while the snowfield is built.
+	lean_graphics = _wants_lean_graphics()
 	get_tree().reload_current_scene()
+
+
+func quit() -> void:
+	if settings:
+		settings.save()
+	get_tree().quit()
 
 
 # How hard the world is pressing on her: the hunter or any anomaly.
@@ -199,13 +216,16 @@ func locks_look() -> bool:
 
 
 # Integrated GPUs hard-froze on volumetric fog and the full shadow load.
-# RUN_GRAPHICS=full or RUN_GRAPHICS=lean overrides the guess.
+# RUN_GRAPHICS=full or RUN_GRAPHICS=lean overrides the guess, then the
+# graphics detail setting.
 func _wants_lean_graphics() -> bool:
 	var forced := OS.get_environment("RUN_GRAPHICS")
 	if forced == "full":
 		return false
 	if forced == "lean":
 		return true
+	if settings and settings.graphics != 0:
+		return settings.graphics == 1
 	return RenderingServer.get_video_adapter_type() != RenderingDevice.DEVICE_TYPE_DISCRETE_GPU
 
 

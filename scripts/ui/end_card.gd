@@ -4,10 +4,11 @@ extends Control
 var _title: Label
 var _body: Label
 var _again: Button
+var _hint: Label
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	_build()
@@ -34,6 +35,7 @@ func _show(title: String, body: String, action: String) -> void:
 	_title.text = title
 	_body.text = body
 	_again.text = action
+	_hint.text = "%s does the same." % Game.settings.key_label("restart")
 	visible = true
 
 
@@ -72,6 +74,6 @@ func _build() -> void:
 	_again.pressed.connect(func() -> void: Game.restart())
 	box.add_child(_again)
 
-	var hint := UiChrome.label("R does the same.", 13, UiChrome.MUTED)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(hint)
+	_hint = UiChrome.label("R does the same.", 13, UiChrome.MUTED)
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(_hint)

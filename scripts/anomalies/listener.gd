@@ -216,12 +216,14 @@ func _build() -> void:
 			_head_rest = _skeleton.get_bone_pose_rotation(_head)
 	_shed()
 	_crack = AudioStreamPlayer3D.new()
+	_crack.bus = "Dread"
 	_crack.stream = _sound("snap.wav")
 	_crack.volume_db = 2.0
 	_crack.unit_size = 8.0
 	_crack.max_distance = 60.0
 	add_child(_crack)
 	_hiss = AudioStreamPlayer3D.new()
+	_hiss.bus = "Dread"
 	var hiss := _sound("wind.wav")
 	if hiss is AudioStreamWAV:
 		hiss = (hiss as AudioStreamWAV).duplicate()

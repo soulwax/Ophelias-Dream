@@ -50,7 +50,8 @@ func _ready() -> void:
 	add_child(Weather.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
-	add_child(Hud.new())
+	var hud := Hud.new()
+	add_child(hud)
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player, hunter]
 	if baking:
@@ -64,6 +65,12 @@ func _ready() -> void:
 	Game.begin_intro()
 	if _capture:
 		Game.set_phase(Game.Phase.PLAYING)
+		# Dev hook: RUN_MENU=<page> opens the Esc menu on that page for the shot.
+		var page := OS.get_environment("RUN_MENU")
+		if page != "":
+			process_mode = Node.PROCESS_MODE_ALWAYS
+			Game.toggle_pause.call_deferred()
+			hud.menu.open_page.call_deferred(page)
 
 
 func _process(_delta: float) -> void:

@@ -7,16 +7,15 @@ var _objective: Label
 var _pips: Array[ColorRect] = []
 var _warning_plate: PanelContainer
 var _warning: Label
+var _prompt_plate: PanelContainer
 var _prompt: HBoxContainer
 var _prompt_caption: Label
 var _breath: Control
 var _breath_fill: ColorRect
 var _breath_label: Label
-var _controls: Control
 var _vignette: ColorRect
-var _pause: Control
 var _debug: Label
-var _play_age := 0.0
+var menu: PauseMenu
 var reader: NoteReader
 var ending: EndCard
 
@@ -29,17 +28,16 @@ func _ready() -> void:
 	_on_phase(Game.phase)
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
+	var playing := Game.phase == Game.Phase.PLAYING
 	_warning.text = _warning_line()
-	_warning_plate.visible = _warning.text != "" and Game.phase == Game.Phase.PLAYING
+	_warning_plate.visible = _warning.text != "" and playing
+	_objective_plate.visible = playing and Game.settings.show_objective
 	_refresh_prompt()
 	_refresh_breath()
 	_refresh_pips()
 	if Game.phase == Game.Phase.INTRO:
 		_intro.modulate.a = clampf(Game.intro_left / 0.65, 0.0, 1.0)
-	elif Game.phase == Game.Phase.PLAYING:
-		_play_age += delta
-		_controls.modulate.a = clampf(1.0 - (_play_age - 8.0) / 4.0, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
 		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62)
 		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.threat() * 0.5, 0.0, 0.0))
@@ -62,15 +60,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_phase(next: Game.Phase) -> void:
 	_intro.visible = next == Game.Phase.INTRO
-	_pause.visible = next == Game.Phase.PAUSED
-	var playing := next == Game.Phase.PLAYING
-	_objective_plate.visible = playing
-	_breath.visible = playing
-	_controls.visible = playing
-	if next == Game.Phase.INTRO:
-		_controls.modulate.a = 1.0
-	if next == Game.Phase.PLAYING and _play_age <= 0.0:
-		_controls.modulate.a = 1.0
 	_refresh_objective()
 
 
@@ -90,10 +79,13 @@ func _refresh_pips() -> void:
 
 func _refresh_breath() -> void:
 	if Game.player == null:
+		_breath.visible = false
 		return
 	var ratio := clampf(Game.player.stamina / Tune.STAMINA_MAX, 0.0, 1.0)
 	_breath_fill.anchor_right = ratio
 	var spent := Game.player.exhaust_left > 0.0
+	var short := ratio < 0.995 or spent or Game.player.holding_breath
+	_breath.visible = Game.phase == Game.Phase.PLAYING and (Game.settings.breath_meter == 0 or short)
 	if Game.player.holding_breath:
 		_breath_fill.color = Color(0.62, 0.78, 0.95)
 		_breath_label.text = "Holding breath"
@@ -124,8 +116,8 @@ func _warning_line() -> String:
 func _refresh_prompt() -> void:
 	var show := false
 	var caption := ""
-	var key := "E"
-	if Game.phase == Game.Phase.PLAYING and Game.player:
+	var key := Game.settings.key_label("interact")
+	if Game.phase == Game.Phase.PLAYING and Game.player and Game.settings.show_prompts:
 		var thing := Game.player.nearby_interactable()
 		if Game.player.nearby_note():
 			show = true
@@ -137,10 +129,11 @@ func _refresh_prompt() -> void:
 			show = true
 			key = ""
 			caption = "The fence does not give."
-	_prompt.visible = show
+	_prompt_plate.visible = show
 	if not show:
 		return
 	_prompt.get_child(0).visible = key != ""
+	UiChrome.set_key(_prompt, key)
 	_prompt_caption.text = caption
 
 
@@ -164,13 +157,13 @@ func _build() -> void:
 	_build_intro()
 	_build_objective()
 	_build_warning()
-	_build_controls()
 	_build_bottom()
-	_build_pause()
 	reader = NoteReader.new()
 	add_child(reader)
 	ending = EndCard.new()
 	add_child(ending)
+	menu = PauseMenu.new()
+	add_child(menu)
 	_debug = UiChrome.label("", 14, UiChrome.MUTED)
 	_debug.visible = false
 	_debug.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -196,8 +189,8 @@ func _build_intro() -> void:
 	card.set_anchors_preset(Control.PRESET_CENTER)
 	card.offset_left = -340
 	card.offset_right = 340
-	card.offset_top = -205
-	card.offset_bottom = 205
+	card.offset_top = -100
+	card.offset_bottom = 100
 	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro.add_child(card)
@@ -211,10 +204,10 @@ func _build_intro() -> void:
 	var line := UiChrome.label("The fence is as far as the snow goes.", 18, UiChrome.MUTED)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
-	box.add_child(HSeparator.new())
-	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Jump"], ["Ctrl", "Slide"], ["RMB", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
-		var row := UiChrome.key_row(pair[0], pair[1])
-		box.add_child(row)
+	# The controls live in the Esc menu, not on screen.
+	var menu_line := UiChrome.label("Esc: controls and settings", 13, UiChrome.MUTED)
+	menu_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(menu_line)
 
 
 func _build_objective() -> void:
@@ -265,20 +258,6 @@ func _build_warning() -> void:
 	_warning_plate.add_child(_warning)
 
 
-func _build_controls() -> void:
-	_controls = VBoxContainer.new()
-	_controls.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_controls.offset_left = 28
-	_controls.offset_top = -284
-	_controls.offset_right = 240
-	_controls.offset_bottom = -28
-	_controls.add_theme_constant_override("separation", 4)
-	_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_controls)
-	for pair in [["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Jump"], ["Ctrl", "Slide"], ["RMB", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
-		_controls.add_child(UiChrome.key_row(pair[0], pair[1]))
-
-
 func _build_bottom() -> void:
 	var dock := VBoxContainer.new()
 	dock.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -290,10 +269,16 @@ func _build_bottom() -> void:
 	dock.alignment = BoxContainer.ALIGNMENT_CENTER
 	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dock)
+	# On a plate, so the key reads against bright snow.
+	_prompt_plate = PanelContainer.new()
+	_prompt_plate.add_theme_stylebox_override("panel", UiChrome.plate(10, 6))
+	_prompt_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_prompt_plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_prompt_plate.visible = false
+	dock.add_child(_prompt_plate)
 	_prompt = UiChrome.key_row("E", "Read the note")
-	_prompt.visible = false
 	_prompt_caption = _prompt.get_child(1) as Label
-	dock.add_child(_prompt)
+	_prompt_plate.add_child(_prompt)
 	_breath = PanelContainer.new()
 	_breath.add_theme_stylebox_override("panel", UiChrome.plate(12, 6))
 	_breath.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -319,44 +304,6 @@ func _build_bottom() -> void:
 	_breath_fill.anchor_bottom = 1.0
 	_breath_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	track.add_child(_breath_fill)
-
-
-func _build_pause() -> void:
-	_pause = Control.new()
-	_pause.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_pause.visible = false
-	add_child(_pause)
-	var scrim := ColorRect.new()
-	scrim.color = Color(0.03, 0.04, 0.06, 0.55)
-	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
-	_pause.add_child(scrim)
-	var card := PanelContainer.new()
-	card.set_anchors_preset(Control.PRESET_CENTER)
-	card.offset_left = -260
-	card.offset_right = 260
-	card.offset_top = -235
-	card.offset_bottom = 235
-	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
-	_pause.add_child(card)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	card.add_child(box)
-	var title := UiChrome.label("Paused", 36)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title)
-	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Jump"], ["Ctrl", "Slide"], ["RMB", "Hold breath"], ["E", "Read"]]:
-		box.add_child(UiChrome.key_row(pair[0], pair[1]))
-	var resume := UiChrome.text_button("Resume")
-	resume.pressed.connect(func() -> void: Game.toggle_pause())
-	box.add_child(resume)
-	var again := UiChrome.text_button("Restart")
-	again.pressed.connect(func() -> void: Game.restart())
-	box.add_child(again)
-	var hint := UiChrome.label("Esc resumes.  R restarts.", 13, UiChrome.MUTED)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(hint)
 
 
 func _letterbox() -> void:

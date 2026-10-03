@@ -16,14 +16,14 @@ var _sting: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_wind = _loop("wind.wav", -16.0)
-	_drone = _loop("drone.wav", -22.0)
-	_heart = _one_shot("heart.wav", -8.0)
+	_wind = _loop("wind.wav", -16.0, "Ambience")
+	_drone = _loop("drone.wav", -22.0, "Ambience")
+	_heart = _one_shot("heart.wav", -8.0, "Dread")
 	_load_steps()
-	_snap = _one_shot("snap.wav", -4.0)
-	_slide_hiss = _loop("storm_hiss.wav", -20.0)
+	_snap = _one_shot("snap.wav", -4.0, "Dread")
+	_slide_hiss = _loop("storm_hiss.wav", -20.0, "Effects")
 	_slide_hiss.stop()
-	_sting = _one_shot("sting.wav", -2.0)
+	_sting = _one_shot("sting.wav", -2.0, "Dread")
 	Game.soundscape = self
 	Game.closeness_changed.connect(_on_closeness)
 	if _wind:
@@ -96,6 +96,7 @@ func _load_steps() -> void:
 			_floor_clips.append(load(path) as AudioStream)
 	for _i in 4:
 		var player := AudioStreamPlayer.new()
+		player.bus = "Effects"
 		add_child(player)
 		_steps.append(player)
 
@@ -119,8 +120,8 @@ func _process(_delta: float) -> void:
 	_on_closeness(Game.threat())
 
 
-func _loop(file_name: String, volume_db: float) -> AudioStreamPlayer:
-	var player := _one_shot(file_name, volume_db)
+func _loop(file_name: String, volume_db: float, bus: String) -> AudioStreamPlayer:
+	var player := _one_shot(file_name, volume_db, bus)
 	if player.stream is AudioStreamWAV:
 		var wav := (player.stream as AudioStreamWAV).duplicate() as AudioStreamWAV
 		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
@@ -129,9 +130,10 @@ func _loop(file_name: String, volume_db: float) -> AudioStreamPlayer:
 	return player
 
 
-func _one_shot(file_name: String, volume_db: float) -> AudioStreamPlayer:
+func _one_shot(file_name: String, volume_db: float, bus: String) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
 	player.volume_db = volume_db
+	player.bus = bus
 	var path := "res://assets/audio/" + file_name
 	if ResourceLoader.exists(path):
 		player.stream = load(path)

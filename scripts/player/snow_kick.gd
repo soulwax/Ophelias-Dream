@@ -11,6 +11,8 @@ var _cursor := 0
 
 
 func _ready() -> void:
+	# Each burst jumps to the next boot; never interpolate the jump.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var cloud := _cloud()
 	for i in POOL:
 		var motion := ParticleProcessMaterial.new()

@@ -20,6 +20,7 @@ var _yaw: float = 0.0
 var _pitch: float = -0.18
 var exhaust_left: float = 0.0
 var _sprinting := false
+var _sprint_latch := false
 var _left_foot := false
 var _glide := Vector3.ZERO
 var footprints: Footprints
@@ -87,6 +88,8 @@ func _ready() -> void:
 	_build_camera()
 	_build_model()
 	_place()
+	rotation.y = _yaw
+	reset_physics_interpolation()
 	footprints = Footprints.new()
 	add_child(footprints)
 	kicks = SnowKick.new()
@@ -113,15 +116,20 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	if event is InputEventMouseMotion and not Game.locks_look():
-		_yaw -= event.relative.x * Tune.MOUSE_SENS
-		_pitch = clampf(_pitch - event.relative.y * Tune.MOUSE_SENS, deg_to_rad(-50.0), deg_to_rad(22.0))
+	# Look goes straight to the camera every frame. screen_relative is in real
+	# pixels, so the window size or stretch never changes the sensitivity.
+	if event is InputEventMouseMotion and not Game.locks_look() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		var turn := (event as InputEventMouseMotion).screen_relative * Tune.MOUSE_SENS * Game.settings.mouse_sensitivity
+		_yaw -= turn.x
+		_pitch = clampf(_pitch + (turn.y if Game.settings.invert_y else -turn.y), Tune.PITCH_DOWN, Tune.PITCH_UP)
 
 
 func _physics_process(delta: float) -> void:
 	if trail == null:
 		return
-	_apply_look()
+	# The body faces the camera so the keys move her relative to the view;
+	# her model turns on its own (_carry).
+	rotation.y = _yaw
 	if Game.locks_movement():
 		if sliding:
 			_end_slide()
@@ -138,7 +146,6 @@ func _physics_process(delta: float) -> void:
 			grace.speed = _ground_speed()
 		_breathe(delta, false)
 		_carry(delta, false)
-		_move_camera(delta)
 		return
 
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -163,8 +170,7 @@ func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
-	var running := Input.is_action_pressed("sprint") or _autopilot in ["sprint", "jump", "slide"]
-	var wants_sprint := moving and running and exhaust_left <= 0.0 and not sliding
+	var wants_sprint := moving and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
 	# Once spent she must get some breath back before she can sprint again,
 	# so holding Shift through exhaustion cannot stutter into a stumble loop.
 	var sprinting := wants_sprint and stamina > 0.0 and (_sprinting or stamina > Tune.SPRINT_RESUME)
@@ -203,11 +209,7 @@ func _physics_process(delta: float) -> void:
 	if Game.weather and moving and not indoors():
 		push = Game.weather.wind * 0.03 * (1.0 + Game.weather.gust * 0.8)
 	if not sliding:
-		var target := Vector3(wish.x, 0.0, wish.z) * speed
-		var rate := _momentum(target, moving, sprinting)
-		if not on_floor:
-			rate *= Tune.AIR_CONTROL
-		_glide = _glide.move_toward(target, rate * delta)
+		_steer(wish, speed, sprinting, on_floor, delta)
 	_since_plant += delta
 	if foot_lock:
 		foot_lock.body_speed = _ground_speed()
@@ -221,8 +223,17 @@ func _physics_process(delta: float) -> void:
 	_breathe(delta, sprinting)
 	_carry(delta, sprinting)
 	_steps(delta)
-	_move_camera(delta)
 	_flicker_lantern(delta)
+
+
+# The camera rig lives outside the physics tick: it follows her interpolated
+# position and the mouse every rendered frame, so look and motion stay smooth
+# at any frame rate.
+func _process(delta: float) -> void:
+	if spring_arm == null:
+		return
+	_move_camera(delta)
+	_apply_look()
 
 
 func _jump() -> void:
@@ -340,16 +351,58 @@ func _end_slide() -> void:
 		Game.soundscape.slide(0.0)
 
 
-# Quick to get going, a short coast when she lets go or eases off a sprint,
-# and hard braking when she reverses: weight without sluggishness.
-func _momentum(target: Vector3, moving: bool, sprinting: bool) -> float:
-	if not moving:
-		return Tune.STRIDE_COAST
-	if _glide.length() > 0.5 and _glide.dot(target) < 0.0:
-		return Tune.STRIDE_BRAKE
-	if target.length() > _glide.length():
-		return Tune.STRIDE_ACCEL_SPRINT if sprinting else Tune.STRIDE_ACCEL_WALK
-	return Tune.STRIDE_COAST
+# Speed and heading move separately, so a turn never costs a slow vector
+# blend: at a walk she pivots almost at once, at a sprint she sweeps round
+# and hard corners bleed a little speed. Asked to reverse at speed she plants
+# and brakes first. Letting go she skids a short way; easing off a sprint she
+# slows over a stride or two. In the air she keeps what she left with.
+func _steer(wish: Vector3, top: float, sprinting: bool, on_floor: bool, delta: float) -> void:
+	var flat := Vector3(_glide.x, 0.0, _glide.z)
+	var current := flat.length()
+	var asked := wish.length() > 0.05
+	if not on_floor:
+		if not asked:
+			_glide = flat.move_toward(Vector3.ZERO, Tune.AIR_DRAG * delta)
+			return
+		var aim := wish.normalized() * maxf(top, current)
+		_glide = flat.move_toward(aim, Tune.AIR_ACCEL * delta)
+		return
+	var pace := clampf((current - Tune.WALK_SPEED) / (Tune.SPRINT_SPEED - Tune.WALK_SPEED), 0.0, 1.0)
+	if not asked:
+		_glide = flat.move_toward(Vector3.ZERO, lerpf(Tune.STRIDE_STOP_WALK, Tune.STRIDE_STOP_SPRINT, pace) * delta)
+		return
+	var toward := wish.normalized()
+	var heading := toward
+	if current >= Tune.PIVOT_SPEED:
+		heading = flat / current
+		var angle := heading.signed_angle_to(toward, Vector3.UP)
+		if absf(angle) > Tune.REVERSE_ANGLE:
+			_glide = heading * move_toward(current, 0.0, Tune.STRIDE_BRAKE * delta)
+			return
+		var reach := lerpf(Tune.TURN_RATE_WALK, Tune.TURN_RATE_SPRINT, pace) * delta
+		var turned := clampf(angle, -reach, reach)
+		heading = heading.rotated(Vector3.UP, turned)
+		current *= 1.0 - absf(turned) * Tune.TURN_BLEED * pace
+	var want := top * minf(wish.length(), 1.0)
+	var rate := Tune.STRIDE_EASE
+	if want > current:
+		rate = Tune.STRIDE_ACCEL_SPRINT if sprinting else Tune.STRIDE_ACCEL_WALK
+	_glide = heading * move_toward(current, want, rate * delta)
+
+
+# Hold to sprint, or with the toggle setting tap once and she keeps running
+# until she stops, is spent, or it is tapped again.
+func _sprint_wanted(moving: bool) -> bool:
+	if _autopilot in ["sprint", "jump", "slide"]:
+		return true
+	if not Game.settings.sprint_toggle:
+		_sprint_latch = false
+		return Input.is_action_pressed("sprint")
+	if Input.is_action_just_pressed("sprint"):
+		_sprint_latch = not _sprint_latch
+	if not moving or exhaust_left > 0.0:
+		_sprint_latch = false
+	return _sprint_latch
 
 
 # Uphill costs speed, downhill gives a little back.
@@ -450,13 +503,14 @@ func _place() -> void:
 
 
 func _apply_look() -> void:
-	rotation.y = _yaw
-	if spring_arm:
-		spring_arm.rotation.x = _pitch
-		_fit_boom_to_ground()
+	var turn := Basis(Vector3.UP, _yaw)
+	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake, 0.0) + _trail_offset
+	var body := get_global_transform_interpolated().origin
+	spring_arm.global_transform = Transform3D(turn * Basis(Vector3.RIGHT, _pitch), body + turn * mount)
+	_fit_boom_to_ground()
 	if camera:
 		var shake := Game.weather.gust * 0.012 if Game.weather else 0.0
-		camera.rotation.z = sin(Time.get_ticks_msec() * 0.009) * shake + _roll_kick
+		camera.rotation.z = (sin(Time.get_ticks_msec() * 0.009) * shake + _roll_kick) * Game.settings.camera_shake
 
 
 func apply_authored_spawn() -> void:
@@ -545,7 +599,8 @@ func _carry(delta: float, sprinting: bool) -> void:
 	if flat.length() > 0.35:
 		var before := _facing
 		var target_yaw := atan2(-flat.x, -flat.z)
-		_facing = lerp_angle(_facing, target_yaw, 1.0 - exp(-delta * (9.0 if sprinting else 3.6)))
+		var pace_turn := clampf((flat.length() - Tune.WALK_SPEED) / (Tune.SPRINT_SPEED - Tune.WALK_SPEED), 0.0, 1.0)
+		_facing = lerp_angle(_facing, target_yaw, 1.0 - exp(-delta * lerpf(Tune.FACE_RATE_WALK, Tune.FACE_RATE_SPRINT, pace_turn)))
 		turn_rate = angle_difference(before, _facing) / maxf(delta, 0.0001)
 	var accel := (_glide - _last_glide) / maxf(delta, 0.0001)
 	_last_glide = _glide
@@ -612,11 +667,13 @@ func _move_camera(delta: float) -> void:
 	if spring_arm == null or camera == null:
 		return
 	var pace := clampf((_ground_speed() - Tune.WALK_SPEED) / (Tune.SPRINT_SPEED - Tune.WALK_SPEED), 0.0, 1.0)
-	camera.fov = lerpf(camera.fov, 68.0 + 9.0 * pace + 5.0 * _slide_weight, 1.0 - exp(-delta * 4.0))
+	var widen := (9.0 * pace + 5.0 * _slide_weight) if Game.settings.speed_fov else 0.0
+	camera.fov = lerpf(camera.fov, Game.settings.fov + widen, 1.0 - exp(-delta * 4.0))
 	# Indoors the camera comes in over her shoulder: rooms are a few metres
 	# across, and a long boom would only be crushed against the walls.
 	var inside := indoors()
-	_boom = lerpf(_boom, INDOOR_BOOM if inside else BOOM_LENGTH + 0.5 * pace, 1.0 - exp(-delta * 3.0))
+	var outdoors_boom := BOOM_LENGTH * Game.settings.camera_distance + 0.5 * pace
+	_boom = lerpf(_boom, minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom, 1.0 - exp(-delta * 3.0))
 	_shoulder = lerpf(_shoulder, INDOOR_SHOULDER if inside else 0.0, 1.0 - exp(-delta * 3.0))
 	# Pressed into her by a wall anyway, it looks past her instead of
 	# through the inside of her head.
@@ -624,10 +681,8 @@ func _move_camera(delta: float) -> void:
 		visual.visible = spring_arm.get_hit_length() > 0.6
 	_jolt = lerpf(_jolt, 0.0, 1.0 - exp(-delta * 11.0))
 	_roll_kick = lerpf(_roll_kick, 0.0, 1.0 - exp(-delta * 8.0))
-	var lag := global_transform.basis.inverse() * Vector3(-_glide.x, 0.0, -_glide.z) * 0.04
+	var lag := Basis(Vector3.UP, _yaw).inverse() * Vector3(-_glide.x, 0.0, -_glide.z) * 0.04
 	_trail_offset = _trail_offset.lerp(lag.limit_length(0.32), 1.0 - exp(-delta * 3.0))
-	# The camera drops with her into a slide.
-	spring_arm.position = Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt, 0.0) + _trail_offset
 
 
 func _flicker_lantern(delta: float) -> void:
@@ -672,7 +727,9 @@ func _build_body() -> void:
 
 func _build_camera() -> void:
 	spring_arm = SpringArm3D.new()
-	spring_arm.position = Vector3(0, 1.5, 0)
+	# Placed every frame by _apply_look, not carried by the body's tick.
+	spring_arm.top_level = true
+	spring_arm.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	spring_arm.spring_length = BOOM_LENGTH
 	spring_arm.margin = 0.18
 	spring_arm.collision_mask = Tune.LAYER_WORLD

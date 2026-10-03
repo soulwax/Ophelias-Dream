@@ -41,6 +41,7 @@ func _ready() -> void:
 		_cooldown = 2.0
 	for i in 6:
 		var voice := AudioStreamPlayer3D.new()
+		voice.bus = "Effects"
 		voice.unit_size = 4.0
 		voice.max_distance = 30.0
 		voice.attenuation_filter_cutoff_hz = 6000.0

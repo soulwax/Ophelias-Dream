@@ -51,6 +51,10 @@ F3 toggles a debug label (hunter gap and stamina) in debug builds.
 - Holds the phase state machine (`BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED`) and emits `phase_changed` / `closeness_changed`. UI and audio subscribe to these signals.
 - Each system registers itself on the autoload in its `_ready()` (`Game.player = self`, `Game.trail = self`, `Game.weather = self`, …), and other systems reach each other through `Game.*`, not node paths.
 - Registers all input actions in code with `_bind()`. There is no `[input]` section in `project.godot`, so new actions go here.
+- `Game.settings` (`Settings`, `scripts/game/settings.gd`) is created right after the default binds and holds everything the Esc menu changes: look, sprint mode, camera, display, audio levels and HUD options, plus key overrides. It saves to `user://settings.cfg` when the menu closes, on restart and on quit. Systems read `Game.settings.*` when they need a value.
+ - New rebindable actions go in `Settings.ACTIONS` (two slots each). A key bound to one action is taken from any other.
+ - Audio has three buses created at startup: `Ambience` (wind, drone, storm), `Effects` (steps, slide, doors, switches, house) and `Dread` (heartbeat, stings, anomaly sounds). Give every new player a `bus`.
+ - Graphics detail (Auto/Lean/Full) feeds `_wants_lean_graphics()` after `RUN_GRAPHICS`, and applies on the next restart.
 - `locks_movement()` / `locks_look()` gate player control by phase. `restart()` resets state and reloads the scene.
 - `closeness` (0–1) is the single "how near is it" value. The hunter sets it, and the HUD vignette, breath and audio react to it. The UI never shows distances.
 
@@ -76,10 +80,13 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
   - Slides get a speed boost, snow friction, gravity along the slope and limited steering, and you can jump out of one.
   - `Stride` adds layers on top of locomotion: an air pose (Jump_Start, sought by vertical velocity), a slide pose (Crouch_Idle), and a landing one-shot (Jump_Land).
   - `FootLock.suspended` suppresses ground contact in the air and during a slide.
-  - Hold breath is on right mouse button or F.
+  - Hold breath is on right mouse button or F (defaults; all keys can be rebound in the Esc menu). Sprint can be set to toggle.
 - Dev hooks: `RUN_AUTOPILOT=walk|sprint|jump|slide` and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
-- Momentum is in `Player._momentum` (accelerate, coast, or brake on reversal), and `_slope_factor` slows her uphill.
-- Dev hook: `RUN_AUTOPILOT=walk|sprint` holds forward, for `RUN_CAPTURE` shots.
+- Momentum is in `Player._steer`, which moves speed and heading separately (`Tune.STRIDE_*`, `TURN_*`). At a walk she pivots almost at once; at a sprint she sweeps round at `TURN_RATE_SPRINT`, and hard key turns dip her speed briefly. A reversal at speed plants and brakes first. Letting go skids about 0.5 s, and in the air she keeps her takeoff speed (`AIR_ACCEL`, `AIR_DRAG`). `_slope_factor` slows her uphill.
+- Physics interpolation is on (`physics/common/physics_interpolation`).
+ - The camera rig (`spring_arm`) is `top_level`, not interpolated, and placed every frame in `Player._process` from `get_global_transform_interpolated()` and the mouse. Look reads `screen_relative`, so window size never changes sensitivity.
+ - Anything that teleports must call `reset_physics_interpolation()` after the move (hunter `_move_to`, `Anomaly.place_near`, player spawn).
+ - Pooled effects that jump to new spots (`Footprints`, `SnowKick`) and nodes moved in `_process` (`Weather`) have interpolation off.
 
 **Player** is a `CharacterBody3D` with a spring-arm third-person camera, stamina-gated sprint, wind push from `Game.weather` (only while she moves), and `Footprints` decals.
 - The model (`visual`) turns toward the direction she's moving, independent of the camera, and leans into acceleration and turns (`_carry`).
@@ -134,7 +141,14 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 
 **Weather** follows the camera and drives several `SnowLayer` particle layers, `StormAudio`, and `Atmosphere.apply_storm(intensity)` from one gust/intensity model. `scripts/world/snowfall.gd` (`Snowfall`) is the older snow system and nothing instantiates it any more.
 
-**UI (`scripts/ui/`)**: `Hud` creates `NoteReader` and `EndCard`. Shared styling (plates, paper, key-hint rows, palette constants) lives in the `UiChrome` class (`chrome.gd`). Note text and its corruption level are data in `NoteCatalog`, separate from the world pickup `FieldNote`.
+**UI (`scripts/ui/`)**: `Hud` creates `NoteReader`, `EndCard` and `PauseMenu`. Controls are not shown on screen; the intro card only points to Esc.
+- `PauseMenu` (`pause_menu.gd`) is the Esc menu.
+ - The sidebar has Resume, Restart and Quit, and five pages: Controls with rebinding, Camera, Display, Audio and Interface.
+ - Each page has a reset, and its controls come from `_slider` / `_toggle` / `_choice` / `_binding`.
+ - Rebinding listens in `_input` before anything else: Esc cancels and Backspace clears.
+ - Dev hook: `RUN_MENU=<page>` with `RUN_CAPTURE` opens it for a shot.
+- In-world key hints (the prompt, the note reader footer, the end card) read `Game.settings.key_label(action)`, so they follow rebinding.
+- Inside `_ready()`, a full-screen Control needs `set_anchors_and_offsets_preset`; anchors alone keep its empty starting rect. Shared styling (plates, paper, key-hint rows, palette constants) lives in the `UiChrome` class (`chrome.gd`). Note text and its corruption level are data in `NoteCatalog`, separate from the world pickup `FieldNote`.
 
 **Shaders** live in `shaders/` and are loaded by path from code (`snow_ground`, `footprint`, `snowflake`, `vignette`).
 
