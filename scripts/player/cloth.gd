@@ -13,6 +13,15 @@ const STEP := 1.0 / 60.0
 const MAX_STEPS := 2
 
 var stiffness := 0.0
+# Pull toward the rest shape for the rows just under the pinned edge; it
+# eases to `stiffness` over `top_rows` rows. Lets a skirt hug the hips while
+# its hem swings freely.
+var top_stiffness := 0.0
+var top_rows := 4
+# Rows carried rigidly by the bone (row 0 always is). Hair uses the rows that
+# lie on the skull, so they move exactly with the scalp.
+var pinned_rows := 1
+var _pinned := 0
 # How hard folds resist, 0..1. Bend links reach two and three particles
 # along each row and column, so a fold spreads over several segments and
 # rolls instead of creasing at one joint.
@@ -48,6 +57,8 @@ var _trim: Callable
 var _accum := 0.0
 var _live := false
 var _last_frame := Transform3D.IDENTITY
+var _last_usec := 0
+var _last_frame_index := -1
 var _mesh := ArrayMesh.new()
 var _render_cols := 0
 var _render_rows := 0
@@ -64,6 +75,7 @@ func setup(skeleton: Skeleton3D, bone: String, rest: PackedVector3Array, cols: i
 	_anchor = skeleton.find_bone(bone)
 	_cols = cols
 	_rows = rows
+	_pinned = cols * clampi(pinned_rows, 1, rows)
 	_rest = rest
 	_trim = trim
 	if panel > 0:
@@ -94,6 +106,25 @@ func setup(skeleton: Skeleton3D, bone: String, rest: PackedVector3Array, cols: i
 	top_level = true
 	mesh = _mesh
 	extra_cull_margin = 2.0
+	# Step once the skeleton has finished its update, modifiers included:
+	# modifier results (the turned head, the breathing chest, swaying hips)
+	# are discarded afterwards, so reading bones in _process misses them.
+	set_process(false)
+	skeleton.skeleton_updated.connect(_on_skeleton_updated)
+
+
+func _on_skeleton_updated() -> void:
+	# The signal can come more than once a frame: simulate once per frame,
+	# but always draw the roots where the bone is now.
+	var frame_index := Engine.get_process_frames()
+	if frame_index == _last_frame_index:
+		_follow()
+		return
+	_last_frame_index = frame_index
+	var now := Time.get_ticks_usec()
+	var delta := 0.0 if _last_usec == 0 else float(now - _last_usec) / 1000000.0
+	_last_usec = now
+	_process(clampf(delta, 0.0, 0.1))
 
 
 func add_capsule(bone: String, a_rest: Vector3, b_rest: Vector3, radius: float) -> void:
@@ -139,8 +170,25 @@ func _process(delta: float) -> void:
 		# Sweep the pinned row from last frame's pose to this one, so a fast
 		# turn drags the cloth instead of teleporting its top edge.
 		_step(_last_frame.interpolate_with(frame, float(k + 1) / float(steps)), wind)
-	_last_frame = frame
+	if steps > 0:
+		_last_frame = frame
+	# Between steps the body moves on; the roots must not lag the skin.
+	_pin(frame)
 	_rebuild()
+
+
+func _follow() -> void:
+	if _skeleton == null or _anchor < 0 or not _live:
+		return
+	_pin(_skeleton.global_transform * _skeleton.get_bone_global_pose(_anchor))
+	_rebuild()
+
+
+func _pin(frame: Transform3D) -> void:
+	for idx in _pinned:
+		var pinned := frame * _local[idx]
+		_pos[idx] = pinned
+		_prev[idx] = pinned
 
 
 func _reset(frame: Transform3D) -> void:
@@ -179,15 +227,16 @@ func _place_capsules() -> void:
 func _step(frame: Transform3D, wind: Vector3) -> void:
 	var pull := (Vector3(0.0, -9.8, 0.0) + wind) * STEP * STEP
 	var keep := 1.0 - damping
-	for j in _cols:
-		var pinned := frame * _local[j]
-		_pos[j] = pinned
-		_prev[j] = pinned
-	for idx in range(_cols, _pos.size()):
+	_pin(frame)
+	for idx in range(_pinned, _pos.size()):
 		var p := _pos[idx]
 		var moved := p + (p - _prev[idx]) * keep + pull
-		if stiffness > 0.0:
-			moved += (frame * _local[idx] - moved) * stiffness
+		var hold := stiffness
+		if top_stiffness > stiffness:
+			var row := float(idx / _cols) - float(pinned_rows - 1)
+			hold = lerpf(top_stiffness, stiffness, clampf((row - 1.0) / float(maxi(top_rows - 1, 1)), 0.0, 1.0))
+		if hold > 0.0:
+			moved += (frame * _local[idx] - moved) * hold
 		_prev[idx] = p
 		_pos[idx] = moved
 	for _iteration in iterations:
@@ -201,9 +250,11 @@ func _step(frame: Transform3D, wind: Vector3) -> void:
 			if dist < 1e-6:
 				continue
 			var fix := d * ((dist - _link_len[k]) / dist * _link_k[k])
-			if a < _cols:
+			if a < _pinned and b < _pinned:
+				continue
+			if a < _pinned:
 				_pos[b] = pb - fix
-			elif b < _cols:
+			elif b < _pinned:
 				_pos[a] = pa + fix
 			else:
 				_pos[a] = pa + fix * 0.5
@@ -212,7 +263,7 @@ func _step(frame: Transform3D, wind: Vector3) -> void:
 
 
 func _collide() -> void:
-	for idx in range(_cols, _pos.size()):
+	for idx in range(_pinned, _pos.size()):
 		var p := _pos[idx]
 		var hit := false
 		for capsule in _world_caps:

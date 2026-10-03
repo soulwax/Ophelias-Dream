@@ -39,7 +39,8 @@ func _process(_delta: float) -> void:
 	if not _capture:
 		return
 	_frames += 1
-	if _frames == 150:
+	var shot_frame := OS.get_environment("RUN_SHOT_FRAME").to_int()
+	if _frames == (shot_frame if shot_frame > 0 else 150):
 		_shoot()
 
 

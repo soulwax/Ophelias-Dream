@@ -16,10 +16,11 @@ const CUFF := Color(0.018, 0.015, 0.02, 0.78)
 const DENIM := Color(0.07, 0.075, 0.09, 0.85)
 const LEATHER := Color(0.016, 0.006, 0.008, 0.3)
 const HAIR_ROOT := Color(0.09, 0.045, 0.028, 0.48)
-const HAIR_CAP := Color(0.05, 0.027, 0.017, 0.95)
+# The scalp under the locks wears the roots' own tone, so a gap reads as shadow in the hair.
+const HAIR_CAP := Color(0.08, 0.042, 0.026, 0.7)
 const HAIR_TIP := Color(0.3, 0.16, 0.08, 0.5)
 const SILVER := Color(0.8, 0.8, 0.83)
-const WINE := Color(0.075, 0.006, 0.013, 0.95)
+const WINE := Color(0.05, 0.004, 0.009, 0.95)
 # Corner of the painted face in the body texture (tools/paint_coat.py keeps
 # this box as skin and dyes the rest).
 const FACE_UV := Vector2(0.4, 0.36)
@@ -239,6 +240,37 @@ func _band(y0: float, y1: float) -> Dictionary:
 	return {"cz": cz, "rx": max_x, "front": max_z - cz, "back": cz - min_z}
 
 
+# Her outline at one height: for each direction theta (0 = front, around her
+# left), how far the body reaches from (0, centre_z), smoothed so creases and
+# the gap between the legs do not dent it.
+func _outline(y: float, centre_z: float, thetas: Array[float]) -> Array[float]:
+	var reach: Array[float] = []
+	reach.resize(thetas.size())
+	reach.fill(0.0)
+	for p in _verts:
+		if absf(p.y - y) > 0.018 or absf(p.x) > 0.32:
+			continue
+		var dx := p.x
+		var dz := p.z - centre_z
+		var angle := atan2(dx, dz)
+		var r := Vector2(dx, dz).length()
+		for j in thetas.size():
+			if absf(angle_difference(angle, thetas[j])) < 0.26:
+				reach[j] = maxf(reach[j], r)
+	# Fill empty directions from their neighbours, then smooth twice.
+	for j in reach.size():
+		if reach[j] <= 0.0:
+			reach[j] = maxf(reach[(j + 1) % reach.size()], reach[(j - 1 + reach.size()) % reach.size()])
+	for _pass in 2:
+		var smooth := reach.duplicate()
+		for j in reach.size():
+			var a := reach[maxi(j - 1, 0)]
+			var b := reach[mini(j + 1, reach.size() - 1)]
+			smooth[j] = maxf(reach[j], (a + reach[j] * 2.0 + b) * 0.25)
+		reach = smooth
+	return reach
+
+
 # Widest distance from a bone segment, over the middle of that segment.
 func _girth(a: Vector3, b: Vector3, side: float) -> float:
 	var ab := b - a
@@ -296,13 +328,14 @@ func _build_scarf() -> void:
 	var trim := func(_u: float, v: float) -> Color:
 		return WINE.darkened(0.15 * v)
 	loop.setup(skeleton, "UpperChest", rest, cols, rows, rows, trim)
-	loop.material_override = _fabric(Color.WHITE, 0.35, 0.1, 28.0, 0.35, WINE.darkened(0.3))
+	# Ribbed knit: a deep, fine weave and only a little sheen.
+	loop.material_override = _fabric(Color.WHITE, 0.18, 0.06, 46.0, 0.6, WINE.darkened(0.3))
 	add_child(loop)
 	_scarf_colliders(loop, neck, neck_r, chest, shoulder)
 
 	# Two narrow tails off to her left, one longer than the other.
-	var tails: Array = [[0.085, 0.52], [0.045, 0.42]]
-	var strip := 2
+	var tails: Array = [[0.11, 0.5], [0.035, 0.4]]
+	var strip := 3
 	var tail_rows := 11
 	var tail_rest := PackedVector3Array()
 	tail_rest.resize(tail_rows * tails.size() * strip)
@@ -313,16 +346,20 @@ func _build_scarf() -> void:
 			var y := base_y - 0.06 - length * float(i) / float(tail_rows - 1)
 			var surface := _front_point(Vector2(y - 0.02, y + 0.02), x, 0.03)
 			# Hangs a hand's breadth off the coat so it drapes, not paints.
-			var z := maxf(surface.z, chest.cz) + 0.055 - 0.01 * float(k)
-			var half := 0.034 * lerpf(1.0, 0.88, float(i) / float(tail_rows - 1))
-			tail_rest[(i * tails.size() + k) * strip] = Vector3(x - half, y, z)
-			tail_rest[(i * tails.size() + k) * strip + 1] = Vector3(x + half, y, z)
+			# The front tail hangs clear of the one behind it.
+			var z := maxf(surface.z, chest.cz) + 0.05 + 0.018 * float(1 - k)
+			var half := 0.027 * lerpf(1.0, 0.85, float(i) / float(tail_rows - 1))
+			# Knit curls at the edges: the middle column sits a little proud.
+			for c in strip:
+				var across := (float(c) - 1.0) * half
+				var curl := (1.0 - absf(float(c) - 1.0)) * 0.008
+				tail_rest[(i * tails.size() + k) * strip + c] = Vector3(x + across, y, z + curl)
 	var tail := Cloth.new()
 	tail.name = "Wear_ScarfTails"
 	tail.panel = strip
 	_soft_wool(tail)
 	var fringe := func(_u: float, v: float) -> Color:
-		return WINE.lightened(0.12) if v > 0.93 else WINE
+		return WINE.lightened(0.06) if v > 0.95 else WINE
 	tail.setup(skeleton, "UpperChest", tail_rest, tails.size() * strip, tail_rows, 0, fringe)
 	tail.material_override = loop.material_override
 	add_child(tail)
@@ -402,10 +439,7 @@ func _build_clasps() -> void:
 
 
 func _build_skirt() -> void:
-	# The skirt starts under the belt, which hides its edge, follows her
-	# waist and hips as closely as the bodice does, and only opens into the
-	# A-line below the widest point of the hips. No shelf, no bell.
-	var top_y := (_belt_lo + _belt_hi) * 0.5
+	# Find the widest point of the hips.
 	var widest_y := _hips_y - 0.06
 	var widest_rx := 0.0
 	for k in 9:
@@ -416,38 +450,53 @@ func _build_skirt() -> void:
 			widest_y = probe
 	var widest := _band(widest_y - 0.012, widest_y + 0.012)
 	var hem_y := 0.24
-	var cols := 22
-	var rows := 14
+	var cols := 30
+	var rows := 15
 	var gap := 0.14
+	# Seven godets round the skirt: flat over the hips, deep folds at the hem.
+	var folds := 7.0
+	var thetas: Array[float] = []
+	for j in cols:
+		thetas.append(lerpf(gap * 0.5, TAU - gap * 0.5, float(j) / float(cols - 1)))
+	# The coat's fitted layer covers waist and hips and follows every pose;
+	# the skirt takes over from it just above the widest point of the hips,
+	# wrapping her real outline there (not an ellipse), and falls from it.
+	var top_y := widest_y + 0.07
+	var centre_z: float = widest.cz
+	var hip := _outline(widest_y, centre_z, thetas)
 	var closed := 1
 	var rest := PackedVector3Array()
 	for i in rows:
 		var t := float(i) / float(rows - 1)
-		var y := lerpf(top_y, hem_y, t)
-		var shape := widest
-		var rx: float
-		var front: float
-		var back: float
+		var y := lerpf(top_y, hem_y, pow(t, 1.15))
+		var radii := hip
 		if y > widest_y:
-			shape = _band(y - 0.012, y + 0.012)
-			rx = shape.rx + 0.021
-			front = shape.front + 0.021
-			back = shape.back + 0.021
+			radii = _outline(y, centre_z, thetas)
 			closed = i + 1
-		else:
-			# Starts tangent to the hip line, so the fall has no kink.
-			var open := pow(clampf((widest_y - y) / (widest_y - hem_y), 0.0, 1.0), 1.7)
-			rx = lerpf(widest.rx + 0.024, widest.rx + 0.22, open)
-			front = lerpf(widest.front + 0.024, widest.front + 0.2, open)
-			back = lerpf(widest.back + 0.028, widest.back + 0.24, open)
+		var open := clampf((widest_y - y) / (widest_y - hem_y), 0.0, 1.0)
+		# Leaves the hips along their own curve, so the fall has no shelf.
+		var flare := pow(open, 1.6)
 		for j in cols:
-			var theta := lerpf(gap * 0.5, TAU - gap * 0.5, float(j) / float(cols - 1))
-			var depth := front if cos(theta) > 0.0 else back
-			rest.append(Vector3(sin(theta) * rx, y, (shape.cz as float) + cos(theta) * depth))
+			var theta := thetas[j]
+			# Back and sides take more of the flare than the front.
+			# A modest A-line: it falls close to her legs and opens as she strides.
+			var reach := lerpf(0.11, 0.15, 0.5 - 0.5 * cos(theta))
+			# The top row tucks just inside the fitted coat (which stands
+			# 17 mm proud), so the seam is hidden; it eases out over two rows.
+			var standoff := lerpf(0.004, 0.024, clampf(float(i) / 2.0, 0.0, 1.0))
+			var r := radii[j] + standoff + reach * flare
+			# The folds deepen fast below the hips, and the hollows dip deeper
+			# than the crests stand out, as cloth falls.
+			var wave := sin(theta * folds)
+			r *= 1.0 + 0.11 * pow(open, 0.7) * (wave if wave > 0.0 else wave * 1.3)
+			rest.append(Vector3(sin(theta) * r, y, centre_z + cos(theta) * r))
 	var skirt := Cloth.new()
 	skirt.name = "Wear_Skirt"
 	# Heavy velvet: holds its A-line, swings slowly, barely flutters.
-	skirt.stiffness = 0.045
+	skirt.stiffness = 0.036
+	# The rows over the hips hold her shape; the swing starts below them.
+	skirt.top_stiffness = 0.35
+	skirt.top_rows = 4
 	skirt.bend = 0.6
 	skirt.damping = 0.075
 	skirt.wind_response = 0.035
@@ -458,15 +507,17 @@ func _build_skirt() -> void:
 	skirt.setup(skeleton, "Hips", rest, cols, rows, closed + 1, hem)
 	skirt.material_override = _fabric(Color.WHITE, 0.3, 0.12, 9.0, 0.25)
 	add_child(skirt)
-	# Keep the velvet outside the hips and the striding legs.
-	var pelvis := maxf(widest.front, widest.back) + 0.02
-	var reach := maxf((widest.rx as float) + 0.02 - pelvis, 0.01)
-	skirt.add_capsule("Hips", Vector3(-reach, widest_y, widest.cz), Vector3(reach, widest_y, widest.cz), pelvis)
+	# The hips are held by the measured outline and the stiff top rows (a
+	# crude pelvis capsule only shoved them into a shelf); capsules keep the
+	# velvet off the striding legs.
 	for side_name in ["Left", "Right"]:
 		var side := 1.0 if side_name == "Left" else -1.0
 		var thigh := _girth(_bone(side_name + "UpperLeg"), _bone(side_name + "LowerLeg"), side)
 		var shin := _girth(_bone(side_name + "LowerLeg"), _bone(side_name + "Foot"), side)
-		skirt.add_capsule(side_name + "UpperLeg", _bone(side_name + "UpperLeg"), _bone(side_name + "LowerLeg"), thigh + 0.03)
+		# From a third down the thigh: starting at the hip joint, the capsule's
+		# round top shoved the skirt's hip rows out into a shelf.
+		var thigh_top := _bone(side_name + "UpperLeg").lerp(_bone(side_name + "LowerLeg"), 0.35)
+		skirt.add_capsule(side_name + "UpperLeg", thigh_top, _bone(side_name + "LowerLeg"), thigh + 0.018)
 		skirt.add_capsule(side_name + "LowerLeg", _bone(side_name + "LowerLeg"), _bone(side_name + "Foot") + Vector3(0, 0.08, 0), shin + 0.03)
 
 
@@ -484,30 +535,30 @@ func _build_hair() -> void:
 	var lift := 0.02
 	var locks: Array = []
 	# Back fall: crown to between the shoulder blades.
-	for k in 13:
-		var angle := deg_to_rad(lerpf(-100.0, 100.0, float(k) / 12.0))
+	for k in 17:
+		var angle := deg_to_rad(lerpf(-104.0, 104.0, float(k) / 16.0))
 		var reach := 0.56 + 0.05 * sin(float(k) * 2.3) - 0.08 * absf(sin(angle))
 		var root := _scalp(skull, angle, top_y - 0.03, top_y, widest_y, lift)
 		var path: Array[Vector3] = [root]
 		path.append(_scalp(skull, angle, widest_y + 0.05, top_y, widest_y, lift))
 		path.append(_scalp(skull, angle, widest_y - 0.02, top_y, widest_y, lift))
 		var fall := Vector3(sin(angle) * (shoulders.rx * 0.62 + 0.03), top_y - reach, shoulders.cz - (shoulders.back + 0.045) * cos(angle) * 0.9)
-		locks.append([path, fall, 0.075, false])
+		locks.append([path, fall, 0.08, false])
 	# Side part on her left; most of the hair sweeps across to the right.
 	var part_x := 0.032
-	for k in 6:
-		var t := float(k) / 5.0
+	for k in 10:
+		var t := float(k) / 9.0
 		var z: float = lerpf(skull.cz + skull.front * 0.62, skull.cz - skull.back * 0.45, t)
-		var side := -1.0 if k < 4 else 1.0
+		var side := -1.0 if k < 7 else 1.0
 		var root := Vector3(part_x, _crest(top_y, widest_y, z, skull) + lift, z)
 		var over := Vector3(side * (skull.rx * 0.72 + lift), widest_y + 0.06, z - 0.01 * t)
 		var temple := Vector3(side * (skull.rx + lift + 0.006), widest_y - 0.025, z - 0.015)
-		var framing := k == 0 or k == 4
+		var framing := k == 0 or k == 7
 		var fall := Vector3(side * (shoulders.rx * 0.72), 1.2, shoulders.cz - 0.02)
 		if framing:
 			fall = Vector3(side * 0.125, 1.18, chest.cz + chest.front + 0.035)
 		var path: Array[Vector3] = [root, over, temple]
-		locks.append([path, fall, 0.07, framing])
+		locks.append([path, fall, 0.062 if framing else 0.075, framing])
 	var rows := 11
 	var rest := PackedVector3Array()
 	rest.resize(rows * locks.size() * 2)
@@ -547,9 +598,15 @@ func _build_hair() -> void:
 	hair.name = "Wear_Hair"
 	hair.panel = 2
 	hair.card_uv = true
-	hair.card_layers = 2
-	hair.layer_gap = 0.007
+	hair.card_layers = 3
+	hair.layer_gap = 0.0055
 	hair.stiffness = 0.022
+	# The three rows laid over the skull are carried by the head: the hair
+	# moves with the scalp, never on its own. Below them it eases from firm
+	# into free swing.
+	hair.pinned_rows = 3
+	hair.top_stiffness = 0.3
+	hair.top_rows = 3
 	hair.bend = 0.55
 	hair.damping = 0.06
 	hair.wind_response = 0.1
@@ -565,6 +622,7 @@ func _build_hair() -> void:
 	hair_material.shader = preload("res://shaders/hair.gdshader")
 	hair_material.set_shader_parameter("strands", _strand_texture())
 	hair.material_override = hair_material
+	_build_crown(skull, top_y, widest_y, part_x, hair_material)
 	hair.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(hair)
 	var skull_r := maxf(skull.rx, maxf(skull.front, skull.back)) + 0.016
@@ -580,6 +638,87 @@ func _build_hair() -> void:
 	for side_name in ["Left", "Right"]:
 		var arm := _girth(_bone(side_name + "UpperArm"), _bone(side_name + "LowerArm"), 0.0)
 		hair.add_capsule(side_name + "UpperArm", _bone(side_name + "UpperArm"), _bone(side_name + "LowerArm"), arm + 0.035)
+
+
+## The combed layer over the scalp: many short cards carried rigidly by the
+## head, flowing down and away from the side part; at the front they sweep
+## sideways to frame the face instead of falling over the forehead. Normals
+## point out from the skull centre, so the layer shades as one soft mass.
+func _build_crown(skull: Dictionary, top_y: float, widest_y: float, part_x: float, material: Material) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7311
+	var centre := Vector3(0.0, widest_y - 0.02, skull.cz)
+	var front_line := _head.y + 0.165
+	var side_line := _head.y + 0.105
+	var back_line := _neck_y + 0.08
+	# High and level across forehead and temples; it drops only behind the
+	# temples, toward the ears and the nape.
+	var hairline := func(angle: float) -> float:
+		var c := cos(angle)
+		var face := smoothstep(-0.25, -0.6, c)
+		var nape := smoothstep(0.0, 0.9, c)
+		return lerpf(lerpf(side_line, back_line, nape), front_line, face)
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var cards := 0
+	var attempts := 0
+	while cards < 150 and attempts < 3000:
+		attempts += 1
+		var a := rng.randf_range(-PI, PI)
+		var line: float = hairline.call(a)
+		if line > top_y - 0.03:
+			continue
+		var y := rng.randf_range(line + 0.008, top_y - 0.004)
+		var frontness := clampf(-cos(a), 0.0, 1.0)
+		# Away from the part: which side of it the root is on decides the comb.
+		var side := 1.0 if sin(a) * skull.rx > part_x else -1.0
+		var layer := rng.randi_range(0, 2)
+		var lift := 0.011 + 0.006 * float(layer)
+		var length := rng.randf_range(0.08, 0.13)
+		var width := rng.randf_range(0.032, 0.046)
+		var points: Array[Vector3] = []
+		var segments := 5
+		var angle := a
+		var height := y
+		for s in segments + 1:
+			points.append(_scalp(skull, angle, height, top_y, widest_y, lift))
+			var step := length / float(segments)
+			# Front hair sweeps toward the temple, the rest falls back and down.
+			height -= step * lerpf(0.95, 0.35, frontness)
+			angle += side * step * lerpf(0.25, 0.8, frontness) / maxf(skull.rx, 0.05)
+			height = maxf(height, float(hairline.call(angle)) - 0.012)
+		_crown_card(tool, points, width, centre, rng.randf_range(0.86, 1.12))
+		cards += 1
+	tool.index()
+	var piece := MeshInstance3D.new()
+	piece.name = "Wear_Crown"
+	piece.mesh = tool.commit()
+	piece.material_override = material
+	attach("Head", piece, Transform3D.IDENTITY)
+
+
+func _crown_card(tool: SurfaceTool, points: Array[Vector3], width: float, centre: Vector3, tone: float) -> void:
+	var count := points.size()
+	var rows: Array = []
+	for i in count:
+		var along := points[mini(i + 1, count - 1)] - points[maxi(i - 1, 0)]
+		var normal := (points[i] - centre).normalized()
+		var across := along.cross(normal).normalized()
+		var taper := lerpf(1.0, 0.55, float(i) / float(count - 1))
+		var v := float(i) / float(count - 1)
+		var color := HAIR_ROOT.lerp(HAIR_TIP, v * 0.35)
+		color = Color(color.r * tone, color.g * tone, color.b * tone, 1.0)
+		rows.append([points[i] - across * width * 0.5 * taper, points[i] + across * width * 0.5 * taper, normal, v, color])
+	for i in count - 1:
+		var r0: Array = rows[i]
+		var r1: Array = rows[i + 1]
+		var quad := [[r0[0], 0.0, r0[3], r0[2], r0[4]], [r0[1], 1.0, r0[3], r0[2], r0[4]], [r1[1], 1.0, r1[3], r1[2], r1[4]], [r1[0], 0.0, r1[3], r1[2], r1[4]]]
+		for k in [0, 1, 2, 0, 2, 3]:
+			var corner: Array = quad[k]
+			tool.set_normal(corner[3])
+			tool.set_color(corner[4])
+			tool.set_uv(Vector2(corner[1], 0.25 + corner[2] * 0.75))
+			tool.add_vertex(corner[0])
 
 
 # A point on the skull, angle 0 at the back, lifted off the scalp.

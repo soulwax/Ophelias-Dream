@@ -70,12 +70,50 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
   - When the animated foot comes down (judged against its own recent low point, or at the bottom of its swing for brief sprint contacts, and only after it has really swung), it locks that terrain spot. The IK holds the foot there until the animation lifts it or the leg overreaches.
   - It emits `planted(left, at)`, and `Player._on_planted` does all footfall effects: sound, prints, `SnowKick` powder and camera jolt. The distance-based trigger in `_steps` is only a fallback.
 - Per-step dynamics: `_step_surge()` swings speed within each step (`Tune.STEP_SURGE_*`), checking on landing and surging on push-off.
+- Jump (Space) and slide (Ctrl/C, from a sprint) are in `Player`.
+  - Jumps have coyote time and a jump buffer, variable height, heavier falls, reduced air control, and landings scaled by fall speed.
+  - Slides get a speed boost, snow friction, gravity along the slope and limited steering, and you can jump out of one.
+  - `Stride` adds layers on top of locomotion: an air pose (Jump_Start, sought by vertical velocity), a slide pose (Crouch_Idle), and a landing one-shot (Jump_Land). Clip phases were found with `tools/clip_probe.gd -- <clips>`.
+  - `FootLock.suspended` releases the feet in the air and during a slide.
+  - Hold breath is on right mouse button or F.
+- Dev hooks: `RUN_AUTOPILOT=walk|sprint|jump|slide` and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
 - Momentum is in `Player._momentum` (accelerate, coast, or brake on reversal), and `_slope_factor` slows her uphill.
 - Dev hook: `RUN_AUTOPILOT=walk|sprint` holds forward, for `RUN_CAPTURE` shots.
 
 **Player** is a `CharacterBody3D` with a spring-arm third-person camera, stamina-gated sprint, wind push from `Game.weather` (only while she moves), and `Footprints` decals.
 - The model (`visual`) turns toward the direction she's moving, independent of the camera, and leans into acceleration and turns (`_carry`).
 - `_fit_boom_to_ground` shortens the camera boom so the camera never goes under the one-sided terrain. Notes are found via the `field_notes` group, and you can't read a note while moving fast. Opening a note enters `READING`, which freezes the player but not the hunter.
+
+**House (`scripts/house/`)**: the cabin she wakes in, built in code by `House`. Its local frame has +Z facing the trail and y 0 at the boards.
+- *Layout*:
+  - Ground floor: bedroom (the spawn), entry hall, living room and kitchen, and a back hall with the stair well
+  - A 19-step flight down 3.4 m
+  - Cellar: landing, corridor, janitor room, and `Morgue`, which is ported from the sibling project `merl`'s `prototype_room.gd`
+- *Tools*:
+  - `HouseKit`: scanned CC0 Poly Haven materials (world triplanar), props, walls with openings, slabs with holes, stairs (visual treads on one walkable ramp), lights
+  - `HouseDoor`: E-to-open hinged leaves on merl's `DoorHingeDynamics`, with `DoorAudio` sounds, in plank, steel and chamber styles
+  - `WallSwitch`
+  - Interactables join the `interactables` group and expose `interact_label()`, `interact_point()` and `interact()`. `Player.nearby_interactable()` picks one, and the HUD prompt shows its label.
+- *Terrain*: `Trail` gives `Ground` a flat pad (`pads`) around the house and a cut (`cuts`) over the stair well. `House.add_snow_patch` refills the cut's 3 m cells outside the walls with the same snow material. The cellar stays under `SLAB_TOP`, below the snow.
+- *Indoors*: `Game.indoors()` / `House.contains()`.
+  - The camera boom drops to 1.75 m over the shoulder, and her model hides if the camera is crushed into her.
+  - No snowfall; the storm is muffled.
+  - Floor-tap footsteps instead of snow, no prints or powder, and `FootLock.floor_at` plants feet on the boards.
+  - The hunter waits at `House.doorstep()` and cannot catch her inside. The Listener cannot perceive breath through walls.
+- *Assets*: from `merl`, CC0, under `assets/vendor/polyhaven/` (`provenance.json`) and `assets/derived/doors/audio/`.
+- *Dev hook*: `RUN_SPAWN=outside|bedroom|living|stair|cellar|janitor|morgue`.
+- *Darkness*: `Atmosphere.shelter` (eased by `Weather` as the camera goes in or out) drops the daylight ambience to about 7%, so the rooms are only what their lamps make of them. Most lamps are deliberately unlit. Her camera light brightens and widens indoors.
+- *Haunting (`haunting.gd`)*: rooms come from `House.room_at()`. Tension rises indoors and drains outside, and events fire at intervals that shorten with it:
+  - `flicker`, `creak`, `door`: a visible door drifts on its own via `HouseDoor.drift()`.
+  - `knock` (ground floor): becomes `house_knock_hard` when the hunter waits at the doorstep.
+  - `steps` (cellar): footsteps cross the floor above toward the head of the stair.
+  - `chamber` (morgue): a chamber door opens behind her and its tray slides out.
+  - `whisper` (high tension only).
+  - Persistent: the bedroom lantern goes out when she leaves and relights when she returns; the sheeted body (`Morgue.body`) is laid out after her first visit; taps drip.
+  - Dev hook: `RUN_HAUNT=<event>` fires that event every 2 s and prints it.
+- *Sounds*: `python tools/make_house_sounds.py` synthesizes all the `house_*.wav` files (knocks, creaks, whisper, drip, tray, thud, steps above) from resonator and noise models. No licensed audio.
+
+**Terrain winding**: `Ground` triangles must be clockwise seen from above (Godot's front face). They used to be counter-clockwise, which culled the whole terrain from above; the "snow" was the sky colour.
 
 **Anomalies (`scripts/anomalies/`)** are original, SCP-style entities that run alongside the hunter. They are not canon SCPs; canon SCP content is CC BY-SA, so keep them original.
 - *Anomaly*: each subclass follows one strict rule. It exposes `dread` (0..1), a HUD `hint`, and `record()`, a containment record `NoteEntry` with `record_of` set to its code.
@@ -92,6 +130,13 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - *Boots*: lofted from measured foot slices and skinned to the Foot, Toes and LowerLeg binds.
 - *Cloth*: the coat skirt, hair locks and scarf are `Cloth`, a world-space Verlet grid pinned to a bone. It has a soft pull toward its rest shape, weighted bend links, capsule colliders, and a Catmull-Rom smoothed render. `panel` splits it into strips, and `card_uv`/`card_layers` turn the strips into hair cards.
 - *Breath*: `Breath` emits GPU steam at the mouth. `Player.strain` drives its rhythm; strain rises while sprinting and peaks just after a long sprint.
+
+- *Posture* (`posture.gd`): a `SkeletonModifier3D` placed before `FootLock`. It turns her head and neck toward the camera's look direction (clamped, and forward again when the camera looks behind her), opens the chest and lifts the shoulders with `Breath.fullness()` (scaled by strain), and sways the hips over her planted feet when she stands still.
+- *Hair*: two layers.
+  - `Outfit._build_crown`: ~150 short rigid cards attached to the Head bone, combed away from the side part. A per-angle hairline keeps them off the face. Their normals point out from the skull centre, so the layer shades as one mass.
+  - Long simulated locks, whose three skull rows are rigidly carried (`Cloth.pinned_rows`) so they can't drift from the scalp.
+- *Cloth timing*: `Cloth` steps on `Skeleton3D.skeleton_updated`, not in `_process`. Modifier results are discarded after the skeleton update, so reading bones in `_process` misses the head turn, breathing and sway.
+- *Skirt fit*: the skirt starts just above the widest point of her hips, from her measured outline there (`Outfit._outline`, a radius per direction), with the top row tucked under the fitted shell. It has stiffer top rows (`Cloth.top_stiffness`), a modest A-line with 7 godet folds, and leg capsules from mid-thigh down. A pelvis capsule, or thigh capsules starting at the hip joints, shove the hip rows out into a shelf.
 
 Look at changes with `godot --path . --resolution 800x900 -s tools/outfit_preview.gd -- <out_dir>`, which renders PNGs from fixed angles, including moving shots. Shaders: `wear.gdshader` (dye in vertex colour, roughness in alpha, velvet sheen, lining on back faces) and `hair.gdshader` (alpha-scissor strands, anisotropic highlight). Two gotchas:
 - On `CPUParticles3D`/`GPUParticles3D`, never set `lifetime` or `amount` every frame: it restarts the emitter.

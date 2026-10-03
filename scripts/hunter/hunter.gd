@@ -81,6 +81,11 @@ func _pursue(delta: float) -> void:
 	var threat := _threat()
 	var speed := lerpf(Tune.HUNTER_CREEP, Tune.HUNTER_CHASE, smoothstep(0.2, 1.0, threat))
 	var player_at := Game.player.global_position
+	# It does not come into the house. It goes to the doorstep and waits;
+	# the hunt clock keeps running while she hides.
+	var sheltered := Game.indoors(player_at + Vector3(0.0, 0.9, 0.0))
+	if sheltered and Game.house:
+		player_at = Game.house.doorstep()
 	var flat := player_at - global_position
 	flat.y = 0.0
 	var distance := flat.length()
@@ -101,7 +106,10 @@ func _pursue(delta: float) -> void:
 		eyes.visible = threat > 0.62 and distance < Tune.REVEAL_EYES
 	_play("Sprint" if speed > 3.3 else "Walk")
 	_ambience(delta, distance, threat)
-	if distance < Tune.CATCH_GAP and threat >= 0.48:
+	if sheltered:
+		# Felt through the walls, never touching her.
+		Game.set_closeness(minf(presence, 0.5))
+	elif distance < Tune.CATCH_GAP and threat >= 0.48:
 		Game.catch_player()
 
 

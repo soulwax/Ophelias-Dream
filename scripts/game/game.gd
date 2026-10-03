@@ -20,6 +20,8 @@ var blackbox: Blackbox
 # Anomalies: the strongest pressure any of them puts on her this frame, the
 # HUD line that goes with it, and which ones she has read the record of.
 var director: AnomalyDirector
+# The cabin she wakes in: rooms, cellar and morgue.
+var house: House
 var dread: float = 0.0
 var anomaly_hint := ""
 var understood: Dictionary = {}
@@ -45,7 +47,11 @@ func _ready() -> void:
 	_bind("interact", KEY_E)
 	_bind("pause", KEY_ESCAPE)
 	_bind("restart", KEY_R)
-	_bind("hold_breath", KEY_SPACE)
+	_bind("jump", KEY_SPACE)
+	_bind("slide", KEY_CTRL)
+	_bind("slide", KEY_C)
+	_bind("hold_breath", KEY_F)
+	_bind_mouse("hold_breath", MOUSE_BUTTON_RIGHT)
 
 
 func _process(delta: float) -> void:
@@ -71,6 +77,7 @@ func reset() -> void:
 	active_note = null
 	notes_found = 0
 	director = null
+	house = null
 	dread = 0.0
 	anomaly_hint = ""
 	understood.clear()
@@ -179,6 +186,10 @@ func knows(code: String) -> bool:
 	return understood.has(code)
 
 
+func indoors(world_point: Vector3) -> bool:
+	return house != null and house.contains(world_point)
+
+
 func locks_movement() -> bool:
 	return phase != Phase.PLAYING
 
@@ -196,6 +207,15 @@ func _wants_lean_graphics() -> bool:
 	if forced == "lean":
 		return true
 	return RenderingServer.get_video_adapter_type() != RenderingDevice.DEVICE_TYPE_DISCRETE_GPU
+
+
+func _bind_mouse(action: String, button: MouseButton) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var event := InputEventMouseButton.new()
+	event.button_index = button
+	if not InputMap.action_has_event(action, event):
+		InputMap.action_add_event(action, event)
 
 
 func _bind(action: String, key: Key) -> void:

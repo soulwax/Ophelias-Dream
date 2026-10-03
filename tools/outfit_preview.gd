@@ -89,8 +89,16 @@ func _stage() -> void:
 	var suit := StandardMaterial3D.new()
 	suit.albedo_texture = load("res://assets/characters/girl_coat.png")
 	suit.roughness = 0.9
+	# Same face as Player._cloak: soft brows, scattering skin.
+	suit.roughness = 0.62
+	suit.subsurf_scatter_enabled = true
+	suit.subsurf_scatter_strength = 0.35
+	suit.subsurf_scatter_skin_mode = true
+	suit.rim_enabled = true
+	suit.rim = 0.12
 	var brows := StandardMaterial3D.new()
-	brows.albedo_color = Color(0.16, 0.09, 0.06)
+	brows.albedo_color = Color(0.3, 0.18, 0.11, 0.72)
+	brows.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	for mesh_instance in _model.find_children("*", "MeshInstance3D", true, false):
 		var mesh_name := mesh_instance.name.to_lower()
 		if "brow" in mesh_name:
@@ -102,6 +110,12 @@ func _stage() -> void:
 		var breath := Breath.new()
 		breath.strain = 0.9
 		outfit.attach("Head", breath, Transform3D(Basis(), outfit.mouth_rest))
+		var posture := Posture.fit(outfit.skeleton, null)
+		posture.breath = breath
+		posture.strain = func() -> float: return 0.9
+		# She looks toward the camera, so turned-head shots show the hair follow.
+		posture.look = func() -> Vector3:
+			return (_camera.global_position - (_holder.global_position + Vector3(0, 1.6, 0))).normalized() if _camera else Vector3.ZERO
 	_animation = _model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_camera = Camera3D.new()
 	_camera.fov = 40.0

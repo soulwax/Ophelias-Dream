@@ -12,6 +12,7 @@ var _gust_target := 0.0
 var _lull := 5.0
 var _layers: Array[SnowLayer] = []
 var _audio: StormAudio
+var _shelter := 0.0
 var _atmosphere: Atmosphere
 
 
@@ -29,14 +30,22 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_advance(delta)
 	var camera := get_viewport().get_camera_3d()
+	var inside := false
 	if camera:
 		global_position = camera.global_position
+		inside = Game.indoors(camera.global_position)
 	for layer in _layers:
 		layer.apply(intensity, wind, gust)
+		# No snow falls indoors; the storm is only heard through the walls.
+		if inside:
+			layer.amount_ratio = 0.0
+	# Stepping through a door, the light changes over a breath, not a frame.
+	_shelter = move_toward(_shelter, 1.0 if inside else 0.0, delta * 1.4)
 	if _atmosphere:
+		_atmosphere.shelter = _shelter
 		_atmosphere.apply_storm(intensity)
 	if _audio:
-		_audio.apply(intensity, gust)
+		_audio.apply(intensity * (0.3 if inside else 1.0), gust * (0.3 if inside else 1.0))
 
 
 func _advance(delta: float) -> void:

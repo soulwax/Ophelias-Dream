@@ -9,6 +9,17 @@ var _step_z := 1.0
 var _points_x := 2
 var _points_z := 2
 
+# Flat pads (the house sits on one): [Vector2 centre, inner radius, outer
+# radius]. Inside the inner radius the snow is level at the height the noise
+# had at the centre; it blends back out by the outer radius.
+var pads: Array = []
+# Cuts: [Transform3D local-to-world, Rect2 local x/z]. Grid cells touching a
+# cut are left out of the mesh and the collision (the stair well).
+var cuts: Array = []
+var _pad_heights: Array[float] = []
+# The snow's material, so patches can match it exactly.
+var snow_material: ShaderMaterial
+
 var _broad := FastNoiseLite.new()
 var _detail := FastNoiseLite.new()
 var _ridge := FastNoiseLite.new()
@@ -59,7 +70,31 @@ func _sample(x: float, z: float) -> float:
 	h += _ridge.get_noise_2d(x, z) * 3.6
 	h = _flatten(h, x, z, 0.0, 10.0, 16.0)
 	h = _flatten(h, x, z, 10.0, -200.0, 18.0)
+	for index in _pad_heights.size():
+		var pad: Array = pads[index]
+		var centre: Vector2 = pad[0]
+		var level := 1.0 - smoothstep(pad[1], pad[2], Vector2(x, z).distance_to(centre))
+		h = lerpf(h, _pad_heights[index], level)
 	return h
+
+
+func _cut(x0: float, z0: float, size_x: float, size_z: float) -> bool:
+	for cut in cuts:
+		var to_local: Transform3D = (cut[0] as Transform3D).affine_inverse()
+		var rect: Rect2 = cut[1]
+		# The cell, seen in the cut's frame, against the cut rectangle.
+		var bounds := Rect2()
+		var first := true
+		for corner in [Vector3(x0, 0, z0), Vector3(x0 + size_x, 0, z0), Vector3(x0, 0, z0 + size_z), Vector3(x0 + size_x, 0, z0 + size_z)]:
+			var local: Vector3 = to_local * corner
+			if first:
+				bounds = Rect2(local.x, local.z, 0, 0)
+				first = false
+			else:
+				bounds = bounds.expand(Vector2(local.x, local.z))
+		if bounds.intersects(rect):
+			return true
+	return false
 
 
 func _flatten(h: float, x: float, z: float, px: float, pz: float, radius: float) -> float:
@@ -81,6 +116,12 @@ func _build() -> void:
 	_origin_z = min_z
 	_step_x = (max_x - min_x) / float(cells_x)
 	_step_z = (max_z - min_z) / float(cells_z)
+
+	_pad_heights.clear()
+	var raw: Array[float] = []
+	for pad in pads:
+		raw.append(_sample((pad[0] as Vector2).x, (pad[0] as Vector2).y))
+	_pad_heights = raw
 
 	var vertices := PackedVector3Array()
 	vertices.resize(_points_x * _points_z)
@@ -104,11 +145,16 @@ func _build() -> void:
 	var cursor := 0
 	for z in cells_z:
 		for x in cells_x:
+			if not cuts.is_empty() and _cut(_origin_x + float(x) * _step_x, _origin_z + float(z) * _step_z, _step_x, _step_z):
+				continue
 			var i00 := z * _points_x + x
 			var i10 := i00 + 1
 			var i01 := i00 + _points_x
 			var i11 := i01 + 1
-			for tri in [[i00, i01, i11], [i00, i11, i10]]:
+			# Clockwise seen from above: Godot's front face. (Counter-clockwise
+			# was culled from above, so for a long time the "snow" on screen
+			# was only the sky colour behind an invisible terrain.)
+			for tri in [[i00, i11, i01], [i00, i10, i11]]:
 				var a: int = tri[0]
 				var b: int = tri[1]
 				var c: int = tri[2]
@@ -121,7 +167,8 @@ func _build() -> void:
 				indices[cursor] = c
 				faces[cursor] = vertices[c]
 				cursor += 1
-				var face_normal := (vertices[b] - vertices[a]).cross(vertices[c] - vertices[a])
+				# Reversed operands keep the normal pointing up for this winding.
+				var face_normal := (vertices[c] - vertices[a]).cross(vertices[b] - vertices[a])
 				normals[a] += face_normal
 				normals[b] += face_normal
 				normals[c] += face_normal
@@ -130,6 +177,8 @@ func _build() -> void:
 			normals[i] = Vector3.UP
 		else:
 			normals[i] = normals[i].normalized()
+	indices.resize(cursor)
+	faces.resize(cursor)
 
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -141,7 +190,8 @@ func _build() -> void:
 
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.mesh = mesh
-	mesh_instance.material_override = _material()
+	snow_material = _material()
+	mesh_instance.material_override = snow_material
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(mesh_instance)
 

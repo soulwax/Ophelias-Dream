@@ -20,6 +20,28 @@ const STRIDE_SPRINT := 4.3
 # Per-step speed swing: checks on impact, surges on push-off.
 const STEP_SURGE_WALK := 0.06
 const STEP_SURGE_SPRINT := 0.12
+
+# Jump: instant takeoff, cut short by letting go, forgiving at edges and on
+# early presses, a little heavier on the way down.
+const JUMP_VELOCITY := 5.4
+const JUMP_CUT := 0.5
+const JUMP_STAMINA := 0.45
+const COYOTE := 0.12
+const JUMP_BUFFER := 0.14
+const AIR_CONTROL := 0.35
+const FALL_GRAVITY := 1.3
+
+# Slide out of a sprint: a kick of speed, low snow friction, gravity along
+# the slope, a little steering.
+const SLIDE_MIN_SPEED := 4.2
+const SLIDE_BOOST := 1.3
+const SLIDE_FRICTION := 2.8
+const SLIDE_SLOPE := 9.0
+const SLIDE_STEER := 1.4
+const SLIDE_MAX_TIME := 1.3
+const SLIDE_MIN_TIME := 0.35
+const SLIDE_END_SPEED := 2.2
+const SLIDE_STAMINA := 0.4
 const STAMINA_MAX := 4.6
 const STAMINA_REGEN := 1.35
 const EXHAUST_LOCK := 0.85

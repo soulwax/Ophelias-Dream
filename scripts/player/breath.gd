@@ -63,6 +63,16 @@ func _ready() -> void:
 	add_child(_puff)
 
 
+## How full her lungs are, 0 emptied .. 1 full: rises through the in-breath,
+## falls as the steam goes out, and stays full while she holds it.
+func fullness() -> float:
+	if held:
+		return 1.0
+	if _burst_left > 0.0:
+		return 0.2
+	return 0.5 - 0.5 * cos(_phase * TAU)
+
+
 # The breath she was holding comes out at once: a big, fast cloud.
 func gasp(power: float) -> void:
 	_burst_left = lerpf(0.35, 0.8, clampf(power, 0.0, 1.0))

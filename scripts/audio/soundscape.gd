@@ -8,7 +8,9 @@ var _steps: Array[AudioStreamPlayer] = []
 var _step_clips: Array[AudioStream] = []
 var _step_cursor := 0
 var _last_step := -1
+var _floor_clips: Array[AudioStream] = []
 var _snap: AudioStreamPlayer
+var _slide_hiss: AudioStreamPlayer
 var _sting: AudioStreamPlayer
 
 
@@ -19,6 +21,8 @@ func _ready() -> void:
 	_heart = _one_shot("heart.wav", -8.0)
 	_load_steps()
 	_snap = _one_shot("snap.wav", -4.0)
+	_slide_hiss = _loop("storm_hiss.wav", -20.0)
+	_slide_hiss.stop()
 	_sting = _one_shot("sting.wav", -2.0)
 	Game.soundscape = self
 	Game.closeness_changed.connect(_on_closeness)
@@ -29,16 +33,17 @@ func _ready() -> void:
 # One boot in snow. The clip is picked at random but never the same twice in
 # a row, and each step gets its own pitch and level, so a long walk never
 # turns into a loop. A sprint lands deeper and louder than a walk.
-func play_step(heavy: bool = false) -> void:
-	if _steps.is_empty() or _step_clips.is_empty():
+func play_step(heavy: bool = false, indoors: bool = false) -> void:
+	var clips := _floor_clips if indoors and not _floor_clips.is_empty() else _step_clips
+	if _steps.is_empty() or clips.is_empty():
 		return
 	var player := _steps[_step_cursor]
 	_step_cursor = (_step_cursor + 1) % _steps.size()
-	var pick := randi() % _step_clips.size()
-	if _step_clips.size() > 1 and pick == _last_step:
-		pick = (pick + 1 + randi() % (_step_clips.size() - 1)) % _step_clips.size()
+	var pick := randi() % clips.size()
+	if clips.size() > 1 and pick == _last_step:
+		pick = (pick + 1 + randi() % (clips.size() - 1)) % clips.size()
 	_last_step = pick
-	player.stream = _step_clips[pick]
+	player.stream = clips[pick]
 	if heavy:
 		player.pitch_scale = randf_range(0.86, 0.98)
 		player.volume_db = randf_range(-5.0, -2.0)
@@ -46,6 +51,19 @@ func play_step(heavy: bool = false) -> void:
 		player.pitch_scale = randf_range(0.95, 1.08)
 		player.volume_db = randf_range(-11.0, -7.5)
 	player.play()
+
+
+# Snow hissing under her boots while she slides; amount 0 stops it.
+func slide(amount: float) -> void:
+	if _slide_hiss == null or _slide_hiss.stream == null:
+		return
+	if amount <= 0.0:
+		_slide_hiss.stop()
+		return
+	_slide_hiss.volume_db = lerpf(-20.0, -5.0, amount)
+	_slide_hiss.pitch_scale = lerpf(1.3, 1.8, amount)
+	if not _slide_hiss.playing:
+		_slide_hiss.play(randf() * 4.0)
 
 
 func play_snap(volume_db: float = -4.0) -> void:
@@ -71,6 +89,11 @@ func _load_steps() -> void:
 					_step_clips.append(clip)
 		if not _step_clips.is_empty():
 			break
+	# Indoors: the dry boot taps, on boards and tile.
+	for file_name in ["tap_0.wav", "tap_1.wav", "tap_2.wav", "tap_3.wav", "tap_4.wav", "tap_5.wav"]:
+		var path: String = "res://assets/audio/" + str(file_name)
+		if ResourceLoader.exists(path):
+			_floor_clips.append(load(path) as AudioStream)
 	for _i in 4:
 		var player := AudioStreamPlayer.new()
 		add_child(player)

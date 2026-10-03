@@ -23,9 +23,14 @@ const BLEND_IN := 0.06
 const BLEND_OUT := 0.14
 
 var ground: Ground
+# Height of whatever she stands on under a point: the snow outside, the
+# boards and tile indoors. Falls back to the terrain when unset.
+var floor_at: Callable
 # Her ground speed, set by the player each frame: a planted foot may drift a
 # little more in the world at speed, where gaits are blended.
 var body_speed := 0.0
+# In the air or sliding, nothing is planted: feet go where the pose puts them.
+var suspended := false
 var _model: Node3D
 var _feet: Array = []
 var _last_msec := 0
@@ -96,7 +101,10 @@ func _process_modification() -> void:
 		foot["peak"] = maxf(float(foot.get("peak", 1.0)), lift - low)
 		var swung := float(foot["peak"]) > SWING
 		var locked: bool = foot["locked"]
-		if not locked and swung and ((lift < low + DOWN and drift < still) or bottomed):
+		if suspended:
+			locked = false
+			foot["peak"] = 1.0
+		elif not locked and swung and ((lift < low + DOWN and drift < still) or bottomed):
 			locked = true
 			foot["peak"] = 0.0
 			foot["at"] = _on_ground(animated, floor_y)
@@ -116,7 +124,9 @@ func _process_modification() -> void:
 # The animated ankle, moved by however much the terrain under the foot
 # differs from the terrain under her: the uphill foot lands higher.
 func _on_ground(animated: Vector3, floor_y: float) -> Vector3:
-	if ground == null:
-		return animated
-	var under := ground.height_at(animated.x, animated.z)
+	var under := floor_y
+	if floor_at.is_valid():
+		under = floor_at.call(animated)
+	elif ground:
+		under = ground.height_at(animated.x, animated.z)
 	return Vector3(animated.x, animated.y + (under - floor_y), animated.z)

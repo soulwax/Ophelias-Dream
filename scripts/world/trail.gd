@@ -3,6 +3,7 @@ extends Node3D
 
 var curve: Curve3D
 var ground: Ground
+var house: House
 var length: float = 1.0
 var player_start_offset: float = 0.0
 var exit_offset: float = 1.0
@@ -15,8 +16,25 @@ var _reserved: Array[Vector3] = []
 func _ready() -> void:
 	_rng.seed = 1701
 	_build_curve()
+	var house_frame := _house_frame()
 	ground = Ground.new()
+	# A level pad for the house and the cellar under the snow, and a cut
+	# where the stair well goes down through it.
+	# Level well past the cellar: the 3 m grid starts blending a whole cell
+	# before the pad's edge.
+	ground.pads = [[Vector2(house_frame.origin.x, house_frame.origin.z), 14.0, 22.0]]
+	ground.cuts = [[house_frame, House.stair_cut()]]
 	add_child(ground)
+	house = House.new()
+	house.name = "House"
+	house_frame.origin.y = ground.height_at(house_frame.origin.x, house_frame.origin.z) + House.PLINTH
+	house.transform = house_frame
+	add_child(house)
+	house.add_snow_patch(ground.snow_material)
+	Game.house = house
+	for x in range(-12, 13, 3):
+		for z in range(-10, 11, 3):
+			_reserve(house.to_global(Vector3(x, 0.0, z)))
 	var fence := Fence.new()
 	fence.ground = ground
 	add_child(fence)
@@ -68,13 +86,18 @@ func _build_curve() -> void:
 	exit_point = curve.sample_baked(exit_offset)
 
 
+# Where the house stands: well off the trail start, front door facing it.
+func _house_frame() -> Transform3D:
+	var start := frame_at(player_start_offset)
+	var at := start.origin + start.basis.x * -17.0
+	at.y = 0.0
+	var facing := start.origin - at
+	facing.y = 0.0
+	return Transform3D(Basis(Vector3.UP, atan2(facing.x, facing.z)), at)
+
+
 func _build_landmarks() -> void:
 	var start := frame_at(player_start_offset)
-	var cabin_at := on_ground(start.origin + start.basis.x * -14.0)
-	_reserve(cabin_at)
-	_reserve(cabin_at + Vector3(5, 0, 0))
-	_reserve(cabin_at + Vector3(-5, 0, 0))
-	_prop("SM_Prop_Cabin_01.fbx", cabin_at, start, 1.15, true, Vector3(6.2, 6.8, 7.2))
 	_prop("SM_Prop_Bench_01.fbx", on_ground(start.origin + start.basis.x * -4.2 + (-start.basis.z) * 2.0), start, 1.0, false, Vector3.ZERO)
 	_prop("SM_Prop_Wood_Pile_01.fbx", on_ground(start.origin + start.basis.x * 4.2), start, 1.0, false, Vector3.ZERO)
 	_prop("SM_Prop_Lantern_01.fbx", on_ground(start.origin + start.basis.x * -2.6), start, 1.0, false, Vector3.ZERO)

@@ -126,9 +126,13 @@ func _refresh_prompt() -> void:
 	var caption := ""
 	var key := "E"
 	if Game.phase == Game.Phase.PLAYING and Game.player:
+		var thing := Game.player.nearby_interactable()
 		if Game.player.nearby_note():
 			show = true
 			caption = "Read the note"
+		elif thing:
+			show = true
+			caption = str(thing.call("interact_label"))
 		elif _against_wire():
 			show = true
 			key = ""
@@ -192,8 +196,8 @@ func _build_intro() -> void:
 	card.set_anchors_preset(Control.PRESET_CENTER)
 	card.offset_left = -340
 	card.offset_right = 340
-	card.offset_top = -168
-	card.offset_bottom = 168
+	card.offset_top = -205
+	card.offset_bottom = 205
 	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro.add_child(card)
@@ -208,7 +212,7 @@ func _build_intro() -> void:
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
 	box.add_child(HSeparator.new())
-	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
+	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Jump"], ["Ctrl", "Slide"], ["RMB", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
 		var row := UiChrome.key_row(pair[0], pair[1])
 		box.add_child(row)
 
@@ -265,13 +269,13 @@ func _build_controls() -> void:
 	_controls = VBoxContainer.new()
 	_controls.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_controls.offset_left = 28
-	_controls.offset_top = -210
+	_controls.offset_top = -284
 	_controls.offset_right = 240
 	_controls.offset_bottom = -28
 	_controls.add_theme_constant_override("separation", 4)
 	_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_controls)
-	for pair in [["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
+	for pair in [["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Jump"], ["Ctrl", "Slide"], ["RMB", "Hold breath"], ["E", "Read"], ["Esc", "Pause"]]:
 		_controls.add_child(UiChrome.key_row(pair[0], pair[1]))
 
 
@@ -331,8 +335,8 @@ func _build_pause() -> void:
 	card.set_anchors_preset(Control.PRESET_CENTER)
 	card.offset_left = -260
 	card.offset_right = 260
-	card.offset_top = -180
-	card.offset_bottom = 180
+	card.offset_top = -235
+	card.offset_bottom = 235
 	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
 	_pause.add_child(card)
 	var box := VBoxContainer.new()
@@ -342,7 +346,7 @@ func _build_pause() -> void:
 	var title := UiChrome.label("Paused", 36)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Hold breath"], ["E", "Read"]]:
+	for pair in [["Mouse", "Look"], ["WASD", "Move"], ["Shift", "Sprint"], ["Space", "Jump"], ["Ctrl", "Slide"], ["RMB", "Hold breath"], ["E", "Read"]]:
 		box.add_child(UiChrome.key_row(pair[0], pair[1]))
 	var resume := UiChrome.text_button("Resume")
 	resume.pressed.connect(func() -> void: Game.toggle_pause())

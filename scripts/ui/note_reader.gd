@@ -122,9 +122,9 @@ func _build() -> void:
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(footer)
 	footer.add_child(UiChrome.key_row("E", "Close the page"))
-	footer.add_child(UiChrome.key_row("Space", "Hold breath"))
+	footer.add_child(UiChrome.key_row("RMB", "Hold breath"))
 	var close := UiChrome.paper_button("Close")
-	# Space holds her breath while she reads; it must not press the button.
+	# Keys pressed while she reads must never press the button.
 	close.focus_mode = Control.FOCUS_NONE
 	close.pressed.connect(func() -> void: Game.close_reading())
 	footer.add_child(close)

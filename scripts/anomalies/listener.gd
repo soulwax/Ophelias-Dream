@@ -69,6 +69,9 @@ func _physics_process(delta: float) -> void:
 		return
 	var breath := Game.player.breath
 	var plume := breath.plume if breath else 0.0
+	# Walls hide the cloud: indoors there is nothing for it to perceive.
+	if Game.indoors(Game.player.global_position + Vector3(0.0, 0.9, 0.0)):
+		plume = 0.0
 	var mouth := breath.global_position if breath else Game.player.global_position + Vector3(0, 1.6, 0)
 	var distance := _flat(Game.player.global_position - global_position).length()
 	# It perceives the cloud itself; a bigger cloud carries further.
