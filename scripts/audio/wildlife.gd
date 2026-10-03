@@ -21,6 +21,7 @@ var _voice_cursor := 0
 var _clips := {}
 var _last := {}
 var _songbirds: AudioStreamPlayer3D
+var _choruses: Array[AudioStream] = []
 var _songbird_gain := 0.0
 var _next_creak := 6.0
 var _next_flump := 18.0
