@@ -50,8 +50,11 @@ func _ready() -> void:
 		_voices.append(voice)
 	_songbirds = Loudness.voice(Loudness.SONGBIRDS, "Outside", true)
 	_songbirds.top_level = true
-	_songbirds.stream = _loop("res://assets/audio/birds_0.wav")
 	add_child(_songbirds)
+	for index in 3:
+		var chorus := _loop("res://assets/audio/birds_%d.wav" % index)
+		if chorus:
+			_choruses.append(chorus)
 
 
 func _process(delta: float) -> void:
@@ -115,13 +118,15 @@ func _birds(trees: PackedVector3Array, ears: Vector3, intensity: float, threat: 
 		if near_it != Vector3.INF:
 			_series(near_it + Vector3.UP * 6.0, "raven", randi_range(2, 3), 0.4, Loudness.RAVEN + 3.0 - walls)
 			_next_call = maxf(_next_call, 40.0)
-	# Small birds only in the calm, and never with anything near.
-	if _songbirds.stream:
+	# Small birds only in the calm, and never with anything near; each time
+	# they start up again it is another flock in another tree.
+	if not _choruses.is_empty():
 		var calm := (1.0 - smoothstep(0.4, 0.62, intensity)) * (1.0 - smoothstep(0.05, 0.25, threat))
 		_songbird_gain = move_toward(_songbird_gain, calm, delta * 0.2)
 		if _songbird_gain > 0.01 and not _songbirds.playing:
 			var perch := _tree_between(trees, ears, 18.0, 50.0)
 			if perch != Vector3.INF:
+				_songbirds.stream = _choruses[randi() % _choruses.size()]
 				_songbirds.global_position = perch + Vector3.UP * 5.0
 				_songbirds.play(randf() * _songbirds.stream.get_length())
 		elif _songbird_gain <= 0.01 and _songbirds.playing:
