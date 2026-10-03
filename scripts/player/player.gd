@@ -528,6 +528,14 @@ func _apply_look() -> void:
 		ears.global_transform = Transform3D(turn, body + Vector3(0.0, 1.55 - 0.45 * _slide_weight, 0.0))
 
 
+func apply_authored_spawn() -> void:
+	if OS.get_environment("RUN_SPAWN") != "":
+		_place()
+		return
+	_yaw = rotation.y
+	_facing = _yaw
+
+
 # The ground mesh is one-sided, so a camera that slips under a slope sees
 # straight through it. Walk the boom outward and stop before it goes under.
 func _fit_boom_to_ground() -> void:

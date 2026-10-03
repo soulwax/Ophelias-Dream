@@ -87,7 +87,7 @@ func _begin_capture(action: String, slot: int) -> void:
 
 
 func _finish_capture(event: InputEvent) -> void:
-	var taken := Game.settings.bind(_capture[0], _capture[1], event)
+	var taken: String = Game.settings.bind(_capture[0], _capture[1], event)
 	_end_capture("Taken from %s." % taken if taken != "" else "")
 
 
@@ -271,7 +271,7 @@ func _choice(caption: String, key: String, options: Array, values: Array, note :
 func _binding(action: String, caption: String) -> void:
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
-	var events := Game.settings.events_of(action)
+	var events: Array[InputEvent] = Game.settings.events_of(action)
 	for slot in Settings.SLOTS:
 		var cap := Button.new()
 		cap.focus_mode = Control.FOCUS_NONE

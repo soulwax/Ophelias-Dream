@@ -1,6 +1,8 @@
 class_name Ground
 extends Node3D
 
+var seed_value := 1701
+
 var _heights := PackedFloat32Array()
 var _origin_x := 0.0
 var _origin_z := 0.0
@@ -50,10 +52,10 @@ func height_at(x: float, z: float) -> float:
 
 
 func _configure_noise() -> void:
-	_setup(_broad, 1701, 0.0072, 5, FastNoiseLite.FRACTAL_FBM)
-	_setup(_detail, 1702, 0.029, 2, FastNoiseLite.FRACTAL_FBM)
-	_setup(_ridge, 1703, 0.011, 3, FastNoiseLite.FRACTAL_RIDGED)
-	_setup(_dirt, 1704, 0.02, 3, FastNoiseLite.FRACTAL_FBM)
+	_setup(_broad, seed_value, 0.0072, 5, FastNoiseLite.FRACTAL_FBM)
+	_setup(_detail, seed_value + 1, 0.029, 2, FastNoiseLite.FRACTAL_FBM)
+	_setup(_ridge, seed_value + 2, 0.011, 3, FastNoiseLite.FRACTAL_RIDGED)
+	_setup(_dirt, seed_value + 3, 0.02, 3, FastNoiseLite.FRACTAL_FBM)
 
 
 func _setup(noise: FastNoiseLite, seed_value: int, frequency: float, octaves: int, fractal: FastNoiseLite.FractalType) -> void:
@@ -247,6 +249,7 @@ func _build() -> void:
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
 	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = "SnowSurface"
 	mesh_instance.mesh = mesh
 	snow_material = _material()
 	mesh_instance.material_override = snow_material
@@ -254,9 +257,11 @@ func _build() -> void:
 	add_child(mesh_instance)
 
 	var body := StaticBody3D.new()
+	body.name = "GroundCollision"
 	body.collision_layer = Tune.LAYER_WORLD
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
+	shape.name = "SnowShape"
 	var concave := ConcavePolygonShape3D.new()
 	concave.data = faces
 	concave.backface_collision = true

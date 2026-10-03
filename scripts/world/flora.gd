@@ -8,10 +8,10 @@ var _rng := RandomNumberGenerator.new()
 var _density := FastNoiseLite.new()
 
 
-func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3]) -> void:
-	_rng.seed = 90210
+func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: int = 1701) -> void:
+	_rng.seed = seed_value + 88509
 	_density.noise_type = FastNoiseLite.TYPE_PERLIN
-	_density.seed = 88
+	_density.seed = seed_value - 1613
 	_density.frequency = 0.034
 	_density.fractal_type = FastNoiseLite.FRACTAL_FBM
 	_density.fractal_octaves = 3
@@ -84,6 +84,7 @@ func _prop(ground: Ground, file_name: String, at: Vector3, scale: float, trunk: 
 	if "pine_03" in lower or "pine_05" in lower:
 		scale *= 1.45
 	var node := PropFactory.spawn(file_name)
+	node.name = file_name.get_basename()
 	node.scale = Vector3.ONE * Tune.PROP_SCALE * scale
 	node.position = at
 	node.rotation.y = _rng.randf() * TAU
@@ -117,6 +118,7 @@ func _horizon(ground: Ground) -> void:
 			at.y = ground.height_at(at.x, at.z) - 1.2
 			var horizon_file := "SM_Env_Background_Trees_02.fbx" if _rng.randf() < 0.55 else "SM_Env_Background_Trees_01.fbx"
 			var node := PropFactory.spawn(horizon_file)
+			node.name = horizon_file.get_basename()
 			node.scale = Vector3.ONE * _rng.randf_range(0.9, 1.35)
 			node.position = at
 			node.rotation.y = _rng.randf() * TAU
@@ -130,6 +132,7 @@ func _horizon(ground: Ground) -> void:
 			at.y = ground.height_at(at.x, at.z) - 4.0
 			var file_name := "SM_Env_MountainRange_01.fbx" if index % 2 == 0 else "SM_Env_Rock_Cliff_02.fbx"
 			var node := PropFactory.spawn(file_name)
+			node.name = file_name.get_basename()
 			node.scale = Vector3.ONE * (1.15 if index % 2 == 0 else 0.95)
 			node.position = at
 			node.rotation.y = _rng.randf() * TAU

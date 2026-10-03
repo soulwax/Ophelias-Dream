@@ -9,6 +9,19 @@ var _env: Environment
 var shelter := 0.0
 
 
+func rebind_authoring_resources() -> void:
+	_env = environment
+	var volume := get_node_or_null("SnowFog") as FogVolume
+	_veil = volume.material as FogMaterial if volume else null
+	if Game.lean_graphics and _env:
+		_env.ssao_enabled = false
+		_env.volumetric_fog_enabled = false
+		_env.fog_density = 0.007
+		if _sun:
+			_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+			_sun.directional_shadow_max_distance = 70.0
+
+
 func _ready() -> void:
 	environment = _make_environment()
 	var sun := DirectionalLight3D.new()
@@ -32,6 +45,7 @@ func _ready() -> void:
 
 func _snow_volume() -> void:
 	var volume := FogVolume.new()
+	volume.name = "SnowFog"
 	volume.size = Vector3(360, 42, 360)
 	volume.position = Vector3(0, 14, -74)
 	var material := FogMaterial.new()
