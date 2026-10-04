@@ -288,6 +288,7 @@ func add_authoring() -> void:
 	if doorstep_marker:
 		doorstep_marker.add_to_group(EditableLevel.AUTHORING_GROUP)
 	_add_traces(root)
+	_add_comfort(root)
 
 
 ## Pages and objects that disagree with the trail notes. Last under Authoring,
@@ -306,6 +307,57 @@ func _add_traces(authoring: Node3D) -> void:
 	HouseKit.box(traces, "CandleSoot", Vector3(-4.28, 0.695, 2.78), Vector3(0.04, 0.018, 0.04), soot)
 	var wool := HouseKit.paint(Color(0.38, 0.16, 0.14), 0.92)
 	HouseKit.box(traces, "Mat", Vector3(0.0, -0.004, 3.95), Vector3(0.92, 0.012, 0.48), wool)
+
+
+## Rugs, a throw, and the lamps that make the ground floor a room. Appended
+## under Authoring so an older snapshot does not drop them.
+func _add_comfort(authoring: Node3D) -> void:
+	var comfort := Node3D.new()
+	comfort.name = "Comfort"
+	comfort.add_to_group(EditableLevel.AUTHORING_GROUP)
+	authoring.add_child(comfort)
+	var oat := HouseKit.paint(Color(0.78, 0.7, 0.58), 0.96)
+	var rust := HouseKit.paint(Color(0.62, 0.32, 0.24), 0.94)
+	var cream := HouseKit.paint(Color(0.9, 0.84, 0.74), 0.9)
+	var shade := HouseKit.paint(Color(0.93, 0.86, 0.74), 0.7)
+	HouseKit.box(comfort, "LivingRug", Vector3(3.15, 0.012, 1.15), Vector3(2.15, 0.015, 2.6), oat)
+	HouseKit.box(comfort, "Throw", Vector3(3.85, 0.46, 1.85), Vector3(0.55, 0.035, 1.15), rust)
+	HouseKit.box(comfort, "Cushion", Vector3(3.85, 0.58, 2.55), Vector3(0.16, 0.28, 0.32), cream)
+	HouseKit.box(comfort, "BedRug", Vector3(-3.35, 0.01, 1.55), Vector3(1.7, 0.012, 1.15), rust)
+	var stand := Vector3(2.55, 0.0, 1.15)
+	HouseKit.box(comfort, "LampStand", stand + Vector3(0.0, 0.62, 0.0), Vector3(0.035, 1.24, 0.035), HouseKit.paint(Color(0.22, 0.18, 0.14), 0.45, 0.4))
+	HouseKit.box(comfort, "LampShade", stand + Vector3(0.0, 1.28, 0.0), Vector3(0.32, 0.18, 0.32), shade)
+	var living := HouseKit.light(comfort, "LivingLamp", stand + Vector3(0.0, 1.12, 0.0), Color("ffc090"), 1.45, 6.8)
+	living.omni_attenuation = 0.65
+	_keep_light("living", living)
+	var bedroom := HouseKit.light(comfort, "BedroomFill", Vector3(-3.3, 1.7, 1.7), Color("ffc49a"), 0.55, 4.8)
+	bedroom.omni_attenuation = 0.6
+	_keep_light("bedroom", bedroom)
+	var passage := HouseKit.light(comfort, "PassageFill", Vector3(-1.6, 2.15, -1.3), Color("ffd0a8"), 0.32, 4.5)
+	passage.omni_attenuation = 0.9
+	_keep_light("backhall", passage)
+
+
+## After the editable level copies stored lamp values, put the warmth back.
+func settle_comfort() -> void:
+	var lights := get_node_or_null("Lights")
+	if lights == null:
+		return
+	_retune(lights, "LanternLight", Color("ffb060"), 1.55, 6.0, 0.65)
+	_retune(lights, "KitchenLight", Color("ffd0a4"), 1.15, 6.8, 0.72)
+	_retune(lights, "HallLight", Color("ffe6c8"), 0.38, 4.0, 1.15)
+	for lamp_name in ["LandingLight", "CorridorSouthLight", "JanitorLight"]:
+		_retune(lights, lamp_name, Color("c5d4e2"), 0.28, 4.0, 1.35)
+
+
+func _retune(parent: Node, lamp_name: String, color: Color, energy: float, reach: float, attenuation: float) -> void:
+	var lamp := parent.get_node_or_null(lamp_name) as OmniLight3D
+	if lamp == null:
+		return
+	lamp.light_color = color
+	lamp.light_energy = energy
+	lamp.omni_range = reach
+	lamp.omni_attenuation = attenuation
 
 
 func _trace_page(parent: Node3D, page_name: String, at: Vector3, entry: NoteEntry) -> void:
@@ -631,11 +683,9 @@ func _furnish() -> void:
 		HouseKit.blocker(root, "FurnitureBody", blocker[0], blocker[1])
 
 
-## Most of the house is dark. The lantern by the bed where she wakes, one
-## weak bulb in the hall, one over the kitchen table; the living room and back
-## hall are unlit. Below, a bulkhead at the foot of the stair and at the near
-## end of the corridor; its far end, by the mortuary door, is dark. The
-## janitor's bulb is bare and dim; the mortuary has its fluorescents.
+## The ground floor is a warm room: lantern, kitchen, and the floor lamp in
+## Comfort. The hall is only a dim threshold. Below, the bulbs are cold and
+## spare; the far end of the corridor, by the mortuary door, stays dark.
 func _light_house() -> void:
 	var root := _group("Lights")
 	var warm := Color("ffc88a")

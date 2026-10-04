@@ -13,6 +13,7 @@ var spring_arm: SpringArm3D
 var camera: Camera3D
 var ears: AudioListener3D
 var lantern: SpotLight3D
+var lamp_fill: OmniLight3D
 var visual: Node3D
 var animation_player: AnimationPlayer
 
@@ -714,11 +715,15 @@ func _move_camera(delta: float) -> void:
 func _flicker_lantern(delta: float) -> void:
 	if lantern == null:
 		return
-	# Indoors her small light is all she has in the unlit rooms.
+	# Outside she needs the lamp in the storm. Indoors the rooms are already warm,
+	# and a hard beam would wash that out.
 	_glow = move_toward(_glow, 1.0 if indoors() else 0.0, delta * 1.4)
-	lantern.light_energy = lerpf(0.22, 0.85, _glow) + sin(Time.get_ticks_msec() * 0.013) * 0.03
-	lantern.spot_range = lerpf(7.0, 9.0, _glow)
-	lantern.spot_angle = lerpf(24.0, 34.0, _glow)
+	lantern.light_energy = lerpf(0.48, 0.1, _glow) + sin(Time.get_ticks_msec() * 0.013) * 0.02
+	lantern.spot_range = lerpf(8.0, 4.2, _glow)
+	lantern.spot_angle = lerpf(28.0, 16.0, _glow)
+	if lamp_fill:
+		lamp_fill.light_color = Color(0.62, 0.7, 0.82).lerp(Color(1.0, 0.78, 0.58), _glow)
+		lamp_fill.light_energy = lerpf(0.05, 0.14, _glow)
 
 
 func _steps(delta: float) -> void:
@@ -781,12 +786,12 @@ func _build_camera() -> void:
 	lantern.shadow_enabled = false
 	camera.add_child(lantern)
 
-	var fill := OmniLight3D.new()
-	fill.light_color = Color(0.7, 0.76, 0.9)
-	fill.light_energy = 0.06
-	fill.omni_range = 3.5
-	fill.position = Vector3(0, 1.3, 0.2)
-	add_child(fill)
+	lamp_fill = OmniLight3D.new()
+	lamp_fill.light_color = Color(0.7, 0.76, 0.9)
+	lamp_fill.light_energy = 0.06
+	lamp_fill.omni_range = 3.5
+	lamp_fill.position = Vector3(0, 1.3, 0.2)
+	add_child(lamp_fill)
 
 
 func _build_model() -> void:
