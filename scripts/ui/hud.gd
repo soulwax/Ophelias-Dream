@@ -45,6 +45,7 @@ func _process(delta: float) -> void:
 	_murmur.text = Game.murmur if spoken else ""
 	_murmur_plate.visible = spoken
 	_objective_plate.visible = playing and Game.settings.show_objective
+	_refresh_objective()
 	_refresh_prompt()
 	_refresh_breath()
 	_refresh_pips()
@@ -76,7 +77,7 @@ func _on_phase(next: Game.Phase) -> void:
 
 
 func _refresh_objective() -> void:
-	if Game.notes_found < Tune.HUNT_NOTES:
+	if not Game.hunt_started:
 		_objective.text = "Reach the lookout."
 	else:
 		_objective.text = "Keep moving."

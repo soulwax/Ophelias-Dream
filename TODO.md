@@ -1,5 +1,9 @@
 # What the run is for
 
+Current execution plan: [finish the run](docs/DIRECTION.md). The passes below
+describe the narrative intent; wrong prints, return events, and last-page ending
+variations already exist. Follow the current plan for remaining integration work.
+
 The game already has a morning that will not settle, and a run that does not need it. The pages disagree about who waved, whose strap it is, whether the mat moved, and whether the lights at the end are a car. The house disagrees with the pages: a candle burned down on the stand, a pack candle that was never lit, a mat that turns the first time she comes back from the snow. The things in the field are not people. The figure is a rule about being still and being seen. The Listener is a rule about breath. The sleeper's past is the gap where a name would be.
 
 Play does not yet belong to that argument. After the third trail note the correct action is to keep moving, and the road is always the way out. Reading is a risk because it holds her still, not because the page changes what the snow will say about her. The Listener and the figure can both end the run, and neither ending knows about the other, or about the card on the mortuary desk. The body under the sheet, the height that is neither measurement in the file, and the initial that is not Mara never have to meet the thing she is fleeing.

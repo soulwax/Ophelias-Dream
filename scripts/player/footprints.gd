@@ -11,6 +11,7 @@ enum Mark { HERS, SOLE, BERM, PAIR }
 
 var _quads: Array[MeshInstance3D] = []
 var _ages: PackedFloat32Array
+var _holds: PackedFloat32Array
 var _cursor := 0
 var _hers: Array[Vector3] = []
 var _lied := false
@@ -23,6 +24,8 @@ func _ready() -> void:
 	global_transform = Transform3D.IDENTITY
 	_ages.resize(POOL)
 	_ages.fill(HOLD + FADE)
+	_holds.resize(POOL)
+	_holds.fill(HOLD)
 	var shader := load("res://shaders/footprint.gdshader") as Shader
 	var quad := QuadMesh.new()
 	quad.size = Vector2(1.0, 1.0)
@@ -46,21 +49,32 @@ func _ready() -> void:
 		_quads.append(mesh_instance)
 
 
-func stamp(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark = Mark.HERS) -> void:
+func stamp(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark = Mark.HERS, evidence: bool = false) -> void:
 	if mark == Mark.PAIR:
 		# Both boots planted, not a stride apart. That count is not hers.
 		var side := Vector3(cos(yaw), 0.0, -sin(yaw))
-		_lay(at + side * 0.11, yaw, heavy, false, Mark.HERS, false)
-		_lay(at - side * 0.11, yaw, heavy, true, Mark.HERS, false)
+		_lay(at + side * 0.11, yaw, heavy, false, Mark.HERS, false, evidence)
+		_lay(at - side * 0.11, yaw, heavy, true, Mark.HERS, false, evidence)
 		return
-	_lay(at, yaw, heavy, flip, mark, mark == Mark.HERS)
+	_lay(at, yaw, heavy, flip, mark, mark == Mark.HERS, evidence)
 
 
-func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember: bool) -> void:
+func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember: bool, evidence: bool) -> void:
+	# Only the three narrative patches reserve slots; ordinary tracks cycle past.
+	for _attempt in POOL:
+		if _holds[_cursor] <= HOLD or _ages[_cursor] >= _holds[_cursor] + FADE:
+			break
+		_cursor = (_cursor + 1) % POOL
 	var mesh_instance := _quads[_cursor]
 	var width := randf_range(0.11, 0.125)
 	var length := randf_range(0.30, 0.34)
 	var press := 0.62
+	if evidence and mark == Mark.SOLE:
+		# One impossible step by the returned-to door has to read at walking
+		# height against bright snow, without becoming a new kind of object.
+		width *= 1.3
+		length *= 1.3
+		press = 1.0
 	if heavy:
 		width *= 1.06
 		length *= 1.04
@@ -91,6 +105,7 @@ func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember
 	mesh_instance.transform = Transform3D(basis, planted - forward * 0.02)
 	mesh_instance.visible = true
 	_ages[_cursor] = 0.0
+	_holds[_cursor] = Tune.EVIDENCE_HOLD if evidence else HOLD
 	var material := mesh_instance.material_override as ShaderMaterial
 	var shader_mark := 0.0
 	if mark == Mark.SOLE:
@@ -101,6 +116,7 @@ func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember
 		material.set_shader_parameter("fade", 1.0)
 		material.set_shader_parameter("press", press)
 		material.set_shader_parameter("mark", shader_mark)
+		material.set_shader_parameter("evidence", 1.0 if evidence else 0.0)
 		material.set_shader_parameter("span", Vector2(width, length))
 	if remember:
 		_hers.append(Vector3(at.x, 0.0, at.z))
@@ -110,12 +126,14 @@ func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember
 
 
 func _process(delta: float) -> void:
+	if Game.phase != Game.Phase.PLAYING and Game.phase != Game.Phase.READING:
+		return
 	_lie_once()
 	for i in POOL:
 		if not _quads[i].visible:
 			continue
 		_ages[i] += delta
-		var fade := 1.0 if _ages[i] < HOLD else clampf(1.0 - (_ages[i] - HOLD) / FADE, 0.0, 1.0)
+		var fade := 1.0 if _ages[i] < _holds[i] else clampf(1.0 - (_ages[i] - _holds[i]) / FADE, 0.0, 1.0)
 		if fade <= 0.0:
 			_quads[i].visible = false
 			continue
@@ -130,6 +148,12 @@ func _lie_once() -> void:
 		return
 	if Game.indoors(Game.player.global_position):
 		return
+	var trail := Game.trail
+	if trail == null:
+		return
+	var player_along := trail.offset_of(Game.player.global_position) - trail.player_start_offset
+	if player_along < Tune.WRONG_TRACK_ROUTE_DISTANCE:
+		return
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		return
@@ -139,6 +163,14 @@ func _lie_once() -> void:
 		return
 	look = look.normalized()
 	for at in _hers:
+		var along := trail.offset_of(at) - trail.player_start_offset
+		# Keep the changed stride on the first outbound path, near enough to
+		# the cabin to notice when doubling back from the Listener.
+		if along < Tune.RETURN_CLUE_ROUTE_DISTANCE * 0.5 or along > Tune.HUNT_ROUTE_DISTANCE * 0.75:
+			continue
+		var path_at := trail.position_at(trail.player_start_offset + along)
+		if Vector2(path_at.x, path_at.z).distance_to(Vector2(at.x, at.z)) > 3.0:
+			continue
 		var to := at - camera.global_position
 		to.y = 0.0
 		var reach := to.length()
@@ -147,8 +179,9 @@ func _lie_once() -> void:
 		if to.normalized().dot(look) > -0.2:
 			continue
 		var side := Vector3(look.z, 0.0, -look.x)
-		stamp(Vector3(at.x, 0.0, at.z) + side * 0.55, atan2(side.x, side.z), false, false, Mark.PAIR)
+		stamp(Vector3(at.x, 0.0, at.z) + side * 0.55, atan2(side.x, side.z), false, false, Mark.PAIR, true)
 		_lied = true
+		Game.mark("snow: paired mark behind the player")
 		return
 
 

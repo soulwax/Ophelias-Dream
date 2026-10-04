@@ -37,7 +37,7 @@ func _physics_process(delta: float) -> void:
 	if _reached_exit():
 		Game.escape()
 		return
-	if Game.notes_found < Tune.HUNT_NOTES:
+	if not Game.hunt_started:
 		_stalk(delta)
 	else:
 		_pursue(delta)
@@ -95,13 +95,7 @@ func _pursue(delta: float) -> void:
 	var flat := player_at - global_position
 	flat.y = 0.0
 	var distance := flat.length()
-	# Breath is the other debt. While that one is louder, this one waits
-	# outside the reach of a catch.
-	var listener_foreground := Game.player.holding_breath and Game.dread > Game.closeness
-	var stand_off := Tune.CATCH_GAP + 0.55
-	if listener_foreground and distance < stand_off:
-		distance = stand_off
-	elif distance > 0.08:
+	if distance > 0.08:
 		var step := minf(speed * delta, distance)
 		var next := global_position + flat.normalized() * step
 		next = _clamp_inside(next)
@@ -121,7 +115,7 @@ func _pursue(delta: float) -> void:
 	if sheltered:
 		# Felt through the walls, never touching her.
 		Game.set_closeness(minf(presence, 0.5))
-	elif not listener_foreground and distance < Tune.CATCH_GAP and threat >= 0.48:
+	elif distance < Tune.CATCH_GAP and threat >= 0.48:
 		var body := "The snow where you were is pressed flat. Nothing leads away."
 		if Game.reading_last_page():
 			body += " The count closed."
@@ -129,7 +123,7 @@ func _pursue(delta: float) -> void:
 
 
 func _threat() -> float:
-	var from_notes := float(Game.notes_found - Tune.HUNT_NOTES) / 2.0
+	var from_notes := maxf(0.0, float(Game.notes_found - Tune.HUNT_NOTES) / 2.0)
 	var from_time := clampf(Game.seconds_hunting() / 75.0, 0.0, 1.0)
 	return clampf(0.26 + from_notes * 0.46 + from_time * 0.34, 0.0, 1.0)
 

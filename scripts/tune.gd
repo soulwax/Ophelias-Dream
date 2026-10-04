@@ -82,6 +82,13 @@ const ANOMALIES_PER_RUN := 1
 const GRAVITY := 20.0
 
 const HUNT_NOTES := 3
+# Metres beyond the authored start: the later route is dangerous without pages.
+const HUNT_ROUTE_DISTANCE := 85.0
+# The first page sits 22 m from the start. Passing it sets up a changed return.
+const RETURN_CLUE_ROUTE_DISTANCE := 22.0
+# The extra boots appear on a stretch the player can retrace before the hunt.
+const WRONG_TRACK_ROUTE_DISTANCE := 30.0
+const EVIDENCE_HOLD := 240.0
 const CATCH_GAP := 2.15
 const EXIT_MARGIN := 8.0
 const EXIT_RADIUS := 13.0

@@ -76,7 +76,7 @@ func _physics_process(delta: float) -> void:
 	var mouth := breath.global_position if breath else Game.player.global_position + Vector3(0, 1.6, 0)
 	var distance := _flat(Game.player.global_position - global_position).length()
 	# The figure is the debt in front. This one does not hunt beside it.
-	var figure_in_front := Game.notes_found >= Tune.HUNT_NOTES
+	var figure_in_front := Game.hunt_started
 	if figure_in_front and (_mood == Mood.HUNT or _mood == Mood.LISTEN):
 		_mood = Mood.DRIFT
 		if _hiss and _hiss.playing:

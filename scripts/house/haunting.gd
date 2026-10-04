@@ -35,7 +35,9 @@ var _body_laid := false
 var _lantern_out := false
 var _first_cellar := true
 var _left_house := false
+var _reached_early_trail := false
 var _mat_turned := false
+var _door_mark_pending := false
 
 const WHISPERS: PackedStringArray = [
 	"Finish the line.",
@@ -74,7 +76,10 @@ func _process(delta: float) -> void:
 		return
 	if Game.phase != Game.Phase.PLAYING and Game.phase != Game.Phase.READING:
 		return
+	_lay_door_mark()
 	var here := house.room_at(Game.player.global_position + Vector3(0.0, 0.9, 0.0))
+	if here == "":
+		_notice_excursion()
 	if here != room:
 		_enter(here, room)
 		room = here
@@ -116,14 +121,23 @@ func _enter(next: String, previous: String) -> void:
 		# It was not there the first time.
 		_body_laid = true
 		house.morgue.body.visible = true
+		Game.mark("house: body on morgue return")
 	if previous != "" and next == "":
 		_left_house = true
-	if _left_house and not _mat_turned and previous == "" and next != "":
+	if _left_house and _reached_early_trail and not _mat_turned and previous == "" and next != "":
 		_turn_mat()
 	if House.is_cellar(next) and _first_cellar:
 		# The first time down, it waits for her to settle, then walks overhead.
 		_first_cellar = false
 		_cooldown = minf(_cooldown, 5.0)
+
+
+func _notice_excursion() -> void:
+	if _reached_early_trail or not _left_house or Game.trail == null or Game.player == null:
+		return
+	var along := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
+	if along >= Tune.RETURN_CLUE_ROUTE_DISTANCE:
+		_reached_early_trail = true
 
 
 func _ambient(delta: float) -> void:
@@ -160,7 +174,7 @@ func _pick() -> String:
 
 
 func _hunter_waiting() -> bool:
-	return Game.hunter != null and Game.notes_found >= Tune.HUNT_NOTES and Game.hunter.global_position.distance_to(house.doorstep()) < 6.0
+	return Game.hunter != null and Game.hunt_started and Game.hunter.global_position.distance_to(house.doorstep()) < 6.0
 
 
 # --- Events -------------------------------------------------------------------------
@@ -263,14 +277,26 @@ func _turn_mat() -> void:
 	var mat := house.get_node_or_null("Authoring/Traces/Mat") as Node3D
 	if mat:
 		mat.rotation.y = 0.38
+	_door_mark_pending = true
+	Game.mark("house: mat turned on return")
+
+
+func _lay_door_mark() -> void:
+	if not _door_mark_pending:
+		return
 	# The page says she went back and the mat was still straight. The snow
 	# outside the door has a sole that never pushed a berm.
 	if Game.player == null or Game.player.footprints == null:
 		return
-	var at := house.to_global(Vector3(0.46, 0.0, 5.65))
+	var at := house.doorstep() + house.global_basis.x.normalized() * 0.46
 	if Game.trail != null and Game.trail.ground != null:
 		at.y = Game.trail.ground.height_at(at.x, at.z)
-	Game.player.footprints.stamp(at, 0.5, false, false, Footprints.Mark.SOLE)
+	var camera := Game.player.camera
+	if camera and not camera.is_position_behind(at) and camera.is_position_in_frustum(at):
+		return
+	Game.player.footprints.stamp(at, house.global_rotation.y + 0.5, false, false, Footprints.Mark.SOLE, true)
+	_door_mark_pending = false
+	Game.mark("snow: sole outside the returned-to door")
 
 
 # --- Helpers -------------------------------------------------------------------------

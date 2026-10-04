@@ -34,7 +34,8 @@ var ending_title := ""
 var ending_body := ""
 # She opened the page that asks her to finish. The road remembers. The catch does not speak in that voice.
 var read_last_page := false
-var _hunt_start_msec: int = -1
+var hunt_started := false
+var _hunt_seconds := 0.0
 
 
 func _ready() -> void:
@@ -66,6 +67,12 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if phase == Phase.PLAYING or phase == Phase.READING:
+		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
+			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
+				start_hunt()
+		if hunt_started:
+			_hunt_seconds += delta
 	if phase != Phase.INTRO:
 		return
 	intro_left -= delta
@@ -97,7 +104,8 @@ func reset() -> void:
 	ending_title = ""
 	ending_body = ""
 	read_last_page = false
-	_hunt_start_msec = -1
+	hunt_started = false
+	_hunt_seconds = 0.0
 
 
 func begin_intro() -> void:
@@ -140,8 +148,8 @@ func begin_reading() -> void:
 		notes_found += 1
 		if entry and entry.title == NoteCatalog.LAST_TITLE:
 			read_last_page = true
-		if notes_found == Tune.HUNT_NOTES and _hunt_start_msec < 0:
-			_hunt_start_msec = Time.get_ticks_msec()
+		if notes_found >= Tune.HUNT_NOTES:
+			start_hunt()
 	set_phase(Phase.READING)
 
 
@@ -157,9 +165,14 @@ func murmur_line(line: String) -> void:
 
 
 func seconds_hunting() -> float:
-	if _hunt_start_msec < 0:
-		return 0.0
-	return float(Time.get_ticks_msec() - _hunt_start_msec) / 1000.0
+	return _hunt_seconds
+
+
+func start_hunt() -> void:
+	if hunt_started:
+		return
+	hunt_started = true
+	mark("hunt started at %d pages" % notes_found)
 
 
 func close_reading() -> void:

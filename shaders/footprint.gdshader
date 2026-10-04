@@ -3,6 +3,8 @@ render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specula
 
 uniform float fade = 1.0;
 uniform float press = 0.7;
+// Kept contradictions read as pressed snow in bright daylight, not a new decal.
+uniform float evidence = 0.0;
 // 0 her stride (bowl and berm), 1 a sole that shoved nothing, 2 a berm with no sole.
 uniform float mark = 0.0;
 // Quad width and length in metres, so a shove in the shader is a shove on the snow.
@@ -85,7 +87,7 @@ void fragment() {
 	boot_weights(UV, inside, rim, tread);
 	float grain = hash(UV * vec2(220.0, 90.0));
 	vec3 loose = vec3(0.90, 0.93, 0.97);
-	vec3 packed = vec3(0.70, 0.76, 0.82);
+	vec3 packed = mix(vec3(0.70, 0.76, 0.82), vec3(0.46, 0.53, 0.61), evidence);
 	vec3 color = mix(loose, packed, inside * (0.45 + press * 0.4));
 	color = mix(color, packed * 0.9, tread * 0.65);
 	color = mix(color, loose * 1.03, rim * (1.0 - inside));
