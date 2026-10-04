@@ -213,5 +213,55 @@
     "source": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets\\PAD_SV_GrassSet_Grass02a_00201e0e\\PAD_SV_GrassSet_Grass02a\\Unity\\Rocket\\PAD_SV_GrassSet_Grass02a\\Textures\\T_PAD_GrassSet_2048_OpenGL_N.png",
     "file": "T_PAD_GrassSet_2048_OpenGL_N.png",
     "sha256": "A4C2275DB1838136B546D2216C0292CC81C58B4D204BEFB3A5253925CAFCE100"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_LogPile\\Unity\\Rocket\\MVV_LogPile\\HDRP\\SM_MVV_LogPile_c1_LOD0.fbx",
+    "file": "SM_MVV_LogPile_c1_LOD0.fbx",
+    "sha256": "53459B486EAA56F1B990AA2BD3BC34A4C2D85D6B07CEA7B19B95BB7B90EB924B"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_LogPile\\Unity\\Rocket\\MVV_LogPile\\Textures\\T_MVV_LogPile_2048_AO.png",
+    "file": "T_MVV_LogPile_2048_AO.png",
+    "sha256": "87FD80D793961CB9124C81EB45A0D4493710E86BB03930B73D838372C8A71813"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_LogPile\\Unity\\Rocket\\MVV_LogPile\\Textures\\T_MVV_LogPile_2048_B.png",
+    "file": "T_MVV_LogPile_2048_B.png",
+    "sha256": "201F24323F87D10E18491BC32B5442E4A640DCEC11C978AC5DFC00188B1B5EF8"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Proprietary\\MVV_LogPile\\Unity\\Rocket\\MVV_LogPile\\Textures\\T_MVV_LogPile_2048_OpenGL_N.png",
+    "file": "T_MVV_LogPile_2048_OpenGL_N.png",
+    "sha256": "B8FF7145CE7C1082B9F28CF18CEE5F4D98715F35CB7664FFE492ADD0FE605ED5"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Sourced\\painted_wooden_bench\\painted_wooden_bench_2k.fbx",
+    "file": "painted_wooden_bench_2k.fbx",
+    "sha256": "AEDD0AF2D8C9CBF753AA20B193DDC17548D778ABE1514FC8AE5B0C3AF5CF1855"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Sourced\\painted_wooden_bench\\painted_wooden_bench_ao_2k.jpg",
+    "file": "painted_wooden_bench_ao_2k.jpg",
+    "sha256": "96EA1D95B7FA86FBDD28858237D67887C20C24F151545136CC3D18A8A7326780"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Sourced\\painted_wooden_bench\\painted_wooden_bench_arm_2k.jpg",
+    "file": "painted_wooden_bench_arm_2k.jpg",
+    "sha256": "FB51834034B251CBA6B37387CA962FBF4181A0D63A5C747A3AA7460903582ED8"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Sourced\\painted_wooden_bench\\painted_wooden_bench_diff_2k.jpg",
+    "file": "painted_wooden_bench_diff_2k.jpg",
+    "sha256": "1A0D4439212E01DAAD3437511DEFD9551DB16F4D076129A73D5D6B2028B9CC57"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Sourced\\painted_wooden_bench\\painted_wooden_bench_nor_gl_2k.jpg",
+    "file": "painted_wooden_bench_nor_gl_2k.jpg",
+    "sha256": "BB1992B136C436FEB585FCA9731D9E8F26E7397ED45A7E93EFD1E5F6F68E3D36"
+  },
+  {
+    "source": "D:\\Workspace\\Engines\\Unity\\The-Quarantine-Unity\\Assets\\Quarantine\\Art\\Sourced\\painted_wooden_bench\\painted_wooden_bench_rough_2k.jpg",
+    "file": "painted_wooden_bench_rough_2k.jpg",
+    "sha256": "C0C80E65B9D48CDA4792A87C32DF3EBCB233C40DE68272C0E09B10A7094D0D9E"
   }
 ]

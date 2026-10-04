@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/environment/premium/painted_wooden_bench_2k.fbx" id="1"]
+[ext_resource type="Material" path="res://assets/environment/premium/materials/painted_bench.tres" id="2"]
+
+[node name="PaintedWoodenBench" type="Node3D"]
+metadata/premium_flora = true
+
+[node name="Model" parent="." instance=ExtResource("1")]
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="painted_wooden_bench" parent="Model" index="0"]
+surface_material_override/0 = ExtResource("2")
+
+[editable path="Model"]

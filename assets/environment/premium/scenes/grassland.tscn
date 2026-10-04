@@ -1,0 +1,903 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/environment/premium/scenes/SM_PAD_SV_Grass01b_c1_LOD0.tscn" id="1_eldo1"]
+[ext_resource type="PackedScene" path="res://assets/environment/premium/scenes/SM_PAD_SV_Grass02a_c1_LOD0.tscn" id="2_s0kkw"]
+[ext_resource type="PackedScene" path="res://assets/environment/premium/scenes/SM_PAD_SV_MoorGrass01a_c1_LOD0.tscn" id="3_38qfm"]
+
+[node name="Grassland" type="Node3D" unique_id=1375636364]
+
+[node name="GrassPatch_000" type="Node3D" parent="." unique_id=2024522897 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.05327197, 0, -1.434179, 0, 1.435168, 0, 1.434179, 0, 0.05327197, -1.138375, 2.4800332, -207.26279)
+metadata/premium_flora = true
+
+[node name="GrassPatch_001" type="Node3D" parent="." unique_id=1727524152 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.0127165, 0, 0.54429346, 0, 1.1497175, 0, -0.54429346, 0, -1.0127165, 1.9873098, 1.6930869, -209.08589)
+metadata/premium_flora = true
+
+[node name="GrassPatch_002" type="Node3D" parent="." unique_id=76335335 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.7712069, 0, 0.5017684, 0, 0.92007154, 0, -0.5017684, 0, -0.7712069, -1.2111413, 2.4859133, -204.10603)
+metadata/premium_flora = true
+
+[node name="GrassPatch_003" type="Node3D" parent="." unique_id=375308868 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.69651103, 0, -0.87242424, 0, 1.1163565, 0, 0.87242424, 0, 0.69651103, 17.664715, 0.60308105, -205.0078)
+metadata/premium_flora = true
+
+[node name="GrassPatch_004" type="Node3D" parent="." unique_id=1267131657 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.4145293, 0, 0.3278696, 0, 1.4520302, 0, -0.3278696, 0, -1.4145293, 5.6214447, 0.71282804, -200.80739)
+metadata/premium_flora = true
+
+[node name="GrassPatch_005" type="Node3D" parent="." unique_id=1228154700 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.67576784, 0, -0.6058014, 0, 0.90755576, 0, 0.6058014, 0, -0.67576784, -0.8930247, 2.7641943, -196.87918)
+metadata/premium_flora = true
+
+[node name="GrassPatch_006" type="Node3D" parent="." unique_id=1017990087 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.13593842, 0, 1.0423043, 0, 1.0511315, 0, -1.0423043, 0, 0.13593842, 2.4209633, 1.4958829, -196.70137)
+metadata/premium_flora = true
+
+[node name="GrassPatch_007" type="Node3D" parent="." unique_id=1665704617 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.34247765, 0, 1.3925793, 0, 1.4340739, 0, -1.3925793, 0, 0.34247765, 10.815163, 0.57815176, -194.50063)
+metadata/premium_flora = true
+
+[node name="GrassPatch_008" type="Node3D" parent="." unique_id=545807355 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.51038826, 0, -1.2494214, 0, 1.3496481, 0, 1.2494214, 0, 0.51038826, -9.652828, 3.2623, -193.37773)
+metadata/premium_flora = true
+
+[node name="GrassPatch_009" type="Node3D" parent="." unique_id=748558957 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.53559446, 0, 1.0895863, 0, 1.2141086, 0, -1.0895863, 0, -0.53559446, 1.8580914, 2.8264468, -191.1324)
+metadata/premium_flora = true
+
+[node name="GrassPatch_010" type="Node3D" parent="." unique_id=1809744411 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.503845, 0, -1.1882, 0, 1.2906119, 0, 1.1882, 0, -0.503845, -10.621221, 2.644021, -187.24796)
+metadata/premium_flora = true
+
+[node name="GrassPatch_011" type="Node3D" parent="." unique_id=2058359600 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.3464991, 0, 0.5210413, 0, 1.443795, 0, -0.5210413, 0, 1.3464991, -7.3154154, 3.3822732, -189.09245)
+metadata/premium_flora = true
+
+[node name="GrassPatch_012" type="Node3D" parent="." unique_id=1002364811 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.9499888, 0, -0.18798418, 0, 0.9684094, 0, 0.18798418, 0, 0.9499888, -0.5223236, 3.6865797, -188.0806)
+metadata/premium_flora = true
+
+[node name="GrassPatch_013" type="Node3D" parent="." unique_id=191553926 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.5179456, 0, 1.02434, 0, 1.1478416, 0, -1.02434, 0, 0.5179456, -10.998878, 2.4884336, -182.66013)
+metadata/premium_flora = true
+
+[node name="GrassPatch_014" type="Node3D" parent="." unique_id=1080000915 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.20805986, 0, 0.89592385, 0, 0.9197654, 0, -0.89592385, 0, -0.20805986, -7.3400335, 2.8769898, -183.00755)
+metadata/premium_flora = true
+
+[node name="GrassPatch_015" type="Node3D" parent="." unique_id=519197130 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.039478, 0, 0.44052547, 0, 1.1289717, 0, -0.44052547, 0, -1.039478, 11.105964, 0.96188796, -184.63428)
+metadata/premium_flora = true
+
+[node name="GrassPatch_016" type="Node3D" parent="." unique_id=320754372 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.2180814, 0, -0.84744954, 0, 0.87506014, 0, 0.84744954, 0, -0.2180814, 18.710983, 0.59094673, -185.22641)
+metadata/premium_flora = true
+
+[node name="GrassPatch_017" type="Node3D" parent="." unique_id=53818134 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.8039778, 0, -0.76342314, 0, 1.1086907, 0, 0.76342314, 0, -0.8039778, -14.75761, 1.7437912, -181.22217)
+metadata/premium_flora = true
+
+[node name="GrassPatch_018" type="Node3D" parent="." unique_id=390678946 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.29987535, 0, 1.2398093, 0, 1.2755597, 0, -1.2398093, 0, 0.29987535, -8.978468, 2.6587968, -180.04651)
+metadata/premium_flora = true
+
+[node name="GrassPatch_019" type="Node3D" parent="." unique_id=237144184 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.8135454, 0, -0.39470354, 0, 0.90423834, 0, 0.39470354, 0, -0.8135454, -5.5076933, 2.882217, -179.82701)
+metadata/premium_flora = true
+
+[node name="GrassPatch_020" type="Node3D" parent="." unique_id=318906610 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.8289236, 0, 1.0204946, 0, 1.3147333, 0, -1.0204946, 0, 0.8289236, 9.511799, 1.164268, -181.4344)
+metadata/premium_flora = true
+
+[node name="GrassPatch_021" type="Node3D" parent="." unique_id=825124352 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.3742256, 0, -0.5350452, 0, 1.47471, 0, 0.5350452, 0, 1.3742256, -15.042881, 1.6062014, -175.70518)
+metadata/premium_flora = true
+
+[node name="GrassPatch_022" type="Node3D" parent="." unique_id=1976888416 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.1712785, 0, 0.68999845, 0, 1.3594084, 0, -0.68999845, 0, 1.1712785, -11.336558, 2.0471904, -174.60335)
+metadata/premium_flora = true
+
+[node name="GrassPatch_023" type="Node3D" parent="." unique_id=2058863506 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.3071134, 0, 0.27572197, 0, 1.3358773, 0, -0.27572197, 0, 1.3071134, -6.978294, 2.2623649, -176.01189)
+metadata/premium_flora = true
+
+[node name="GrassPatch_024" type="Node3D" parent="." unique_id=1724379978 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.3634504, 0, -0.5027589, 0, 1.4531908, 0, 0.5027589, 0, -1.3634504, 11.207579, 0.41206875, -175.1244)
+metadata/premium_flora = true
+
+[node name="GrassPatch_025" type="Node3D" parent="." unique_id=993921049 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.96371126, 0, 0.09974695, 0, 0.96885955, 0, -0.09974695, 0, 0.96371126, -14.5225, 1.7240905, -172.1348)
+metadata/premium_flora = true
+
+[node name="GrassPatch_026" type="Node3D" parent="." unique_id=536812305 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.0820618, 0, 0.13162647, 0, 1.0900382, 0, -0.13162647, 0, 1.0820618, -8.510318, 1.8574207, -171.83162)
+metadata/premium_flora = true
+
+[node name="GrassPatch_027" type="Node3D" parent="." unique_id=460439235 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.18135035, 0, 1.2336084, 0, 1.2468671, 0, -1.2336084, 0, 0.18135035, -7.080284, 1.9054885, -172.80716)
+metadata/premium_flora = true
+
+[node name="GrassPatch_028" type="Node3D" parent="." unique_id=1738769044 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.61626947, 0, -1.0518327, 0, 1.2190734, 0, 1.0518327, 0, 0.61626947, 11.105079, 0.0890135, -171.66289)
+metadata/premium_flora = true
+
+[node name="GrassPatch_029" type="Node3D" parent="." unique_id=144359722 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.1137682, 0, 0.9021757, 0, 1.433318, 0, -0.9021757, 0, -1.1137682, -12.924967, 1.9961225, -167.91415)
+metadata/premium_flora = true
+
+[node name="GrassPatch_030" type="Node3D" parent="." unique_id=1010292066 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.92442226, 0, -0.31871724, 0, 0.9778227, 0, 0.31871724, 0, 0.92442226, -9.306254, 1.8205256, -166.92128)
+metadata/premium_flora = true
+
+[node name="GrassPatch_031" type="Node3D" parent="." unique_id=602758998 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.2099853, 0, 0.65295655, 0, 1.3749242, 0, -0.65295655, 0, 1.2099853, 5.6710835, 0.5742194, -167.1541)
+metadata/premium_flora = true
+
+[node name="GrassPatch_032" type="Node3D" parent="." unique_id=454067300 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.105671644, 0, 1.3222897, 0, 1.3265054, 0, -1.3222897, 0, -0.105671644, 10.959923, -0.017566783, -169.2604)
+metadata/premium_flora = true
+
+[node name="GrassPatch_033" type="Node3D" parent="." unique_id=1895877045 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.2617755, 0, -1.1988508, 0, 1.227098, 0, 1.1988508, 0, -0.2617755, -15.364918, 1.8536311, -163.01334)
+metadata/premium_flora = true
+
+[node name="GrassPatch_034" type="Node3D" parent="." unique_id=1778541460 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.16044489, 0, 1.3541056, 0, 1.3635778, 0, -1.3541056, 0, -0.16044489, -0.8925433, 0.76355475, -163.60428)
+metadata/premium_flora = true
+
+[node name="GrassPatch_035" type="Node3D" parent="." unique_id=1794637063 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.08758583, 0, 0.85516757, 0, 0.85964113, 0, -0.85516757, 0, 0.08758583, 1.3557497, 0.6003106, -163.44179)
+metadata/premium_flora = true
+
+[node name="GrassPatch_036" type="Node3D" parent="." unique_id=1248671378 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.3240453, 0, 0.7014608, 0, 1.4983802, 0, -0.7014608, 0, 1.3240453, 5.331606, 0.1588464, -163.60762)
+metadata/premium_flora = true
+
+[node name="GrassPatch_037" type="Node3D" parent="." unique_id=1317225843 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.7442949, 0, 0.5533017, 0, 0.92742527, 0, -0.5533017, 0, -0.7442949, 10.231143, -0.9060428, -162.77278)
+metadata/premium_flora = true
+
+[node name="GrassPatch_038" type="Node3D" parent="." unique_id=946181798 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.80613285, 0, 0.9449483, 0, 1.2420859, 0, -0.9449483, 0, -0.80613285, -18.236778, 1.1249669, -160.26845)
+metadata/premium_flora = true
+
+[node name="GrassPatch_039" type="Node3D" parent="." unique_id=364370386 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.080236, 0, -0.23090482, 0, 1.1046388, 0, 0.23090482, 0, 1.080236, -13.094657, 1.8383445, -161.4951)
+metadata/premium_flora = true
+
+[node name="GrassPatch_040" type="Node3D" parent="." unique_id=212524545 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.46702746, 0, 0.8588773, 0, 0.97764254, 0, -0.8588773, 0, -0.46702746, -10.073326, 1.5301867, -158.7841)
+metadata/premium_flora = true
+
+[node name="GrassPatch_041" type="Node3D" parent="." unique_id=552276626 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.211651, 0, -0.27062005, 0, 1.2415044, 0, 0.27062005, 0, -1.211651, -7.465248, 1.2550861, -159.81778)
+metadata/premium_flora = true
+
+[node name="GrassPatch_042" type="Node3D" parent="." unique_id=2069105506 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.69424504, 0, 0.6830061, 0, 0.9738961, 0, -0.6830061, 0, 0.69424504, 2.6655328, 0.2291885, -159.10344)
+metadata/premium_flora = true
+
+[node name="GrassPatch_043" type="Node3D" parent="." unique_id=1079893978 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.3680812, 0, -0.5785138, 0, 1.4853702, 0, 0.5785138, 0, 1.3680812, 4.84118, -0.23796123, -159.21869)
+metadata/premium_flora = true
+
+[node name="GrassPatch_044" type="Node3D" parent="." unique_id=1486575919 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.24677908, 0, 1.2412474, 0, 1.2655414, 0, -1.2412474, 0, 0.24677908, -17.494755, 1.3329257, -156.21027)
+metadata/premium_flora = true
+
+[node name="GrassPatch_045" type="Node3D" parent="." unique_id=980305462 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.2926029, 0, 0.6900202, 0, 1.4652475, 0, -0.6900202, 0, 1.2926029, -9.469055, 1.5919926, -155.89458)
+metadata/premium_flora = true
+
+[node name="GrassPatch_046" type="Node3D" parent="." unique_id=669403965 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.3334069, 0, 0.2625515, 0, 1.3590097, 0, -0.2625515, 0, 1.3334069, -5.9499807, 1.2691096, -157.1355)
+metadata/premium_flora = true
+
+[node name="GrassPatch_047" type="Node3D" parent="." unique_id=1105020653 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.37371182, 0, 1.4363552, 0, 1.4841754, 0, -1.4363552, 0, -0.37371182, 3.3108368, -0.15168187, -154.76984)
+metadata/premium_flora = true
+
+[node name="GrassPatch_048" type="Node3D" parent="." unique_id=1348578972 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.7909739, 0, -0.4697599, 0, 0.9199533, 0, 0.4697599, 0, -0.7909739, -17.200933, 1.5683469, -152.44345)
+metadata/premium_flora = true
+
+[node name="GrassPatch_049" type="Node3D" parent="." unique_id=2080638997 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.058725297, 0, 1.1882653, 0, 1.1897155, 0, -1.1882653, 0, 0.058725297, -13.9671545, 1.6873943, -152.76126)
+metadata/premium_flora = true
+
+[node name="GrassPatch_050" type="Node3D" parent="." unique_id=1464313799 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.3769017, 0, 0.3249847, 0, 1.4147344, 0, -0.3249847, 0, 1.3769017, 6.752715, -0.6033863, -152.54993)
+metadata/premium_flora = true
+
+[node name="GrassPatch_051" type="Node3D" parent="." unique_id=1884604276 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.079551786, 0, -0.97755766, 0, 0.9807892, 0, 0.97755766, 0, 0.079551786, 10.418983, -0.6846487, -151.04648)
+metadata/premium_flora = true
+
+[node name="GrassPatch_052" type="Node3D" parent="." unique_id=1471828740 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.081865296, 0, 0.89611846, 0, 0.89985013, 0, -0.89611846, 0, 0.081865296, 14.844307, -0.96014726, -152.55661)
+metadata/premium_flora = true
+
+[node name="GrassPatch_053" type="Node3D" parent="." unique_id=393585652 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.505773, 0, -0.81949306, 0, 0.9630032, 0, 0.81949306, 0, -0.505773, -2.7641346, 1.7087953, -147.40454)
+metadata/premium_flora = true
+
+[node name="GrassPatch_054" type="Node3D" parent="." unique_id=1901679951 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.93171376, 0, 0.21361952, 0, 0.955889, 0, -0.21361952, 0, -0.93171376, 15.149532, -0.7902786, -147.02043)
+metadata/premium_flora = true
+
+[node name="GrassPatch_055" type="Node3D" parent="." unique_id=384759505 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.1278151, 0, 0.6162838, 0, 1.2852131, 0, -0.6162838, 0, 1.1278151, 10.354018, 0.42048287, -143.93633)
+metadata/premium_flora = true
+
+[node name="GrassPatch_056" type="Node3D" parent="." unique_id=95502353 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.07679879, 0, 0.85635203, 0, 0.85978884, 0, -0.85635203, 0, -0.07679879, 13.006895, 0.0106555745, -143.80571)
+metadata/premium_flora = true
+
+[node name="GrassPatch_057" type="Node3D" parent="." unique_id=356610030 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.76639915, 0, -0.40007013, 0, 0.86453676, 0, 0.40007013, 0, -0.76639915, 19.01794, -0.7681458, -145.41843)
+metadata/premium_flora = true
+
+[node name="GrassPatch_058" type="Node3D" parent="." unique_id=279804978 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.1290736, 0, -0.35365593, 0, 1.1831652, 0, 0.35365593, 0, 1.1290736, 10.247311, 1.276892, -140.65668)
+metadata/premium_flora = true
+
+[node name="GrassPatch_059" type="Node3D" parent="." unique_id=1447442631 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.06605798, 0, 1.33405, 0, 1.3356845, 0, -1.33405, 0, 0.06605798, 18.54095, 0.9264246, -139.35591)
+metadata/premium_flora = true
+
+[node name="GrassPatch_060" type="Node3D" parent="." unique_id=432840610 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.1028326, 0, -0.08468059, 0, 1.1060789, 0, 0.08468059, 0, -1.1028326, 18.437628, 2.0827956, -133.217)
+metadata/premium_flora = true
+
+[node name="GrassPatch_061" type="Node3D" parent="." unique_id=1526561764 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.25219753, 0, 1.3229071, 0, 1.3467319, 0, -1.3229071, 0, -0.25219753, 21.0456, 2.169114, -130.62065)
+metadata/premium_flora = true
+
+[node name="GrassPatch_062" type="Node3D" parent="." unique_id=440729009 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.8202025, 0, 1.2208688, 0, 1.4708002, 0, -1.2208688, 0, 0.8202025, 9.774504, 2.4857614, -127.833824)
+metadata/premium_flora = true
+
+[node name="GrassPatch_063" type="Node3D" parent="." unique_id=599178422 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.78064424, 0, -0.37646163, 0, 0.86667687, 0, 0.37646163, 0, -0.78064424, 16.73071, 2.15501, -128.54538)
+metadata/premium_flora = true
+
+[node name="GrassPatch_064" type="Node3D" parent="." unique_id=221016008 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.1027906, 0, -0.4752286, 0, 1.2008287, 0, 0.4752286, 0, 1.1027906, 4.7727656, 3.2650046, -123.30173)
+metadata/premium_flora = true
+
+[node name="GrassPatch_065" type="Node3D" parent="." unique_id=78244578 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.37790626, 0, 1.3035207, 0, 1.3571954, 0, -1.3035207, 0, 0.37790626, 15.229739, 2.4631233, -124.13201)
+metadata/premium_flora = true
+
+[node name="GrassPatch_066" type="Node3D" parent="." unique_id=1461121204 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.1549768, 0, 0.24575654, 0, 1.1808335, 0, -0.24575654, 0, -1.1549768, 18.491348, 2.3898966, -124.88027)
+metadata/premium_flora = true
+
+[node name="GrassPatch_067" type="Node3D" parent="." unique_id=788991423 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.1154855, 0, 0.2080178, 0, 1.1347156, 0, -0.2080178, 0, 1.1154855, 15.083244, 3.556196, -119.166275)
+metadata/premium_flora = true
+
+[node name="GrassPatch_068" type="Node3D" parent="." unique_id=195808694 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.9449015, 0, 0.21029958, 0, 0.9680211, 0, -0.21029958, 0, 0.9449015, 16.892956, 3.0677345, -121.367165)
+metadata/premium_flora = true
+
+[node name="GrassPatch_069" type="Node3D" parent="." unique_id=1597191819 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.3709294, 0, 0.35073045, 0, 1.4150827, 0, -0.35073045, 0, 1.3709294, 8.915873, 4.114301, -116.35111)
+metadata/premium_flora = true
+
+[node name="GrassPatch_070" type="Node3D" parent="." unique_id=367716679 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.30002934, 0, -1.1118535, 0, 1.1516231, 0, 1.1118535, 0, -0.30002934, 14.055309, 3.9362612, -117.143326)
+metadata/premium_flora = true
+
+[node name="GrassPatch_071" type="Node3D" parent="." unique_id=768993554 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.3695637, 0, 0.13929933, 0, 1.3766296, 0, -0.13929933, 0, 1.3695637, 7.4059005, 4.3826256, -112.67146)
+metadata/premium_flora = true
+
+[node name="GrassPatch_072" type="Node3D" parent="." unique_id=1489947408 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.1035302, 0, -0.45065948, 0, 1.1920037, 0, 0.45065948, 0, 1.1035302, 9.990548, 4.550885, -110.502106)
+metadata/premium_flora = true
+
+[node name="GrassPatch_073" type="Node3D" parent="." unique_id=1265173912 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.37344018, 0, -0.96399784, 0, 1.0338033, 0, 0.96399784, 0, 0.37344018, -23.183704, 4.3371754, -106.530426)
+metadata/premium_flora = true
+
+[node name="GrassPatch_074" type="Node3D" parent="." unique_id=1639034412 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.1495849, 0, 0.21135578, 0, 1.1688527, 0, -0.21135578, 0, 1.1495849, -26.619232, 4.0666995, -104.52444)
+metadata/premium_flora = true
+
+[node name="GrassPatch_075" type="Node3D" parent="." unique_id=1276094892 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.3705045, 0, 0.09275587, 0, 1.3736397, 0, -0.09275587, 0, -1.3705045, -17.85062, 5.0784926, -103.07148)
+metadata/premium_flora = true
+
+[node name="GrassPatch_076" type="Node3D" parent="." unique_id=236001985 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.06833056, 0, -1.1160922, 0, 1.118182, 0, 1.1160922, 0, -0.06833056, -3.334508, 5.6304226, -102.91792)
+metadata/premium_flora = true
+
+[node name="GrassPatch_077" type="Node3D" parent="." unique_id=43455352 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.7633059, 0, -0.5302547, 0, 0.92941165, 0, 0.5302547, 0, -0.7633059, 2.3442705, 5.4083676, -104.41637)
+metadata/premium_flora = true
+
+[node name="GrassPatch_078" type="Node3D" parent="." unique_id=1331921231 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.48052737, 0, -0.79373014, 0, 0.9278546, 0, 0.79373014, 0, 0.48052737, -24.700724, 4.822136, -99.887634)
+metadata/premium_flora = true
+
+[node name="GrassPatch_079" type="Node3D" parent="." unique_id=1556094874 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.07291309, 0, -1.0689838, 0, 1.0714675, 0, 1.0689838, 0, 0.07291309, -2.742603, 5.7580976, -101.17637)
+metadata/premium_flora = true
+
+[node name="GrassPatch_080" type="Node3D" parent="." unique_id=1158691308 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.43863338, 0, -1.0414546, 0, 1.1300561, 0, 1.0414546, 0, -0.43863338, 6.40986, 5.7835646, -101.07366)
+metadata/premium_flora = true
+
+[node name="GrassPatch_081" type="Node3D" parent="." unique_id=412147392 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.27510747, 0, 0.8283174, 0, 0.87280804, 0, -0.8283174, 0, 0.27510747, -25.250021, 5.14164, -95.56057)
+metadata/premium_flora = true
+
+[node name="GrassPatch_082" type="Node3D" parent="." unique_id=345883504 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.3664541, 0, -0.19807051, 0, 1.3807348, 0, 0.19807051, 0, -1.3664541, -21.589699, 5.694699, -95.116196)
+metadata/premium_flora = true
+
+[node name="GrassPatch_083" type="Node3D" parent="." unique_id=1130954208 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.75354606, 0, 1.008745, 0, 1.259126, 0, -1.008745, 0, 0.75354606, -17.926704, 5.955776, -94.578964)
+metadata/premium_flora = true
+
+[node name="GrassPatch_084" type="Node3D" parent="." unique_id=946698002 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.929034, 0, 0.30617687, 0, 0.97818625, 0, -0.30617687, 0, 0.929034, 2.9030652, 6.3365316, -96.72105)
+metadata/premium_flora = true
+
+[node name="GrassPatch_085" type="Node3D" parent="." unique_id=1962375001 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.1646435, 0, 0.839193, 0, 0.8551914, 0, -0.839193, 0, 0.1646435, 6.214868, 6.2505946, -94.990814)
+metadata/premium_flora = true
+
+[node name="GrassPatch_086" type="Node3D" parent="." unique_id=1692008406 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.0897957, 0, -0.40503323, 0, 1.1626291, 0, 0.40503323, 0, 1.0897957, -25.304813, 5.3991976, -92.61777)
+metadata/premium_flora = true
+
+[node name="GrassPatch_087" type="Node3D" parent="." unique_id=840502600 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.7975528, 0, 0.89094794, 0, 1.1957754, 0, -0.89094794, 0, 0.7975528, -12.580909, 5.7747564, -91.752304)
+metadata/premium_flora = true
+
+[node name="GrassPatch_088" type="Node3D" parent="." unique_id=424250017 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.30208626, 0, 1.128759, 0, 1.1684833, 0, -1.128759, 0, 0.30208626, -9.15789, 5.903841, -90.86024)
+metadata/premium_flora = true
+
+[node name="GrassPatch_089" type="Node3D" parent="." unique_id=1008589824 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.2579846, 0, 0.1589949, 0, 1.2679924, 0, -0.1589949, 0, 1.2579846, 3.0299888, 6.5393515, -91.890816)
+metadata/premium_flora = true
+
+[node name="GrassPatch_090" type="Node3D" parent="." unique_id=1768697827 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.3440502, 0, -0.47907528, 0, 1.4268792, 0, 0.47907528, 0, 1.3440502, 5.3583126, 6.218801, -92.82344)
+metadata/premium_flora = true
+
+[node name="GrassPatch_091" type="Node3D" parent="." unique_id=886273916 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.3982124, 0, -0.533736, 0, 1.4966202, 0, 0.533736, 0, -1.3982124, 10.521467, 5.5598598, -93.035934)
+metadata/premium_flora = true
+
+[node name="GrassPatch_092" type="Node3D" parent="." unique_id=1195891029 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.4628427, 0, 0.010928748, 0, 1.4628835, 0, -0.010928748, 0, -1.4628427, 14.994613, 4.7659855, -90.52925)
+metadata/premium_flora = true
+
+[node name="GrassPatch_093" type="Node3D" parent="." unique_id=570402982 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.90088964, 0, -1.108507, 0, 1.4284222, 0, 1.108507, 0, -0.90088964, -16.671429, 5.599613, -87.55349)
+metadata/premium_flora = true
+
+[node name="GrassPatch_094" type="Node3D" parent="." unique_id=750805431 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.70756876, 0, -0.69924736, 0, 0.9947866, 0, 0.69924736, 0, -0.70756876, -7.1033306, 5.927787, -87.45032)
+metadata/premium_flora = true
+
+[node name="GrassPatch_095" type="Node3D" parent="." unique_id=413461505 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.7992045, 0, 1.2066958, 0, 1.4473572, 0, -1.2066958, 0, 0.7992045, 12.947918, 5.0604916, -88.35698)
+metadata/premium_flora = true
+
+[node name="GrassPatch_096" type="Node3D" parent="." unique_id=853656893 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.62414473, 0, -0.9800377, 0, 1.1619081, 0, 0.9800377, 0, -0.62414473, 17.420898, 4.469207, -89.03434)
+metadata/premium_flora = true
+
+[node name="GrassPatch_097" type="Node3D" parent="." unique_id=1913270996 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.2407478, 0, -0.31185153, 0, 1.2793384, 0, 0.31185153, 0, 1.2407478, -13.950817, 5.2640295, -84.9918)
+metadata/premium_flora = true
+
+[node name="GrassPatch_098" type="Node3D" parent="." unique_id=1886689157 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.1298009, 0, 0.497013, 0, 1.2342901, 0, -0.497013, 0, -1.1298009, -9.869495, 5.2959757, -84.3198)
+metadata/premium_flora = true
+
+[node name="GrassPatch_099" type="Node3D" parent="." unique_id=1246671458 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.70957977, 0, -0.4830381, 0, 0.8583876, 0, 0.4830381, 0, 0.70957977, -5.452133, 5.703404, -84.75982)
+metadata/premium_flora = true
+
+[node name="GrassPatch_100" type="Node3D" parent="." unique_id=1855465276 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.2533288, 0, 0.35347676, 0, 1.3022208, 0, -0.35347676, 0, 1.2533288, 14.967345, 4.2204514, -84.3992)
+metadata/premium_flora = true
+
+[node name="GrassPatch_101" type="Node3D" parent="." unique_id=1256643513 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.1775022, 0, -0.3908867, 0, 1.2406868, 0, 0.3908867, 0, 1.1775022, 18.243763, 3.5511842, -82.81629)
+metadata/premium_flora = true
+
+[node name="GrassPatch_102" type="Node3D" parent="." unique_id=1177532605 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.7946071, 0, 0.86642915, 0, 1.1756275, 0, -0.86642915, 0, -0.7946071, 22.096704, 3.429045, -83.25284)
+metadata/premium_flora = true
+
+[node name="GrassPatch_103" type="Node3D" parent="." unique_id=116081669 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.12845063, 0, 1.3251435, 0, 1.3313545, 0, -1.3251435, 0, 0.12845063, -10.2423935, 4.795509, -79.68926)
+metadata/premium_flora = true
+
+[node name="GrassPatch_104" type="Node3D" parent="." unique_id=1446763530 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.75955224, 0, -1.0172246, 0, 1.2695138, 0, 1.0172246, 0, -0.75955224, 13.288085, 3.906062, -80.09301)
+metadata/premium_flora = true
+
+[node name="GrassPatch_105" type="Node3D" parent="." unique_id=1667197051 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.2005675, 0, -0.8033158, 0, 1.4445341, 0, 0.8033158, 0, -1.2005675, 17.522434, 3.3867953, -81.4942)
+metadata/premium_flora = true
+
+[node name="GrassPatch_106" type="Node3D" parent="." unique_id=726475172 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.0513426, 0, 0.95859003, 0, 1.4227495, 0, -0.95859003, 0, -1.0513426, 20.821001, 3.0645652, -80.9213)
+metadata/premium_flora = true
+
+[node name="GrassPatch_107" type="Node3D" parent="." unique_id=1112939735 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.87771535, 0, 0.4268241, 0, 0.9759934, 0, -0.4268241, 0, -0.87771535, -9.824741, 4.655852, -77.38804)
+metadata/premium_flora = true
+
+[node name="GrassPatch_108" type="Node3D" parent="." unique_id=1602335532 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.5467633, 0, 1.3628727, 0, 1.4684591, 0, -1.3628727, 0, 0.5467633, 13.7779665, 3.2803974, -76.01314)
+metadata/premium_flora = true
+
+[node name="GrassPatch_109" type="Node3D" parent="." unique_id=1362285330 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.42298064, 0, -1.1847477, 0, 1.2579904, 0, 1.1847477, 0, -0.42298064, 22.97158, 2.5158722, -76.69428)
+metadata/premium_flora = true
+
+[node name="GrassPatch_110" type="Node3D" parent="." unique_id=1124867003 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.04241377, 0, 0.90787226, 0, 0.9088625, 0, -0.90787226, 0, -0.04241377, 25.51154, 2.607771, -76.74518)
+metadata/premium_flora = true
+
+[node name="GrassPatch_111" type="Node3D" parent="." unique_id=1613663528 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.9001114, 0, 0.030612858, 0, 0.90063184, 0, -0.030612858, 0, -0.9001114, -10.347894, 4.6238284, -73.32706)
+metadata/premium_flora = true
+
+[node name="GrassPatch_112" type="Node3D" parent="." unique_id=374791874 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.2459612, 0, 0.09390466, 0, 1.2494948, 0, -0.09390466, 0, -1.2459612, 0.55471385, 4.1036344, -70.84493)
+metadata/premium_flora = true
+
+[node name="GrassPatch_113" type="Node3D" parent="." unique_id=1090035959 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.014892493, 0, 0.9152356, 0, 0.91535676, 0, -0.9152356, 0, -0.014892493, 29.76242, 2.2305493, -73.48553)
+metadata/premium_flora = true
+
+[node name="GrassPatch_114" type="Node3D" parent="." unique_id=181424808 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.017644573, 0, -1.3691015, 0, 1.3692153, 0, 1.3691015, 0, -0.017644573, -2.0151668, 3.997644, -67.97156)
+metadata/premium_flora = true
+
+[node name="GrassPatch_115" type="Node3D" parent="." unique_id=1765537511 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.9241203, 0, 0.6672867, 0, 1.1398551, 0, -0.6672867, 0, 0.9241203, 2.125933, 3.724901, -67.12371)
+metadata/premium_flora = true
+
+[node name="GrassPatch_116" type="Node3D" parent="." unique_id=1463154998 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.4495457, 0, -0.8122602, 0, 0.9283631, 0, 0.8122602, 0, 0.4495457, 5.714206, 3.5521498, -66.69233)
+metadata/premium_flora = true
+
+[node name="GrassPatch_117" type="Node3D" parent="." unique_id=1650907065 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.77403855, 0, -1.0884162, 0, 1.3355844, 0, 1.0884162, 0, 0.77403855, 21.760239, 2.5759337, -69.00531)
+metadata/premium_flora = true
+
+[node name="GrassPatch_118" type="Node3D" parent="." unique_id=253051875 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.20246795, 0, 1.0424869, 0, 1.0619662, 0, -1.0424869, 0, -0.20246795, -3.4278686, 3.9674509, -62.9253)
+metadata/premium_flora = true
+
+[node name="GrassPatch_119" type="Node3D" parent="." unique_id=2120644648 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.9524506, 0, 0.21188222, 0, 0.97573364, 0, -0.21188222, 0, -0.9524506, 1.0012308, 3.9251468, -63.351635)
+metadata/premium_flora = true
+
+[node name="GrassPatch_120" type="Node3D" parent="." unique_id=352910120 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.1161069, 0, 0.67150015, 0, 1.3025386, 0, -0.67150015, 0, 1.1161069, 18.875088, 2.845277, -64.557785)
+metadata/premium_flora = true
+
+[node name="GrassPatch_121" type="Node3D" parent="." unique_id=1430259257 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.6945696, 0, -1.0403584, 0, 1.2509087, 0, 1.0403584, 0, 0.6945696, 20.521917, 2.621415, -64.05865)
+metadata/premium_flora = true
+
+[node name="GrassPatch_122" type="Node3D" parent="." unique_id=923175602 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.93261665, 0, -0.86960655, 0, 1.2751429, 0, 0.86960655, 0, 0.93261665, -3.1223586, 3.9435873, -60.258465)
+metadata/premium_flora = true
+
+[node name="GrassPatch_123" type="Node3D" parent="." unique_id=1614242126 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.0244097, 0, 0.13261446, 0, 1.0329578, 0, -0.13261446, 0, -1.0244097, 0.9219012, 4.037311, -60.814606)
+metadata/premium_flora = true
+
+[node name="GrassPatch_124" type="Node3D" parent="." unique_id=1376795331 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.54707587, 0, 0.8275213, 0, 0.9920098, 0, -0.8275213, 0, 0.54707587, 11.267454, 2.9439824, -58.99612)
+metadata/premium_flora = true
+
+[node name="GrassPatch_125" type="Node3D" parent="." unique_id=801721357 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.50791186, 0, -1.0259149, 0, 1.1447601, 0, 1.0259149, 0, 0.50791186, 18.489174, 1.8924121, -59.785267)
+metadata/premium_flora = true
+
+[node name="GrassPatch_126" type="Node3D" parent="." unique_id=1706647940 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.9773105, 0, 0.8067452, 0, 1.2672701, 0, -0.8067452, 0, -0.9773105, 22.222342, 1.8624027, -60.577145)
+metadata/premium_flora = true
+
+[node name="GrassPatch_127" type="Node3D" parent="." unique_id=1633922393 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.92553645, 0, -0.23261033, 0, 0.9543193, 0, 0.23261033, 0, -0.92553645, 26.056297, 1.9454324, -59.347393)
+metadata/premium_flora = true
+
+[node name="GrassPatch_128" type="Node3D" parent="." unique_id=1317752149 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.6687529, 0, -0.88617176, 0, 1.1101941, 0, 0.88617176, 0, 0.6687529, 9.354605, 3.334229, -54.919575)
+metadata/premium_flora = true
+
+[node name="GrassPatch_129" type="Node3D" parent="." unique_id=697090447 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.3396562, 0, 0.19534598, 0, 1.3538238, 0, -0.19534598, 0, -1.3396562, 18.500952, 1.5242311, -56.728497)
+metadata/premium_flora = true
+
+[node name="GrassPatch_130" type="Node3D" parent="." unique_id=1568703202 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.4298426, 0, -0.27830502, 0, 1.4566755, 0, 0.27830502, 0, -1.4298426, 22.110428, 1.2846514, -55.87656)
+metadata/premium_flora = true
+
+[node name="GrassPatch_131" type="Node3D" parent="." unique_id=304914137 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.44120866, 0, -1.3054773, 0, 1.3780189, 0, 1.3054773, 0, -0.44120866, 5.6122117, 3.7421951, -51.817802)
+metadata/premium_flora = true
+
+[node name="GrassPatch_132" type="Node3D" parent="." unique_id=1050577634 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.0008035513, 0, -1.1159874, 0, 1.1159877, 0, 1.1159874, 0, 0.0008035513, 10.749848, 3.2411356, -51.942764)
+metadata/premium_flora = true
+
+[node name="GrassPatch_133" type="Node3D" parent="." unique_id=1207129348 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.40849224, 0, -1.1217557, 0, 1.1938182, 0, 1.1217557, 0, 0.40849224, 12.937942, 2.815713, -51.025383)
+metadata/premium_flora = true
+
+[node name="GrassPatch_134" type="Node3D" parent="." unique_id=1387594623 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.0826691, 0, -0.67023885, 0, 1.2733392, 0, 0.67023885, 0, -1.0826691, 18.370634, 1.6443241, -52.859447)
+metadata/premium_flora = true
+
+[node name="GrassPatch_135" type="Node3D" parent="." unique_id=1296958792 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.75476724, 0, -1.0039164, 0, 1.2559943, 0, 1.0039164, 0, 0.75476724, 22.15577, 1.4583701, -52.44398)
+metadata/premium_flora = true
+
+[node name="GrassPatch_136" type="Node3D" parent="." unique_id=801110301 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.4366486, 0, -0.1371966, 0, 1.4431847, 0, 0.1371966, 0, 1.4366486, -5.794471, 3.420547, -49.103817)
+metadata/premium_flora = true
+
+[node name="GrassPatch_137" type="Node3D" parent="." unique_id=1842368860 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.08620677, 0, 1.1567163, 0, 1.1599243, 0, -1.1567163, 0, -0.08620677, 9.942415, 3.5168674, -46.894543)
+metadata/premium_flora = true
+
+[node name="GrassPatch_138" type="Node3D" parent="." unique_id=1363485832 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.2653887, 0, 0.5394565, 0, 1.3755805, 0, -0.5394565, 0, -1.2653887, -23.49155, 3.5777678, -42.612885)
+metadata/premium_flora = true
+
+[node name="GrassPatch_139" type="Node3D" parent="." unique_id=678880050 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.53957164, 0, -0.74042064, 0, 0.91616607, 0, 0.74042064, 0, -0.53957164, -16.647013, 3.1743681, -43.392593)
+metadata/premium_flora = true
+
+[node name="GrassPatch_140" type="Node3D" parent="." unique_id=1123727782 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.46883658, 0, -1.2261318, 0, 1.3127098, 0, 1.2261318, 0, -0.46883658, 1.0261457, 3.7640553, -44.485245)
+metadata/premium_flora = true
+
+[node name="GrassPatch_141" type="Node3D" parent="." unique_id=1828404502 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.80652773, 0, -1.1114186, 0, 1.3732219, 0, 1.1114186, 0, 0.80652773, 7.0411806, 3.4708505, -43.03063)
+metadata/premium_flora = true
+
+[node name="GrassPatch_142" type="Node3D" parent="." unique_id=128554779 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.09078547, 0, -0.8760696, 0, 0.88076097, 0, 0.8760696, 0, 0.09078547, 9.012781, 3.4216373, -44.286453)
+metadata/premium_flora = true
+
+[node name="GrassPatch_143" type="Node3D" parent="." unique_id=1676853379 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.0361772, 0, -0.52557695, 0, 1.1618495, 0, 0.52557695, 0, -1.0361772, 14.11219, 2.4017646, -43.717915)
+metadata/premium_flora = true
+
+[node name="GrassPatch_144" type="Node3D" parent="." unique_id=1867361825 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.7305053, 0, 0.9409032, 0, 1.1911913, 0, -0.9409032, 0, -0.7305053, -24.949604, 3.1891546, -40.668697)
+metadata/premium_flora = true
+
+[node name="GrassPatch_145" type="Node3D" parent="." unique_id=1106087671 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.1425809, 0, -0.28299955, 0, 1.1771065, 0, 0.28299955, 0, -1.1425809, -20.904913, 3.0804245, -39.692017)
+metadata/premium_flora = true
+
+[node name="GrassPatch_146" type="Node3D" parent="." unique_id=1053092621 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.77634025, 0, 0.94124925, 0, 1.2201042, 0, -0.94124925, 0, 0.77634025, -16.724482, 2.8128026, -39.761044)
+metadata/premium_flora = true
+
+[node name="GrassPatch_147" type="Node3D" parent="." unique_id=484400882 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.063449144, 0, 1.4104874, 0, 1.4119138, 0, -1.4104874, 0, 0.063449144, 1.6947454, 3.223478, -39.555336)
+metadata/premium_flora = true
+
+[node name="GrassPatch_148" type="Node3D" parent="." unique_id=692559519 instance=ExtResource("1_eldo1")]
+transform = Transform3D(1.3550732, 0, 0.085350566, 0, 1.3577585, 0, -0.085350566, 0, 1.3550732, 7.444037, 3.048487, -39.652447)
+metadata/premium_flora = true
+
+[node name="GrassPatch_149" type="Node3D" parent="." unique_id=1967682185 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.2184885, 0, -0.19295491, 0, 1.2336715, 0, 0.19295491, 0, 1.2184885, 11.317252, 2.5344467, -39.54597)
+metadata/premium_flora = true
+
+[node name="GrassPatch_150" type="Node3D" parent="." unique_id=346278024 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.6304055, 0, -0.86355484, 0, 1.0691763, 0, 0.86355484, 0, 0.6304055, -17.654797, 2.5492237, -36.789074)
+metadata/premium_flora = true
+
+[node name="GrassPatch_151" type="Node3D" parent="." unique_id=1055927786 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.78157586, 0, -0.8871216, 0, 1.1823052, 0, 0.8871216, 0, 0.78157586, -12.951561, 2.1705089, -35.857986)
+metadata/premium_flora = true
+
+[node name="GrassPatch_152" type="Node3D" parent="." unique_id=171850940 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.8277379, 0, 1.2445161, 0, 1.4946474, 0, -1.2445161, 0, 0.8277379, -10.6080885, 1.9999408, -35.223167)
+metadata/premium_flora = true
+
+[node name="GrassPatch_153" type="Node3D" parent="." unique_id=545618087 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.88239187, 0, -0.4687368, 0, 0.99916446, 0, 0.4687368, 0, -0.88239187, -2.1495395, 2.6326475, -37.3237)
+metadata/premium_flora = true
+
+[node name="GrassPatch_154" type="Node3D" parent="." unique_id=578688530 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.2145803, 0, -0.7818916, 0, 1.4444928, 0, 0.7818916, 0, -1.2145803, 3.353973, 2.9241965, -36.429367)
+metadata/premium_flora = true
+
+[node name="GrassPatch_155" type="Node3D" parent="." unique_id=610430063 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.1537633, 0, 0.29005322, 0, 1.1896641, 0, -0.29005322, 0, 1.1537633, 4.8845935, 2.8165772, -35.565838)
+metadata/premium_flora = true
+
+[node name="GrassPatch_156" type="Node3D" parent="." unique_id=1758078650 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.8425175, 0, 0.18057518, 0, 0.86165136, 0, -0.18057518, 0, -0.8425175, 9.74004, 2.6422915, -36.87406)
+metadata/premium_flora = true
+
+[node name="GrassPatch_157" type="Node3D" parent="." unique_id=1420014246 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.5231319, 0, 0.72656554, 0, 0.89530134, 0, -0.72656554, 0, 0.5231319, 12.845548, 2.3247418, -36.186287)
+metadata/premium_flora = true
+
+[node name="GrassPatch_158" type="Node3D" parent="." unique_id=1527878842 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.6144671, 0, 1.1275592, 0, 1.2841182, 0, -1.1275592, 0, 0.6144671, -19.24317, 1.7536287, -30.598593)
+metadata/premium_flora = true
+
+[node name="GrassPatch_159" type="Node3D" parent="." unique_id=1629066296 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.017632188, 0, 1.2714996, 0, 1.271622, 0, -1.2714996, 0, -0.017632188, -10.114493, 1.6432835, -32.570004)
+metadata/premium_flora = true
+
+[node name="GrassPatch_160" type="Node3D" parent="." unique_id=1573982925 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.25698686, 0, 1.1511354, 0, 1.1794723, 0, -1.1511354, 0, 0.25698686, -6.859928, 1.5281953, -30.934635)
+metadata/premium_flora = true
+
+[node name="GrassPatch_161" type="Node3D" parent="." unique_id=136898503 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.7740354, 0, 0.35239583, 0, 0.8504785, 0, -0.35239583, 0, -0.7740354, 2.7429166, 2.5284395, -33.47911)
+metadata/premium_flora = true
+
+[node name="GrassPatch_162" type="Node3D" parent="." unique_id=1564278747 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.0826247, 0, -0.18940063, 0, 1.0990672, 0, 0.18940063, 0, -1.0826247, 5.9839277, 2.3365746, -32.180794)
+metadata/premium_flora = true
+
+[node name="GrassPatch_163" type="Node3D" parent="." unique_id=1338352199 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.56745034, 0, -0.88644034, 0, 1.0525095, 0, 0.88644034, 0, -0.56745034, 9.883497, 2.5713348, -32.693424)
+metadata/premium_flora = true
+
+[node name="GrassPatch_164" type="Node3D" parent="." unique_id=1489799449 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.052429765, 0, -1.4021862, 0, 1.403166, 0, 1.4021862, 0, 0.052429765, 13.579175, 2.1765034, -30.855598)
+metadata/premium_flora = true
+
+[node name="GrassPatch_165" type="Node3D" parent="." unique_id=2012610434 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.2919938, 0, 0.99548745, 0, 1.0374274, 0, -0.99548745, 0, 0.2919938, 17.740028, 1.1448269, -31.795515)
+metadata/premium_flora = true
+
+[node name="GrassPatch_166" type="Node3D" parent="." unique_id=1414291928 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.64312094, 0, 0.9429204, 0, 1.1413603, 0, -0.9429204, 0, -0.64312094, -13.827, 1.4459832, -28.695745)
+metadata/premium_flora = true
+
+[node name="GrassPatch_167" type="Node3D" parent="." unique_id=1670140053 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.62036824, 0, -0.94979465, 0, 1.1344455, 0, 0.94979465, 0, 0.62036824, -8.76664, 1.1783721, -29.223347)
+metadata/premium_flora = true
+
+[node name="GrassPatch_168" type="Node3D" parent="." unique_id=1923885517 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.1327952, 0, 0.4515152, 0, 1.2194633, 0, -0.4515152, 0, -1.1327952, 7.261633, 2.10917, -29.177893)
+metadata/premium_flora = true
+
+[node name="GrassPatch_169" type="Node3D" parent="." unique_id=940238328 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.0677143, 0, -0.97233963, 0, 1.4441116, 0, 0.97233963, 0, 1.0677143, 11.115525, 2.523894, -29.363243)
+metadata/premium_flora = true
+
+[node name="GrassPatch_170" type="Node3D" parent="." unique_id=956851119 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.04501998, 0, -1.4571465, 0, 1.4578419, 0, 1.4571465, 0, -0.04501998, 16.96494, 1.7329239, -27.71405)
+metadata/premium_flora = true
+
+[node name="GrassPatch_171" type="Node3D" parent="." unique_id=1796467307 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.16725267, 0, -0.8419792, 0, 0.8584302, 0, 0.8419792, 0, -0.16725267, -15.26239, 1.963571, -22.570698)
+metadata/premium_flora = true
+
+[node name="GrassPatch_172" type="Node3D" parent="." unique_id=1411881413 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.2892604, 0, 0.5384306, 0, 1.3971757, 0, -0.5384306, 0, -1.2892604, -5.1106806, 1.5039173, -23.878593)
+metadata/premium_flora = true
+
+[node name="GrassPatch_173" type="Node3D" parent="." unique_id=1438471790 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.15228926, 0, -1.2533454, 0, 1.2625636, 0, 1.2533454, 0, -0.15228926, -2.9147727, 1.4962757, -24.868214)
+metadata/premium_flora = true
+
+[node name="GrassPatch_174" type="Node3D" parent="." unique_id=282490505 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.7206874, 0, -0.5424128, 0, 0.9019989, 0, 0.5424128, 0, 0.7206874, 6.846673, 1.9088976, -25.477509)
+metadata/premium_flora = true
+
+[node name="GrassPatch_175" type="Node3D" parent="." unique_id=946529645 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.7654764, 0, -0.9359437, 0, 1.2091091, 0, 0.9359437, 0, 0.7654764, 22.219984, 0.7506579, -24.115997)
+metadata/premium_flora = true
+
+[node name="GrassPatch_176" type="Node3D" parent="." unique_id=25941264 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.16566706, 0, 1.1378821, 0, 1.1498789, 0, -1.1378821, 0, 0.16566706, -9.32185, 1.5585159, -21.134794)
+metadata/premium_flora = true
+
+[node name="GrassPatch_177" type="Node3D" parent="." unique_id=49654061 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.010606791, 0, -0.9089543, 0, 0.9090162, 0, 0.9089543, 0, 0.010606791, 19.470985, 1.4313117, -19.868862)
+metadata/premium_flora = true
+
+[node name="GrassPatch_178" type="Node3D" parent="." unique_id=880405939 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.14514658, 0, -1.3826722, 0, 1.3902698, 0, 1.3826722, 0, 0.14514658, 24.597464, 0.191458, -21.101654)
+metadata/premium_flora = true
+
+[node name="GrassPatch_179" type="Node3D" parent="." unique_id=1405496249 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.8828322, 0, -1.1731454, 0, 1.4682176, 0, 1.1731454, 0, 0.8828322, -5.070122, 2.667096, -7.016278)
+metadata/premium_flora = true
+
+[node name="GrassPatch_180" type="Node3D" parent="." unique_id=1750247601 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.7211401, 0, 0.6987721, 0, 1.0041541, 0, -0.6987721, 0, 0.7211401, -3.2205102, 2.5777936, -9.022814)
+metadata/premium_flora = true
+
+[node name="GrassPatch_181" type="Node3D" parent="." unique_id=1848228334 instance=ExtResource("3_38qfm")]
+transform = Transform3D(1.0229942, 0, -0.39635104, 0, 1.0970922, 0, 0.39635104, 0, 1.0229942, -3.118367, 2.774369, -4.072096)
+metadata/premium_flora = true
+
+[node name="GrassPatch_182" type="Node3D" parent="." unique_id=1214689254 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.44065687, 0, -1.0233381, 0, 1.114181, 0, 1.0233381, 0, 0.44065687, -1.1513467, 1.798463, 0.95572305)
+metadata/premium_flora = true
+
+[node name="GrassPatch_183" type="Node3D" parent="." unique_id=970762336 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.0541762, 0, 0.6693036, 0, 1.2487012, 0, -0.6693036, 0, 1.0541762, 0.900169, 1.8704364, 0.34058213)
+metadata/premium_flora = true
+
+[node name="GrassPatch_184" type="Node3D" parent="." unique_id=1393878867 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.8237674, 0, 1.207014, 0, 1.4613266, 0, -1.207014, 0, 0.8237674, 11.1210785, 2.952587, -0.42561102)
+metadata/premium_flora = true
+
+[node name="GrassPatch_185" type="Node3D" parent="." unique_id=334151807 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.08734599, 0, 0.99324894, 0, 0.9970821, 0, -0.99324894, 0, 0.08734599, 14.290006, 3.1808398, 0.845057)
+metadata/premium_flora = true
+
+[node name="GrassPatch_186" type="Node3D" parent="." unique_id=1114026124 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.38230377, 0, -1.2186425, 0, 1.2772022, 0, 1.2186425, 0, -0.38230377, -4.876604, 1.9397246, 4.933649)
+metadata/premium_flora = true
+
+[node name="GrassPatch_187" type="Node3D" parent="." unique_id=2145226577 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.5148116, 0, 0.78247124, 0, 0.93663883, 0, -0.78247124, 0, 0.5148116, -2.2761586, 1.7646072, 4.9453673)
+metadata/premium_flora = true
+
+[node name="GrassPatch_188" type="Node3D" parent="." unique_id=1665597908 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.3746369, 0, 0.19556084, 0, 1.3884778, 0, -0.19556084, 0, -1.3746369, 17.449432, 3.6225665, 2.992681)
+metadata/premium_flora = true
+
+[node name="GrassPatch_189" type="Node3D" parent="." unique_id=367861140 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.65245306, 0, -1.1951578, 0, 1.3616524, 0, 1.1951578, 0, 0.65245306, -2.6386058, 1.881138, 6.584897)
+metadata/premium_flora = true
+
+[node name="GrassPatch_190" type="Node3D" parent="." unique_id=550924705 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.9435615, 0, -1.085804, 0, 1.4384987, 0, 1.085804, 0, -0.9435615, 6.386064, 0.5767203, 8.12637)
+metadata/premium_flora = true
+
+[node name="GrassPatch_191" type="Node3D" parent="." unique_id=671055457 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-0.6849064, 0, -1.2309749, 0, 1.4086859, 0, 1.2309749, 0, -0.6849064, 6.4883976, 0.4251997, 11.61875)
+metadata/premium_flora = true
+
+[node name="GrassPatch_192" type="Node3D" parent="." unique_id=1738931180 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.7943485, 0, 1.1173662, 0, 1.3709474, 0, -1.1173662, 0, -0.7943485, 5.4370794, 0.27556977, 15.369665)
+metadata/premium_flora = true
+
+[node name="GrassPatch_193" type="Node3D" parent="." unique_id=975065276 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.1133412, 0, 0.10548004, 0, 1.1183268, 0, -0.10548004, 0, -1.1133412, 10.127579, 0.79572684, 16.913034)
+metadata/premium_flora = true
+
+[node name="GrassPatch_194" type="Node3D" parent="." unique_id=48156427 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.66485256, 0, 1.1289314, 0, 1.3101584, 0, -1.1289314, 0, 0.66485256, 15.023016, 1.9939048, 15.144266)
+metadata/premium_flora = true
+
+[node name="GrassPatch_195" type="Node3D" parent="." unique_id=392210124 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.9254816, 0, 1.0365691, 0, 1.3896013, 0, -1.0365691, 0, 0.9254816, 9.659192, 0.047773365, 21.353296)
+metadata/premium_flora = true
+
+[node name="GrassPatch_196" type="Node3D" parent="." unique_id=437245330 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.9975591, 0, -0.6737543, 0, 1.2037728, 0, 0.6737543, 0, 0.9975591, -5.833285, 1.6109776, 24.354029)
+metadata/premium_flora = true
+
+[node name="GrassPatch_197" type="Node3D" parent="." unique_id=1205697544 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.1352824, 0, 0.8201546, 0, 1.4005426, 0, -0.8201546, 0, 1.1352824, 3.2710848, 0.29464647, 24.866285)
+metadata/premium_flora = true
+
+[node name="GrassPatch_198" type="Node3D" parent="." unique_id=1401568755 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.42812258, 0, 1.4145494, 0, 1.4779171, 0, -1.4145494, 0, -0.42812258, 6.243849, -0.12922046, 23.490501)
+metadata/premium_flora = true
+
+[node name="GrassPatch_199" type="Node3D" parent="." unique_id=1721194286 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.1895173, 0, 0.5533717, 0, 1.3119344, 0, -0.5533717, 0, -1.1895173, -12.758058, 2.05253, 26.705887)
+metadata/premium_flora = true
+
+[node name="GrassPatch_200" type="Node3D" parent="." unique_id=1957409278 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.8330624, 0, -0.75104237, 0, 1.1216316, 0, 0.75104237, 0, -0.8330624, -7.377102, 1.808251, 27.381786)
+metadata/premium_flora = true
+
+[node name="GrassPatch_201" type="Node3D" parent="." unique_id=11613638 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.6072979, 0, -1.1661354, 0, 1.3147937, 0, 1.1661354, 0, 0.6072979, 6.540674, -0.2653338, 28.82354)
+metadata/premium_flora = true
+
+[node name="GrassPatch_202" type="Node3D" parent="." unique_id=430721850 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.0692229, 0, 0.12268771, 0, 1.0762389, 0, -0.12268771, 0, -1.0692229, 10.047666, -0.3144602, 26.889578)
+metadata/premium_flora = true
+
+[node name="GrassPatch_203" type="Node3D" parent="." unique_id=1591524136 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.26690245, 0, 0.9502079, 0, 0.9869812, 0, -0.9502079, 0, 0.26690245, -9.085651, 2.6163602, 30.937786)
+metadata/premium_flora = true
+
+[node name="GrassPatch_204" type="Node3D" parent="." unique_id=2052050075 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.006931092, 0, 1.0043993, 0, 1.0044231, 0, -1.0043993, 0, 0.006931092, -6.630214, 2.3571107, 31.779251)
+metadata/premium_flora = true
+
+[node name="GrassPatch_205" type="Node3D" parent="." unique_id=1818750461 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.43274134, 0, -1.3549229, 0, 1.4223505, 0, 1.3549229, 0, -0.43274134, -5.524951, 2.6082895, 35.26482)
+metadata/premium_flora = true
+
+[node name="GrassPatch_206" type="Node3D" parent="." unique_id=1273187748 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-0.3069718, 0, -0.88604593, 0, 0.9377148, 0, 0.88604593, 0, -0.3069718, 5.9120336, 1.2011579, 40.08531)
+metadata/premium_flora = true
+
+[node name="GrassPatch_207" type="Node3D" parent="." unique_id=580693552 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.94827384, 0, 1.0507886, 0, 1.4154081, 0, -1.0507886, 0, 0.94827384, 8.605706, 1.1320658, 43.782845)
+metadata/premium_flora = true
+
+[node name="GrassPatch_208" type="Node3D" parent="." unique_id=1228363611 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.45427766, 0, 0.7592274, 0, 0.8847567, 0, -0.7592274, 0, 0.45427766, -15.031047, 2.5442502, 49.001457)
+metadata/premium_flora = true
+
+[node name="GrassPatch_209" type="Node3D" parent="." unique_id=61691806 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.0282326, 0, -1.0010823, 0, 1.4350708, 0, 1.0010823, 0, -1.0282326, 5.5118814, 2.5405495, 47.779552)
+metadata/premium_flora = true
+
+[node name="GrassPatch_210" type="Node3D" parent="." unique_id=865676104 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(-1.0645828, 0, 0.11783288, 0, 1.0710841, 0, -0.11783288, 0, -1.0645828, 11.419885, 1.3163805, 48.96284)
+metadata/premium_flora = true
+
+[node name="GrassPatch_211" type="Node3D" parent="." unique_id=2110978649 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.43743682, 0, 1.0417672, 0, 1.1298805, 0, -1.0417672, 0, 0.43743682, 14.676838, 0.5249392, 46.95527)
+metadata/premium_flora = true
+
+[node name="GrassPatch_212" type="Node3D" parent="." unique_id=72905761 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.230904, 0, 1.078488, 0, 1.1029292, 0, -1.078488, 0, 0.230904, 7.2433667, 2.352515, 52.475636)
+metadata/premium_flora = true
+
+[node name="GrassPatch_213" type="Node3D" parent="." unique_id=1757238589 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(1.1702545, 0, 0.14122716, 0, 1.1787454, 0, -0.14122716, 0, 1.1702545, 12.760207, 1.4648045, 52.679123)
+metadata/premium_flora = true
+
+[node name="GrassPatch_214" type="Node3D" parent="." unique_id=720456462 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.1337581, 0, -0.06856548, 0, 1.1358294, 0, 0.06856548, 0, -1.1337581, 3.282523, 2.4677205, 55.12934)
+metadata/premium_flora = true
+
+[node name="GrassPatch_215" type="Node3D" parent="." unique_id=1213213577 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-1.0142841, 0, 0.20762672, 0, 1.035317, 0, -0.20762672, 0, -1.0142841, 5.630434, 2.5215435, 54.724323)
+metadata/premium_flora = true
+
+[node name="GrassPatch_216" type="Node3D" parent="." unique_id=1030487192 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.52803725, 0, -0.7410276, 0, 0.909915, 0, 0.7410276, 0, 0.52803725, 8.614773, 2.2609959, 54.57147)
+metadata/premium_flora = true
+
+[node name="GrassPatch_217" type="Node3D" parent="." unique_id=1936233787 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.51081836, 0, 0.86209875, 0, 1.0020727, 0, -0.86209875, 0, 0.51081836, 12.890658, 1.5843499, 56.97576)
+metadata/premium_flora = true
+
+[node name="GrassPatch_218" type="Node3D" parent="." unique_id=2015769214 instance=ExtResource("3_38qfm")]
+transform = Transform3D(-0.35563636, 0, 1.3122256, 0, 1.3595636, 0, -1.3122256, 0, -0.35563636, -14.4118, 2.2642403, 58.67264)
+metadata/premium_flora = true
+
+[node name="GrassPatch_219" type="Node3D" parent="." unique_id=1149816973 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.06699563, 0, 1.4946645, 0, 1.4961653, 0, -1.4946645, 0, 0.06699563, -2.9890673, 2.2117789, 59.8738)
+metadata/premium_flora = true
+
+[node name="GrassPatch_220" type="Node3D" parent="." unique_id=163462421 instance=ExtResource("2_s0kkw")]
+transform = Transform3D(0.9150633, 0, 0.15800025, 0, 0.92860377, 0, -0.15800025, 0, 0.9150633, 6.2650557, 2.2159708, 60.557766)
+metadata/premium_flora = true
+
+[node name="GrassPatch_221" type="Node3D" parent="." unique_id=1189019822 instance=ExtResource("1_eldo1")]
+transform = Transform3D(0.4854666, 0, 1.3636497, 0, 1.4474869, 0, -1.3636497, 0, 0.4854666, -5.244295, 2.4954655, 65.44833)
+metadata/premium_flora = true
+
+[node name="GrassPatch_222" type="Node3D" parent="." unique_id=620464824 instance=ExtResource("1_eldo1")]
+transform = Transform3D(-1.0141432, 0, -0.90563977, 0, 1.359658, 0, 0.90563977, 0, -1.0141432, -1.3199403, 2.4387045, 63.266373)
+metadata/premium_flora = true
+
+[node name="GrassPatch_223" type="Node3D" parent="." unique_id=645561727 instance=ExtResource("3_38qfm")]
+transform = Transform3D(0.43682694, 0, -0.9429415, 0, 1.0392095, 0, 0.9429415, 0, 0.43682694, 1.32379, 2.334514, 64.130066)
+metadata/premium_flora = true
