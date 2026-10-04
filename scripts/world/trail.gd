@@ -159,7 +159,7 @@ func _build_landmarks() -> void:
 	_light(on_ground(start.origin) + Vector3(0, 1.8, 0), Color(1.0, 0.62, 0.32), 1.1, 9.0)
 
 	var notes := NoteCatalog.all()
-	var marks: Array[float] = [22.0, 58.0, 98.0, 138.0, 176.0]
+	var marks: Array[float] = [15.0, 40.0, 70.0, 138.0, 176.0]
 	for index in notes.size():
 		var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
 		var frame := frame_at(along)

@@ -682,10 +682,19 @@ func nearby_note() -> FieldNote:
 		if page == null:
 			continue
 		var distance := global_position.distance_to(page.global_position)
-		if distance < best_distance:
+		if distance < best_distance and _can_reach_note(page):
 			best_distance = distance
 			best = page
 	return best
+
+
+func _can_reach_note(page: FieldNote) -> bool:
+	# Distance alone can select the nightstand page through an exterior wall.
+	# Keep the ray above the paper so slopes do not hide nearby ground notes.
+	var from := global_position + Vector3(0.0, 1.2, 0.0)
+	var to := page.global_position + Vector3(0.0, 1.0, 0.0)
+	var query := PhysicsRayQueryParameters3D.create(from, to, Tune.LAYER_WORLD)
+	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 
 # The camera breathes with her pace: wider and further back at a sprint,

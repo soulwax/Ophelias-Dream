@@ -117,8 +117,13 @@ func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		if _bake_pid > 0 and not OS.is_process_running(_bake_pid):
 			_bake_pid = -1
-			EditorInterface.get_resource_filesystem().scan()
-			EditorInterface.reload_scene_from_path("res://scenes/main.tscn")
+			# EditorInterface is absent from export templates, even while this
+			# branch is unreachable there. Resolve it dynamically so the script
+			# still parses in a Windows build.
+			var editor_interface = Engine.get_singleton(&"EditorInterface")
+			if editor_interface:
+				editor_interface.get_resource_filesystem().scan()
+				editor_interface.reload_scene_from_path("res://scenes/main.tscn")
 		return
 	if not _capture:
 		return
@@ -198,7 +203,10 @@ func _finish_repack(nodes: Array[Node], chosen_seed: int) -> void:
 func _regenerate_editor_level() -> void:
 	if not Engine.is_editor_hint() or _bake_pid > 0:
 		return
-	EditorInterface.save_scene()
+	var editor_interface = Engine.get_singleton(&"EditorInterface")
+	if editor_interface == null:
+		return
+	editor_interface.save_scene()
 	_bake_pid = OS.create_process(OS.get_executable_path(), PackedStringArray([
 		"--headless", "--path", ProjectSettings.globalize_path("res://"),
 		"--", "--bake-editor-level"

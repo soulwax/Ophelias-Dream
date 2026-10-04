@@ -30,13 +30,14 @@ var _voices: Array[AudioStreamPlayer3D] = []
 var _voice_cursor := 0
 var _sounds: Dictionary = {}
 var _flickering: Dictionary = {}
-var _left_morgue := false
 var _body_laid := false
+var _body_pending := false
 var _lantern_out := false
 var _first_cellar := true
 var _left_house := false
 var _reached_early_trail := false
 var _mat_turned := false
+var _mat_pending := false
 var _door_mark_pending := false
 
 const WHISPERS: PackedStringArray = [
@@ -76,13 +77,15 @@ func _process(delta: float) -> void:
 		return
 	if Game.phase != Game.Phase.PLAYING and Game.phase != Game.Phase.READING:
 		return
-	_lay_door_mark()
 	var here := house.room_at(Game.player.global_position + Vector3(0.0, 0.9, 0.0))
 	if here == "":
 		_notice_excursion()
 	if here != room:
 		_enter(here, room)
 		room = here
+	_lay_body()
+	_maybe_turn_mat()
+	_lay_door_mark()
 	var inside := room != ""
 	tension = clampf(tension + delta * (1.0 / 100.0 if inside else -1.0 / 45.0), 0.0, 1.0)
 	_ambient(delta)
@@ -116,16 +119,11 @@ func _enter(next: String, previous: String) -> void:
 		house.lantern_light.visible = true
 		_stutter(house.lantern_light, 6)
 	if previous == "morgue" and next != "morgue":
-		_left_morgue = true
-	if next == "morgue" and _left_morgue and not _body_laid and house.morgue and house.morgue.body:
-		# It was not there the first time.
-		_body_laid = true
-		house.morgue.body.visible = true
-		Game.mark("house: body on morgue return")
+		_body_pending = true
 	if previous != "" and next == "":
 		_left_house = true
 	if _left_house and _reached_early_trail and not _mat_turned and previous == "" and next != "":
-		_turn_mat()
+		_mat_pending = true
 	if House.is_cellar(next) and _first_cellar:
 		# The first time down, it waits for her to settle, then walks overhead.
 		_first_cellar = false
@@ -272,11 +270,24 @@ func _whisper() -> void:
 	Game.murmur_line(WHISPERS[randi() % WHISPERS.size()])
 
 
+func _maybe_turn_mat() -> void:
+	if not _mat_pending:
+		return
+	var mat := house.get_node_or_null("Authoring/Traces/Mat") as Node3D
+	if mat == null:
+		return
+	var camera := Game.player.camera
+	if camera and not camera.is_position_behind(mat.global_position) and camera.is_position_in_frustum(mat.global_position):
+		return
+	_turn_mat()
+
+
 func _turn_mat() -> void:
+	_mat_pending = false
 	_mat_turned = true
 	var mat := house.get_node_or_null("Authoring/Traces/Mat") as Node3D
 	if mat:
-		mat.rotation.y = 0.38
+		mat.rotate_y(0.38)
 	_door_mark_pending = true
 	Game.mark("house: mat turned on return")
 
@@ -297,6 +308,22 @@ func _lay_door_mark() -> void:
 	Game.player.footprints.stamp(at, house.global_rotation.y + 0.5, false, false, Footprints.Mark.SOLE, true)
 	_door_mark_pending = false
 	Game.mark("snow: sole outside the returned-to door")
+
+
+func _lay_body() -> void:
+	if not _body_pending or room == "morgue" or house.morgue == null or house.morgue.body == null:
+		return
+	# Place it during the absence, so entering the mortuary never makes it
+	# appear on a table the player was already watching.
+	var body := house.morgue.body
+	var at := body.global_position + Vector3.UP * 1.1
+	var camera := Game.player.camera
+	if camera and not camera.is_position_behind(at) and camera.is_position_in_frustum(at):
+		return
+	_body_pending = false
+	_body_laid = true
+	body.visible = true
+	Game.mark("house: body laid while mortuary unseen")
 
 
 # --- Helpers -------------------------------------------------------------------------

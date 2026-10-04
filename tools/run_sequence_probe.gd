@@ -96,12 +96,26 @@ func _run() -> void:
 		player.global_position = trail.on_ground(trail.position_at(trail.player_start_offset + Tune.RETURN_CLUE_ROUTE_DISTANCE + 1.0))
 		haunting._notice_excursion()
 		haunting._enter("bedroom", "")
-		_check(haunting._mat_turned and trail.house.lantern_light.visible, "early-trail return exposes turned mat and relit lantern")
-		haunting._enter("corridor", "morgue")
-		haunting._enter("morgue", "corridor")
-		_check(trail.house.morgue.body.visible, "second mortuary visit reveals the body")
 		var camera := player.camera
 		var old_camera := camera.global_transform
+		_check(haunting._mat_pending and trail.house.lantern_light.visible, "early-trail return queues mat clue and relights lantern")
+		var mat := trail.house.get_node("Authoring/Traces/Mat") as Node3D
+		camera.look_at_from_position(mat.global_position + trail.house.global_basis.z.normalized() * 2.0 + Vector3.UP * 1.5, mat.global_position)
+		haunting._maybe_turn_mat()
+		_check(not haunting._mat_turned, "mat waits while the doorway is visible")
+		camera.rotate_y(PI)
+		haunting._maybe_turn_mat()
+		_check(haunting._mat_turned, "mat turns after the player looks away")
+		haunting._enter("corridor", "morgue")
+		haunting.room = "corridor"
+		var body_at := trail.house.morgue.body.global_position + Vector3.UP * 1.1
+		camera.look_at_from_position(body_at + Vector3(0.0, 0.8, 2.0), body_at)
+		haunting._lay_body()
+		_check(not trail.house.morgue.body.visible, "mortuary body waits while the table is visible")
+		camera.rotate_y(PI)
+		haunting._lay_body()
+		haunting._enter("morgue", "corridor")
+		_check(trail.house.morgue.body.visible, "second mortuary visit finds body placed while unseen")
 		camera.look_at_from_position(trail.house.doorstep() + Vector3(0.0, 2.0, 3.0), trail.house.doorstep())
 		haunting._lay_door_mark()
 		_check(haunting._door_mark_pending, "door mark waits while its ground is visible")

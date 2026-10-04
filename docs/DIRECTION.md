@@ -42,8 +42,8 @@ hand-authored scene edits. Update the old task list to point here.
 
 This pass is complete when the listed checks pass and skipping notes no longer
 skips pursuit. A first-time human playthrough must still judge whether the return
-is tempting and the altered snow is noticed. Target 10–15 minutes including
-exploration and reading; do not stretch the trail simply to meet that duration.
+is tempting and the altered snow is noticed. Measure a first-time run before
+setting a duration target; do not stretch the trail simply to meet a number.
 
 ## Validation record
 
