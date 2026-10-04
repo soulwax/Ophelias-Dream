@@ -3,6 +3,8 @@ render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specula
 
 uniform float fade = 1.0;
 uniform float press = 0.7;
+// 0 her stride (bowl and berm), 1 a sole that shoved nothing, 2 a berm with no sole.
+uniform float mark = 0.0;
 // Quad width and length in metres, so a shove in the shader is a shove on the snow.
 uniform vec2 span = vec2(0.12, 0.32);
 
@@ -32,6 +34,12 @@ void boot_weights(vec2 uv, out float inside, out float rim, out float tread) {
 	tread = smoothstep(0.28, 0.42, lugs);
 	tread *= smoothstep(0.1, 0.18, along) * (1.0 - smoothstep(0.84, 0.94, along));
 	tread *= inside;
+	if (mark > 1.5) {
+		inside = 0.0;
+		tread = 0.0;
+	} else if (mark > 0.5) {
+		rim = 0.0;
+	}
 }
 
 // Metres along the patch normal. Negative is into the snow.

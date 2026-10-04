@@ -261,9 +261,16 @@ func _whisper() -> void:
 func _turn_mat() -> void:
 	_mat_turned = true
 	var mat := house.get_node_or_null("Authoring/Traces/Mat") as Node3D
-	if mat == null:
+	if mat:
+		mat.rotation.y = 0.38
+	# The page says she went back and the mat was still straight. The snow
+	# outside the door has a sole that never pushed a berm.
+	if Game.player == null or Game.player.footprints == null:
 		return
-	mat.rotation.y = 0.38
+	var at := house.to_global(Vector3(0.46, 0.0, 5.65))
+	if Game.trail != null and Game.trail.ground != null:
+		at.y = Game.trail.ground.height_at(at.x, at.z)
+	Game.player.footprints.stamp(at, 0.5, false, false, Footprints.Mark.SOLE)
 
 
 # --- Helpers -------------------------------------------------------------------------

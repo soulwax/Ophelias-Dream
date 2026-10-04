@@ -32,6 +32,8 @@ var murmur_left := 0.0
 var understood: Dictionary = {}
 var ending_title := ""
 var ending_body := ""
+# She opened the page that asks her to finish. The road remembers. The catch does not speak in that voice.
+var read_last_page := false
 var _hunt_start_msec: int = -1
 
 
@@ -94,6 +96,7 @@ func reset() -> void:
 	understood.clear()
 	ending_title = ""
 	ending_body = ""
+	read_last_page = false
 	_hunt_start_msec = -1
 
 
@@ -135,9 +138,17 @@ func begin_reading() -> void:
 		active_note.collect()
 	elif active_note and active_note.collect():
 		notes_found += 1
+		if entry and entry.title == NoteCatalog.LAST_TITLE:
+			read_last_page = true
 		if notes_found == Tune.HUNT_NOTES and _hunt_start_msec < 0:
 			_hunt_start_msec = Time.get_ticks_msec()
 	set_phase(Phase.READING)
+
+
+func reading_last_page() -> bool:
+	if phase != Phase.READING or active_note == null or active_note.entry == null:
+		return false
+	return active_note.entry.title == NoteCatalog.LAST_TITLE
 
 
 func murmur_line(line: String) -> void:

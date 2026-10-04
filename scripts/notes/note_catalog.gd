@@ -1,6 +1,9 @@
 class_name NoteCatalog
 extends RefCounted
 
+# The page that asks her to finish. Opening it is what the endings remember.
+const LAST_TITLE := "don't"
+
 static func all() -> Array[NoteEntry]:
 	var notes: Array[NoteEntry] = [
 		_make(
@@ -24,7 +27,7 @@ static func all() -> Array[NoteEntry]:
 			0.48
 		),
 		_make(
-			"don't",
+			LAST_TITLE,
 			"stay until the end of the line.\n\ni am the one who stamped the strap. i am not the one who waved. if you hear three strikes on the door you are counting for whatever is on the step. finish this first.\n\nthe lights have been on longer than the snow. do not go to them until you have finished. i need you to finish.\n\nit is behind you.",
 			0.72
 		),
