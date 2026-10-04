@@ -136,16 +136,15 @@ func _refresh_prompt() -> void:
 	var key := Game.settings.key_label("interact")
 	var target: Node3D
 	if Game.phase == Game.Phase.PLAYING and Game.player and Game.settings.show_prompts:
-		var thing := Game.player.nearby_interactable()
-		var note := Game.player.nearby_note()
-		if note:
+		var focused: Node3D = Game.player.viewed_target()
+		if focused is FieldNote:
 			show = true
 			caption = "Read the note"
-			target = note
-		elif thing:
+			target = focused
+		elif focused:
 			show = true
-			caption = str(thing.call("interact_label"))
-			target = thing
+			caption = str(focused.call("interact_label"))
+			target = focused
 		elif _against_wire():
 			show = true
 			key = ""

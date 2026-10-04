@@ -78,6 +78,9 @@ var _facing := 0.0
 var _lean := Vector2.ZERO
 var _sway := 0.0
 var _last_glide := Vector3.ZERO
+var _outlined_target: Node3D
+var _outlined_meshes: Array[MeshInstance3D] = []
+var _outline_material: ShaderMaterial
 
 
 func _ready() -> void:
@@ -102,6 +105,7 @@ func _ready() -> void:
 	add_child(ears)
 	ears.make_current()
 	_settle_spawn()
+	Game.phase_changed.connect(_on_phase)
 	Game.player = self
 
 
@@ -112,13 +116,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if Game.phase == Game.Phase.PLAYING:
-			var page := nearby_note()
+			var focused := viewed_target()
+			var page := (focused as FieldNote) if focused is FieldNote else (nearby_note() if focused == null else null)
 			if page:
 				Game.active_note = page
 				Game.begin_reading()
 				get_viewport().set_input_as_handled()
 				return
-			var thing := nearby_interactable()
+			var thing := focused if focused != null else nearby_interactable()
 			if thing:
 				var accepted: bool = thing.call("interact") == true
 				var feedback := ""
@@ -246,6 +251,7 @@ func _process(delta: float) -> void:
 		return
 	_move_camera(delta)
 	_apply_look()
+	_outline_target(viewed_target() if Game.phase == Game.Phase.PLAYING else null)
 
 
 func _jump() -> void:
@@ -710,6 +716,106 @@ func _can_reach_note(page: FieldNote) -> bool:
 	var to := page.global_position + Vector3(0.0, 1.0, 0.0)
 	var query := PhysicsRayQueryParameters3D.create(from, to, Tune.LAYER_WORLD)
 	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+
+## The note, door or switch she is currently viewing and can reach.
+func viewed_target() -> Node3D:
+	if camera == null:
+		return null
+	var thing := nearby_interactable()
+	var note := _viewed_note()
+	if note and thing:
+		var chest := global_position + Vector3(0.0, 1.2, 0.0)
+		var point: Vector3 = thing.call("interact_point")
+		return note if chest.distance_to(note.global_position) <= chest.distance_to(point) + 0.35 else thing
+	return note if note else thing
+
+
+func _viewed_note() -> FieldNote:
+	if camera == null or velocity.length() > Tune.WALK_SPEED + 0.55:
+		return null
+	var look := -camera.global_transform.basis.z
+	look.y = 0.0
+	look = look.normalized()
+	var best: FieldNote = null
+	var best_score := 99.0
+	for node in get_tree().get_nodes_in_group("field_notes"):
+		var page := node as FieldNote
+		if page == null:
+			continue
+		var distance := global_position.distance_to(page.global_position)
+		if distance >= Tune.READ_DISTANCE or not _can_reach_note(page):
+			continue
+		var toward := page.global_position - global_position
+		toward.y = 0.0
+		var facing := toward.normalized().dot(look) if toward.length() > 0.35 else 1.0
+		if facing < 0.25:
+			continue
+		var score := distance - facing * 0.6
+		if score < best_score:
+			best_score = score
+			best = page
+	return best
+
+
+func _on_phase(next: Game.Phase) -> void:
+	if next != Game.Phase.PLAYING:
+		_outline_target(null)
+
+
+func _outline_target(target: Node3D) -> void:
+	if target == _outlined_target:
+		return
+	for mesh in _outlined_meshes:
+		if is_instance_valid(mesh):
+			mesh.material_overlay = null
+	_outlined_meshes.clear()
+	_outlined_target = target
+	if target == null:
+		return
+	var overlay := _ensure_outline_material()
+	if overlay == null:
+		return
+	if target is MeshInstance3D and _should_outline_mesh(target as MeshInstance3D):
+		var root_mesh := target as MeshInstance3D
+		root_mesh.material_overlay = overlay
+		_outlined_meshes.append(root_mesh)
+	for node in target.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if not _should_outline_mesh(mesh):
+			continue
+		mesh.material_overlay = overlay
+		_outlined_meshes.append(mesh)
+
+
+func _should_outline_mesh(mesh: MeshInstance3D) -> bool:
+	if mesh == null:
+		return false
+	var part := String(mesh.name)
+	if part in ["VisionPanel", "Gasket", "CardHolder"]:
+		return false
+	for prefix in ["Ledge_", "Joint_", "KickPlate_"]:
+		if part.begins_with(prefix):
+			return false
+	return true
+
+
+func _ensure_outline_material() -> ShaderMaterial:
+	if _outline_material != null:
+		return _outline_material
+	var shader := load("res://shaders/interact_outline.gdshader") as Shader
+	if shader == null:
+		return null
+	var shell := ShaderMaterial.new()
+	shell.shader = shader
+	shell.render_priority = 11
+	shell.set_shader_parameter("shell", true)
+	_outline_material = ShaderMaterial.new()
+	_outline_material.shader = shader
+	_outline_material.render_priority = 10
+	_outline_material.set_shader_parameter("shell", false)
+	_outline_material.next_pass = shell
+	return _outline_material
 
 
 # The camera breathes with her pace: wider and further back at a sprint,
