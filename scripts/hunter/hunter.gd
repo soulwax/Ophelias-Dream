@@ -95,7 +95,13 @@ func _pursue(delta: float) -> void:
 	var flat := player_at - global_position
 	flat.y = 0.0
 	var distance := flat.length()
-	if distance > 0.08:
+	# Breath is the other debt. While that one is louder, this one waits
+	# outside the reach of a catch.
+	var listener_foreground := Game.player.holding_breath and Game.dread > Game.closeness
+	var stand_off := Tune.CATCH_GAP + 0.55
+	if listener_foreground and distance < stand_off:
+		distance = stand_off
+	elif distance > 0.08:
 		var step := minf(speed * delta, distance)
 		var next := global_position + flat.normalized() * step
 		next = _clamp_inside(next)
@@ -115,11 +121,11 @@ func _pursue(delta: float) -> void:
 	if sheltered:
 		# Felt through the walls, never touching her.
 		Game.set_closeness(minf(presence, 0.5))
-	elif distance < Tune.CATCH_GAP and threat >= 0.48:
-		Game.catch_player(
-			"You stopped",
-			"The one from the trees does not hurry until it knows you have stopped. The snow closed over the place you were."
-		)
+	elif not listener_foreground and distance < Tune.CATCH_GAP and threat >= 0.48:
+		var body := "The snow where you were is pressed flat. Nothing leads away."
+		if Game.reading_last_page():
+			body += " The count closed."
+		Game.catch_player("You stopped", body)
 
 
 func _threat() -> float:

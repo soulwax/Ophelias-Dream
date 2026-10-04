@@ -34,6 +34,15 @@ var _left_morgue := false
 var _body_laid := false
 var _lantern_out := false
 var _first_cellar := true
+var _left_house := false
+var _mat_turned := false
+
+const WHISPERS: PackedStringArray = [
+	"Finish the line.",
+	"The mat was straight.",
+	"I did not wave.",
+	"The wool is still warm.",
+]
 
 
 func _ready() -> void:
@@ -107,6 +116,10 @@ func _enter(next: String, previous: String) -> void:
 		# It was not there the first time.
 		_body_laid = true
 		house.morgue.body.visible = true
+	if previous != "" and next == "":
+		_left_house = true
+	if _left_house and not _mat_turned and previous == "" and next != "":
+		_turn_mat()
 	if House.is_cellar(next) and _first_cellar:
 		# The first time down, it waits for her to settle, then walks overhead.
 		_first_cellar = false
@@ -237,10 +250,27 @@ func _chamber() -> void:
 
 
 func _whisper() -> void:
-	# Close at her ear, a little behind, on one side.
+	# Close at her ear, a little behind, on one side. The sound has no words.
+	# The line on the glass is the writer's, and it does not explain itself.
 	var side := Game.player.camera.global_transform.basis.x * (1.0 if randf() < 0.5 else -1.0) if Game.player.camera else Vector3.RIGHT
 	var at := _eye() + side * 0.45 - _look() * 0.25
 	_play("house_whisper", at, Loudness.WHISPER, randf_range(0.9, 1.0))
+	Game.murmur_line(WHISPERS[randi() % WHISPERS.size()])
+
+
+func _turn_mat() -> void:
+	_mat_turned = true
+	var mat := house.get_node_or_null("Authoring/Traces/Mat") as Node3D
+	if mat:
+		mat.rotation.y = 0.38
+	# The page says she went back and the mat was still straight. The snow
+	# outside the door has a sole that never pushed a berm.
+	if Game.player == null or Game.player.footprints == null:
+		return
+	var at := house.to_global(Vector3(0.46, 0.0, 5.65))
+	if Game.trail != null and Game.trail.ground != null:
+		at.y = Game.trail.ground.height_at(at.x, at.z)
+	Game.player.footprints.stamp(at, 0.5, false, false, Footprints.Mark.SOLE)
 
 
 # --- Helpers -------------------------------------------------------------------------

@@ -7,3 +7,5 @@ extends Resource
 # Containment records describe an anomaly's rule. They do not count toward
 # the hunter's notes; reading one marks that anomaly as understood.
 @export var record_of: String = ""
+# Trail notes advance the hunt. Pages in the house do not.
+@export var counts: bool = true

@@ -80,6 +80,8 @@ func _ready() -> void:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
 		_settle_route(trail, shift, built_house, built_exit)
+		if trail.house:
+			trail.house.settle_comfort()
 		player.set_process(false)
 		player.set_physics_process(false)
 		hunter.set_physics_process(false)
@@ -96,6 +98,8 @@ func _ready() -> void:
 		player.apply_authored_spawn()
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
+	if trail.house:
+		trail.house.settle_comfort()
 	trail.adopt_markers()
 	director.layout()
 	Game.begin_intro()

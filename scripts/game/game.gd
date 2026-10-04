@@ -26,9 +26,14 @@ var director: AnomalyDirector
 var house: House
 var dread: float = 0.0
 var anomaly_hint := ""
+# A line from the house, spoken under the breath, gone in a few seconds.
+var murmur := ""
+var murmur_left := 0.0
 var understood: Dictionary = {}
 var ending_title := ""
 var ending_body := ""
+# She opened the page that asks her to finish. The road remembers. The catch does not speak in that voice.
+var read_last_page := false
 var _hunt_start_msec: int = -1
 
 
@@ -86,9 +91,12 @@ func reset() -> void:
 	house = null
 	dread = 0.0
 	anomaly_hint = ""
+	murmur = ""
+	murmur_left = 0.0
 	understood.clear()
 	ending_title = ""
 	ending_body = ""
+	read_last_page = false
 	_hunt_start_msec = -1
 
 
@@ -122,15 +130,30 @@ func begin_reading() -> void:
 	if phase != Phase.PLAYING:
 		return
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var record := active_note != null and active_note.entry != null and active_note.entry.record_of != ""
-	if record:
+	var entry := active_note.entry if active_note else null
+	if entry and entry.record_of != "":
 		active_note.collect()
-		understood[active_note.entry.record_of] = true
+		understood[entry.record_of] = true
+	elif entry and not entry.counts:
+		active_note.collect()
 	elif active_note and active_note.collect():
 		notes_found += 1
+		if entry and entry.title == NoteCatalog.LAST_TITLE:
+			read_last_page = true
 		if notes_found == Tune.HUNT_NOTES and _hunt_start_msec < 0:
 			_hunt_start_msec = Time.get_ticks_msec()
 	set_phase(Phase.READING)
+
+
+func reading_last_page() -> bool:
+	if phase != Phase.READING or active_note == null or active_note.entry == null:
+		return false
+	return active_note.entry.title == NoteCatalog.LAST_TITLE
+
+
+func murmur_line(line: String) -> void:
+	murmur = line
+	murmur_left = 4.5
 
 
 func seconds_hunting() -> float:

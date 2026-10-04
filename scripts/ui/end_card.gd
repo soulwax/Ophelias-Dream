@@ -22,9 +22,12 @@ func _on_phase(next: Game.Phase) -> void:
 			var body := Game.ending_body if Game.ending_body != "" else "You stopped. The snow closed over the place you were."
 			_show(title, body, "Wake in the cabin")
 		Game.Phase.ESCAPED:
+			var road := "Headlights. You do not look back."
+			if Game.read_last_page:
+				road += " The line was not finished."
 			_show(
 				"The road",
-				"Headlights. The last page lied. You do not look back.",
+				road,
 				"Walk the ridge again"
 			)
 		_:

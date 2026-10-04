@@ -39,12 +39,13 @@ func _init() -> void:
 func record() -> NoteEntry:
 	return make_record(
 		"OBJECT 2-117 — \"THE LISTENER\"",
-		"Class: Persistent. Do not attempt recovery.\n\n"
-		+ "Description: A humanoid accretion of hoarfrost, approx. 2.4 m. It has no auditory organs and no eyes we have been able to find. It responds exclusively to visible exhaled vapour.\n\n"
-		+ "It is not the figure in the tree line. That one wants the person. This one cannot tell a person from the steam. It does not follow people. It goes to where the breath was.\n\n"
-		+ "Calm breathing in these temperatures is visible at roughly ten metres. Breathing after exertion is visible at forty.\n\n"
-		+ "Incident 2-117-04: Agent [redacted] stood within arm's reach of the object for one minute and forty seconds holding her breath. It did not register her. When she exhaled it was already turning.\n\n"
-		+ "Procedure: If you see it, stop running. Running makes the plume. Hold your breath, walk, and plan where you will let it out."
+		"Class: Persistent. Recovery: refused. The refusal is not dated.\n\n"
+		+ "Description: Humanoid accretion of hoarfrost. First sheet, 2.4 m. The sheet clipped under it, 1.9 m, same hand. No auditory organs entered. Eyes: \"none found.\" Under that, another hand: \"do not look for them.\"\n\n"
+		+ "A field page was in the pack with the strap stamp. It says the contact waved. No observation log contains a wave. The page is filed under this number because the pack was. That may be an error.\n\n"
+		+ "The contact at the tree line has no number. The tree-line pages and this sheet disagree about the hand. Do not merge the files.\n\n"
+		+ "It responds to visible exhaled vapour. Calm vapour in this weather carries about ten metres. Vapour after exertion carries further. The margin says \"across the kitchen,\" which is not a measure.\n\n"
+		+ "Incident, signed M.: stood in reach for one minute and forty seconds, breath held. A crossed line under it reads \"until the lantern.\" When the breath was released the object turned. The log does not record contact. The crossed line does.\n\n"
+		+ "Procedure, this number only: If it has turned its head, stop running. Running feeds the vapour. Hold the breath. Walk. Choose where you will let it out."
 	)
 
 
@@ -74,8 +75,14 @@ func _physics_process(delta: float) -> void:
 		plume = 0.0
 	var mouth := breath.global_position if breath else Game.player.global_position + Vector3(0, 1.6, 0)
 	var distance := _flat(Game.player.global_position - global_position).length()
+	# The figure is the debt in front. This one does not hunt beside it.
+	var figure_in_front := Game.notes_found >= Tune.HUNT_NOTES
+	if figure_in_front and (_mood == Mood.HUNT or _mood == Mood.LISTEN):
+		_mood = Mood.DRIFT
+		if _hiss and _hiss.playing:
+			_hiss.stop()
 	# It perceives the cloud itself; a bigger cloud carries further.
-	if plume > NOTICE and distance < HEAR_CALM + HEAR_PLUME * plume:
+	if not figure_in_front and plume > NOTICE and distance < HEAR_CALM + HEAR_PLUME * plume:
 		if _mood != Mood.HUNT:
 			_notice()
 		_mood = Mood.HUNT
@@ -99,7 +106,7 @@ func _physics_process(delta: float) -> void:
 				var away := Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0)).normalized()
 				_memory = Game.player.global_position + away * randf_range(14.0, 28.0)
 			_glide(_memory, DRIFT_SPEED, delta)
-	if distance < REACH and plume > 0.1:
+	if not figure_in_front and distance < REACH and plume > 0.1:
 		catch("It heard you breathe", "The cloud left your mouth and it was already there. The cold went in where the air came out.")
 		return
 	var pressure := clampf(1.0 - distance / 32.0, 0.0, 1.0)
