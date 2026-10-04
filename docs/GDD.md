@@ -1,6 +1,6 @@
 # Run Away — Game Design Document
 
-**Version:** `0.0.12`
+**Version:** `0.0.13`
 **Engine & Stack:** Godot 4.7 (Forward+ Renderer, Jolt Physics, Typed GDScript)
 **Perspective:** Third-Person Over-the-Shoulder
 **Genre:** Short Authored Daylight Winter Horror
@@ -176,10 +176,18 @@ Rather than flat decals, footprints are 96 pooled, subdivided `1.0 m × 1.0 m` m
 - **Enclosure & Terrain:** A `300 m × 300 m` wire-fenced basin (`X: [-150, 150]`, `Z: [-224, 76]`) with a `3.0 m` procedural snow grid (`Ground`), flattened foundation pads around the cabin/cellar, a stairwell cut into the earth, and multi-mesh alpine flora (`Flora`).
 - **Hybrid Code + Editor Workflow:** Systems construct their nodes in code during `_ready()`, after which `EditableLevel.apply()` overlays hand-authored transforms, route curve adjustments, cabin furniture placements, and landmark tweaks stored in `scenes/editable_level.scn` (tracked via Git LFS).
 
-### 5.2 Weather & Shelter (`scripts/weather/weather.gd`)
-- **Three-Layer Snowfall:** Near, mid, and far GPU particle boxes follow the camera and cull indoor particles via shelter height/bounds checks.
-- **Window Whistles:** Six 3D wind-whistle emitters sit at the cabin's window openings, peaking when the player stands near the glass indoors.
-- **Immediate Spawn Settlement:** `Weather.settle()` checks if the player spawns indoors on frame 0 and snaps `shelter = 1.0` immediately so outdoor storm audio never leaks at launch.
+### 5.2 Dynamic Volumetric Weather & Shelter (`scripts/weather/weather.gd`, `scripts/world/atmosphere.gd`)
+- **Four-Regime Weather State Machine:** Weather evolves continuously across four distinct atmospheric fronts (`11–24 s` per regime, weighted toward heavier fronts as `Game.threat()` rises and after `Game.hunt_started`):
+  - `CLEARING`: Brief high-visibility lulls (`intensity ~0.22`) with glittering airborne ice crystals (`DiamondDust`), low ground drift, and sharp directional sun shafts (`volumetric_fog_anisotropy = 0.62`).
+  - `DRIFT`: Steady alpine snowfall (`intensity ~0.52`) with rolling ground spindrift ribbons and shifting crosswinds.
+  - `SQUALL`: Heavy wind-sheared snow curtains (`intensity ~0.82`) with fast gale streaks, swirling mid-air squall veils, and rising wind roar.
+  - `WHITEOUT`: Blinding blizzard fronts (`intensity ~1.0`, `whiteout ~0.92`) that compress visibility (`fog_density`, `volumetric_fog_density`, and low `anisotropy = 0.26` diffuse glare), whip violent gusts, and drive sub-bass storm pressure.
+- **3D Volumetric Fog Shaders (`shaders/volumetric_weather.gdshader`):**
+  - Dual `FogVolume` architecture: a basin-wide `SnowFog` volume (`360 × 44 × 360 m`) and a high-detail camera-following `SquallVolume` (`96 × 28 × 96 m`) that sculpt wind-sheared falling snow curtains, 2-octave 3D turbulent fog banks advected by `wind_scroll`, and dense ground-hugging spindrift (`0–3.8 m`).
+  - **Indoor Volume Cutout:** Both volumetric fog shaders transform world points via `house_inv_transform` and evaluate a smooth signed-distance box cutout over the cabin and cellar so indoor rooms stay crisp while volumetric squalls visibly rage outside the windowpanes.
+- **Six-Layer Particle Architecture (`scripts/weather/snow_layer.gd`, `shaders/spindrift.gdshader`):**
+  - Combines `CanopyFlakes`, `NearFlurries`, `DiamondDust` (glittering ice prisms in clearings), `GaleStreaks` (high-velocity horizontal streaks during gusts), `GroundSpindrift` (billowing snow ribbons hugging terrain contours), and `SquallVeil` (broad translucent snow sheets during squalls/whiteouts).
+- **Window Whistles & Immediate Spawn Settlement:** Six 3D wind-whistle emitters sit at the cabin's window openings, peaking when the player stands near the glass indoors. `Weather.settle()` snaps `shelter = 1.0` on frame 0 when spawning indoors so outdoor storm audio never leaks at launch.
 
 ### 5.3 Calibrated Audio & Bus Hierarchy (`scripts/audio/loudness.gd`, `scripts/game/settings.gd`)
 All 3D sounds are calibrated in decibels SPL at 1 metre via `Loudness`, listening from a top-level `AudioListener3D` (`Player.ears`) placed at the character's head height (`+1.55 m`) rather than the camera boom 3 metres behind her.
@@ -203,7 +211,7 @@ flowchart LR
   - Full-screen procedural vignette shader (`shaders/vignette.gdshader`) driven by cold/closeness/dread and stamina exhaustion.
   - Subtle bottom-center breath bar that appears only when stamina is below `98%` or breath is held, tinting icy blue while holding breath and warm red when exhausted.
   - Single-line whisper/threat hint that prioritizes whichever rule has higher pressure (`Listener.dread` vs. `Game.closeness`).
-  - Context-sensitive `[E]` prompt (`Read <title>`, `Open door`, `Close door`).
+  - Context-sensitive `[E]` prompt (`Read <title>`, `Open door`, `Close door`) paired with a two-pass spatial outline shader (`shaders/interact_outline.gdshader`) that highlights the currently viewed interactable note or door leaf with a breathing frost-gold silhouette and rim glow.
 - **`NoteReader` (`scripts/ui/note_reader.gd`):**
   - Opens a parchment modal without pausing the world (`Phase.READING`). Text reveals at `42 CPS` (`Tune.TYPE_CPS`) with typewriter ticks. Notes with `corruption > 0.0` substitute characters with corrupted glyphs as they type.
 
@@ -220,7 +228,7 @@ flowchart LR
 | `E` | `interact` | Read/close note, or open/close house and mortuary doors |
 | `Esc` | `pause` | Toggle Pause & Settings menu (freezes world and clocks) |
 | `R` | `restart` | Restart run from the cabin bedroom after `CAUGHT` or `ESCAPED` |
-| `F1`–`F5` | Debug (`OS.is_debug_build()`) | `F1`: Next note, `F2`: Next anomaly, `F3`: Summon anomaly, `F4`: Toggle indoor/outdoor spawn, `F5`: Trigger house haunt |
+| `F1`–`F6` | Debug (`OS.is_debug_build()`) | `F1`: Next note, `F2`: Next anomaly, `F3`: Toggle debug HUD / summon anomaly, `F4`: Toggle indoor/outdoor spawn, `F5`: Trigger house haunt, `F6`: Cycle weather regime (`CLEARING`/`DRIFT`/`SQUALL`/`WHITEOUT`) |
 
 ---
 

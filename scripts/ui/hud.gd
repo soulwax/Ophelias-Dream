@@ -52,11 +52,13 @@ func _process(delta: float) -> void:
 	if Game.phase == Game.Phase.INTRO:
 		_intro.modulate.a = clampf(Game.intro_left / 0.65, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
-		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62)
+		var whiteout_press := (Game.weather.whiteout * 0.14) if Game.weather and Game.player and not Game.player.indoors() else 0.0
+		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62 + whiteout_press)
 		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.threat() * 0.5, 0.0, 0.0))
 	if _debug.visible and Game.player and Game.hunter and Game.trail:
 		var gap := Game.trail.offset_of(Game.player.global_position) - Game.hunter.offset
-		_debug.text = "gap %.1f m   breath %.1f" % [gap, Game.player.stamina]
+		var wx := Game.weather.regime_name() if Game.weather else "None"
+		_debug.text = "%s   gap %.1f m   breath %.1f" % [wx, gap, Game.player.stamina]
 
 
 func _unhandled_input(event: InputEvent) -> void:
