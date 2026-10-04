@@ -90,8 +90,6 @@ func _ready() -> void:
 	_build_camera()
 	_build_model()
 	_place()
-	rotation.y = _yaw
-	reset_physics_interpolation()
 	footprints = Footprints.new()
 	add_child(footprints)
 	kicks = SnowKick.new()
@@ -103,6 +101,7 @@ func _ready() -> void:
 	ears.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	add_child(ears)
 	ears.make_current()
+	_settle_spawn()
 	Game.player = self
 
 
@@ -543,9 +542,25 @@ func _apply_look() -> void:
 func apply_authored_spawn() -> void:
 	if OS.get_environment("RUN_SPAWN") != "":
 		_place()
-		return
-	_yaw = rotation.y
+	else:
+		_yaw = rotation.y
+		_facing = _yaw
+	_settle_spawn()
+
+
+func _settle_spawn() -> void:
+	rotation.y = _yaw
 	_facing = _yaw
+	reset_physics_interpolation()
+	var inside := indoors()
+	var outdoors_boom := BOOM_LENGTH * (Game.settings.camera_distance if Game.settings else 1.0)
+	_boom = minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom
+	_shoulder = INDOOR_SHOULDER if inside else 0.0
+	_glow = 1.0 if inside else 0.0
+	if camera and Game.settings:
+		camera.fov = Game.settings.fov
+	_flicker_lantern(0.0)
+	_apply_look()
 
 
 # The ground mesh is one-sided, so a camera that slips under a slope sees

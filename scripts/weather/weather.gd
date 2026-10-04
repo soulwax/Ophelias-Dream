@@ -3,7 +3,7 @@ extends Node3D
 
 const TEX := "res://assets/weather/"
 
-var intensity := 0.62
+var intensity := 0.35
 var gust := 0.0
 var wind := Vector3(8.0, 0.0, 3.0)
 
@@ -27,15 +27,44 @@ func _ready() -> void:
 		if child is Atmosphere:
 			_atmosphere = child as Atmosphere
 			break
+	settle()
+
+
+func _is_inside() -> bool:
+	var listener := get_viewport().get_audio_listener_3d()
+	if listener:
+		return Game.indoors(listener.global_position)
+	var camera := get_viewport().get_camera_3d()
+	if camera:
+		return Game.indoors(camera.global_position)
+	return Game.player != null and Game.player.indoors()
+
+
+func settle() -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera:
+		global_position = camera.global_position
+	elif Game.player:
+		global_position = Game.player.global_position
+	var inside := _is_inside()
+	shelter = 1.0 if inside else 0.0
+	for layer in _layers:
+		layer.apply(intensity, wind, gust)
+		if inside:
+			layer.amount_ratio = 0.0
+	if _atmosphere:
+		_atmosphere.shelter = shelter
+		_atmosphere.apply_storm(intensity)
+	if _audio:
+		_audio.apply(intensity, gust, wind, shelter)
 
 
 func _process(delta: float) -> void:
 	_advance(delta)
 	var camera := get_viewport().get_camera_3d()
-	var inside := false
 	if camera:
 		global_position = camera.global_position
-		inside = Game.indoors(camera.global_position)
+	var inside := _is_inside()
 	for layer in _layers:
 		layer.apply(intensity, wind, gust)
 		# No snow falls indoors; the storm is only heard through the walls.

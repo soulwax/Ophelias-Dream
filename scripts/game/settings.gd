@@ -97,7 +97,7 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_FOCUS_IN:
 		_focused = what == NOTIFICATION_APPLICATION_FOCUS_IN
-		_apply_audio()
+		apply_audio()
 
 
 # Sets one value and applies it. Sliders call this on every step, so saving
@@ -119,7 +119,7 @@ func reset(keys: Array) -> void:
 
 func apply() -> void:
 	_apply_display()
-	_apply_audio()
+	apply_audio()
 	changed.emit()
 
 
@@ -327,7 +327,7 @@ func _build_mix() -> void:
 	var outside := _bus("Outside", "Ambience")
 	if AudioServer.get_bus_effect_count(outside) == 0:
 		var walls := AudioEffectLowPassFilter.new()
-		walls.cutoff_hz = 20000.0
+		walls.cutoff_hz = 650.0
 		walls.resonance = 0.5
 		AudioServer.add_bus_effect(outside, walls)
 	var master := AudioServer.get_bus_index("Master")
@@ -366,8 +366,9 @@ func _apply_display() -> void:
 		viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if render_scale < 0.99 else Viewport.SCALING_3D_MODE_BILINEAR
 
 
-func _apply_audio() -> void:
-	var levels := {"Master": master_volume, "Ambience": ambience_volume, "Effects": effects_volume, "Dread": dread_volume}
+func apply_audio() -> void:
+	var fade := smoothstep(0.0, 1.0, Game.audio_fade) if Game and Game.phase != Game.Phase.PAUSED else 1.0
+	var levels := {"Master": master_volume * fade, "Ambience": ambience_volume, "Effects": effects_volume, "Dread": dread_volume}
 	for bus in levels:
 		var index := AudioServer.get_bus_index(bus)
 		if index < 0:
