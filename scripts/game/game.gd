@@ -36,6 +36,8 @@ var ending_body := ""
 var read_last_page := false
 var hunt_started := false
 var _hunt_seconds := 0.0
+var audio_fade := 0.0
+var _audio_hold := 4
 
 
 func _ready() -> void:
@@ -67,6 +69,13 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if phase != Phase.BOOT and audio_fade < 1.0:
+		if _audio_hold > 0:
+			_audio_hold -= 1
+		else:
+			audio_fade = move_toward(audio_fade, 1.0, minf(delta, 0.05) / Tune.INTRO_TIME)
+			if settings:
+				settings.apply_audio()
 	if phase == Phase.PLAYING or phase == Phase.READING:
 		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
 			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
@@ -106,10 +115,18 @@ func reset() -> void:
 	read_last_page = false
 	hunt_started = false
 	_hunt_seconds = 0.0
+	audio_fade = 0.0
+	_audio_hold = 4
+	if settings:
+		settings.apply_audio()
 
 
 func begin_intro() -> void:
 	intro_left = Tune.INTRO_TIME
+	audio_fade = 0.0
+	_audio_hold = 4
+	if settings:
+		settings.apply_audio()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	set_phase(Phase.INTRO)
 

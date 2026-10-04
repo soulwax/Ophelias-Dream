@@ -100,6 +100,8 @@ func _ready() -> void:
 		snapshot.queue_free()
 	if trail.house:
 		trail.house.settle_comfort()
+	if Game.weather:
+		Game.weather.settle()
 	trail.adopt_markers()
 	director.layout()
 	Game.begin_intro()
