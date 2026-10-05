@@ -30,6 +30,13 @@ godot --headless --path . -s tools/probe.gd
 # Rebuild the elf's movement library from the shared hunter animation source
 godot --headless --path . -s tools/retarget_elf.gd
 
+# Rebuild her walk and jog from the Bandai Namco feminine-style takes (CC BY-NC 4.0)
+python tools/fetch_motion.py
+godot --headless --path . -s tools/retarget_bvh.gd
+
+# Contact sheets of her clips (needs a window), into build/gait/
+godot --path . -s tools/gait_sheet.gd
+
 # Windows export (preset "Windows Desktop", embedded PCK -> build/windows/Run Away.exe)
 godot --headless --path . --export-release "Windows Desktop" "build/windows/Run Away.exe"
 
@@ -73,8 +80,11 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_point` triggers it.
 
 **Locomotion (`scripts/player/stride.gd`, `snow_kick.gd`)**:
-- `Stride` builds an `AnimationTree` from code. A BlendSpace1D (Idle, Walk_Formal, Jog_Fwd, Sprint) is driven by her ground speed, and a TimeScale sets the playback rate so the planted foot moves at that speed.
-- The movement clips are baked to the elf skeleton in `assets/characters/styloo_elf/elf_animations.res`; regenerate with `tools/retarget_elf.gd` after changing clips.
+- `Stride` builds an `AnimationTree` from code. A BlendSpace1D (Idle, Walk, Jog, Sprint) is driven by her ground speed, and a TimeScale sets the playback rate so the planted foot moves at that speed.
+- Walk and Jog are the Bandai Namco Research Motion Dataset's feminine-style takes, in `assets/characters/styloo_elf/feminine/elf_feminine.res` (library `feminine`). They are CC BY-NC 4.0, so the game is non-commercial; the credit is in the Esc menu and `feminine/README.md`.
+ - `tools/retarget_bvh.gd` reads the BVH directly, poses the elf from joint positions (limb directions; torso frames relative to their cycle average; neck and head follow the chest), cuts one looping in-place cycle, and prints each clip's natural speed for `Tune.STRIDE_*`.
+ - The sprint stays the Quaternius clip; their dash is a light run, too slow for `SPRINT_SPEED`. `Grace` draws its wide elbows in.
+- The other clips (idle, sprint, jump, land, crouch, stumble) are baked to the elf in `assets/characters/styloo_elf/elf_animations.res`; regenerate with `tools/retarget_elf.gd`.
 - A OneShot plays the exhaustion stumble (Hit_Chest).
 - Each running gait spans a plateau (two blend points with the same clip), so a steady speed plays one clip. Blending clips whose cycles differ muddles the legs.
 - `FootLock` (`foot_lock.gd`) watches the elf's animated feet and emits `planted(left, at)` for sound, prints, `SnowKick` powder and camera jolt. The elf has no leg IK; the distance-based trigger in `_steps` is a fallback.
@@ -85,7 +95,10 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
   - `Stride` adds layers on top of locomotion: an air pose (Jump_Start, sought by vertical velocity), a slide pose (Crouch_Idle), and a landing one-shot (Jump_Land).
   - `FootLock.suspended` suppresses ground contact in the air and during a slide.
   - Hold breath is on right mouse button or F (defaults; all keys can be rebound in the Esc menu). Sprint can be set to toggle.
-- Dev hooks: `RUN_AUTOPILOT=walk|sprint|jump|slide` and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
+  - Alt (held) walks slowly at `WALK_SLOW_SPEED`. Q or the middle mouse button (held) glances back: the camera swings over her right shoulder while she keeps running the way she was going, and `Grace` turns her chest and head with it.
+  - Gamepad (bound in `Game._bind_pad`, kept by `Settings._set_events` when keys are rebound): left stick moves with a radial dead zone and a curve, so a part push walks slowly; right stick looks with a ramp when held fully. `Game.rumble()` shakes the pad on landings, stumbles, hard knocks and the catch.
+  - Assists: from standing the first tick moves her at once (`START_BURST`); read/open is buffered for `INTERACT_BUFFER`; indoors she slips past the edge of a door frame (`DOOR_ASSIST`); a held jump floats at its apex (`APEX_HANG`); the camera arm pulls in at once and lets back out at `ARM_EXTEND`.
+- Dev hooks: `RUN_AUTOPILOT=walk|sprint|jump|slide|glance` and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
 - Momentum is in `Player._steer`, which moves speed and heading separately (`Tune.STRIDE_*`, `TURN_*`). At a walk she pivots almost at once; at a sprint she sweeps round at `TURN_RATE_SPRINT`, and hard key turns dip her speed briefly. A reversal at speed plants and brakes first. Letting go skids about 0.5 s, and in the air she keeps her takeoff speed (`AIR_ACCEL`, `AIR_DRAG`). `_slope_factor` slows her uphill.
 - Physics interpolation is on (`physics/common/physics_interpolation`).
  - The camera rig (`spring_arm`) is `top_level`, not interpolated, and placed every frame in `Player._process` from `get_global_transform_interpolated()` and the mouse. Look reads `screen_relative`, so window size never changes sensitivity.
@@ -137,7 +150,7 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - *Testing*: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script, so test them in the game.
 - *The Listener (2-117)* perceives only `Breath.plume`. Space (`hold_breath`) suppresses the steam, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp.
 
-**Player model**: `scripts/player/player.gd` instantiates `assets/characters/styloo_elf/elf.glb` at 0.8 scale, with its original materials. The bundled bow and arrows were removed from the GLB by `tools/prepare_elf.py`. `elf_animations.res` contains eight movement clips retargeted from the hunter's shared animation library by `tools/retarget_elf.gd`. `Breath` is attached to `DEF-spine.006` at the mouth; `FootLock` watches `DEF-foot.L/R` for contacts. The model has no leg IK or separate face, hair, and cloth simulation.
+**Player model**: `scripts/player/player.gd` instantiates `assets/characters/styloo_elf/elf.glb` at 0.8 scale, with its original materials. The bundled bow and arrows were removed from the GLB by `tools/prepare_elf.py`. `elf_animations.res` contains eight movement clips retargeted from the hunter's shared animation library by `tools/retarget_elf.gd`; her walk and jog come from `feminine/elf_feminine.res`. `Breath` is attached to `DEF-spine.006` at the mouth; `FootLock` watches `DEF-foot.L/R` for contacts. The skeleton (216 bones) has hair, dress, eyelid, brow, jaw, eye, finger and twist bones, but nothing drives them yet, and the elf has no leg IK; `docs/MOVEMENT.md` plans both.
 - `Grace` (`grace.gd`, a SkeletonModifier3D after `FootLock`) layers her carriage over the clips: in the walk, an arm counter-swing read from the thighs, soft elbows, and shoulders turning against the hips with the head held level; a lifted chest; and, after `Tune.TIPTOE_AFTER` seconds standing, a recurring rise onto her toes. Tuning is in `Tune.GRACE_*` / `TIPTOE_*`.
 - Inside a modifier, global bone poses go stale once a parent is written, so `Grace` writes local rotations conjugated through each parent's clip pose. For the same reason, bone attachments don't show its children's changes; `godot --path . -s tools/grace_probe.gd` (needs a window) renders side views with it on and off into `build/grace/`.
 

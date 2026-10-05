@@ -224,8 +224,11 @@ flowchart LR
 | `Shift` | `sprint` | Sprint (`6.85 m/s`); drains stamina and builds breath plume |
 | `Space` | `jump` | Jump (`5.4 m/s` vertical); costs `0.45` stamina |
 | `C` (while sprinting) | `slide` | Downhill snow slide; boosts speed and lowers profile |
-| `Q` or `C` (walk/idle) | `hold_breath` | Suppress breath plume (`plume = 0`); drains `0.6` stamina/s |
-| `E` | `interact` | Read/close note, or open/close house and mortuary doors |
+| `RMB` or `F` | `hold_breath` | Suppress breath plume (`plume = 0`); drains `0.6` stamina/s |
+| `Alt` (held) | `walk_slow` | Walk slowly (`0.95 m/s`), close to her walk's natural pace |
+| `Q` or `MMB` (held) | `glance_back` | Camera swings over her right shoulder to look behind; she keeps running forward and turns her head back |
+| `E` | `interact` | Read/close note, or open/close house and mortuary doors (buffered `0.35 s`) |
+| Gamepad | — | Left stick moves (a part push walks slowly), right stick looks, `LT` sprint, `RT` hold breath, `A` jump, `B` slide, `X` interact, `LB` walk slowly, `R3` glance back, `Start` pause, `Back` restart; rumble on landings, stumbles, hard knocks and the catch |
 | `Esc` | `pause` | Toggle Pause & Settings menu (freezes world and clocks) |
 | `R` | `restart` | Restart run from the cabin bedroom after `CAUGHT` or `ESCAPED` |
 | `F1`–`F6` | Debug (`OS.is_debug_build()`) | `F1`: Next note, `F2`: Next anomaly, `F3`: Toggle debug HUD / summon anomaly, `F4`: Toggle indoor/outdoor spawn, `F5`: Trigger house haunt, `F6`: Cycle weather regime (`CLEARING`/`DRIFT`/`SQUALL`/`WHITEOUT`) |

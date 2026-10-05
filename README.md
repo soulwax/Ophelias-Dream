@@ -40,3 +40,8 @@ Asset licenses and source details are kept beside the assets, including
 [the elf](assets/characters/styloo_elf/README.md),
 [environment assets](assets/environment/premium/README.md), and provenance
 records under `assets/vendor/` and `assets/audio/`.
+
+Her walk and jog are adapted from the Bandai Namco Research Motion Dataset
+(Bandai Namco Research Inc., CC BY-NC 4.0); see
+[feminine/README.md](assets/characters/styloo_elf/feminine/README.md). Because
+of that licence, Run Away is non-commercial.

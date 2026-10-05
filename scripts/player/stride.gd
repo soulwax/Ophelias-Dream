@@ -8,6 +8,12 @@ extends RefCounted
 # Natural speeds (metres per second at playback 1) live in Tune.
 
 const IDLE := "Idle"
+# Walk and jog are the Bandai Namco feminine-style takes (feminine library);
+# the sprint is the Quaternius clip, which Grace draws in.
+const WALK := "Walk"
+const JOG := "Jog"
+const SPRINT := "Sprint"
+const FALLBACK := {"Walk": "Walk_Formal", "Jog": "Jog_Fwd"}
 const STUMBLE := "Hit_Chest"
 const AIR := "Jump_Start"
 const LAND := "Jump_Land"
@@ -31,14 +37,15 @@ static func build(player: AnimationPlayer, model: Node) -> Stride:
 	# bands she crosses while speeding up or slowing down.
 	stride._gaits = [
 		[IDLE, 0.0, 0.0],
-		# A plateau over the walking pace, so it stays Walk_Formal and the
-		# playback rate rises with her. The jog only begins past that.
-		["Walk_Formal", 1.05, Tune.STRIDE_WALK],
-		["Walk_Formal", 1.95, Tune.STRIDE_WALK],
-		["Jog_Fwd", 2.2, Tune.STRIDE_JOG],
-		["Jog_Fwd", 3.2, Tune.STRIDE_JOG],
-		["Sprint", 4.6, Tune.STRIDE_SPRINT],
-		["Sprint", Tune.SPRINT_SPEED, Tune.STRIDE_SPRINT],
+		# A plateau over every walking pace, from walking slowly to her brisk
+		# walk, so it stays one walk and the playback rate rises with her.
+		# The jog only begins past that.
+		[WALK, 0.75, Tune.STRIDE_WALK],
+		[WALK, 1.95, Tune.STRIDE_WALK],
+		[JOG, 2.2, Tune.STRIDE_JOG],
+		[JOG, 3.2, Tune.STRIDE_JOG],
+		[SPRINT, 4.6, Tune.STRIDE_SPRINT],
+		[SPRINT, Tune.SPRINT_SPEED, Tune.STRIDE_SPRINT],
 	]
 	var space := AnimationNodeBlendSpace1D.new()
 	space.min_space = 0.0
@@ -161,4 +168,6 @@ static func _resolve(player: AnimationPlayer, clip: String) -> String:
 	for name in player.get_animation_list():
 		if name.ends_with("/" + clip):
 			return name
+	if FALLBACK.has(clip):
+		return _resolve(player, FALLBACK[clip])
 	return ""

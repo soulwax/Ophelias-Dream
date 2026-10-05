@@ -64,7 +64,7 @@ var _shoulder := 0.0
 var _glow := 0.0
 var _trail_offset := Vector3.ZERO
 # Dev hook: RUN_AUTOPILOT=walk or sprint holds forward (and sprint), so
-# RUN_CAPTURE can photograph her mid-stride.
+# RUN_CAPTURE can photograph her mid-stride; glance sprints looking back.
 var _autopilot := OS.get_environment("RUN_AUTOPILOT")
 var breath: Breath
 # 0 calm .. 1 gasping. Climbs with sprinting and spent stamina, peaks just
@@ -81,6 +81,13 @@ var _last_glide := Vector3.ZERO
 var _outlined_target: Node3D
 var _outlined_meshes: Array[MeshInstance3D] = []
 var _outline_material: ShaderMaterial
+# Read / open pressed just before she can: kept a moment and tried again.
+var _interact_buffer := 0.0
+# 0 looking ahead .. 1 looking back over her right shoulder.
+var glance := 0.0
+var _look_ramp := 0.0
+var _arm_reach := BOOM_LENGTH
+var _frame_delta := 0.016
 
 
 func _ready() -> void:
@@ -116,21 +123,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if Game.phase == Game.Phase.PLAYING:
-			var focused := viewed_target()
-			var page := (focused as FieldNote) if focused is FieldNote else (nearby_note() if focused == null else null)
-			if page:
-				Game.active_note = page
-				Game.begin_reading()
+			if _try_interact():
 				get_viewport().set_input_as_handled()
-				return
-			var thing := focused if focused != null else nearby_interactable()
-			if thing:
-				var accepted: bool = thing.call("interact") == true
-				var feedback := ""
-				if not accepted and thing is HouseDoor:
-					feedback = (thing as HouseDoor).blocked_label()
-				Game.interaction_feedback.emit(feedback, accepted)
-				get_viewport().set_input_as_handled()
+			else:
+				_interact_buffer = Tune.INTERACT_BUFFER
 	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	# Look goes straight to the camera every frame. screen_relative is in real
@@ -141,12 +137,35 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pitch = clampf(_pitch + (turn.y if Game.settings.invert_y else -turn.y), Tune.PITCH_DOWN, Tune.PITCH_UP)
 
 
+# The page she is looking at or standing by, else the door or switch.
+func _try_interact() -> bool:
+	var focused := viewed_target()
+	var page := (focused as FieldNote) if focused is FieldNote else (nearby_note() if focused == null else null)
+	if page:
+		Game.active_note = page
+		Game.begin_reading()
+		return true
+	var thing := focused if focused != null else nearby_interactable()
+	if thing == null:
+		return false
+	var accepted: bool = thing.call("interact") == true
+	var feedback := ""
+	if not accepted and thing is HouseDoor:
+		feedback = (thing as HouseDoor).blocked_label()
+	Game.interaction_feedback.emit(feedback, accepted)
+	return true
+
+
 func _physics_process(delta: float) -> void:
 	if trail == null:
 		return
 	# The body faces the camera so the keys move her relative to the view;
 	# her model turns on its own (_carry).
 	rotation.y = _yaw
+	if _interact_buffer > 0.0:
+		_interact_buffer -= delta
+		if Game.phase == Game.Phase.PLAYING and _try_interact():
+			_interact_buffer = 0.0
 	if Game.locks_movement():
 		if sliding:
 			_end_slide()
@@ -165,7 +184,7 @@ func _physics_process(delta: float) -> void:
 		_carry(delta, false)
 		return
 
-	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var input := _move_input()
 	var jump_pressed := Input.is_action_just_pressed("jump")
 	var slide_pressed := Input.is_action_just_pressed("slide")
 	if _autopilot != "":
@@ -187,12 +206,15 @@ func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
-	var wants_sprint := moving and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
+	var slow := Input.is_action_pressed("walk_slow") and _autopilot == ""
+	var wants_sprint := moving and not slow and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
 	# Once spent she must get some breath back before she can sprint again,
 	# so holding Shift through exhaustion cannot stutter into a stumble loop.
 	var sprinting := wants_sprint and stamina > 0.0 and (_sprinting or stamina > Tune.SPRINT_RESUME)
+	if sprinting and not _sprinting and on_floor:
+		_kick_off()
 	_sprinting = sprinting
-	var speed := Tune.WALK_SPEED
+	var speed := Tune.WALK_SLOW_SPEED if slow else Tune.WALK_SPEED
 	if sprinting:
 		speed = Tune.SPRINT_SPEED
 		stamina = maxf(stamina - delta, 0.0)
@@ -215,9 +237,13 @@ func _physics_process(delta: float) -> void:
 		_jump()
 	elif not on_floor:
 		# Let go early for a hop; falling is a little heavier than rising.
-		if velocity.y > 0.0 and not Input.is_action_pressed("jump") and _jumped and _autopilot == "":
+		var held := Input.is_action_pressed("jump") or _autopilot != ""
+		if velocity.y > 0.0 and not held and _jumped:
 			velocity.y *= pow(Tune.JUMP_CUT, delta * 12.0)
-		velocity.y -= Tune.GRAVITY * delta * (Tune.FALL_GRAVITY if velocity.y < 0.0 else 1.0)
+		var weight := Tune.FALL_GRAVITY if velocity.y < 0.0 else 1.0
+		if _jumped and held and absf(velocity.y) < Tune.APEX_SPEED:
+			weight = Tune.APEX_HANG
+		velocity.y -= Tune.GRAVITY * delta * weight
 	elif not _airborne:
 		velocity.y = -1.0
 
@@ -234,6 +260,10 @@ func _physics_process(delta: float) -> void:
 	var surge := _step_surge() if on_floor and not sliding else 1.0
 	velocity.x = _glide.x * surge + push.x
 	velocity.z = _glide.z * surge + push.z
+	if moving and on_floor and not sliding:
+		var assist := _door_assist(Vector3(velocity.x, 0.0, velocity.z))
+		velocity.x += assist.x
+		velocity.z += assist.z
 	move_and_slide()
 	_track_air(delta)
 	_animate(delta, moving, sprinting)
@@ -249,6 +279,12 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if spring_arm == null:
 		return
+	_frame_delta = delta
+	_stick_look(delta)
+	var looking_back := (Input.is_action_pressed("glance_back") or _autopilot == "glance") and Game.phase == Game.Phase.PLAYING
+	glance = move_toward(glance, 1.0 if looking_back else 0.0, delta / Tune.GLANCE_TIME)
+	if grace:
+		grace.glance = smoothstep(0.0, 1.0, glance)
 	_move_camera(delta)
 	_apply_look()
 	_outline_target(viewed_target() if Game.phase == Game.Phase.PLAYING else null)
@@ -298,6 +334,7 @@ func _land(fall_speed: float) -> void:
 	_jolt -= lerpf(0.03, 0.13, power)
 	_glide *= lerpf(0.97, 0.7, power)
 	_since_plant = 0.0
+	Game.rumble(0.12 + 0.3 * power, 0.55 * power, 0.1 + 0.12 * power)
 	_both_feet(maxf(power, 0.45))
 
 
@@ -400,6 +437,11 @@ func _steer(wish: Vector3, top: float, sprinting: bool, on_floor: bool, delta: f
 		_glide = flat.move_toward(Vector3.ZERO, lerpf(Tune.STRIDE_STOP_WALK, Tune.STRIDE_STOP_SPRINT, pace) * delta)
 		return
 	var toward := wish.normalized()
+	var want_now := top * minf(wish.length(), 1.0)
+	if current < 0.05:
+		# From standing, the first step is already under way.
+		_glide = toward * minf(Tune.START_BURST, want_now)
+		return
 	var heading := toward
 	if current >= Tune.PIVOT_SPEED:
 		heading = flat / current
@@ -418,10 +460,51 @@ func _steer(wish: Vector3, top: float, sprinting: bool, on_floor: bool, delta: f
 	_glide = heading * move_toward(current, want, rate * delta)
 
 
+# Keys or the left stick, with a radial dead zone and a curve: a small push
+# is a careful step, a full one her walk.
+func _move_input() -> Vector2:
+	var raw := Input.get_vector("move_left", "move_right", "move_forward", "move_back", Tune.STICK_DEADZONE)
+	var amount := raw.length()
+	if amount < 0.001:
+		return Vector2.ZERO
+	return raw / amount * pow(minf(amount, 1.0), Tune.STICK_CURVE)
+
+
+# Breaking into a sprint: the boots dig in and throw snow.
+func _kick_off() -> void:
+	if _ground_speed() < 0.8:
+		return
+	_jolt -= 0.025
+	Game.rumble(0.18, 0.0, 0.08)
+	if kicks and not indoors() and trail and trail.ground:
+		var back := -Vector3(_glide.x, 0.0, _glide.z).normalized()
+		var at := global_position + back * 0.15
+		kicks.kick(Vector3(at.x, trail.ground.height_at(at.x, at.z) + 0.05, at.z), 0.9, back)
+
+
+# Indoors, walking into the edge of a door frame or a piece of furniture
+# slips her sideways toward the gap instead of stopping her dead. A flat wall
+# has no gap beside it, so nothing changes there.
+func _door_assist(motion: Vector3) -> Vector3:
+	if not indoors() or motion.length() < 0.3:
+		return Vector3.ZERO
+	var ahead := motion.normalized() * 0.22
+	var from := global_transform
+	if not test_move(from, ahead):
+		return Vector3.ZERO
+	var side := Vector3(ahead.z, 0.0, -ahead.x).normalized()
+	for reach in [0.06, 0.1, 0.15]:
+		for sign in [1.0, -1.0]:
+			var shift: Vector3 = side * reach * sign
+			if not test_move(from, shift) and not test_move(from.translated(shift), ahead):
+				return shift.normalized() * Tune.DOOR_ASSIST
+	return Vector3.ZERO
+
+
 # Hold to sprint, or with the toggle setting tap once and she keeps running
 # until she stops, is spent, or it is tapped again.
 func _sprint_wanted(moving: bool) -> bool:
-	if _autopilot in ["sprint", "jump", "slide"]:
+	if _autopilot in ["sprint", "jump", "slide", "glance"]:
 		return true
 	if not Game.settings.sprint_toggle:
 		_sprint_latch = false
@@ -451,6 +534,7 @@ func _stumble() -> void:
 	_glide *= 0.5
 	_jolt -= 0.09
 	strain = 1.0
+	Game.rumble(0.4, 0.7, 0.25)
 	if Game.soundscape:
 		Game.soundscape.play_step(global_position, _surface_at(global_position), 1.0)
 
@@ -530,11 +614,35 @@ func _place() -> void:
 	_facing = _yaw
 
 
+# The right stick: a curve for fine aim near the centre, and a turn that
+# quickens once it has been held all the way for a moment.
+func _stick_look(delta: float) -> void:
+	if Game.locks_look() or Game.settings == null:
+		_look_ramp = 0.0
+		return
+	var stick := Input.get_vector("look_left", "look_right", "look_up", "look_down", Tune.STICK_DEADZONE)
+	var amount := minf(stick.length(), 1.0)
+	if amount < 0.001:
+		_look_ramp = 0.0
+		return
+	var full := amount > 0.92
+	_look_ramp = move_toward(_look_ramp, 1.0 if full else 0.0, delta * (1.0 / Tune.STICK_RAMP_TIME if full else 6.0))
+	var rate := pow(amount, Tune.STICK_LOOK_CURVE) * (1.0 + Tune.STICK_RAMP_BOOST * _look_ramp) * Game.settings.stick_sensitivity
+	var direction := stick / stick.length()
+	_yaw -= direction.x * Tune.STICK_YAW_RATE * rate * delta
+	var tilt := direction.y * Tune.STICK_PITCH_RATE * rate * delta
+	_pitch = clampf(_pitch + (tilt if Game.settings.invert_y else -tilt), Tune.PITCH_DOWN, Tune.PITCH_UP)
+
+
 func _apply_look() -> void:
-	var turn := Basis(Vector3.UP, _yaw)
-	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake, 0.0) + _trail_offset
+	# Glancing back swings the view round over her right shoulder; the body
+	# keeps _yaw, so she runs on the way she was going.
+	var turn := Basis(Vector3.UP, _yaw + PI * smoothstep(0.0, 1.0, glance))
+	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake, 0.0)
 	var body := get_global_transform_interpolated().origin
-	spring_arm.global_transform = Transform3D(turn * Basis(Vector3.RIGHT, _pitch), body + turn * mount)
+	# The trail behind her momentum stays behind her, whichever way she looks.
+	var trail_behind := Basis(Vector3.UP, _yaw) * _trail_offset
+	spring_arm.global_transform = Transform3D(turn * Basis(Vector3.RIGHT, _pitch), body + turn * mount + trail_behind)
 	_fit_boom_to_ground()
 	if camera:
 		var shake := Game.weather.gust * 0.012 if Game.weather else 0.0
@@ -563,6 +671,7 @@ func _settle_spawn() -> void:
 	_boom = minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom
 	_shoulder = INDOOR_SHOULDER if inside else 0.0
 	_glow = 1.0 if inside else 0.0
+	_arm_reach = _boom
 	if camera and Game.settings:
 		camera.fov = Game.settings.fov
 	_flicker_lantern(0.0)
@@ -574,20 +683,41 @@ func _settle_spawn() -> void:
 func _fit_boom_to_ground() -> void:
 	if trail == null or trail.ground == null:
 		return
-	# Indoors the walls and ceilings stop the arm; the snow is irrelevant.
-	if indoors():
-		spring_arm.spring_length = _boom
-		return
 	var pivot := spring_arm.global_position
 	var back := spring_arm.global_transform.basis.z
 	var reach := _boom
-	for i in range(1, BOOM_STEPS + 1):
-		var along := _boom * float(i) / float(BOOM_STEPS)
-		var probe := pivot + back * along
-		if probe.y < trail.ground.height_at(probe.x, probe.z) + BOOM_CLEARANCE:
-			reach = _boom * float(i - 1) / float(BOOM_STEPS)
-			break
-	spring_arm.spring_length = maxf(reach, 0.5)
+	# Indoors the walls and ceilings stop the arm; the snow is irrelevant.
+	if not indoors():
+		for i in range(1, BOOM_STEPS + 1):
+			var along := _boom * float(i) / float(BOOM_STEPS)
+			var probe := pivot + back * along
+			if probe.y < trail.ground.height_at(probe.x, probe.z) + BOOM_CLEARANCE:
+				reach = _boom * float(i - 1) / float(BOOM_STEPS)
+				break
+	# In at once when something comes between them, back out gently.
+	var free := minf(reach, _arm_free(pivot, back, _boom))
+	if free < _arm_reach:
+		_arm_reach = free
+	else:
+		_arm_reach = move_toward(_arm_reach, free, _frame_delta * Tune.ARM_EXTEND)
+	spring_arm.spring_length = maxf(_arm_reach, 0.5)
+
+
+# How far the camera's sphere can travel back from the pivot before it meets
+# the world.
+func _arm_free(pivot: Vector3, back: Vector3, length: float) -> float:
+	if not is_inside_tree() or spring_arm.shape == null:
+		return length
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = spring_arm.shape
+	query.transform = Transform3D(Basis(), pivot)
+	query.motion = back * length
+	query.collision_mask = spring_arm.collision_mask
+	query.exclude = [get_rid()]
+	var fractions := get_world_3d().direct_space_state.cast_motion(query)
+	if fractions.is_empty():
+		return length
+	return maxf(length * fractions[0] - 0.05, 0.3)
 
 
 func _animate(delta: float, moving: bool, sprinting: bool) -> void:
@@ -947,6 +1077,10 @@ func _build_model() -> void:
 	rig_root.add_child(animation_player)
 	animation_player.root_node = NodePath("..")
 	animation_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
+	# Her walk and jog: Bandai Namco Research Inc., CC BY-NC 4.0.
+	var feminine := "res://assets/characters/styloo_elf/feminine/elf_feminine.res"
+	if ResourceLoader.exists(feminine):
+		animation_player.add_animation_library("feminine", load(feminine) as AnimationLibrary)
 	stride = Stride.build(animation_player, rig_root)
 	var mouth := BoneAttachment3D.new()
 	mouth.name = "Mouth"

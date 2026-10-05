@@ -18,6 +18,8 @@ const ACTIONS := [
 	["jump", "Jump"],
 	["slide", "Slide (while sprinting)"],
 	["hold_breath", "Hold breath"],
+	["walk_slow", "Walk slowly (hold)"],
+	["glance_back", "Glance back (hold)"],
 	["interact", "Read / open / use"],
 	["restart", "Restart (paused or at the end)"],
 ]
@@ -26,8 +28,10 @@ const BUSES := ["Ambience", "Effects", "Dread"]
 const FRAME_CAPS := [30, 60, 90, 120, 144, 165, 240, 0]
 const DEFAULTS := {
 	"mouse_sensitivity": 1.0,
+	"stick_sensitivity": 1.0,
 	"invert_y": false,
 	"sprint_toggle": false,
+	"rumble": true,
 	"fov": 70.0,
 	"camera_distance": 1.0,
 	"camera_shake": 1.0,
@@ -50,8 +54,10 @@ const DEFAULTS := {
 
 # Look and keys.
 var mouse_sensitivity: float = DEFAULTS.mouse_sensitivity
+var stick_sensitivity: float = DEFAULTS.stick_sensitivity
 var invert_y: bool = DEFAULTS.invert_y
 var sprint_toggle: bool = DEFAULTS.sprint_toggle
+var rumble: bool = DEFAULTS.rumble
 # Camera: base field of view in degrees, boom length as a share of the
 # default, how much footfalls, gusts and landings shake it, and whether it
 # widens with her speed.
@@ -208,7 +214,8 @@ func reset_keys() -> void:
 	for pair in ACTIONS:
 		var events: Array[InputEvent] = []
 		for event in _default_keys.get(pair[0], []):
-			events.append(event)
+			if event is InputEventKey or event is InputEventMouseButton:
+				events.append(event)
 		_set_events(pair[0], events)
 	save()
 	changed.emit()
@@ -250,12 +257,19 @@ static func event_label(event: InputEvent) -> String:
 	return "?"
 
 
+# Keys and mouse buttons are rebindable; the pad's buttons and sticks stay.
 func _set_events(action: String, events: Array[InputEvent]) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)
+	var pad: Array[InputEvent] = []
+	for event in InputMap.action_get_events(action):
+		if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+			pad.append(event)
 	InputMap.action_erase_events(action)
 	for i in mini(events.size(), SLOTS):
 		InputMap.action_add_event(action, events[i])
+	for event in pad:
+		InputMap.action_add_event(action, event)
 
 
 static func _same(a: InputEvent, b: InputEvent) -> bool:

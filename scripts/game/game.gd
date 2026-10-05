@@ -60,6 +60,10 @@ func _ready() -> void:
 	_bind("slide", KEY_C)
 	_bind_mouse("hold_breath", MOUSE_BUTTON_RIGHT)
 	_bind("hold_breath", KEY_F)
+	_bind("walk_slow", KEY_ALT)
+	_bind("glance_back", KEY_Q)
+	_bind_mouse("glance_back", MOUSE_BUTTON_MIDDLE)
+	_bind_pad()
 	# After the defaults, so it knows what to reset the keys to.
 	settings = Settings.new()
 	settings.name = "Settings"
@@ -218,6 +222,7 @@ func catch_player(title := "", body := "") -> void:
 		return
 	ending_title = title
 	ending_body = body
+	rumble(0.8, 1.0, 0.6)
 	Engine.time_scale = 0.4
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	set_phase(Phase.CAUGHT)
@@ -299,3 +304,43 @@ func _bind(action: String, key: Key) -> void:
 	event.physical_keycode = key
 	if not InputMap.action_has_event(action, event):
 		InputMap.action_add_event(action, event)
+
+
+# A gamepad alongside the keys. The sticks are read with their own radial dead
+# zone (Player), so the actions themselves pass even the smallest push.
+func _bind_pad() -> void:
+	for axis in [["move_left", JOY_AXIS_LEFT_X, -1.0], ["move_right", JOY_AXIS_LEFT_X, 1.0],
+			["move_forward", JOY_AXIS_LEFT_Y, -1.0], ["move_back", JOY_AXIS_LEFT_Y, 1.0],
+			["look_left", JOY_AXIS_RIGHT_X, -1.0], ["look_right", JOY_AXIS_RIGHT_X, 1.0],
+			["look_up", JOY_AXIS_RIGHT_Y, -1.0], ["look_down", JOY_AXIS_RIGHT_Y, 1.0],
+			["sprint", JOY_AXIS_TRIGGER_LEFT, 1.0], ["hold_breath", JOY_AXIS_TRIGGER_RIGHT, 1.0]]:
+		_bind_axis(axis[0], axis[1], axis[2])
+	for button in [["jump", JOY_BUTTON_A], ["slide", JOY_BUTTON_B], ["interact", JOY_BUTTON_X],
+			["sprint", JOY_BUTTON_LEFT_STICK], ["glance_back", JOY_BUTTON_RIGHT_STICK],
+			["walk_slow", JOY_BUTTON_LEFT_SHOULDER], ["hold_breath", JOY_BUTTON_RIGHT_SHOULDER],
+			["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK]]:
+		if not InputMap.has_action(button[0]):
+			InputMap.add_action(button[0])
+		var event := InputEventJoypadButton.new()
+		event.button_index = button[1]
+		event.device = -1
+		InputMap.action_add_event(button[0], event)
+
+
+func _bind_axis(action: String, axis: JoyAxis, direction: float) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	InputMap.action_set_deadzone(action, 0.05)
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = direction
+	event.device = -1
+	InputMap.action_add_event(action, event)
+
+
+## A short shake on every connected pad, if she wants it.
+func rumble(weak: float, strong: float, seconds: float) -> void:
+	if settings == null or not settings.rumble:
+		return
+	for pad in Input.get_connected_joypads():
+		Input.start_joy_vibration(pad, clampf(weak, 0.0, 1.0), clampf(strong, 0.0, 1.0), seconds)

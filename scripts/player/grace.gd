@@ -2,11 +2,12 @@ class_name Grace
 extends SkeletonModifier3D
 
 # Her carriage on top of the baked clips, in the elf's skeleton space (+Z is
-# forward, +X her left). Walk_Formal holds the arms almost still, so a walk
-# gets a loose counter-swing taken from the legs, soft elbows that fold as
-# each hand comes forward, and shoulders that turn against the hips while
-# the head stays level. Standing a while, she rises onto her toes and lets
-# herself back down. Runs after FootLock, so steps are judged on the clip.
+# forward, +X her left). Her walk already swings its arms, so a walk only
+# gets a little looseness taken from the legs, elbows that soften as each hand
+# comes forward, and shoulders that turn against the hips while the head
+# stays level. At a sprint the athletic clip holds its elbows wide, so she
+# draws them in. Standing a while, she rises onto her toes and lets herself
+# back down. Runs after FootLock, so steps are judged on the clip.
 #
 # Global poses read back inside a modification go stale once a parent is
 # written, so every turn is written as a local rotation, conjugated through
@@ -20,6 +21,8 @@ const BONES := ["DEF-spine", "DEF-spine.003", "DEF-spine.004", "DEF-spine.006",
 # sliding or spent), set by the player each frame.
 var speed := 0.0
 var poise := 1.0
+# 0 looking ahead .. 1 looking back over her right shoulder.
+var glance := 0.0
 var _bones := {}
 var _idle := 0.0
 var _tiptoe := 0.0
@@ -55,6 +58,7 @@ func _process_modification() -> void:
 		var up := skeleton.get_bone_parent(bone)
 		_parent[name] = skeleton.get_bone_global_pose(up) if up >= 0 else Transform3D()
 	var walk := smoothstep(0.15, 0.9, speed) * (1.0 - smoothstep(1.9, 2.5, speed)) * poise
+	var sprint := smoothstep(3.6, 5.4, speed) * poise
 	# +1 with her left leg reaching forward, -1 with the right.
 	var reach_l: float = (_pose["DEF-thigh.L"] as Transform3D).basis.y.z
 	var reach_r: float = (_pose["DEF-thigh.R"] as Transform3D).basis.y.z
@@ -65,7 +69,10 @@ func _process_modification() -> void:
 	# Shoulders turn against the hips: her left shoulder draws back as the
 	# left leg reaches. Above that the chest is a touch lifted and open,
 	# more so up on her toes.
-	var counter := Quaternion(Vector3.UP, Tune.GRACE_COUNTER_TURN * legs * walk)
+	# Looking back, her chest turns toward the right shoulder and her head
+	# carries the rest of the way.
+	var back := Quaternion(Vector3.UP, -Tune.GLANCE_CHEST * glance)
+	var counter := Quaternion(Vector3.UP, Tune.GRACE_COUNTER_TURN * legs * walk) * back
 	var lift := Quaternion(Vector3.RIGHT, -(Tune.GRACE_CHEST_LIFT + 0.03 * rise) * poise)
 	_turn(skeleton, "DEF-spine.003", counter)
 	_turn(skeleton, "DEF-spine.004", lift)
@@ -74,17 +81,18 @@ func _process_modification() -> void:
 		# Each arm swings against the leg on its own side, back as it
 		# reaches, and hangs close, opening a little for balance on her toes.
 		var swing := Tune.GRACE_ARM_SWING * legs * sign * walk
-		var hang := sign * deg_to_rad(-3.0 + 4.0 * rise) * poise
+		var hang := sign * (deg_to_rad(-3.0 + 4.0 * rise) * poise - Tune.GRACE_SPRINT_TUCK * sprint)
 		_turn(skeleton, "DEF-upper_arm." + side, Quaternion(Vector3.BACK, hang) * Quaternion(Vector3.RIGHT, swing))
 		# The elbow stays soft and folds as the hand comes forward.
 		var ahead := clampf(-legs * sign, 0.0, 1.0)
-		_turn(skeleton, "DEF-forearm." + side, Quaternion(Vector3.RIGHT, -deg_to_rad(5.0 + 16.0 * ahead) * walk))
+		_turn(skeleton, "DEF-forearm." + side, Quaternion(Vector3.RIGHT, -deg_to_rad(Tune.GRACE_ELBOW_FOLD * (0.3 + 0.7 * ahead)) * walk))
 	if rise > 0.001:
 		_rise_onto_toes(skeleton, rise)
 	# The head keeps its own carriage, so the turning chest never rocks it;
 	# up on her toes the chin lifts a little.
 	var chin := Quaternion(Vector3.RIGHT, -0.04 * rise)
-	_turn(skeleton, "DEF-spine.006", (counter * lift).inverse() * chin)
+	var look := Quaternion(Vector3.UP, -(Tune.GLANCE_CHEST + Tune.GLANCE_HEAD) * glance)
+	_turn(skeleton, "DEF-spine.006", (counter * lift).inverse() * look * chin)
 
 
 # 0..1: how far up on her toes she should be. After standing still for

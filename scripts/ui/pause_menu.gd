@@ -16,7 +16,7 @@ const NOTES := {
 }
 # What each page's reset button puts back.
 const PAGE_KEYS := {
-	"Controls": ["mouse_sensitivity", "invert_y", "sprint_toggle"],
+	"Controls": ["mouse_sensitivity", "stick_sensitivity", "invert_y", "sprint_toggle", "rumble"],
 	"Camera": ["fov", "camera_distance", "camera_shake", "speed_fov"],
 	"Display": ["display_mode", "vsync", "max_fps", "render_scale", "brightness", "graphics"],
 	"Audio": ["master_volume", "ambience_volume", "effects_volume", "dread_volume", "mute_unfocused"],
@@ -138,13 +138,16 @@ func _reset_page() -> void:
 
 func _controls_page() -> void:
 	_slider("Mouse sensitivity", "mouse_sensitivity", 0.2, 3.0, 0.05, func(v: float) -> String: return "%.2fx" % v)
+	_slider("Stick sensitivity", "stick_sensitivity", 0.3, 2.5, 0.05, func(v: float) -> String: return "%.2fx" % v, "Gamepad: the right stick looks. Held all the way, it turns faster after a moment.")
 	_toggle("Invert vertical look", "invert_y")
 	_choice("Sprint", "sprint_toggle", ["Hold the key", "Tap to toggle"], [false, true], "Toggle keeps her running until she stops, runs out of breath, or you tap again.")
+	_toggle("Gamepad rumble", "rumble", "Landings, stumbling, and the door.")
 	_section("Keys", "Click a key to change it. A key can only do one thing; taking it moves it here.")
 	_fixed("Look around", "Mouse")
 	for pair in Settings.ACTIONS:
 		_binding(pair[0], pair[1])
 	_fixed("This menu", "Esc")
+	_section("Gamepad", "Left stick moves; pushed part-way she walks slowly. Right stick looks. LT sprint, RT hold breath, A jump, B slide, X read or open, LB walk slowly, R3 glance back, Start this menu.")
 
 
 func _camera_page() -> void:
@@ -364,6 +367,10 @@ func _build_sidebar() -> Control:
 	var leave := _side_button("Quit to desktop")
 	leave.pressed.connect(func() -> void: Game.quit())
 	box.add_child(leave)
+	var credit := UiChrome.label("Her walk and jog: Bandai Namco Research Motion Dataset, Bandai Namco Research Inc., CC BY-NC 4.0, adapted.", 11, UiChrome.MUTED)
+	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	credit.custom_minimum_size.x = 194
+	box.add_child(credit)
 	return margin
 
 

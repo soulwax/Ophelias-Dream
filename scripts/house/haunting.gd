@@ -216,6 +216,8 @@ func _knock() -> void:
 		return
 	var hard := _hunter_waiting() or tension > 0.75
 	_play("house_knock_hard" if hard else "house_knock", front.global_position + Vector3(0.0, 1.2, 0.4), Loudness.KNOCK_HARD if hard else Loudness.KNOCK, randf_range(0.92, 1.05))
+	if hard:
+		Game.rumble(0.0, 0.45, 0.16)
 
 
 func _steps() -> void:

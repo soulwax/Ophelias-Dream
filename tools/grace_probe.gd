@@ -46,18 +46,21 @@ func _run() -> void:
 	_skeleton.get_parent().add_child(_player)
 	_player.root_node = NodePath("..")
 	_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
+	_player.add_animation_library("feminine", load("res://assets/characters/styloo_elf/feminine/elf_feminine.res") as AnimationLibrary)
 	_grace = Grace.fit(_skeleton)
 	for on in [true, false]:
 		_grace.active = on
 		var tag := "on" if on else "off"
-		_player.play("Walk_Formal")
-		_grace.speed = Tune.WALK_SPEED
-		var walk := _player.get_animation("Walk_Formal").length
-		for phase in [0.0, 0.25, 0.5, 0.75]:
-			_player.seek(walk * phase, true)
-			_player.pause()
-			await _frames(4)
-			_shoot("walk_%s_%02d" % [tag, int(phase * 100.0)])
+		for gait in [["walk", Stride._resolve(_player, Stride.WALK), Tune.WALK_SPEED], ["sprint", Stride.SPRINT, Tune.SPRINT_SPEED]]:
+			var clip: String = gait[1]
+			_player.play(clip)
+			_grace.speed = gait[2]
+			var length := _player.get_animation(clip).length
+			for phase in [0.0, 0.25, 0.5, 0.75]:
+				_player.seek(length * phase, true)
+				_player.pause()
+				await _frames(4)
+				_shoot("%s_%s_%02d" % [gait[0], tag, int(phase * 100.0)])
 		_player.play("Idle")
 		_grace.speed = 0.0
 		var start := Time.get_ticks_msec()
