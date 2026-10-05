@@ -41,10 +41,15 @@ func _process(delta: float) -> void:
 	var playing := Game.phase == Game.Phase.PLAYING
 	_warning.text = _warning_line()
 	_warning_plate.visible = _warning.text != "" and playing
-	Game.murmur_left = maxf(0.0, Game.murmur_left - delta)
-	var spoken := Game.murmur_left > 0.0 and (playing or Game.phase == Game.Phase.READING)
+	if Game.phase != Game.Phase.PAUSED:
+		Game.murmur_left = maxf(0.0, Game.murmur_left - delta)
+	var reading := Game.phase == Game.Phase.READING
+	var spoken := Game.murmur_left > 0.0 and (playing or reading)
 	_murmur.text = Game.murmur if spoken else ""
 	_murmur_plate.visible = spoken
+	if spoken:
+		_murmur_plate.offset_top = -84 if reading else -192
+		_murmur_plate.offset_bottom = -24 if reading else -132
 	_objective_plate.visible = playing and Game.settings.show_objective
 	_refresh_objective()
 	_refresh_prompt()
@@ -237,6 +242,7 @@ func _build() -> void:
 	_build_reticle()
 	reader = NoteReader.new()
 	add_child(reader)
+	_build_murmur()
 	ending = EndCard.new()
 	add_child(ending)
 	menu = PauseMenu.new()
@@ -333,22 +339,23 @@ func _build_warning() -> void:
 	_warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_warning.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_warning_plate.add_child(_warning)
-	_build_murmur()
 
 
 func _build_murmur() -> void:
 	_murmur_plate = PanelContainer.new()
-	_murmur_plate.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_murmur_plate.offset_left = -160
-	_murmur_plate.offset_right = 160
-	_murmur_plate.offset_top = 88
-	_murmur_plate.offset_bottom = 128
-	_murmur_plate.add_theme_stylebox_override("panel", UiChrome.plate(10, 4))
+	_murmur_plate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_murmur_plate.offset_left = -310
+	_murmur_plate.offset_right = 310
+	_murmur_plate.offset_top = -192
+	_murmur_plate.offset_bottom = -132
+	_murmur_plate.add_theme_stylebox_override("panel", UiChrome.plate(12, 6))
 	_murmur_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_murmur_plate.visible = false
 	add_child(_murmur_plate)
-	_murmur = UiChrome.label("", 15, UiChrome.PAPER)
+	_murmur = UiChrome.label("", 16, UiChrome.PAPER)
+	_murmur.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_murmur.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_murmur.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_murmur.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_murmur_plate.add_child(_murmur)
 

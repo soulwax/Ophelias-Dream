@@ -15,6 +15,7 @@ var closeness: float = 0.0
 var player: Player
 var trail: Trail
 var soundscape: Soundscape
+var voice: Voice
 var weather: Weather
 var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
@@ -110,6 +111,7 @@ func reset() -> void:
 	player = null
 	trail = null
 	soundscape = null
+	voice = null
 	weather = null
 	active_note = null
 	notes_found = 0
@@ -178,6 +180,8 @@ func begin_reading() -> void:
 			read_last_page = true
 		if notes_found >= Tune.HUNT_NOTES:
 			start_hunt()
+	if voice and entry:
+		voice.heard_page(entry)
 	set_phase(Phase.READING)
 
 
@@ -189,7 +193,7 @@ func reading_last_page() -> bool:
 
 func murmur_line(line: String) -> void:
 	murmur = line
-	murmur_left = 4.5
+	murmur_left = clampf(2.6 + line.length() * 0.04, 3.2, 7.5)
 
 
 func seconds_hunting() -> float:

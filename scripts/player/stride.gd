@@ -8,12 +8,9 @@ extends RefCounted
 # Natural speeds (metres per second at playback 1) live in Tune.
 
 const IDLE := "Idle"
-# Walk and jog are the Bandai Namco feminine-style takes (feminine library);
-# the sprint is the Quaternius clip, which Grace draws in.
-const WALK := "Walk"
-const JOG := "Jog"
+const WALK := "Walk_Formal"
+const JOG := "Jog_Fwd"
 const SPRINT := "Sprint"
-const FALLBACK := {"Walk": "Walk_Formal", "Jog": "Jog_Fwd"}
 const STUMBLE := "Hit_Chest"
 const AIR := "Jump_Start"
 const LAND := "Jump_Land"
@@ -37,11 +34,9 @@ static func build(player: AnimationPlayer, model: Node) -> Stride:
 	# bands she crosses while speeding up or slowing down.
 	stride._gaits = [
 		[IDLE, 0.0, 0.0],
-		# Idle holds until she is actually stepping, then a short crossfade
-		# into the walk. A steady pace stays one clip; the playback rate
-		# rises with her. The jog only begins past the walk.
-		[IDLE, 0.25, 0.0],
-		[WALK, 0.52, Tune.STRIDE_WALK],
+		# A plateau over the walking pace, so it stays Walk_Formal and the
+		# playback rate rises with her. The jog only begins past that.
+		[WALK, 1.05, Tune.STRIDE_WALK],
 		[WALK, 1.95, Tune.STRIDE_WALK],
 		[JOG, 2.2, Tune.STRIDE_JOG],
 		[JOG, 3.2, Tune.STRIDE_JOG],
@@ -169,6 +164,4 @@ static func _resolve(player: AnimationPlayer, clip: String) -> String:
 	for name in player.get_animation_list():
 		if name.ends_with("/" + clip):
 			return name
-	if FALLBACK.has(clip):
-		return _resolve(player, FALLBACK[clip])
 	return ""

@@ -1025,10 +1025,6 @@ func _build_model() -> void:
 	rig_root.add_child(animation_player)
 	animation_player.root_node = NodePath("..")
 	animation_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
-	# Her walk and jog: Bandai Namco Research Inc., CC BY-NC 4.0.
-	var feminine := "res://assets/characters/styloo_elf/feminine/elf_feminine.res"
-	if ResourceLoader.exists(feminine):
-		animation_player.add_animation_library("feminine", load(feminine) as AnimationLibrary)
 	stride = Stride.build(animation_player, rig_root)
 	var mouth := BoneAttachment3D.new()
 	mouth.name = "Mouth"

@@ -53,6 +53,7 @@ func _ready() -> void:
 	add_child(Wildlife.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
+	add_child(Voice.new())
 	var hud := Hud.new()
 	add_child(hud)
 	Game.mark("scene built")

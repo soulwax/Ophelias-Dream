@@ -56,33 +56,14 @@ const PIVOT_SPEED := 0.9
 # How quickly her body turns to face where she is going (1/s).
 const FACE_RATE_WALK := 7.5
 const FACE_RATE_SPRINT := 10.0
-# Natural ground speed of the movement clips at playback 1, as printed by
-# tools/retarget_bvh.gd (walk, jog) and measured for the Quaternius sprint.
-const STRIDE_WALK := 0.986
-const STRIDE_JOG := 2.118
+# Natural ground speed of the movement clips at playback 1.
+const STRIDE_WALK := 1.02
+const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
 # Her carriage over the clips (Grace), in radians unless noted.
-const GRACE_ARM_SWING := 0.62
-# How far her elbows sit off the dress (degrees).
-const GRACE_ELBOW_OUT := 28.0
-const GRACE_COUNTER_TURN := 0.03
-const GRACE_CHEST_LIFT := 0.04
-# Most the elbows soften as each hand comes forward (degrees).
-const GRACE_ELBOW_FOLD := 5.0
-# At a sprint the athletic clip holds its elbows wide; she draws them in.
-const GRACE_SPRINT_TUCK := 0.24
-# Extra chest lift through the jog, so it stays up instead of hunkering.
-const JOG_LIFT := 0.05
-# Setting off leans her into the first step; stopping sits her back onto the
-# foot that landed (radians).
-const DEPART_LEAN := 0.1
-const SETTLE_LEAN := 0.05
-# Standing still, her weight eases from foot to foot (skeleton metres) and,
-# between looks, one foot taps. The tap starts this far into each wait (s).
-const IDLE_SHIFT := 0.03
-const IDLE_TAP_EVERY := 6.2
-const IDLE_TAP_AT := 1.15
-const IDLE_TAP_LEN := 0.72
+const GRACE_ARM_SWING := 0.34
+const GRACE_COUNTER_TURN := 0.09
+const GRACE_CHEST_LIFT := 0.05
 # Standing still this long (s) she rises onto her toes, once per cycle (s).
 const TIPTOE_AFTER := 5.0
 const TIPTOE_CYCLE := 7.5
@@ -152,6 +133,10 @@ const AIM_CONE := 22.0
 const AIM_STICKY := 5.0
 
 const INTRO_TIME := 3.2
+# Standing still this long (s) she mutters. Another line waits VOICE_GAP.
+const BORED_AFTER := 18.0
+const VOICE_GAP := 14.0
+const VOICE_SPL := 55.0
 const TYPE_CPS := 42.0
 # Radians per screen pixel at sensitivity 1, and the pitch range (rad).
 const MOUSE_SENS := 0.0022

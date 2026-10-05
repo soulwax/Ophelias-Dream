@@ -316,6 +316,7 @@ func _bus(bus: String, send: String) -> int:
 # come from; the storm's bus gets the low-pass the walls close down (Weather
 # drives it); nothing that stacks up (a gust under a hard knock) may clip.
 func _build_mix() -> void:
+	_bus("Voice", "Effects")
 	var room := AudioEffectReverb.new()
 	room.predelay_msec = 8.0
 	room.room_size = 0.28
