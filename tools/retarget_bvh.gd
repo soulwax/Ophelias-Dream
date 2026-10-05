@@ -59,6 +59,16 @@ const LIMBS := [
 ]
 # Frames blended across the loop seam.
 const SEAM := 5
+# Share of each take that survives onto the elf. The feminine walk's hips
+# travel like a runway, so the side-to-side is quieter, while the arms swing
+# further than the take. The jog keeps its step and loses most of the pound
+# (bob): the drop shrinks more than the rise, so it reads light.
+const QUIET := {
+	"Walk": {"hips": 0.72, "roll": 0.5, "arms": 1.35, "bob": 1.0},
+	"Jog": {"hips": 0.9, "roll": 0.8, "arms": 1.3, "bob": 0.38},
+	"Run": {"hips": 1.0, "roll": 1.0, "arms": 1.0, "bob": 1.0},
+	"Walk_Back": {"hips": 0.78, "roll": 0.7, "arms": 1.2, "bob": 1.0},
+}
 
 var _skeleton: Skeleton3D
 var _bone := {}
@@ -69,6 +79,9 @@ var _rest_ankle := 0.0
 # performer's, so frames are taken relative to that average: her posture
 # stays her own and only the sway and turn of each step carries over.
 var _neutral := {}
+# How much of this take's hip travel, hip roll, arm swing and bounce to keep.
+var _quiet := {"hips": 1.0, "roll": 1.0, "arms": 1.0, "bob": 1.0}
+var _hip_mean_y := 0.0
 
 
 func _initialize() -> void:
@@ -90,6 +103,11 @@ func _bake() -> void:
 	var leg := _rest_at("DEF-shin.L").distance_to(_rest_at("DEF-thigh.L")) + _rest_at("DEF-foot.L").distance_to(_rest_at("DEF-shin.L"))
 	_rest_ankle = minf(_rest_at("DEF-foot.L").y, _rest_at("DEF-foot.R").y)
 	print("ELF left-right ", _rest_at("DEF-thigh.L") - _rest_at("DEF-thigh.R"), " foot forward ", _rest_at("DEF-toe.L") - _rest_at("DEF-foot.L"), " leg ", leg)
+	if OS.get_cmdline_user_args().has("--profile"):
+		for take in ["dataset-1_run_feminine_001", "dataset-1_dash_feminine_001", "dataset-1_walk-back_feminine_001", "dataset-1_walk-left_feminine_001", "dataset-1_walk-right_feminine_001"]:
+			_profile(take)
+		quit(0)
+		return
 	var library := AnimationLibrary.new()
 	for take in TAKES:
 		var bvh := _parse(SOURCE % take[0])
@@ -112,6 +130,23 @@ func _bake() -> void:
 
 func _rest_at(name: String) -> Vector3:
 	return (_rest[name] as Transform3D).origin
+
+
+# Hips speed and which foot is planted, every few frames, to find where a take
+# stands, gets going, walks steadily and stops.
+func _profile(take: String) -> void:
+	var bvh := _parse(SOURCE % take)
+	var dt: float = bvh["dt"]
+	var raw: Array[Dictionary] = []
+	for f in int(bvh["frames"]):
+		raw.append(_positions(bvh, f))
+	var line := ""
+	for f in range(1, raw.size() - 1, 3):
+		var hips := _flat(raw[f + 1]["Hips"] - raw[f - 1]["Hips"]).length() / (2.0 * dt)
+		var left := _flat(raw[f + 1]["Foot_L"] - raw[f - 1]["Foot_L"]).length() / (2.0 * dt)
+		var right := _flat(raw[f + 1]["Foot_R"] - raw[f - 1]["Foot_R"]).length() / (2.0 * dt)
+		line += "%d:%d%s%s " % [f, int(hips), "L" if left < 20.0 else "", "R" if right < 20.0 else ""]
+	print(take, " frames ", raw.size(), "\n", line)
 
 
 # --- BVH --------------------------------------------------------------------
@@ -222,6 +257,7 @@ func _clip(bvh: Dictionary, clip_name: String) -> Animation:
 	if cycle.y <= 0:
 		push_error("No steady cycle in " + clip_name)
 		return null
+	_quiet = QUIET.get(clip_name, {"hips": 1.0, "roll": 1.0, "arms": 1.0, "bob": 1.0})
 	var start := cycle.x
 	var length := cycle.y
 	# Turn the take so she faces +Z over the cycle.
@@ -277,6 +313,10 @@ func _clip(bvh: Dictionary, clip_name: String) -> Animation:
 				q = -q
 			sum += q
 		_neutral[entry[0]] = Basis(sum.normalized())
+	var sum_y := 0.0
+	for pose in poses:
+		sum_y += (pose["Hips"] as Vector3).y
+	_hip_mean_y = sum_y / float(poses.size())
 	var duration := float(length) * dt
 	var speed := travel.length() / duration * _scale * Tune.PLAYER_MODEL_SCALE
 	print("%s: frames %d..%d (%.2f s), natural %.3f m/s, %.2f steps/s, hip sway %.1f cm, bob %.1f cm, travel %s" % [
@@ -403,11 +443,26 @@ func _pose(pose: Dictionary) -> void:
 		var kind: String = entry[5]
 		var source := _frame(_lateral(pose, kind), pose[entry[2]] - pose[entry[1]])
 		var turn := source * (_neutral[name] as Basis).inverse()
+		# Less of the performer's hip and chest swagger; the step stays.
+		var roll := float(_quiet["roll"])
+		if name != "DEF-spine":
+			roll = lerpf(roll, 1.0, 0.4)
+		if roll < 0.999:
+			turn = Basis(Quaternion.IDENTITY.slerp(turn.get_rotation_quaternion(), roll))
 		turns[name] = turn
 		var bone: int = _bone[name]
 		var origin := _skeleton.get_bone_global_pose(bone).origin
 		if name == "DEF-spine":
-			origin = (pose["Hips"] as Vector3) * _scale
+			var hips := (pose["Hips"] as Vector3) * _scale
+			hips.x *= float(_quiet["hips"])
+			var bob := float(_quiet["bob"])
+			if bob < 0.999:
+				var mean_y := _hip_mean_y * _scale
+				var dev := hips.y - mean_y
+				# The landing shrinks more than the rise, so a jog floats
+				# instead of pounding.
+				hips.y = mean_y + dev * (bob if dev < 0.0 else lerpf(bob, 1.0, 0.35))
+			origin = hips
 		_skeleton.set_bone_global_pose(bone, Transform3D(turn * (_rest[name] as Transform3D).basis.orthonormalized(), origin))
 	var chest: Basis = turns["DEF-spine.003"]
 	for name: String in CARRIED:
@@ -422,6 +477,12 @@ func _pose(pose: Dictionary) -> void:
 		var carried := _skeleton.get_bone_global_pose(parent).basis.orthonormalized() * _skeleton.get_bone_global_rest(parent).basis.orthonormalized().inverse()
 		var rest_dir := carried * (_rest_at(entry[1]) - _rest_at(name))
 		var want: Vector3 = pose[entry[3]] - pose[entry[2]]
-		var swing := Basis(Quaternion(rest_dir.normalized(), want.normalized()))
+		var swing_q := Quaternion(rest_dir.normalized(), want.normalized())
+		var arms := float(_quiet["arms"])
+		# Only the swing from the shoulder grows. The elbow keeps the take's
+		# own bend, so a bigger swing does not hyperextend it.
+		if not is_equal_approx(arms, 1.0) and (name.begins_with("DEF-upper_arm") or name.begins_with("DEF-shoulder")):
+			swing_q = Quaternion.IDENTITY.slerp(swing_q, arms)
+		var swing := Basis(swing_q)
 		var basis := swing * carried * (_rest[name] as Transform3D).basis.orthonormalized()
 		_skeleton.set_bone_global_pose(bone, Transform3D(basis, _skeleton.get_bone_global_pose(bone).origin))

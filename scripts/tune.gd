@@ -15,7 +15,7 @@ const SPRINT_SPEED := 6.85
 const STRIDE_ACCEL_WALK := 9.0
 const STRIDE_ACCEL_SPRINT := 12.0
 const STRIDE_EASE := 6.0
-const STRIDE_STOP_WALK := 14.0
+const STRIDE_STOP_WALK := 9.0
 const STRIDE_STOP_SPRINT := 12.0
 const STRIDE_BRAKE := 20.0
 # From standing, the first tick of input already moves her this fast (m/s).
@@ -61,15 +61,28 @@ const FACE_RATE_SPRINT := 10.0
 const STRIDE_WALK := 0.986
 const STRIDE_JOG := 2.118
 const STRIDE_SPRINT := 4.3
-# Her carriage over the clips (Grace), in radians unless noted. The walk
-# already swings its arms, so Grace only loosens them.
-const GRACE_ARM_SWING := 0.06
+# Her carriage over the clips (Grace), in radians unless noted.
+const GRACE_ARM_SWING := 0.62
+# How far her elbows sit off the dress (degrees).
+const GRACE_ELBOW_OUT := 28.0
 const GRACE_COUNTER_TURN := 0.03
 const GRACE_CHEST_LIFT := 0.04
 # Most the elbows soften as each hand comes forward (degrees).
-const GRACE_ELBOW_FOLD := 6.0
+const GRACE_ELBOW_FOLD := 5.0
 # At a sprint the athletic clip holds its elbows wide; she draws them in.
 const GRACE_SPRINT_TUCK := 0.24
+# Extra chest lift through the jog, so it stays up instead of hunkering.
+const JOG_LIFT := 0.05
+# Setting off leans her into the first step; stopping sits her back onto the
+# foot that landed (radians).
+const DEPART_LEAN := 0.1
+const SETTLE_LEAN := 0.05
+# Standing still, her weight eases from foot to foot (skeleton metres) and,
+# between looks, one foot taps. The tap starts this far into each wait (s).
+const IDLE_SHIFT := 0.03
+const IDLE_TAP_EVERY := 6.2
+const IDLE_TAP_AT := 1.15
+const IDLE_TAP_LEN := 0.72
 # Standing still this long (s) she rises onto her toes, once per cycle (s).
 const TIPTOE_AFTER := 5.0
 const TIPTOE_CYCLE := 7.5

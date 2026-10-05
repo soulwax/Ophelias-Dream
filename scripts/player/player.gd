@@ -63,8 +63,8 @@ var _boom := BOOM_LENGTH
 var _shoulder := 0.0
 var _glow := 0.0
 var _trail_offset := Vector3.ZERO
-# Dev hook: RUN_AUTOPILOT=walk or sprint holds forward (and sprint), so
-# RUN_CAPTURE can photograph her mid-stride; glance sprints looking back.
+# Dev hook: RUN_AUTOPILOT=walk, jog, or sprint holds forward (sprint sprints),
+# so RUN_CAPTURE can photograph her mid-stride; glance sprints looking back.
 var _autopilot := OS.get_environment("RUN_AUTOPILOT")
 var breath: Breath
 # 0 calm .. 1 gasping. Climbs with sprinting and spent stamina, peaks just
@@ -220,6 +220,8 @@ func _physics_process(delta: float) -> void:
 		_kick_off()
 	_sprinting = sprinting
 	var speed := Tune.WALK_SLOW_SPEED if slow else Tune.WALK_SPEED
+	if _autopilot == "jog":
+		speed = 2.6
 	if sprinting:
 		speed = Tune.SPRINT_SPEED
 		stamina = maxf(stamina - delta, 0.0)
