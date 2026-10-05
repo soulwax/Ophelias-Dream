@@ -36,6 +36,11 @@ func interact_point() -> Vector3:
 	return global_position
 
 
+## Twice the plate, so a switch on a wall is not a pixel hunt.
+func aim_box() -> Array:
+	return [global_transform, AABB(Vector3(-0.09, -0.11, -0.02), Vector3(0.18, 0.22, 0.09))]
+
+
 func interact() -> bool:
 	on = not on
 	if _toggle_tween and _toggle_tween.is_running():

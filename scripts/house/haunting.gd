@@ -8,7 +8,7 @@ extends Node3D
 ##
 ##   flicker   the lamps of her room stutter
 ##   door      a door she can see drifts open or shut on its own
-##   knock     three knocks at the front door (frantic if the hunter waits there)
+##   knock     three knocks at the front door (frantic if something waits there)
 ##   steps     footsteps cross the floor above her while she is in the cellar
 ##   chamber   a cold chamber swings open behind her, its tray sliding out
 ##   creak     a board gives somewhere behind her
@@ -157,7 +157,7 @@ func _pick() -> String:
 		if room == "morgue":
 			options.append(["chamber", 2.5 + tension * 3.0])
 	else:
-		options.append(["knock", 1.5 + (3.0 if _hunter_waiting() else 0.0)])
+		options.append(["knock", 1.5 + (3.0 if _waiting_at_door() else 0.0)])
 	if tension > 0.45:
 		options.append(["whisper", tension * 1.5])
 	var total := 0.0
@@ -171,8 +171,8 @@ func _pick() -> String:
 	return ""
 
 
-func _hunter_waiting() -> bool:
-	return Game.hunter != null and Game.hunt_started and Game.hunter.global_position.distance_to(house.doorstep()) < 6.0
+func _waiting_at_door() -> bool:
+	return Game.something_at_door
 
 
 # --- Events -------------------------------------------------------------------------
@@ -214,7 +214,7 @@ func _knock() -> void:
 	var front := house.doors.get("front") as HouseDoor
 	if front == null:
 		return
-	var hard := _hunter_waiting() or tension > 0.75
+	var hard := _waiting_at_door() or tension > 0.75
 	_play("house_knock_hard" if hard else "house_knock", front.global_position + Vector3(0.0, 1.2, 0.4), Loudness.KNOCK_HARD if hard else Loudness.KNOCK, randf_range(0.92, 1.05))
 	if hard:
 		Game.rumble(0.0, 0.45, 0.16)

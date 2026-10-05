@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Run Away" — a short third-person winter horror game in **Godot 4.7** (Forward+, Jolt physics, D3D12 on Windows), written entirely in GDScript. The `godot` binary on PATH (scoop shim) is 4.7.2. There is no test suite and no linter; verification is done by running the game or capturing a screenshot.
 
-`docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become an open, fenced daylight snowfield, and in it the hunter is not tied to the trail (see below). Where PLAN.md and the code disagree, trust the code.
+`docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become an open, fenced daylight snowfield. The figure in the tree line and the Listener were removed on 2026-10-05; new threats are being chosen from `docs/THREATS.md`. Older docs (`GDD.md`, `NARRATIVE_INTENT.md`, `TODO.md`) still describe them. Where any doc and the code disagree, trust the code.
 
 ## Commands
 
@@ -27,7 +27,7 @@ $env:RUN_CAPTURE = "1"; $env:RUN_SHOT = "$PWD\shot.png"; godot --path .
 # Probe mesh bounds / animation names from the asset packs
 godot --headless --path . -s tools/probe.gd
 
-# Rebuild the elf's movement library from the shared hunter animation source
+# Rebuild the elf's movement library from the shared Quaternius animation source
 godot --headless --path . -s tools/retarget_elf.gd
 
 # Rebuild her walk and jog from the Bandai Namco feminine-style takes (CC BY-NC 4.0)
@@ -46,7 +46,7 @@ godot --headless --path . --export-release "Windows Desktop" "build/windows/Run 
 
 This machine (ThinkPad, Iris Xe) has hard-frozen while running the game. `Game.lean_graphics` is on automatically for non-discrete GPUs (no volumetric fog/FogVolume/SSAO, 2 shadow splits, half the snow); override with `RUN_GRAPHICS=full|lean`. `RUN_BLACKBOX=<path>` makes `Blackbox` stream startup stages, phases and a 0.5 s performance beat to that file; `Game.mark()` adds a line. After adding a new `class_name` script, run `godot --headless --path . --import` or headless runs fail to resolve it.
 
-F3 toggles a debug label (hunter gap and stamina) in debug builds.
+F3 toggles a debug label (weather, threat and stamina) in debug builds.
 
 Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound HQ previews, after the CC0 licence is checked on each page.
 - `python tools/fetch_sounds.py` downloads them to `build/sfx_src/`.
@@ -56,7 +56,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 ## Architecture
 
-**Everything is built in code.** `scenes/main.tscn` is just a root `Node3D` with `scripts/main.gd`. `main.gd` instantiates every system with `ClassName.new()` in order: Atmosphere → Trail → Player → Hunter → Weather → Soundscape → Hud. No other `.tscn` files are authored. Nodes, lights, materials, collision and UI are all constructed in `_ready()`/`_build_*()` methods. New features follow this pattern, not editor-authored scenes.
+**Everything is built in code.** `scenes/main.tscn` is just a root `Node3D` with `scripts/main.gd`. `main.gd` instantiates every system with `ClassName.new()` in order: Atmosphere → Trail → Player → Weather → Wildlife → Soundscape → Hud. No other `.tscn` files are authored. Nodes, lights, materials, collision and UI are all constructed in `_ready()`/`_build_*()` methods. New features follow this pattern, not editor-authored scenes.
 
 **`Game` autoload (`scripts/game/game.gd`)** is the hub:
 - Holds the phase state machine (`BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED`) and emits `phase_changed` / `closeness_changed`. UI and audio subscribe to these signals.
@@ -64,20 +64,17 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 - Registers all input actions in code with `_bind()`. There is no `[input]` section in `project.godot`, so new actions go here.
 - `Game.settings` (`Settings`, `scripts/game/settings.gd`) is created right after the default binds and holds everything the Esc menu changes: look, sprint mode, camera, display, audio levels and HUD options, plus key overrides. It saves to `user://settings.cfg` when the menu closes, on restart and on quit. Systems read `Game.settings.*` when they need a value.
  - New rebindable actions go in `Settings.ACTIONS` (two slots each). A key bound to one action is taken from any other.
- - Audio has three buses created at startup: `Ambience` (wind, drone, storm), `Effects` (steps, slide, doors, switches, house) and `Dread` (heartbeat, stings, anomaly sounds). Give every new player a `bus`.
+ - Audio has three buses created at startup: `Ambience` (wind, drone, storm), `Effects` (steps, slide, doors, switches, house) and `Dread` (heartbeat, stings, threat sounds). Give every new player a `bus`.
  - Graphics detail (Auto/Lean/Full) feeds `_wants_lean_graphics()` after `RUN_GRAPHICS`, and applies on the next restart.
 - `locks_movement()` / `locks_look()` gate player control by phase. `restart()` resets state and reloads the scene.
-- `closeness` (0–1) is the single "how near is it" value. The hunter sets it, and the HUD vignette, breath and audio react to it. The UI never shows distances.
+- The threat interface: `closeness` (0–1) for the one that hunts her, `dread` and `threat_hint` for any other pressure, `threat()` = max of the two, `catch_player(title, body)` for the ending, `something_at_door` (the house knocks hard) and `shown_threat` (a raven scolds beside it). The HUD vignette, heart and warning line react to `threat()`. The UI never shows distances. `hunt_started` turns true after `Tune.HUNT_NOTES` pages or `HUNT_ROUTE_DISTANCE` metres. No threat sets these yet.
+- `Game` ends the run as `ESCAPED` when she is within `EXIT_RADIUS` of `trail.exit_point`.
 
-**`Tune` (`scripts/tune.gd`)** holds all balance constants: speeds, stamina, catch gap, reveal distances, fence bounds, and collision layers (`LAYER_WORLD=1`, `LAYER_ACTOR=2`). Change feel here, not in the systems.
+**`Tune` (`scripts/tune.gd`)** holds all balance constants: speeds, stamina, aim and reach, fence bounds, and collision layers (`LAYER_WORLD=1`, `LAYER_ACTOR=2`). Change feel here, not in the systems.
 
 **World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground` (heightfield, `height_at(x,z)`), `Fence`, the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout plus headlights at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1–3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box.
 
-**Hunter (`scripts/hunter/hunter.gd`)** has two modes, switched by `Game.notes_found` against `Tune.HUNT_NOTES` (3):
-- *Stalk* (before the third note): it appears at a distance off to the side of the camera's view, vanishes if watched, approached or timed out, and reappears sooner as more notes are read.
-- *Pursue* (from the third note on): it walks straight at the player, clamped inside the fence bounds, with no navmesh. Speed and reveal scale with `_threat()`, which combines notes read past the threshold with `Game.seconds_hunting()`. It catches when the gap is under `CATCH_GAP`.
-
-The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_point` triggers it.
+**Threats**: none in the field right now. `docs/THREATS.md` lists the interface above, the `Trail/Threats` marker slot, record pages (`NoteEntry.record_of`, `Game.knows`), and six candidate threats. New threats are original; canon SCP content is CC BY-SA, so do not borrow it. Teleporting ones call `reset_physics_interpolation()` after the move.
 
 **Locomotion (`scripts/player/stride.gd`, `snow_kick.gd`)**:
 - `Stride` builds an `AnimationTree` from code. A BlendSpace1D (Idle, Walk, Jog, Sprint) is driven by her ground speed, and a TimeScale sets the playback rate so the planted foot moves at that speed.
@@ -102,12 +99,18 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 - Momentum is in `Player._steer`, which moves speed and heading separately (`Tune.STRIDE_*`, `TURN_*`). At a walk she pivots almost at once; at a sprint she sweeps round at `TURN_RATE_SPRINT`, and hard key turns dip her speed briefly. A reversal at speed plants and brakes first. Letting go skids about 0.5 s, and in the air she keeps her takeoff speed (`AIR_ACCEL`, `AIR_DRAG`). `_slope_factor` slows her uphill.
 - Physics interpolation is on (`physics/common/physics_interpolation`).
  - The camera rig (`spring_arm`) is `top_level`, not interpolated, and placed every frame in `Player._process` from `get_global_transform_interpolated()` and the mouse. Look reads `screen_relative`, so window size never changes sensitivity.
- - Anything that teleports must call `reset_physics_interpolation()` after the move (hunter `_move_to`, `Anomaly.place_near`, player spawn).
+ - Anything that teleports must call `reset_physics_interpolation()` after the move (player spawn, any threat that jumps).
  - Pooled effects that jump to new spots (`Footprints`, `SnowKick`) and nodes moved in `_process` (`Weather`) have interpolation off.
 
 **Player** is a `CharacterBody3D` with a spring-arm third-person camera, stamina-gated sprint, wind push from `Game.weather` (only while she moves), and `Footprints` decals.
 - The model (`visual`) turns toward the direction she's moving, independent of the camera, and leans into acceleration and turns (`_carry`).
-- `_fit_boom_to_ground` shortens the camera boom so the camera never goes under the one-sided terrain. Notes are found via the `field_notes` group, and you can't read a note while moving fast. Opening a note enters `READING`, which freezes the player but not the hunter.
+- `_fit_boom_to_ground` shortens the camera boom so the camera never goes under the one-sided terrain. Opening a note enters `READING`, which freezes the player but not the world.
+- *Aim* (`aim.gd`, `Player.aim`): worked out once per rendered frame after the camera is placed, so the outline is exactly what a press uses.
+ - Pages (`field_notes`), doors and switches (`interactables`) each return `aim_box()`: `[global transform, local AABB]`. The door's box follows its leaf; the switch's is twice the plate.
+ - The ray from the screen centre takes the nearest box it enters, unless a world collider (other than the thing's own) comes first. Out of reach, it is shown as "Too far to reach" and nothing else is chosen.
+ - Reach is to the nearest point of the box: `INTERACT_REACH` from her chest for doors and switches, `READ_DISTANCE` from her feet for pages (not at a run), with nothing solid in between.
+ - With nothing under the reticle, the thing in reach closest to it within `AIM_CONE` is chosen; the current choice holds unless another is `AIM_STICKY` degrees closer.
+ - E / pad X use `aim.target`; a left click uses only a target that is directly under the reticle. The HUD reticle shows only when something is picked: bright direct, faint chosen around it, rust out of reach. `nearby_note()` remains for the reachability probes.
 
 **House (`scripts/house/`)**: the cabin she wakes in, built in code by `House`. Its local frame has +Z facing the trail and y 0 at the boards.
 - *Layout*:
@@ -118,19 +121,19 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
   - `HouseKit`: scanned CC0 Poly Haven materials (world triplanar), props, walls with openings, slabs with holes, stairs (visual treads on one walkable ramp), lights
   - `HouseDoor`: E-to-open hinged leaves on merl's `DoorHingeDynamics`, with `DoorAudio` sounds, in plank, steel and chamber styles
   - `WallSwitch`
-  - Interactables join the `interactables` group and expose `interact_label()`, `interact_point()` and `interact()`. `Player.nearby_interactable()` picks one, and the HUD prompt shows its label.
+  - Interactables join the `interactables` group and expose `interact_label()`, `interact_point()`, `interact()` and `aim_box()`. `Player.aim` picks one, and the HUD prompt shows its label.
 - *Terrain*: `Trail` gives `Ground` a flat pad (`pads`) around the house and a cut (`cuts`) over the stair well. `House.add_snow_patch` refills the cut's 3 m cells outside the walls with the same snow material. The cellar stays under `SLAB_TOP`, below the snow.
 - *Indoors*: `Game.indoors()` / `House.contains()`.
   - The camera boom drops to 1.75 m over the shoulder, and her model hides if the camera is crushed into her.
   - No snowfall; the storm is muffled.
   - Floor-tap footsteps instead of snow, no prints or powder, and `FootLock.floor_at` reports contacts on the boards.
-  - The hunter waits at `House.doorstep()` and cannot catch her inside. The Listener cannot perceive breath through walls.
+  - `House.doorstep()` is where something outside would wait.
 - *Assets*: from `merl`, CC0, under `assets/vendor/polyhaven/` (`provenance.json`) and `assets/derived/doors/audio/`.
 - *Dev hook*: `RUN_SPAWN=outside|bedroom|living|stair|cellar|janitor|morgue`.
 - *Darkness*: `Atmosphere.shelter` (eased by `Weather` as the camera goes in or out) drops the daylight ambience to about 7%, so the rooms are only what their lamps make of them. Most lamps are deliberately unlit. Her camera light brightens and widens indoors.
 - *Haunting (`haunting.gd`)*: rooms come from `House.room_at()`. Tension rises indoors and drains outside, and events fire at intervals that shorten with it:
   - `flicker`, `creak`, `door`: a visible door drifts on its own via `HouseDoor.drift()`.
-  - `knock` (ground floor): becomes `house_knock_hard` when the hunter waits at the doorstep.
+  - `knock` (ground floor): becomes `house_knock_hard` when `Game.something_at_door` is set or tension is high.
   - `steps` (cellar): footsteps cross the floor above toward the head of the stair.
   - `chamber` (morgue): a chamber door opens behind her and its tray slides out.
   - `whisper` (high tension only).
@@ -140,21 +143,15 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
 
 **Terrain winding**: `Ground` triangles must be clockwise seen from above (Godot's front face). They used to be counter-clockwise, which culled the whole terrain from above; the "snow" was the sky colour.
 
-**Anomalies (`scripts/anomalies/`)** are original, SCP-style entities that run alongside the hunter. They are not canon SCPs; canon SCP content is CC BY-SA, so keep them original.
-- *Anomaly*: each subclass follows one strict rule. It exposes `dread` (0..1), a HUD `hint`, and `record()`, a containment record `NoteEntry` with `record_of` set to its code.
-- *AnomalyDirector*: picks `Tune.ANOMALIES_PER_RUN` from `roster()` (add new ones there), lays out the records as `FieldNote`s, and writes the strongest dread to `Game.dread` and its hint to `Game.anomaly_hint`.
-- *Records*: they don't count toward `notes_found`. Reading one sets `Game.knows(code)`, which upgrades the vague hint to the actual rule.
-- *Threat*: the HUD and soundscape use `Game.threat()`, which is max(hunter closeness, dread).
-- *Endings*: anomalies end the run with `catch(title, body)`, which gives a custom end card.
-- *Dev hooks*: `RUN_ANOMALY=<code>` forces one, and `RUN_ANOMALY_NEAR=1` places it in front of her. Combine with `RUN_CAPTURE` for a screenshot.
-- *Testing*: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script, so test them in the game.
-- *The Listener (2-117)* perceives only `Breath.plume`. Space (`hold_breath`) suppresses the steam, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp.
+**Testing**: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script, so test them in the game.
+
+**Breath**: `hold_breath` (right mouse, F, pad RT) suppresses `Breath.plume`, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp. Nothing perceives breath at the moment.
 
 **Player model**: `scripts/player/player.gd` instantiates `assets/characters/styloo_elf/elf.glb` at 0.8 scale, with its original materials. The bundled bow and arrows were removed from the GLB by `tools/prepare_elf.py`. `elf_animations.res` contains eight movement clips retargeted from the hunter's shared animation library by `tools/retarget_elf.gd`; her walk and jog come from `feminine/elf_feminine.res`. `Breath` is attached to `DEF-spine.006` at the mouth; `FootLock` watches `DEF-foot.L/R` for contacts. The skeleton (216 bones) has hair, dress, eyelid, brow, jaw, eye, finger and twist bones, but nothing drives them yet, and the elf has no leg IK; `docs/MOVEMENT.md` plans both.
 - `Grace` (`grace.gd`, a SkeletonModifier3D after `FootLock`) layers her carriage over the clips: in the walk, an arm counter-swing read from the thighs, soft elbows, and shoulders turning against the hips with the head held level; a lifted chest; and, after `Tune.TIPTOE_AFTER` seconds standing, a recurring rise onto her toes. Tuning is in `Tune.GRACE_*` / `TIPTOE_*`.
 - Inside a modifier, global bone poses go stale once a parent is written, so `Grace` writes local rotations conjugated through each parent's clip pose. For the same reason, bone attachments don't show its children's changes; `godot --path . -s tools/grace_probe.gd` (needs a window) renders side views with it on and off into `build/grace/`.
 
-**Hunter model**: `scripts/hunter/hunter.gd` still uses the Quaternius `Master_Rigged.tscn` from `addons/quaternius_ik_rigged/`. Keep the shared `UAL1_Standard.glb` animation source and male meshes when cleaning assets.
+**Quaternius rig**: `addons/quaternius_ik_rigged/` is now only the animation source for `tools/retarget_elf.gd` (and a body to source from if a threat needs one). Keep the shared `UAL1_Standard.glb` animation source and male meshes when cleaning assets.
 
 **Sound (`scripts/audio/`, `weather/storm_audio.gd`)**
 - *Positioning*: everything in the world is a positional `AudioStreamPlayer3D`, heard from `Player.ears`, an `AudioListener3D` at her head facing the camera's yaw, not from the camera. `audio/general/3d_panning_strength` is 0.85, so surround output pans fully.
@@ -173,14 +170,14 @@ The hunter also detects escape: the player within `EXIT_RADIUS` of `trail.exit_p
  - Wind whistles at the windward `House.windows()`.
 - *Wildlife* (`wildlife.gd`):
  - The nearest pines (`Flora.tree_positions()`) rustle with the gusts; trunks creak; snow slides off branches.
- - Crows and ravens call from far trees and fall silent under threat. A raven scolds from beside the hunter when it shows.
+ - Crows and ravens call from far trees and fall silent under threat. A raven scolds from beside `Game.shown_threat` when it shows.
  - Songbirds (the PAD day-birds from the inventory) sing only in calm.
 - *Buses* (Settings):
  - `Ambience` holds `Outside`, which has the walls low-pass, plus the window whistle.
  - `Effects` is steps and the house; `Room` and `Cellar` are reverbs fed by Area3D zones that `Soundscape` builds from `House.acoustic_zones()`.
- - `Dread` is the heart, drone, sting and the hunter's positional branch snaps.
+ - `Dread` is the heart, drone, sting, and `Soundscape.play_snap` (positional branch snaps a threat can use).
  - A hard limiter sits on Master.
-- *Editable level*: `EditableLevel.apply` matches nodes by child order and frees script-less nodes it does not know. Keep sound-only nodes out of the editable trees, or append them last. Set house audio levels at play time (`Loudness.sound`), because the snapshot overwrites stored properties. `House/Authoring` (spawn markers, window markers, the `StepsAbove` path, room and cellar reverb areas, `Rooms` boxes, the `Doorstep` marker) and `Trail/Anomalies` (one marker and a `*_Record` marker per anomaly code) plus `Trail/Route` (the path, with `Start` and `Exit`) are appended last and grouped as `level_authoring`, so an older snapshot keeps them until the next repack. She still wakes on the authored Player transform; `RUN_SPAWN` uses the spawn markers. Redrawing `Route` or moving `Start` rebuilds the snow, the pines and the landmarks on the next play; `Exit` only moves where she escapes. House interior edits stay.
+- *Editable level*: `EditableLevel.apply` matches nodes by child order and frees script-less nodes it does not know. Keep sound-only nodes out of the editable trees, or append them last. Set house audio levels at play time (`Loudness.sound`), because the snapshot overwrites stored properties. `House/Authoring` (spawn markers, window markers, the `StepsAbove` path, room and cellar reverb areas, `Rooms` boxes, the `Doorstep` marker) and `Trail/Threats` (the marker slot for threats, empty now; older snapshots call it `Anomalies`, and `main._park_threats` accepts either) plus `Trail/Route` (the path, with `Start` and `Exit`) are appended last and grouped as `level_authoring`, so an older snapshot keeps them until the next repack. She still wakes on the authored Player transform; `RUN_SPAWN` uses the spawn markers. Redrawing `Route` or moving `Start` rebuilds the snow, the pines and the landmarks on the next play; `Exit` only moves where she escapes. House interior edits stay.
 
 **Weather** follows the camera and drives several `SnowLayer` particle layers, `StormAudio`, and `Atmosphere.apply_storm(intensity)` from one gust/intensity model. `scripts/world/snowfall.gd` (`Snowfall`) is the older snow system and nothing instantiates it any more.
 

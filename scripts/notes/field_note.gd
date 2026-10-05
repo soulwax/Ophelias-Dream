@@ -23,6 +23,11 @@ func _ready() -> void:
 	_build()
 
 
+## The paper and a little of the snow around it.
+func aim_box() -> Array:
+	return [global_transform, AABB(Vector3(-0.3, -0.05, -0.3), Vector3(0.6, 0.35, 0.6))]
+
+
 func _build() -> void:
 	var page := PropFactory.spawn("SM_Gen_Prop_Papers_01.fbx")
 	page.scale = Vector3.ONE * Tune.PROP_SCALE * 1.15

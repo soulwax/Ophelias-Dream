@@ -1,5 +1,7 @@
 # Narrative intent (historical design notes)
 
+> The figure and the Listener were removed on 2026-10-05. Where these notes rely on them, read "the threat"; candidates are in [THREATS.md](THREATS.md).
+
 These are the original story and implementation passes. For the current state,
 use [DIRECTION.md](DIRECTION.md) and the live [TODO.md](../TODO.md).
 

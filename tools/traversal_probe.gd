@@ -64,13 +64,11 @@ func _physics_process(delta: float) -> void:
 	_max_offset = maxf(_max_offset, offset)
 	if Game.hunt_started and _hunt_at < 0.0:
 		_hunt_at = _elapsed
-		print("Hunt began at %.1f s, %.1f m along route, hunter gap %.1f m" % [
-			_elapsed, offset - _trail.player_start_offset,
-			_player.global_position.distance_to(Game.hunter.global_position)])
+		print("Hunt began at %.1f s, %.1f m along route, threat %.2f" % [
+			_elapsed, offset - _trail.player_start_offset, Game.threat()])
 	if _hunt_at >= 0.0 and _elapsed - _hunt_at >= _hunt_report * 10.0:
-		print("Hunt +%d s: gap %.1f m, stamina %.1f" % [
-			_hunt_report * 10, _player.global_position.distance_to(Game.hunter.global_position),
-			_player.stamina])
+		print("Hunt +%d s: threat %.2f, stamina %.1f" % [
+			_hunt_report * 10, Game.threat(), _player.stamina])
 		_hunt_report += 1
 	if Game.phase == Game.Phase.READING:
 		Input.action_release("move_forward")
@@ -119,11 +117,10 @@ func _physics_process(delta: float) -> void:
 	var report := int(_elapsed / 10.0)
 	if report != _last_report:
 		_last_report = report
-		print("t=%.0f progress=%.1f/%.1f stamina=%.1f phase=%d hunter=%.1f" % [
+		print("t=%.0f progress=%.1f/%.1f stamina=%.1f phase=%d threat=%.2f" % [
 			_elapsed, offset - _trail.player_start_offset,
 			_trail.exit_offset - _trail.player_start_offset,
-			_player.stamina, Game.phase,
-			_player.global_position.distance_to(Game.hunter.global_position)])
+			_player.stamina, Game.phase, Game.threat()])
 	if Game.phase == Game.Phase.ESCAPED:
 		_finish("escaped")
 	elif Game.phase == Game.Phase.CAUGHT:
@@ -138,11 +135,9 @@ func _finish(result: String) -> void:
 	_outcome = result
 	Input.action_release("move_forward")
 	Input.action_release("sprint")
-	print("Traversal result: %s at %.1f s, furthest %.1f m, hunt at %.1f s, notes %d, gap %.1f m, stamina %.1f" % [
+	print("Traversal result: %s at %.1f s, furthest %.1f m, hunt at %.1f s, notes %d, stamina %.1f" % [
 		result, _elapsed, _max_offset - _trail.player_start_offset if _trail else 0.0,
-		_hunt_at, Game.notes_found,
-		_player.global_position.distance_to(Game.hunter.global_position) if _player and Game.hunter else -1.0,
-		_player.stamina if _player else -1.0])
+		_hunt_at, Game.notes_found, _player.stamina if _player else -1.0])
 	var expected_notes := 3 if _with_notes else 0
 	get_tree().quit(0 if result == "escaped" and Game.notes_found == expected_notes and _hunt_at >= 0.0 else 1)
 

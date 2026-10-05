@@ -1,5 +1,7 @@
 # Run Away — Game Design Document
 
+> The figure (Hunter) and the Listener (2-117) were removed on 2026-10-05, with their records and code. Sections below that describe them are history. Candidate replacements are in [THREATS.md](THREATS.md).
+
 **Version:** `0.0.13`
 **Engine & Stack:** Godot 4.7 (Forward+ Renderer, Jolt Physics, Typed GDScript)
 **Perspective:** Third-Person Over-the-Shoulder

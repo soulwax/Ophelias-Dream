@@ -81,8 +81,6 @@ func _beat() -> String:
 	if Game.player:
 		var at := Game.player.global_position
 		text += " pos (%.0f,%.0f,%.0f)" % [at.x, at.y, at.z]
-	if Game.player and Game.hunter:
-		text += " gap %.1f" % Game.player.global_position.distance_to(Game.hunter.global_position)
 	if Game.weather:
 		text += " storm %.2f" % Game.weather.intensity
 	return text

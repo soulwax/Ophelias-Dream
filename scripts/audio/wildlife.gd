@@ -124,9 +124,9 @@ func _birds(trees: PackedVector3Array, ears: Vector3, intensity: float, threat: 
 	# Something on the field shows itself: a raven in the trees beside it
 	# scolds, two or three harsh calls, and the field goes quiet.
 	_alarm_in -= delta
-	if _alarm_in <= 0.0 and Game.hunter and Game.hunter.model and Game.hunter.model.visible:
+	if _alarm_in <= 0.0 and is_instance_valid(Game.shown_threat) and Game.shown_threat.is_visible_in_tree():
 		_alarm_in = randf_range(35.0, 60.0)
-		var near_it := _tree_between(trees, Game.hunter.global_position, 0.0, 30.0)
+		var near_it := _tree_between(trees, Game.shown_threat.global_position, 0.0, 30.0)
 		if near_it != Vector3.INF:
 			_series(near_it + Vector3.UP * 6.0, "raven", randi_range(2, 3), 0.4, Loudness.RAVEN + 3.0 - walls)
 			_next_call = maxf(_next_call, 40.0)

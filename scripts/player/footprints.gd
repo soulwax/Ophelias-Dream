@@ -165,7 +165,7 @@ func _lie_once() -> void:
 	for at in _hers:
 		var along := trail.offset_of(at) - trail.player_start_offset
 		# Keep the changed stride on the first outbound path, near enough to
-		# the cabin to notice when doubling back from the Listener.
+		# the cabin to notice when doubling back.
 		if along < Tune.RETURN_CLUE_ROUTE_DISTANCE * 0.5 or along > Tune.HUNT_ROUTE_DISTANCE * 0.75:
 			continue
 		var path_at := trail.position_at(trail.player_start_offset + along)

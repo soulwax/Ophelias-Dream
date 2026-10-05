@@ -31,7 +31,7 @@ What is missing is where the remaining feel lives.
 2. **Feminine through dynamics, and grounded.** In point-light gait studies (Murray, Kory and Sepic 1970; Mather and Murdoch 1994; Troje 2002), women's walks read through lateral hip sway more than shoulder sway, elbows held close to the body, and a body that takes up less room. Men's read through shoulder sway and elbows held out. Those cues are motion, not mesh, so they can be layered over any clip. Aim for a real woman walking, not a catwalk. She is also cold and frightened, and her carriage should show both.
 3. **Source the clips and layer the rest.** Every clip has its provenance recorded. The procedural layers make any clip read as hers.
 4. **Every step ends in a measurement or a capture.** There is no test suite, so each phase names its probe.
-5. **The narrative rules still hold.** No wave and no writing pose, because either would decide the pages. The figure and the Listener keep their rig and their clips. `docs/NARRATIVE_INTENT.md` said her clips would not change. This plan is where they change, and only hers.
+5. **The narrative rules still hold.** No wave and no writing pose, because either would decide the pages. `docs/NARRATIVE_INTENT.md` said her clips would not change. This plan is where they change, and only hers.
 
 ## Phase 0: Measure the starting point
 
@@ -51,7 +51,7 @@ These do not depend on any animation work.
 5. **Input buffers.** Keep an interact press for 0.15 s, so E pressed just before she is in reach still opens the door. When she is moving too fast to read, keep the read request for 0.4 s while she slows. Right now `nearby_note()` refuses and the press is lost.
 6. **Door-frame assist.** Indoors, when she hits a vertical edge while pushing mostly forward, use `test_move` to try sideways nudges from 0.06 to 0.15 m. If one is clear, slide her through. With a 0.34 m capsule and 0.92 m doorways, she snags on frames today.
 7. **Apex hang.** While the jump is held and her vertical speed is under 1.2 m/s, gravity is 0.65 of normal. The top of the jump floats a little, and the existing heavier fall makes the drop crisp.
-8. **Glance back.** Add a held, rebindable action (R3 on a pad). The camera swings round to look behind her over about 0.18 s. Her movement stays relative to where the camera faced before the glance, so she keeps running forward. Her head and shoulders turn back (Phase 6). On release the camera swings back. This is the horror game's own camera move: the figure leaves when it is watched, and the wrong print lies behind her.
+8. **Glance back.** Add a held, rebindable action (R3 on a pad). The camera swings round to look behind her over about 0.18 s. Her movement stays relative to where the camera faced before the glance, so she keeps running forward. Her head and shoulders turn back (Phase 6). On release the camera swings back. This is the horror game's own camera move: whatever follows her is behind her, and so is the wrong print.
 9. **Camera arm.** When the spring arm hits something it pulls in at once, but it should extend back out over about 0.4 s instead of popping. At speed, shift the pivot 0.25 m toward where she is going. Smooth the camera's height separately for small vertical steps like the porch and the stair. For gamepad only, an optional setting eases the camera behind her after 1.5 s without right-stick input. It stays off for the mouse.
 
 How to check: run `RUN_AUTOPILOT=walk` and `sprint` with a pad and with the keyboard. Walk through every doorway in the house from different angles. Jump on the spot and while sprinting. Hold the glance while sprinting on the trail.
@@ -122,16 +122,16 @@ How to check: capture a sprint, a slide, and standing in a gust outside, then th
 ## Phase 6: Gaze and face
 
 1. **Looking.** Add a `LookAtModifier3D` to the neck and head (about 40/60 between them) and to `DEF-eye.L/R`, with angle limits so her head never turns too far. Targets, in priority order:
-   1. The figure, while it is shown. She looks at it, and the player sees her see it.
+   1. A threat, while it is shown (`Game.shown_threat`). She looks at it, and the player sees her see it.
    2. A sound, for 1.5 s: a knock, the whisper, a branch snapping.
    3. A page or door she is near.
    4. When she is standing or walking slowly, where the camera is looking.
 2. **Blinking.** Using the `DEF-lid` bones, blink every 2.5 to 6 s, sometimes twice. She blinks faster under threat and narrows her eyes into a gust.
 3. **Brows.** The `DEF-brow` bones draw together as `Game.threat()` rises and lift on a sting.
-4. **Mouth and breath.** The jaw and lips part with `Breath.strain` while she pants, press shut while she holds her breath, and open on the gasp. Her face then shows the same thing the plume shows, which is exactly the Listener's rule.
+4. **Mouth and breath.** The jaw and lips part with `Breath.strain` while she pants, press shut while she holds her breath, and open on the gasp. Her face then shows the same thing the plume shows.
 5. **Shiver.** A small tremor through the shoulders in a strong gust outside.
 
-How to check: a capture with the figure in view, a knock heard indoors, holding her breath beside the Listener, and the gasp.
+How to check: a capture with a threat in view, a knock heard indoors, holding her breath, and the gasp.
 
 ## Phase 7: Starts, stops, and turns
 
@@ -174,7 +174,7 @@ How to check: open every door in the house. Her hand should meet each handle wit
 4. **Rumble on a pad.**
    - On landing, scaled by how hard she came down.
    - On a stumble.
-   - A low, slow pulse while the figure waits at the door.
+   - A low, slow pulse while something waits at the door.
    - A short pulse on the sting.
 
 ## What not to do
@@ -182,8 +182,6 @@ How to check: open every door in the house. Her hand should meet each handle wit
 - No crossing steps, no exaggerated hip swing, no primping or posing idles, and no breast physics.
 - No wave and no writing pose.
 - No new body and no constructed meshes. Everything above drives the elf she already is.
-- Do not change how the figure or the Listener move.
-
 ## Order
 
 Phase 1 and Phase 2 go first and do not depend on each other. Phase 4 needs the IK from Phase 2 for the narrow base. Phase 5 is better after Phase 2, so the collisions follow the solved legs. Phase 6 depends on nothing and can go whenever the face is wanted. Phase 3 only gates the clip swaps in Phases 7 and 8; the procedural versions of those can come first.

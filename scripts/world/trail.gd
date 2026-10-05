@@ -53,10 +53,12 @@ func _ready() -> void:
 	flora.name = "Flora"
 	add_child(flora)
 	flora.grow(ground, curve, _reserved, seed_value)
-	var anomalies := Node3D.new()
-	anomalies.name = "Anomalies"
-	anomalies.add_to_group(EditableLevel.AUTHORING_GROUP)
-	add_child(anomalies)
+	# Markers for whatever threats walk the field, before Route so the
+	# editable level keeps its child order.
+	var threats := Node3D.new()
+	threats.name = "Threats"
+	threats.add_to_group(EditableLevel.AUTHORING_GROUP)
+	add_child(threats)
 	_add_route()
 	Game.trail = self
 
@@ -66,7 +68,7 @@ func _ready() -> void:
 func route_derived() -> Array[Node]:
 	var derived: Array[Node] = []
 	for child in get_children():
-		if child.name in ["Ground", "Flora"] or child.name not in ["House", "Fence", "Anomalies", "Route"]:
+		if child.name in ["Ground", "Flora"] or child.name not in ["House", "Fence", "Threats", "Route"]:
 			derived.append(child)
 	return derived
 

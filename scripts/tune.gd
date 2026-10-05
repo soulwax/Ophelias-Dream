@@ -9,8 +9,6 @@ extends RefCounted
 const WALK_SPEED := 1.83
 const WALK_SLOW_SPEED := 0.95
 const SPRINT_SPEED := 6.85
-const HUNTER_CREEP := 1.4
-const HUNTER_CHASE := 5.7
 # Momentum (m/s per second). Speed and heading move separately: she gets
 # going at once, eases off a sprint, skids a short way to a stop, and plants
 # and brakes when asked to reverse.
@@ -115,24 +113,30 @@ const STAMINA_REGEN := 1.35
 const EXHAUST_LOCK := 0.85
 const SPRINT_RESUME := 1.6
 const HOLD_DRAIN := 0.6
-const ANOMALIES_PER_RUN := 1
 const GRAVITY := 20.0
 
+# The danger begins after this many pages, or this far (m) beyond the start.
 const HUNT_NOTES := 3
-# Metres beyond the authored start: the later route is dangerous without pages.
 const HUNT_ROUTE_DISTANCE := 85.0
 # The first page sits 22 m from the start. Passing it sets up a changed return.
 const RETURN_CLUE_ROUTE_DISTANCE := 22.0
 # The extra boots appear on a stretch the player can retrace before the hunt.
 const WRONG_TRACK_ROUTE_DISTANCE := 30.0
 const EVIDENCE_HOLD := 240.0
-const CATCH_GAP := 2.15
 const EXIT_MARGIN := 8.0
 const EXIT_RADIUS := 13.0
 const READ_DISTANCE := 2.6
 
-const REVEAL_EYES := 22.0
-const REVEAL_BODY := 36.0
+# Aiming at things (Aim). The ray from the screen centre reaches AIM_RANGE
+# (m). A door or switch is in reach when the nearest point of it is within
+# INTERACT_REACH of her chest; a page, within READ_DISTANCE of her feet. With
+# nothing under the reticle, the nearest thing within AIM_CONE (degrees) of it
+# is chosen, and a held choice only gives way to one AIM_STICKY degrees
+# closer to the centre.
+const AIM_RANGE := 9.0
+const INTERACT_REACH := 1.7
+const AIM_CONE := 22.0
+const AIM_STICKY := 5.0
 
 const INTRO_TIME := 3.2
 const TYPE_CPS := 42.0

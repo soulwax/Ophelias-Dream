@@ -48,15 +48,6 @@ func _ready() -> void:
 	player.name = "Player"
 	player.trail = trail
 	add_child(player)
-	Game.mark("build hunter")
-	var hunter := Hunter.new()
-	hunter.name = "Hunter"
-	hunter.trail = trail
-	add_child(hunter)
-	Game.mark("build anomalies")
-	var director := AnomalyDirector.new()
-	director.trail = trail
-	add_child(director)
 	Game.mark("build weather")
 	add_child(Weather.new())
 	add_child(Wildlife.new())
@@ -65,17 +56,17 @@ func _ready() -> void:
 	var hud := Hud.new()
 	add_child(hud)
 	Game.mark("scene built")
-	var editable_nodes: Array[Node] = [atmosphere, trail, player, hunter]
+	var editable_nodes: Array[Node] = [atmosphere, trail, player]
 	var built_house := trail.house.transform
 	var built_exit := trail.exit_point
 	var redrawn: bool = shift["curve"] or shift["start"]
 	var retain: Array[Node] = []
 	if redrawn:
 		retain = trail.route_derived()
-	# The previous bake stored the containment page as a trail child, in the
-	# slot Anomalies now uses. Hold that branch aside until the snapshot
-	# actually contains it, so the page is not painted onto the markers.
-	var parked := _park_anomalies(snapshot if use_snapshot else null, trail)
+	# An old bake stored a page as a trail child in the slot Threats uses.
+	# Hold that branch aside until the snapshot contains the slot, so the
+	# page is not painted onto it.
+	var parked := _park_threats(snapshot if use_snapshot else null, trail)
 	if repacking and snapshot:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
@@ -84,7 +75,6 @@ func _ready() -> void:
 			trail.house.settle_comfort()
 		player.set_process(false)
 		player.set_physics_process(false)
-		hunter.set_physics_process(false)
 		snapshot.queue_free()
 		_finish_repack.call_deferred(editable_nodes, chosen_seed)
 		return
@@ -103,7 +93,6 @@ func _ready() -> void:
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()
-	director.layout()
 	Game.begin_intro()
 	if _capture:
 		Game.set_phase(Game.Phase.PLAYING)
@@ -145,16 +134,17 @@ func _shoot() -> void:
 	get_tree().quit()
 
 
-func _park_anomalies(snapshot: Node, trail: Trail) -> Array[Node]:
+func _park_threats(snapshot: Node, trail: Trail) -> Array[Node]:
 	var parked: Array[Node] = []
 	if snapshot == null:
 		return parked
 	var authored := snapshot.get_node_or_null("Trail")
-	if authored and authored.get_node_or_null("Anomalies"):
+	# Older snapshots call the same slot Anomalies.
+	if authored and (authored.get_node_or_null("Threats") or authored.get_node_or_null("Anomalies")):
 		return parked
-	# Route sits after Anomalies. Lift it first so it does not slide into
+	# Route sits after Threats. Lift it first so it does not slide into
 	# the slot the old snapshot still uses for something else.
-	for branch_name in ["Route", "Anomalies"]:
+	for branch_name in ["Route", "Threats"]:
 		var branch := trail.get_node_or_null(branch_name)
 		if branch:
 			trail.remove_child(branch)

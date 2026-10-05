@@ -88,6 +88,8 @@ var glance := 0.0
 var _look_ramp := 0.0
 var _arm_reach := BOOM_LENGTH
 var _frame_delta := 0.016
+# What she points at; a press uses its target as last drawn.
+var aim := Aim.new()
 
 
 func _ready() -> void:
@@ -128,6 +130,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				_interact_buffer = Tune.INTERACT_BUFFER
 	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
+		# A click uses only what is under the reticle, never a guess around it.
+		var click := (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
+		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and aim.direct and _try_interact():
+			get_viewport().set_input_as_handled()
+			return
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	# Look goes straight to the camera every frame. screen_relative is in real
 	# pixels, so the window size or stretch never changes the sensitivity.
@@ -137,17 +144,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pitch = clampf(_pitch + (turn.y if Game.settings.invert_y else -turn.y), Tune.PITCH_DOWN, Tune.PITCH_UP)
 
 
-# The page she is looking at or standing by, else the door or switch.
+# Whatever the aim has outlined: the page, door or switch she sees picked.
 func _try_interact() -> bool:
-	var focused := viewed_target()
-	var page := (focused as FieldNote) if focused is FieldNote else (nearby_note() if focused == null else null)
-	if page:
-		Game.active_note = page
+	var thing := aim.target
+	if thing == null or not is_instance_valid(thing):
+		return false
+	if thing is FieldNote:
+		Game.active_note = thing as FieldNote
 		Game.begin_reading()
 		return true
-	var thing := focused if focused != null else nearby_interactable()
-	if thing == null:
-		return false
 	var accepted: bool = thing.call("interact") == true
 	var feedback := ""
 	if not accepted and thing is HouseDoor:
@@ -287,7 +292,8 @@ func _process(delta: float) -> void:
 		grace.glance = smoothstep(0.0, 1.0, glance)
 	_move_camera(delta)
 	_apply_look()
-	_outline_target(viewed_target() if Game.phase == Game.Phase.PLAYING else null)
+	aim.update(self)
+	_outline_target(aim.target)
 
 
 func _jump() -> void:
@@ -796,33 +802,8 @@ func indoors() -> bool:
 	return Game.indoors(global_position + Vector3(0.0, 0.9, 0.0))
 
 
-## The door or switch she is facing and can reach, if any.
-func nearby_interactable() -> Node3D:
-	if camera == null:
-		return null
-	var chest := global_position + Vector3(0.0, 1.2, 0.0)
-	var look := -camera.global_transform.basis.z
-	look.y = 0.0
-	look = look.normalized()
-	var best: Node3D = null
-	var best_score := 99.0
-	for node in get_tree().get_nodes_in_group("interactables"):
-		var point: Vector3 = node.call("interact_point")
-		var reach := chest.distance_to(point)
-		if reach > 1.8:
-			continue
-		var toward := point - chest
-		toward.y = 0.0
-		var facing := toward.normalized().dot(look) if toward.length() > 0.05 else 1.0
-		if facing < 0.25:
-			continue
-		var score := reach - facing * 0.6
-		if score < best_score:
-			best_score = score
-			best = node as Node3D
-	return best
-
-
+## Any page she could read from where she stands, aimed at or not. The probes
+## use it to prove every page is reachable; play goes through aim.
 func nearby_note() -> FieldNote:
 	if velocity.length() > Tune.WALK_SPEED + 0.55:
 		return null
@@ -848,44 +829,9 @@ func _can_reach_note(page: FieldNote) -> bool:
 	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 
-## The note, door or switch she is currently viewing and can reach.
+## The page, door or switch a press would use now.
 func viewed_target() -> Node3D:
-	if camera == null:
-		return null
-	var thing := nearby_interactable()
-	var note := _viewed_note()
-	if note and thing:
-		var chest := global_position + Vector3(0.0, 1.2, 0.0)
-		var point: Vector3 = thing.call("interact_point")
-		return note if chest.distance_to(note.global_position) <= chest.distance_to(point) + 0.35 else thing
-	return note if note else thing
-
-
-func _viewed_note() -> FieldNote:
-	if camera == null or velocity.length() > Tune.WALK_SPEED + 0.55:
-		return null
-	var look := -camera.global_transform.basis.z
-	look.y = 0.0
-	look = look.normalized()
-	var best: FieldNote = null
-	var best_score := 99.0
-	for node in get_tree().get_nodes_in_group("field_notes"):
-		var page := node as FieldNote
-		if page == null:
-			continue
-		var distance := global_position.distance_to(page.global_position)
-		if distance >= Tune.READ_DISTANCE or not _can_reach_note(page):
-			continue
-		var toward := page.global_position - global_position
-		toward.y = 0.0
-		var facing := toward.normalized().dot(look) if toward.length() > 0.35 else 1.0
-		if facing < 0.25:
-			continue
-		var score := distance - facing * 0.6
-		if score < best_score:
-			best_score = score
-			best = page
-	return best
+	return aim.target
 
 
 func _on_phase(next: Game.Phase) -> void:

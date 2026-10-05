@@ -9,6 +9,7 @@ extends Node3D
 
 var label := "Door"
 var _pivot: Node3D
+var _leaf: Node3D
 var _body: StaticBody3D
 var _shape: CollisionShape3D
 var _motion := DoorHingeDynamics.new()
@@ -46,6 +47,14 @@ func interact_label() -> String:
 
 func interact_point() -> Vector3:
 	return to_global(_handle_at)
+
+
+## The leaf, a little thicker than it is, wherever it has swung to.
+func aim_box() -> Array:
+	var bounds := AABB(Vector3(-_size.x * 0.5, -_size.y * 0.5, -0.06), Vector3(_size.x, _size.y, 0.12))
+	if _leaf == null:
+		return [global_transform.translated_local(Vector3(0.0, _size.y * 0.5, 0.0)), bounds]
+	return [_leaf.global_transform, bounds]
 
 
 func interact() -> bool:
@@ -113,6 +122,7 @@ func _build(size: Vector3, style: String, material: Material, hinge: float, swin
 	leaf.name = "Leaf"
 	leaf.position = Vector3(-hinge * size.x * 0.5, size.y * 0.5, 0.0)
 	_pivot.add_child(leaf)
+	_leaf = leaf
 	match style:
 		"steel":
 			_steel_leaf(leaf, size, hinge)

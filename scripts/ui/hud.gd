@@ -14,6 +14,7 @@ var _prompt: HBoxContainer
 var _prompt_caption: Label
 var _prompt_target: Node3D
 var _prompt_tween: Tween
+var _reticle: Panel
 var _feedback_text := ""
 var _feedback_left := 0.0
 var _breath: Control
@@ -55,10 +56,9 @@ func _process(delta: float) -> void:
 		var whiteout_press := (Game.weather.whiteout * 0.14) if Game.weather and Game.player and not Game.player.indoors() else 0.0
 		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62 + whiteout_press)
 		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.threat() * 0.5, 0.0, 0.0))
-	if _debug.visible and Game.player and Game.hunter and Game.trail:
-		var gap := Game.trail.offset_of(Game.player.global_position) - Game.hunter.offset
+	if _debug.visible and Game.player:
 		var wx := Game.weather.regime_name() if Game.weather else "None"
-		_debug.text = "%s   gap %.1f m   breath %.1f" % [wx, gap, Game.player.stamina]
+		_debug.text = "%s   threat %.2f   breath %.1f" % [wx, Game.threat(), Game.player.stamina]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -121,14 +121,13 @@ func _warning_line() -> String:
 		return "It is close."
 	if near > 0.55:
 		return "Do not stop."
-	# Whichever pressure is actually stronger speaks. A distant listener
-	# does not talk over the figure standing in the trees.
-	if Game.anomaly_hint != "" and Game.dread > near:
-		return Game.anomaly_hint
+	# Whichever pressure is actually stronger speaks.
+	if Game.threat_hint != "" and Game.dread > near:
+		return Game.threat_hint
 	if near > 0.32:
 		return "Something is on the trail."
-	if Game.anomaly_hint != "":
-		return Game.anomaly_hint
+	if Game.threat_hint != "":
+		return Game.threat_hint
 	return ""
 
 
@@ -137,16 +136,24 @@ func _refresh_prompt() -> void:
 	var caption := ""
 	var key := Game.settings.key_label("interact")
 	var target: Node3D
-	if Game.phase == Game.Phase.PLAYING and Game.player and Game.settings.show_prompts:
-		var focused: Node3D = Game.player.viewed_target()
+	var dim := false
+	var aim: Aim = Game.player.aim if Game.player else null
+	if Game.phase == Game.Phase.PLAYING and aim and Game.settings.show_prompts:
+		var focused: Node3D = aim.target
 		if focused is FieldNote:
 			show = true
-			caption = "Read the note"
+			var page := focused as FieldNote
+			caption = "Read the page" if page.entry and not page.entry.counts else "Read the note"
 			target = focused
 		elif focused:
 			show = true
 			caption = str(focused.call("interact_label"))
 			target = focused
+		elif aim.far:
+			show = true
+			dim = true
+			key = ""
+			caption = "Too far to reach"
 		elif _against_wire():
 			show = true
 			key = ""
@@ -160,11 +167,33 @@ func _refresh_prompt() -> void:
 		_prompt_target = target
 		if target:
 			_pulse_prompt(false)
+	_refresh_reticle(aim)
 	if not show:
 		return
+	if not (_prompt_tween and _prompt_tween.is_running()):
+		_prompt_plate.modulate.a = 0.6 if dim else 1.0
 	_prompt.get_child(0).visible = key != ""
 	UiChrome.set_key(_prompt, key)
 	_prompt_caption.text = caption
+
+
+# Only there when something can be picked: bright on what is under it, faint
+# when a nearby thing was chosen around it, rust when it is out of reach.
+func _refresh_reticle(aim: Aim) -> void:
+	var playing := Game.phase == Game.Phase.PLAYING and aim != null and Game.settings.show_prompts
+	var shown := playing and (aim.target != null or aim.far != null)
+	var back := _reticle.get_parent() as Control
+	back.visible = shown
+	if not shown:
+		return
+	var ring := _reticle.get_theme_stylebox("panel") as StyleBoxFlat
+	if aim.far:
+		ring.border_color = Color(UiChrome.RUST, 0.85)
+	elif aim.direct:
+		ring.border_color = Color(UiChrome.PAPER, 1.0)
+	else:
+		ring.border_color = Color(UiChrome.PAPER, 0.55)
+	back.modulate.a = 1.0 if aim.direct or aim.far else 0.7
 
 
 func _on_interaction_feedback(message: String, succeeded: bool) -> void:
@@ -205,6 +234,7 @@ func _build() -> void:
 	_build_objective()
 	_build_warning()
 	_build_bottom()
+	_build_reticle()
 	reader = NoteReader.new()
 	add_child(reader)
 	ending = EndCard.new()
@@ -321,6 +351,39 @@ func _build_murmur() -> void:
 	_murmur.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_murmur.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_murmur_plate.add_child(_murmur)
+
+
+# A light ring on a dark one, so it reads on snow and on the cabin walls.
+func _build_reticle() -> void:
+	var back := Panel.new()
+	back.set_anchors_preset(Control.PRESET_CENTER)
+	back.offset_left = -10
+	back.offset_right = 10
+	back.offset_top = -10
+	back.offset_bottom = 10
+	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	back.add_theme_stylebox_override("panel", _ring(Color(0.05, 0.05, 0.06, 0.45), 4, 10))
+	back.visible = false
+	add_child(back)
+	_reticle = Panel.new()
+	_reticle.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_reticle.offset_left = 1
+	_reticle.offset_right = -1
+	_reticle.offset_top = 1
+	_reticle.offset_bottom = -1
+	_reticle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reticle.add_theme_stylebox_override("panel", _ring(Color(UiChrome.PAPER, 0.95), 2, 9))
+	back.add_child(_reticle)
+
+
+func _ring(color: Color, width: int, radius: int) -> StyleBoxFlat:
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.set_border_width_all(width)
+	ring.set_corner_radius_all(radius)
+	ring.anti_aliasing = true
+	ring.border_color = color
+	return ring
 
 
 func _build_bottom() -> void:

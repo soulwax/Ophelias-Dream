@@ -29,7 +29,7 @@ static func bake(nodes: Array[Node], seed_value: int) -> Error:
 				root.set_meta("route_start", start.position)
 	for index in nodes.size():
 		var node := nodes[index]
-		if node is Player or node is Hunter:
+		if node is Player:
 			_bake_actor(root, node, index)
 			continue
 		var copy := node.duplicate(0)
@@ -67,7 +67,7 @@ static func _save_hierarchy(root: Node3D) -> Error:
 	if result != OK:
 		return result
 	var landmarks := _group_landmarks(trail, root)
-	for name in ["Ground", "Fence", "Flora", "Anomalies", "Route"]:
+	for name in ["Ground", "Fence", "Flora", "Threats", "Route"]:
 		var branch := trail.get_node_or_null(name)
 		if branch:
 			result = _nest_scene(trail, branch, "%s.scn" % name.to_snake_case(), root)
@@ -77,7 +77,7 @@ static func _save_hierarchy(root: Node3D) -> Error:
 		result = _nest_scene(trail, landmarks, "landmarks.scn", root)
 		if result != OK:
 			return result
-	for name in ["Atmosphere", "Trail", "Player", "Hunter"]:
+	for name in ["Atmosphere", "Trail", "Player"]:
 		var branch := root.get_node_or_null(name)
 		if branch:
 			result = _nest_scene(root, branch, "%s.scn" % name.to_snake_case(), root)
@@ -98,7 +98,7 @@ static func _group_landmarks(trail: Node3D, root: Node3D) -> Node3D:
 	trail.add_child(group)
 	group.owner = root
 	for child in trail.get_children():
-		if child == group or child.name in ["Ground", "House", "Fence", "Flora", "Anomalies", "Route"]:
+		if child == group or child.name in ["Ground", "House", "Fence", "Flora", "Threats", "Route"]:
 			continue
 		child.owner = null
 		child.reparent(group, false)
@@ -145,19 +145,18 @@ static func _reown_for_scene(node: Node, scene_root: Node, old_owner: Node) -> v
 
 
 static func _bake_actor(root: Node3D, actor: Node, index: int) -> void:
-	var preview: Node3D = CharacterBody3D.new() if actor is Player else Node3D.new()
+	var preview: Node3D = CharacterBody3D.new()
 	preview.name = actor.name
 	preview.transform = (actor as Node3D).transform
 	preview.set_meta(SOURCE_PATH, PackedInt32Array([index]))
 	preview.set_meta("preview_actor", true)
 	root.add_child(preview)
 	preview.owner = root
-	var model_path := "res://assets/characters/styloo_elf/elf.glb" if actor is Player else "res://addons/quaternius_ik_rigged/Models_with_rigging/Master_Rigged.tscn"
-	var model := (load(model_path) as PackedScene).instantiate() as Node3D
+	var model := (load("res://assets/characters/styloo_elf/elf.glb") as PackedScene).instantiate() as Node3D
 	if model == null:
 		return
 	model.name = "Appearance"
-	var live_model := (actor as Node).find_child("elf", true, false) as Node3D if actor is Player else (actor as Hunter).model
+	var live_model := (actor as Node).find_child("elf", true, false) as Node3D
 	if live_model:
 		model.transform = (actor as Node3D).global_transform.affine_inverse() * live_model.global_transform
 		model.set_meta(SOURCE_PATH, _descendant_path(actor, live_model, index))

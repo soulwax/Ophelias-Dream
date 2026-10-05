@@ -5,8 +5,8 @@
 Run Away is a third-person winter horror game using Godot 4.7, Forward+ rendering, and Jolt physics.
 
 - `scenes/main.tscn` is the entry scene; `scripts/main.gd` constructs gameplay systems in code.
-- `scripts/` groups GDScript by responsibility: `player/`, `world/`, `house/`, `hunter/`, `weather/`, `anomalies/`, `audio/`, `notes/`, and `ui/`.
-- `assets/characters/styloo_elf/` contains the player model, textures, baked animations, and CC0 license. `addons/quaternius_ik_rigged/` supplies the hunter and shared animation source. `shaders/` holds GPU shaders.
+- `scripts/` groups GDScript by responsibility: `player/`, `world/`, `house/`, `weather/`, `audio/`, `notes/`, and `ui/`. There are no threats in the field at the moment; candidates are in `docs/THREATS.md`.
+- `assets/characters/styloo_elf/` contains the player model, textures, baked animations, and CC0 license; her walk and jog in `feminine/` are CC BY-NC 4.0, so the game is non-commercial. `addons/quaternius_ik_rigged/` supplies the shared animation source. `shaders/` holds GPU shaders.
 - `tools/` contains probes, asset generators, and diagnostic scripts. `docs/PLAN.md` records the original design; prefer current code when it disagrees.
 
 ## Build, Test, and Development Commands

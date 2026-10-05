@@ -7,9 +7,12 @@ signal closeness_changed(value: float)
 signal interaction_feedback(message: String, succeeded: bool)
 
 var phase: Phase = Phase.BOOT
+# Threats report here: how near the one that hunts her is (closeness), the
+# strongest other pressure (dread) and the HUD line that goes with it. The
+# UI never shows distances. There are no threats in the field yet; see
+# docs/THREATS.md.
 var closeness: float = 0.0
 var player: Player
-var hunter: Hunter
 var trail: Trail
 var soundscape: Soundscape
 var weather: Weather
@@ -19,16 +22,18 @@ var notes_found: int = 0
 var lean_graphics := true
 var blackbox: Blackbox
 var settings: Settings
-# Anomalies: the strongest pressure any of them puts on her this frame, the
-# HUD line that goes with it, and which ones she has read the record of.
-var director: AnomalyDirector
 # The cabin she wakes in: rooms, cellar and morgue.
 var house: House
 var dread: float = 0.0
-var anomaly_hint := ""
+var threat_hint := ""
+# Something waiting on the doorstep: the house knocks harder.
+var something_at_door := false
+# Whatever threat has just shown itself in the open; ravens scold beside it.
+var shown_threat: Node3D
 # A line from the house, spoken under the breath, gone in a few seconds.
 var murmur := ""
 var murmur_left := 0.0
+# Records she has read (NoteEntry.record_of), by code.
 var understood: Dictionary = {}
 var ending_title := ""
 var ending_body := ""
@@ -80,6 +85,8 @@ func _process(delta: float) -> void:
 			audio_fade = move_toward(audio_fade, 1.0, minf(delta, 0.05) / Tune.INTRO_TIME)
 			if settings:
 				settings.apply_audio()
+	if phase == Phase.PLAYING and player and trail and _at_exit():
+		escape()
 	if phase == Phase.PLAYING or phase == Phase.READING:
 		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
 			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
@@ -101,16 +108,16 @@ func reset() -> void:
 	closeness = 0.0
 	intro_left = Tune.INTRO_TIME
 	player = null
-	hunter = null
 	trail = null
 	soundscape = null
 	weather = null
 	active_note = null
 	notes_found = 0
-	director = null
 	house = null
 	dread = 0.0
-	anomaly_hint = ""
+	threat_hint = ""
+	something_at_door = false
+	shown_threat = null
 	murmur = ""
 	murmur_left = 0.0
 	understood.clear()
@@ -216,7 +223,7 @@ func toggle_pause() -> void:
 		set_phase(Phase.PLAYING)
 
 
-# title and body replace the hunter's ending when something else took her.
+# title and body are the threat's own ending; empty gives the default card.
 func catch_player(title := "", body := "") -> void:
 	if phase == Phase.CAUGHT or phase == Phase.ESCAPED:
 		return
@@ -253,9 +260,16 @@ func quit() -> void:
 	get_tree().quit()
 
 
-# How hard the world is pressing on her: the hunter or any anomaly.
+# How hard the world is pressing on her, whichever threat it is.
 func threat() -> float:
 	return maxf(closeness, dread)
+
+
+# The road: within EXIT_RADIUS of the exit, measured flat.
+func _at_exit() -> bool:
+	var at := player.global_position
+	var end := trail.exit_point
+	return Vector2(at.x - end.x, at.z - end.z).length() <= Tune.EXIT_RADIUS
 
 
 func knows(code: String) -> bool:

@@ -1,5 +1,7 @@
 # Run Away: finish the run
 
+> The figure and the Listener were removed on 2026-10-05. The steps and the validation record below that rely on them wait for replacements from [THREATS.md](THREATS.md).
+
 Build a short, authored daylight winter horror game. The player leaves a record
 with her boots that disagrees with the pages and the mortuary file. Survival
 should be understandable; the identities should remain unresolved.
