@@ -1,6 +1,6 @@
-# Ophelias Dream
+# Ophelia's Dream
 
-Ophelias Dream is a short third-person winter-horror game made with Godot 4.7,
+Ophelia's Dream is a short third-person winter-horror game made with Godot 4.7,
 Forward+ rendering, and Jolt physics. An unnamed woman wakes in a cabin to find
 Mathilda gone into the snow. She searches the house, cellar, and daylight field
 for written pages whose damaged words steadily undermine her understanding of
@@ -237,4 +237,4 @@ Asset licences and provenance live beside the relevant assets, including the
 `assets/vendor/` and `assets/audio/` provenance records. Walk and jog motion in
 [assets/characters/styloo_elf/feminine/](assets/characters/styloo_elf/feminine/)
 is adapted from the Bandai Namco Research Motion Dataset (CC BY-NC 4.0).
-Accordingly, Ophelias Dream is non-commercial.
+Accordingly, Ophelia's Dream is non-commercial.

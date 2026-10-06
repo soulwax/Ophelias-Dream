@@ -103,9 +103,14 @@ func _ready() -> void:
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()
-	Game.begin_intro()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if _capture:
-		Game.set_phase(Game.Phase.PLAYING)
+		Game.begin_intro()
+		if OS.get_environment("RUN_TITLE") != "1":
+			Game.set_phase(Game.Phase.PLAYING)
+		else:
+			Game.set_phase(Game.Phase.BOOT)
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		# Dev hook: RUN_MENU=<page> opens the Esc menu on that page for the shot.
 		var page := OS.get_environment("RUN_MENU")
 		if page != "":

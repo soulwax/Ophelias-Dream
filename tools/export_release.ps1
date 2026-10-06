@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Automates encrypted Windows release exports for Ophelias Dream.
+    Automates encrypted Windows release exports for Ophelia's Dream.
 
 .DESCRIPTION
     1. Ensures a 256-bit AES key (64 hex chars) exists in godot.gdkey and syncs
@@ -11,7 +11,7 @@
     3. Synchronizes application and export versions between project.godot and
        export_presets.cfg.
     4. Configures export_presets.cfg for PCK encryption and runs headless Godot
-       with GODOT_SCRIPT_ENCRYPTION_KEY set to produce build/windows/Ophelias Dream.exe.
+       with GODOT_SCRIPT_ENCRYPTION_KEY set to produce build/windows/Ophelia's Dream.exe.
 
 .EXAMPLE
     ./tools/export_release.ps1
@@ -223,9 +223,9 @@ $resolvedVersion = Sync-VersionAndExportPreset `
 
 $outDir = Join-Path $root "build\windows"
 New-Item -ItemType Directory -Force $outDir | Out-Null
-$outExe = Join-Path $outDir "Ophelias Dream.exe"
+$outExe = Join-Path $outDir "Ophelia's Dream.exe"
 
-Write-Host "Exporting Ophelias Dream v$resolvedVersion using $godot..."
+Write-Host "Exporting Ophelia's Dream v$resolvedVersion using $godot..."
 
 $env:GODOT_SCRIPT_ENCRYPTION_KEY = $key
 $env:SCRIPT_AES256_ENCRYPTION_KEY = $key

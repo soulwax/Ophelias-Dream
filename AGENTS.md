@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Ophelias Dream is a third-person winter horror game using Godot 4.7, Forward+ rendering, and Jolt physics.
+Ophelia's Dream is a third-person winter horror game using Godot 4.7, Forward+ rendering, and Jolt physics.
 
 - `scenes/main.tscn` is the entry scene; `scripts/main.gd` constructs gameplay systems in code.
 - `scripts/` groups GDScript by responsibility: `player/`, `world/`, `house/`, `weather/`, `audio/`, `notes/`, and `ui/`. There are no threats in the field at the moment; candidates are in `docs/THREATS.md`.
@@ -40,7 +40,7 @@ godot --path . -s tools/leap_sheet.gd # Leap contact sheet (needs a window)
 For a Windows release, install matching export templates, create `build/windows/`, then run:
 
 ```powershell
-godot --headless --path . --export-release "Windows Desktop" "build/windows/Ophelias Dream.exe"
+godot --headless --path . --export-release "Windows Desktop" "build/windows/Ophelia's Dream.exe"
 ```
 
 ## Coding Style & Naming Conventions

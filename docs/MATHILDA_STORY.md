@@ -6,7 +6,7 @@ Every line is baked fresh from this script (the earlier Qwen takes were scrapped
 
 ## The story, as a player meets it
 
-She wakes in the cabin. The lantern is lit, the storm is up, and Mathilda is gone. The intro card says it plainly: *Mathilda went out into the storm.* Under it, smaller: *You told her to.*
+Ophelia wakes in the cabin. This is her dream: the house she keeps, the words she regrets, and Mathilda, the part of herself she sent away. The dream never announces itself as unreal; its cups, handwriting and footprints carry the connection. The lantern is lit, the storm is up, and Mathilda is gone. The intro card says it plainly: *Mathilda went out into the storm.* Under it, smaller: *You told her to.*
 
 Last night they argued. Mathilda said she doesn't live, she just keeps house. She said at least one of them keeps anything. Mathilda picked up the pack, and she said *go, then*. That is the last thing she said to her.
 
@@ -40,7 +40,7 @@ The cellar is *nigredo*, the field is *albedo*, and the lights are *rubedo*. Her
 
 ## Frame and endings
 
-**Intro card:** OPHELIAS DREAM / *Mathilda went out into the storm.* / *You told her to.* / (Esc line).
+**Intro card:** OPHELIA'S DREAM / *Mathilda went out into the storm.* / *You told her to.* / (Esc line).
 
 **The road** (she reaches the lights without turning around):
 > The engine is running. The driver's door is open, the seat still warm.

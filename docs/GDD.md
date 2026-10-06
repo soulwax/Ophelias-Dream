@@ -1,4 +1,4 @@
-# Ophelias Dream — Game Design Document
+# Ophelia's Dream — Game Design Document
 
 > The figure (Hunter) and the Listener (2-117) were removed on 2026-10-05, with their records and code. Sections below that describe them are history. Candidate replacements are in [THREATS.md](THREATS.md).
 
@@ -14,9 +14,9 @@
 
 > *"A daylight snowfield, a wire fence, and something that learns you by the notes."*
 
-**Ophelias Dream** is a compact, atmospheric third-person horror game set on an enclosed alpine ridge in bright, overcast winter daylight. The player wakes inside a furnished timber house with a subterranean mortuary beneath it, steps out onto a 243-metre snow-covered trail toward a pair of waiting headlights on a road, and navigates two distinct, rule-bound entities in the snowfield.
+**Ophelia's Dream** is a compact, atmospheric third-person horror game set on an enclosed alpine ridge in bright, overcast winter daylight. The player wakes inside a furnished timber house with a subterranean mortuary beneath it, steps out onto a 243-metre snow-covered trail toward a pair of waiting headlights on a road, and navigates two distinct, rule-bound entities in the snowfield.
 
-Unlike conventional survival horror that explains its lore through exposition or climactic reveals, **Ophelias Dream** is built as an argument between **three physical records**:
+Unlike conventional survival horror that explains its lore through exposition or climactic reveals, **Ophelia's Dream** is built as an argument between **three physical records**:
 1. **The Pages** left along the ridge, which claim a sequence of events and demand that the reader stand still to finish the line.
 2. **The Institutional File** in the cellar mortuary and field dossier, which logs measurements, a procedure for surviving breath-seeking hoarfrost, and an incomplete initial.
 3. **The Snow Itself**, where the player's own boots press a physical trail that quietly disagrees with what the pages claim happened.

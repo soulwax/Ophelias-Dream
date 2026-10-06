@@ -76,6 +76,8 @@ static func murmur_shown(phase: Game.Phase) -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Game.phase == Game.Phase.BOOT:
+		return
 	if event.is_action_pressed("journal"):
 		if Game.phase == Game.Phase.JOURNAL:
 			Game.close_journal()
@@ -250,6 +252,7 @@ func _build() -> void:
 	_build_murmur()
 	ending = EndCard.new()
 	add_child(ending)
+	add_child(preload("res://scripts/ui/dream_menu.gd").new())
 	menu = PauseMenu.new()
 	add_child(menu)
 	_debug = UiChrome.label("", 14, UiChrome.MUTED)
@@ -286,7 +289,7 @@ func _build_intro() -> void:
 	box.add_theme_constant_override("separation", 10)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(box)
-	var title := UiChrome.label("OPHELIAS DREAM", 54)
+	var title := UiChrome.label("OPHELIA'S DREAM", 54)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var line := UiChrome.label("Mathilda went out into the storm.", 18, UiChrome.MUTED)

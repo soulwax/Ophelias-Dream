@@ -1,6 +1,6 @@
 shader_type fog;
 
-// Heavy volumetric alpine weather shader for Ophelias Dream.
+// Heavy volumetric alpine weather shader for Ophelia's Dream.
 // Models wind-sheared snow curtains, rolling squall banks, and low spindrift
 // hugging the ridge while carving out the cabin and cellar interior so rooms
 // stay clear while visible blizzard banks sweep past the windows.

@@ -29,7 +29,7 @@ function Sample {
 	$cpu = Get-CimInstance Win32_PerfFormattedData_Counters_ProcessorInformation -Filter "Name='_Total'"
 	$zones = Get-CimInstance Win32_PerfFormattedData_Counters_ThermalZoneInformation |
 		ForEach-Object { "{0:N0}C" -f ($_.HighPrecisionTemperature / 10.0 - 273.15) }
-	$godot = Get-Process -Name godot*, "Ophelias Dream" -ErrorAction Ignore | Measure-Object WorkingSet64 -Sum
+	$godot = Get-Process -Name godot*, "Ophelia's Dream" -ErrorAction Ignore | Measure-Object WorkingSet64 -Sum
 	$values = @(
 		$gpu.Sum
 		($mem | Where-Object Property -eq SharedUsage).Sum / 1MB

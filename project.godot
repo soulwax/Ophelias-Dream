@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Ophelias Dream"
+config/name="Ophelia's Dream"
 config/description="A daylight snowfield, a wire fence, and something that learns you by the notes."
 config/version="0.1.0"
 run/main_scene="res://scenes/main.tscn"
@@ -35,7 +35,7 @@ window/stretch/aspect="expand"
 
 [dotnet]
 
-project/assembly_name="Ophelias Dream"
+project/assembly_name="Ophelia's Dream"
 
 [physics]
 
