@@ -107,6 +107,8 @@ func _focus_child(group: HBoxContainer, text_to_find := "") -> void:
 			return
 	if group != _blots:
 		_focus_child(_blots)
+	elif _selected and _buttons.has(_selected.title):
+		(_buttons[_selected.title] as Button).grab_focus()
 
 
 func _fill_list() -> void:

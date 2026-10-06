@@ -191,6 +191,7 @@ func _journal_ui() -> void:
 	journal._pick(1)
 	journal._choose("answer")
 	_check(journal._between.visible and journal._between.text == post.between, "the whole page shows the line between the lines")
+	_check(journal.get_viewport().gui_get_focus_owner() != null and journal.get_viewport().gui_get_focus_owner().get_parent() == journal._list, "focus returns to the page list when all blots are solved")
 	Game.toggle_pause()
 	_check(not journal.visible and Game.phase == Game.Phase.PLAYING, "Esc closes it")
 	journal.queue_free()
