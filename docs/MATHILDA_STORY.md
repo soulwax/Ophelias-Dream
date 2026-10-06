@@ -2,7 +2,7 @@
 
 The story and every spoken line, for review **before anything new is baked**. Page text lives in `scripts/notes/note_catalog.gd` and spoken text and moods in `assets/audio/voice/lines.json`. If this draft changes, those files change with it. The mechanics behind the new categories and the third ending are in `docs/superpowers/specs/2026-10-06-mathilda-jungian-design.md`.
 
-Lines marked **(kept)** are the existing 62, word for word and mood for mood, so their baked clips stay valid. Everything unmarked is new.
+Every line is baked fresh from this script (the earlier Qwen takes were scrapped on 2026-10-06).
 
 ## The story, as a player meets it
 
@@ -156,17 +156,17 @@ The page *titles* stay as they are. `LAST_TITLE` stays `"don't turn around"`, an
 
 ## Moods
 
-The seven moods already in use keep their names, so baked clips keep their names. Seven new moods give the acting a wider range.
+Fourteen moods. Each has its own reference performance (see the design), so the mood is acted, not just labelled.
 
 | Mood | How she sounds |
 |---|---|
-| steady (kept) | Calm and even, talking herself into calm. |
-| warm (kept) | Tender, almost smiling, a catch at the end. |
-| hushed (kept) | Barely above a whisper, close, careful. |
-| shaken (kept) | Unsteady, breath short, words a little too fast. |
-| breaking (kept) | On the edge of tears; the voice cracks and gives out. |
-| resolve (kept) | Low and set, each word placed. |
-| calling (kept) | Shouting into a strong wind, straining. |
+| steady | Calm and even, talking herself into calm. |
+| warm | Tender, almost smiling, a catch at the end. |
+| hushed | Barely above a whisper, close, careful. |
+| shaken | Unsteady, breath short, words a little too fast. |
+| breaking | On the edge of tears; the voice cracks and gives out. |
+| resolve | Low and set, each word placed. |
+| calling | Shouting into a strong wind, straining. |
 | **numb** | Flat, slow, far away; the feeling has gone out of it. |
 | **bitter** | Hurt turned into anger; clipped, a little too loud, then quiet. |
 | **pleading** | Small and begging, bargaining with something that isn't listening. |
@@ -179,7 +179,7 @@ The seven moods already in use keep their names, so baked clips keep their names
 
 All lines are hers. Mathilda never speaks aloud.
 
-### Page reactions (kept)
+### Page reactions
 
 - **by the bed:** [shaken] "Stay in." She's the one out there, and she's telling me to stay in.
 - **from the pack:** [breaking] Two cups. She packed for both of us. She knew I'd come.
@@ -189,17 +189,17 @@ All lines are hers. Mathilda never speaks aloud.
 - **don't turn around:** [resolve] Don't turn around. Fine. I won't. Just be at the lights.
 - **intake:** [breaking] One cup. Just one. I'm not lifting that sheet. I'm not.
 
-### Deciphered pages (kept)
+### Deciphered pages
 
 - **by the bed:** [warm] She left the door open for me. Or for herself. She never could decide which of us needed rescuing.
 - **from the pack:** [breaking] One cup. The intake said one cup. I'm not counting again. I'm not.
-- **on the post:** [shaken] It knew my name. It used my name on her.
+- **on the post:** [shaken] It used my name on her. And she answered to it. ...So would I.
 - **torn page:** [hushed] Smaller than mine. Then not. Like the prints were growing into me.
 - **the handwriting changes:** [hushed] Same hand, both pages. I'd know it anywhere. That's what scares me.
-- **don't turn around:** [resolve] The sheet is not her. The sheet is not her. I'll say it all the way to the road.
-- **intake:** [breaking] Just an M. It could be either of us. It could be both.
+- **don't turn around:** [resolve] The sheet is the coat. Just the coat. Say it again. ...The sheet is the coat.
+- **intake:** [numb] The coat held its shape. Nobody was in it. ...Nobody was ever in it.
 
-### First visits (kept)
+### First visits
 
 - **bedroom:** [warm] Her side of the bed is still warm. She can't be far.
 - **hall:** [shaken] Her boots are gone. The door isn't even latched.
@@ -217,11 +217,11 @@ All lines are hers. Mathilda never speaks aloud.
 
 Each plays once: on the first return in the doubt or resolve stage, at least 60 s after the first visit there.
 
-- **bedroom:** [shaken] The lantern's still lit. Nobody's been here. Or I have, and I don't remember. (kept)
-- **hall:** [shaken] I latched it behind me. I know I did. (kept)
-- **living:** [hushed] Still two chairs. I keep thinking one of them will be pushed in. (kept)
-- **morgue:** [breaking] I said I wouldn't come back down here. I keep coming back down here. (kept)
-- **snow:** [hushed] Every set of prints out here could be mine. (kept)
+- **bedroom:** [shaken] The lantern's still lit. Nobody's been here. Or I have, and I don't remember.
+- **hall:** [shaken] I latched it behind me. I know I did.
+- **living:** [hushed] Still two chairs. I keep thinking one of them will be pushed in.
+- **morgue:** [breaking] I said I wouldn't come back down here. I keep coming back down here.
+- **snow:** [hushed] Every set of prints out here could be mine.
 - **backhall:** [hushed] Still only goes down. I keep hoping there'll be a back door this time.
 - **stair:** [numb] Nineteen. I counted again. It's still nineteen. Good. Good.
 - **landing:** [hushed] Back down here. Like something in me keeps choosing it.
@@ -233,12 +233,12 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 
 **Hope** (0–1 trail pages): Mathilda is out there, and she can be found.
 
-- [steady] She knows this field better than I do. She'll have found shelter. (kept)
-- [shaken] Ten minutes, she said. Ten minutes, and then the snow came in sideways. (kept)
-- [warm] When I find her I'm going to be so angry. And then I'm not letting go. (kept)
-- [steady] She always leaves something behind so I can find her. Always. (kept)
-- [hushed] Every white shape is her coat, until it isn't. (kept)
-- [warm] She'll be cold. She never wears the hat. I should've made her wear the hat. (kept)
+- [steady] She knows this field better than I do. She'll have found shelter.
+- [shaken] Ten minutes, she said. Ten minutes, and then the snow came in sideways.
+- [warm] When I find her I'm going to be so angry. And then I'm not letting go.
+- [steady] She always leaves something behind so I can find her. Always.
+- [hushed] Every white shape is her coat, until it isn't.
+- [warm] She'll be cold. She never wears the hat. I should've made her wear the hat.
 - [wry] If she's sitting in some hunting hut eating my chocolate, I swear to God.
 - [remembering] She hums when she's cold. Badly. I'd give anything to hear it now.
 - [steady] Okay. Think. If I were her, where would I go? ...Exactly where I told her not to.
@@ -246,12 +246,12 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 
 **Doubt** (2–3 trail pages): she sounds like me, she writes like me.
 
-- [shaken] Her prints stop. Mine don't. What does that make me? (kept)
-- [hushed] I've said her name so many times it's just a sound now. (kept)
-- [shaken] What if she's back at the cabin, by the lantern, writing to me? (kept)
-- [breaking] I can't remember which of us said we'd stay. (kept)
-- [breaking] I keep turning to tell her something. There's nobody to tell. (kept)
-- [hushed] The light hasn't moved. She was right. It's the same afternoon. (kept)
+- [shaken] Her prints stop. Mine don't. What does that make me?
+- [hushed] I've said her name so many times it's just a sound now.
+- [shaken] What if she's back at the cabin, by the lantern, writing to me?
+- [breaking] I can't remember which of us said we'd stay.
+- [breaking] I keep turning to tell her something. There's nobody to tell.
+- [hushed] The light hasn't moved. She was right. It's the same afternoon.
 - [numb] My feet stopped hurting a while ago. I'm choosing not to think about that.
 - [shaken] Sometimes I hear her footsteps right behind mine. Exactly in time. Exactly.
 - [bitter] She always got to be the brave one. I got to be the one who waited. Who decided that?
@@ -259,12 +259,12 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 
 **Resolve** (4+ trail pages, or the last page): whatever is behind me is mine.
 
-- [resolve] Don't turn around. I can do that. I can do that much. (kept)
-- [breaking] If she's behind me, she can see me. That has to be enough. (kept)
-- [hushed] The engine's running. Someone kept it warm for one of us. (kept)
-- [resolve] Whatever's at the lights, I'm walking up to it. I'm not stopping now. (kept)
-- [breaking] I'll find you. Or you'll find me. One of us gets to go home. (kept)
-- [hushed] I'm not cold any more. That's bad, isn't it. Keep walking. (kept)
+- [resolve] Don't turn around. I can do that. I can do that much.
+- [breaking] If she's behind me, she can see me. That has to be enough.
+- [hushed] The engine's running. Someone kept it warm for one of us.
+- [resolve] Whatever's at the lights, I'm walking up to it. I'm not stopping now.
+- [breaking] I'll find you. Or you'll find me. One of us gets to go home.
+- [hushed] I'm not cold any more. That's bad, isn't it. Keep walking.
 - [warm] If you can hear me, I kept the lantern lit. I did one thing right.
 - [pleading] Don't be at the lights because something happened. Be there because you're stubborn. Please.
 - [wry] Thirty years of being careful, and look where it got me. A field.
@@ -312,23 +312,23 @@ Longer thoughts, one at a time, when she is walking outdoors and has been quiet 
 Outdoors, every 45–80 s; never after she has turned around.
 
 **Hope**
-- [calling] Mathilda! (kept)
-- [calling] Mathilda! Can you hear me? (kept)
-- [calling] Mathilda! Over here! (kept)
+- [calling] Mathilda!
+- [calling] Mathilda! Can you hear me?
+- [calling] Mathilda! Over here!
 - [calling] Mathilda! It's me!
 - [calling] Mathilda! I've got your gloves!
 
 **Doubt**
-- [calling] Mathilda! Answer me! (kept)
-- [breaking] Mathilda... where are you? (kept)
-- [calling] Mathilda! Say something! (kept)
+- [calling] Mathilda! Answer me!
+- [breaking] Mathilda... where are you?
+- [calling] Mathilda! Say something!
 - [panicked] Mathilda! Mathilda, please, answer me, please!
 - [bitter] Mathilda! This isn't funny!
 
 **Resolve**
-- [calling] Mathilda! I'm coming! (kept)
-- [breaking] Mathilda... please. (kept)
-- [calling] I'm going to the lights, Mathilda! Meet me there! (kept)
+- [calling] Mathilda! I'm coming!
+- [breaking] Mathilda... please.
+- [calling] I'm going to the lights, Mathilda! Meet me there!
 - [pleading] Mathilda... I'm sorry. Do you hear me? I'm sorry.
 - [calling] Mathilda! I'm not going back without you!
 
@@ -374,11 +374,11 @@ After the last page, outdoors, holding glance-back for a second:
 
 ### Rejected readings in the journal
 
-- [hushed] No. That's not it. (kept)
-- [steady] That doesn't fit. (kept)
-- [shaken] She'd never write that. (kept)
-- [hushed] Wrong. Look again. (kept)
-- [breaking] I want it to say that. It doesn't. (kept)
+- [hushed] No. That's not it.
+- [steady] That doesn't fit.
+- [shaken] She'd never write that.
+- [hushed] Wrong. Look again.
+- [breaking] I want it to say that. It doesn't.
 - [wry] Right. Because that would make sense.
 - [bitter] That's what I want it to say. Not what it says.
 - [numb] No. She'd never be that kind to me.
@@ -390,4 +390,4 @@ After the last page, outdoors, holding glance-back for a second:
 - **The road:** [pleading] Mathilda? Please get in. I'll drive. You can pick the music. Just... get in.
 - **One set of prints:** [breaking] I'm sorry I sent you out there alone. ...Come on. Let's go home.
 
-**Total: 134 spoken lines. 62 are kept (their clips stay valid) and 72 are new.**
+**Total: 134 spoken lines.**
