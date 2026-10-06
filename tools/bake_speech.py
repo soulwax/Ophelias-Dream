@@ -21,8 +21,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets/audio/voice"
-REF = ROOT / "build/voice/ref"
-CANDIDATES = REF / "candidates"
+# Everything a bake depends on is committed under tools/voice/ (Godot ignores it):
+# the per-mood references, the raw impression picks, and voice_lock.json.
+VOICE = ROOT / "tools/voice"
+REF = VOICE / "ref"
+LOCK = VOICE / "voice_lock.json"
+CANDIDATES = ROOT / "build/voice/candidates"
 HF = ROOT / "build/voice/hf"
 ARCHIVE = ROOT / "build/voice/archive"
 DESIGN_MODEL = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
@@ -263,12 +267,76 @@ def impressions(args):
         usable = [s for s in scored if s["wer"] <= 0.25] or scored
         chosen = int(picks[mood]) if mood in picks else max(usable, key=lambda s: s["similarity"])["n"]
         shutil.copyfile(CANDIDATES / f"{mood}_{chosen}.wav", REF / f"{mood}.wav")
+        (REF / "raw").mkdir(exist_ok=True)
+        shutil.copyfile(CANDIDATES / f"{mood}_{chosen}.wav", REF / "raw" / f"{mood}.wav")
         print(f"    picked {chosen}", flush=True)
         rows.append((mood, scored, chosen))
-    write_page(REF.parent / "impressions.html", "Impressions", [
-        (mood, [(f"ref/candidates/{s['path'].name}", f"#{s['n']}{' (picked)' if s['n'] == chosen else ''}",
+    write_page(ROOT / "build/voice/impressions.html", "Impressions", [
+        (mood, [(f"candidates/{s['path'].name}", f"#{s['n']}{' (picked)' if s['n'] == chosen else ''}",
                  f"wer {s['wer']:.2f} · sim {s['similarity']:.2f} · {s['heard']}") for s in scored])
         for mood, scored, chosen in rows])
+
+
+def unify(args):
+    """Give every mood's impression steady's voice, keeping its delivery (Chatterbox VC, cb-venv).
+
+    VoiceDesign renders each mood as a slightly different woman; cloning lines from
+    those would carry the drift into the game. The raw picks stay in ref/raw/.
+    """
+    import shutil
+    import soundfile as sf
+    from chatterbox.vc import ChatterboxVC
+    judge = Judge()
+    vc = ChatterboxVC.from_pretrained(device="cuda")
+    (REF / "raw").mkdir(exist_ok=True)
+    judge.anchor = judge.embed_file(REF / "steady.wav")
+    moods = args.moods.split(",") if args.moods else [m for m in MOODS if m != "steady"]
+    for mood in moods:
+        raw = REF / "raw" / f"{mood}.wav"
+        if not raw.exists():
+            shutil.copyfile(REF / f"{mood}.wav", raw)
+        before = float((judge.embed_file(raw) * judge.anchor).sum())
+        wav = vc.generate(str(raw), target_voice_path=str(REF / "steady.wav"))
+        samples = wav.squeeze(0).cpu().numpy().astype("float32")
+        samples = level(trim(samples, vc.sr), vc.sr, MOODS[mood][5])
+        after = judge.similarity(samples, vc.sr)
+        heard = judge.hear(samples, vc.sr)
+        sf.write(REF / f"{mood}.wav", samples, vc.sr, subtype="PCM_16")
+        print(f"[{mood}] sim to steady {before:.2f} -> {after:.2f}, wer {wer(MOODS[mood][1], heard):.2f} | {heard}", flush=True)
+
+
+def lock(args):
+    """Record what produced her voice in tools/voice/voice_lock.json, and freeze this venv's packages."""
+    import datetime
+    import importlib.metadata as meta
+    import subprocess
+    venv = Path(sys.executable).parent.parent.name
+    frozen = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True).stdout
+    if not frozen.strip():
+        frozen = subprocess.run(["uv", "pip", "freeze", "--python", sys.executable], capture_output=True, text=True).stdout
+    (VOICE / f"requirements-{venv}.txt").write_text(frozen, encoding="utf-8")
+    data = json.loads(LOCK.read_text(encoding="utf-8")) if LOCK.exists() else {}
+    versions = {}
+    for package in ("torch", "torchaudio", "chatterbox-tts", "qwen-tts", "faster-whisper", "speechbrain"):
+        try:
+            versions[package] = meta.version(package)
+        except meta.PackageNotFoundError:
+            pass
+    data.setdefault("environments", {})[venv] = {"python": sys.version.split()[0], "packages": versions,
+                                                 "requirements": f"requirements-{venv}.txt"}
+    data["models"] = {"impressions": DESIGN_MODEL, "lines": "ResembleAI/chatterbox",
+                      "unify": "ResembleAI/chatterbox (ChatterboxVC)",
+                      "judge": ["mobiuslabsgmbh/faster-whisper-large-v3-turbo", "speechbrain/spkrec-ecapa-voxceleb"]}
+    data["identity"] = IDENTITY
+    data["moods"] = {m: {"direction": v[0], "impression": v[1], "exaggeration": v[2], "cfg_weight": v[3],
+                         "temperature": v[4], "level_dbfs": v[5]} for m, v in MOODS.items()}
+    data["seeds"] = {"impressions": 500, "takes": list(range(1, TAKES + 1))}
+    data["max_wer"] = MAX_WER
+    if args.picks:
+        data["picks"] = dict(p.split("=") for p in args.picks.split(","))
+    data["locked"] = datetime.date.today().isoformat()
+    LOCK.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Locked {venv} into {LOCK}")
 
 
 def bake_kokoro(args):
@@ -340,7 +408,10 @@ def main():
     parser.add_argument("--accept-bad", action="store_true", help="Keep the best take even above MAX_WER")
     parser.add_argument("--scrap", action="store_true", help="Archive every clip and start fresh")
     parser.add_argument("--impressions", action="store_true", help="Render per-mood impressions (gpu-venv)")
-    parser.add_argument("--moods", help="Comma list of moods for --impressions")
+    parser.add_argument("--lock", action="store_true", help="Record this venv and the voice settings in tools/voice/")
+    parser.add_argument("--picks", help="mood=n,... impression picks to record with --lock")
+    parser.add_argument("--unify", action="store_true", help="Convert every impression to steady's voice (cb-venv)")
+    parser.add_argument("--moods", help="Comma list of moods for --impressions or --unify")
     parser.add_argument("--candidates", type=int, default=4)
     parser.add_argument("--pick", action="append", help="mood=n: keep that impression candidate")
     parser.add_argument("--self-test", action="store_true")
@@ -357,6 +428,10 @@ def main():
         return
     if args.impressions:
         return impressions(args)
+    if args.unify:
+        return unify(args)
+    if args.lock:
+        return lock(args)
     import numpy as np
     import soundfile as sf
 
