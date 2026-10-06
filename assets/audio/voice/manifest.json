@@ -188,6 +188,17 @@
       "similarity": 0.6271554231643677,
       "engine": "qwen-design",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "Mathilda? She wouldn't go down there. She hates the cellar.",
+      "mood": "hushed",
+      "category": "places",
+      "file": "19612fc3409ad87562bc8121351898fe5fff4af43e757983a120da2288360018.wav",
+      "seconds": 4.364083333333333,
+      "wer": 0.0,
+      "similarity": 0.8242409825325012,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }

@@ -158,6 +158,8 @@ script.
 
 ### Edit or add a spoken line
 
+#### Nvidia GPU required, or an alternative compatible setup. Huggingface can do the trick for inference, but baking high-quality speech efficiently typically requires a CUDA-capable GPU.
+
 `lines.json` has four keyed categories (`pages`, `deciphered`, `places`, and
 `revisits`), three staged categories (`bored` and `calls` under `hope`, `doubt`,
 and `resolve`), and the `misread` array. Every entry needs `text` and one of
