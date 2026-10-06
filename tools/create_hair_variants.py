@@ -54,7 +54,8 @@ def tube(name, centers, radius, material, armature, sides=16):
         axis = Vector((1, 0, 0)) if abs(tangent.x) < .8 else Vector((0, 1, 0))
         normal = tangent.cross(axis).normalized()
         binormal = tangent.cross(normal).normalized()
-        width = radius * (1 - .28*i/(len(centers)-1))
+        t = i/(len(centers)-1)
+        width = radius * (1 - .28*t) * (1+.07*sin(t*17+.8)+.035*sin(t*39))
         for j in range(sides):
             angle = j*2*pi/sides
             groove = 1.0 + .065*cos(angle*5)
@@ -93,6 +94,12 @@ def build(style):
     hair=hair_components(body)
     for index in hair:
         point=body.data.vertices[index].co
+        # Build fullness around the scalp instead of a uniform shell.
+        fullness = max(0.0, min(1.0,(point.z-1.85)/.12))
+        point.x *= 1.0+.12*fullness
+        point.y *= 1.0+.09*fullness
+        if point.z > 1.94:
+            point.z += .015*fullness
         if point.z < 1.93:
             if style == 'cropped_bob':
                 point.z = 1.93 - (1.93-point.z)*.42
@@ -109,11 +116,14 @@ def build(style):
     dark=hair_material('StyleHairDark',base)
     light=hair_material('StyleHairHighlight',tuple(c*1.2 for c in base))
     if style=='high_bun':
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=20, radius=1.0, location=(0,.082,2.025))
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=40, ring_count=28, radius=1.0, location=(.008,.093,2.032))
         core=bpy.context.object
         core.name='BunCore'
-        core.scale=(.044,.042,.050)
+        core.scale=(.061,.058,.062)
         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        for vertex in core.data.vertices:
+            p=vertex.co
+            p *= 1+.045*sin(p.x*67+p.z*48)+.025*sin(p.y*83-p.x*44)
         core.data.materials.append(dark)
         for polygon in core.data.polygons:
             polygon.use_smooth=True
@@ -122,29 +132,42 @@ def build(style):
         modifier=core.modifiers.new('Existing elf skeleton','ARMATURE')
         modifier.object=armature
         core.parent=armature
-        # A woven coil with three interlaced strands above the crown.
-        for strand in range(3):
+        # Loosely gathered locks follow the bun mass, with uneven partings
+        # and a slight asymmetry rather than a stack of regular coils.
+        for strand in range(13):
             centers=[]
-            for i in range(401):
-                t=i/400; angle=t*2*pi*7
-                weave=angle*3+strand*2*pi/3
-                radius=.052*sin(pi*(.08+.84*t))+.005*cos(weave)
-                centers.append((radius*cos(angle), .082+radius*sin(angle), 1.970+.11*t+.005*sin(weave)))
-            tube('BunStrand%d'%strand,centers,.0075,light if strand==1 else dark,armature)
+            for i in range(91):
+                t=i/90; polar=.12+(pi-.24)*t
+                angle=strand*2*pi/13+.7*t+.12*sin(t*8+strand*1.7)
+                bulge=1+.04*sin(t*13+strand)
+                centers.append((.008+.063*sin(polar)*cos(angle)*bulge,
+                                .093+.060*sin(polar)*sin(angle)*bulge,
+                                2.032+.064*cos(polar)))
+            tube('BunLock%d'%strand,centers,.0055+(strand%3)*.0008,light if strand%4==1 else dark,armature)
     elif style=='twin_braids':
         for side in (-1,1):
             for strand in range(3):
                 centers=[]
                 for i in range(100):
-                    t=i/99; angle=t*2*pi*4.5+strand*2*pi/3
-                    radius=.013*(1-.65*t)
-                    centers.append((side*(.102+.038*t)+radius*cos(angle), .048+.015*t+radius*sin(angle), 1.913-.30*t))
-                tube('Braid%dStrand%d'%(side,strand),centers,.0075,light if strand==1 else dark,armature)
+                    t=i/99; angle=t*2*pi*4.5+strand*2*pi/3+.22*sin(t*11+side)
+                    radius=.016*(1-.60*t)*(1+.12*sin(t*17+side))
+                    centers.append((side*(.105+.039*t+.007*sin(t*7))+radius*cos(angle),
+                                    .05+.015*t+.009*sin(t*8+.7)+radius*sin(angle), 1.921-.31*t))
+                tube('Braid%dStrand%d'%(side,strand),centers,.0085+(strand%2)*.0007,light if strand==1 else dark,armature)
             # A small gold binding around each braid tip.
             gold=hair_material('BraidTie',(.55,.32,.075))
-            center=Vector((side*.139,.063,1.620))
+            center=Vector((side*(.105+.039+.007*sin(7)),.065+.009*sin(8.7),1.618))
             ring=[tuple(center+Vector((.011*cos(i*2*pi/40),.011*sin(i*2*pi/40),0))) for i in range(41)]
             tube('BraidTie%d'%side,ring,.0025,gold,armature)
+    if style != 'cropped_bob':
+        for side in (-1,1):
+            for lock in range(2):
+                centers=[]
+                for i in range(40):
+                    t=i/39
+                    centers.append((side*(.082+.012*sin(t*pi)+lock*.007),
+                                    -.074-.016*sin(t*pi)+lock*.009,1.966-.103*t))
+                tube('LooseTemple%d_%d'%(side,lock),centers,.0032 if lock==0 else .0021,dark,armature)
     assert rest == [tuple(tuple(row) for row in bone.matrix_local) for bone in armature.data.bones]
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'sources'/(style+'.blend')))
     bpy.ops.export_scene.gltf(filepath=str(OUT/(style+'.glb')), export_format='GLB',

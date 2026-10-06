@@ -3,8 +3,8 @@
 Geometry variants derived from Styloo's CC0 elf. Preserve [original provenance/license](../styloo_elf/README.md). New procedural strand geometry was created for this project.
 
 - Frost Bob: a shortened, gently flared silver bob, using Snowlight's palette.
-- Ember Crown: swept-back auburn hair with a compact woven bun, using Ember's palette.
-- Midnight Braids: tapered dark twin braids with small gold bindings, using Midnight's palette.
+- Ember Crown: swept-back auburn hair with a full gathered bun and loose temple locks, using Ember's palette.
+- Midnight Braids: irregularly spaced, tapered dark twin braids with small gold bindings and loose temple locks, using Midnight's palette.
 
 Original bones, hierarchy and rest transforms are preserved. New strands/ties have normalized head-bone weights: they follow head motion but do not simulate flexible hair. Reshaped original hair retains its UVs/materials; added strands use smooth grooved geometry and dedicated materials. Body/outfit geometry is unchanged.
 

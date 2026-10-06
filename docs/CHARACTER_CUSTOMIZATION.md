@@ -10,7 +10,7 @@ godot --path . scenes/character_presentation.tscn
 
 Left/right arrows or Previous/Next buttons cycle through characters and wrap around. Up/down arrows cycle through the baked and feminine animation libraries, starting in Idle whenever a character is selected. Preview clips loop and crossfade. X toggles a T pose and resumes the selected animation when pressed again; up/down also exits the T pose. Drag with the left mouse button to turn, use the wheel to zoom, Home to reset to idle and reset the view, and Escape to close.
 
-The catalog contains the base character plus Snowlight, Ember, and Midnight appearance studies. Add every completed edit to `assets/characters/presentation_catalog.json` so the collection retains earlier variants. Their reproducible Blender generator and provenance are described in `assets/characters/variants/README.md`.
+The catalog contains seven characters: the base, Snowlight, Ember, Midnight, Frost Bob, Ember Crown, and Midnight Braids. The last three change hair geometry, with fuller scalp volume, gathered locks, and tapered braids. Add completed edits to `assets/characters/presentation_catalog.json` to retain earlier variants. Generators, editable Blender sources and provenance are described in `assets/characters/variants/README.md` and `assets/characters/hairstyles/README.md`.
 
 Each catalog entry has:
 
