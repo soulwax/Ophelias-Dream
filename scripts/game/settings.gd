@@ -21,6 +21,7 @@ const ACTIONS := [
 	["walk_slow", "Walk slowly (hold)"],
 	["glance_back", "Glance back (hold)"],
 	["interact", "Read / open / use"],
+	["journal", "Journal"],
 	["restart", "Restart (paused or at the end)"],
 ]
 const SLOTS := 2

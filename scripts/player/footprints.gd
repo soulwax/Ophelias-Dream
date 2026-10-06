@@ -126,7 +126,7 @@ func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember
 
 
 func _process(delta: float) -> void:
-	if Game.phase != Game.Phase.PLAYING and Game.phase != Game.Phase.READING:
+	if not Game.awake():
 		return
 	_lie_once()
 	for i in POOL:

@@ -1,10 +1,18 @@
 extends Node
 
-enum Phase { BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED }
+enum Phase { BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL }
 
 signal phase_changed(next: Phase)
 signal closeness_changed(value: float)
 signal interaction_feedback(message: String, succeeded: bool)
+
+# A page went into the journal, or a smudge was solved.
+signal journal_changed
+signal page_added(entry: NoteEntry)
+# Every smudge on this page is solved; the line between the lines shows.
+signal page_deciphered(entry: NoteEntry)
+
+enum Reading { LOCKED, WRONG, RIGHT }
 
 var phase: Phase = Phase.BOOT
 # Threats report here: how near the one that hunts her is (closeness), the
@@ -40,6 +48,16 @@ var ending_title := ""
 var ending_body := ""
 # She opened the page that asks her to finish. The road remembers. The catch does not speak in that voice.
 var read_last_page := false
+# The journal: pages in the order found, the one to open on, and what she
+# knows that makes a smudge legible (NoteEntry.smudges keys).
+var journal: Array[NoteEntry] = []
+var journal_focus := ""
+var read_pages: Dictionary = {}
+var visited: Dictionary = {}
+var heard_events: Dictionary = {}
+# title -> {smudge index: true}
+var deciphered: Dictionary = {}
+
 var hunt_started := false
 var _hunt_seconds := 0.0
 var audio_fade := 0.0
@@ -68,6 +86,8 @@ func _ready() -> void:
 	_bind("hold_breath", KEY_F)
 	_bind("walk_slow", KEY_ALT)
 	_bind("glance_back", KEY_Q)
+	_bind("journal", KEY_J)
+	_bind("journal", KEY_TAB)
 	_bind_mouse("glance_back", MOUSE_BUTTON_MIDDLE)
 	_bind_pad()
 	# After the defaults, so it knows what to reset the keys to.
@@ -88,12 +108,14 @@ func _process(delta: float) -> void:
 				settings.apply_audio()
 	if phase == Phase.PLAYING and player and trail and _at_exit():
 		escape()
-	if phase == Phase.PLAYING or phase == Phase.READING:
+	if awake():
 		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
 			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
 				start_hunt()
 		if hunt_started:
 			_hunt_seconds += delta
+	if awake() and player:
+		visit(place_at(player.global_position))
 	if phase != Phase.INTRO:
 		return
 	intro_left -= delta
@@ -126,6 +148,12 @@ func reset() -> void:
 	ending_title = ""
 	ending_body = ""
 	read_last_page = false
+	journal.clear()
+	journal_focus = ""
+	read_pages.clear()
+	visited.clear()
+	heard_events.clear()
+	deciphered.clear()
 	hunt_started = false
 	_hunt_seconds = 0.0
 	audio_fade = 0.0
@@ -180,6 +208,8 @@ func begin_reading() -> void:
 			read_last_page = true
 		if notes_found >= Tune.HUNT_NOTES:
 			start_hunt()
+	if entry:
+		add_to_journal(entry)
 	if voice and entry:
 		voice.heard_page(entry)
 	set_phase(Phase.READING)
@@ -214,7 +244,153 @@ func close_reading() -> void:
 	set_phase(Phase.PLAYING)
 
 
+## The world keeps going: playing, reading a page or in the journal.
+func awake() -> bool:
+	return phase == Phase.PLAYING or phase == Phase.READING or phase == Phase.JOURNAL
+
+
+## Where she is, for her lines and the journal's keys: a house room, the
+## lights near the exit, or the snow.
+func place_at(point: Vector3) -> String:
+	if house:
+		var room := house.room_at(point + Vector3(0.0, 0.9, 0.0))
+		if room != "":
+			return room
+	if trail:
+		var end := trail.exit_point
+		if Vector2(point.x - end.x, point.z - end.z).length() < Tune.LIGHTS_NEAR:
+			return "lights"
+	return "snow"
+
+
+func visit(place: String) -> void:
+	if place == "" or visited.has(place):
+		return
+	visited[place] = true
+	journal_changed.emit()
+
+
+func heard(event: String) -> void:
+	if heard_events.has(event):
+		return
+	heard_events[event] = true
+	journal_changed.emit()
+
+
+## page:<title> read, place:<place> visited, event:<call|echo> heard. With her
+## voice off she never calls, so the snow stands in for a call; the echo may
+## never come, so the last page stands in for it.
+func known(key: String) -> bool:
+	var split := key.find(":")
+	if split < 0:
+		return false
+	var what := key.substr(split + 1)
+	match key.left(split):
+		"page":
+			return read_pages.has(what)
+		"place":
+			return visited.has(what)
+		"event":
+			if heard_events.has(what):
+				return true
+			if what == "call":
+				return visited.has("snow") and (voice == null or not voice.speaks())
+			if what == "echo":
+				return read_pages.has(NoteCatalog.LAST_TITLE)
+	return false
+
+
+func add_to_journal(entry: NoteEntry) -> void:
+	if entry == null:
+		return
+	read_pages[entry.title] = true
+	for kept in journal:
+		if kept.title == entry.title:
+			journal_changed.emit()
+			return
+	journal.append(entry)
+	page_added.emit(entry)
+	journal_changed.emit()
+
+
+func solved(entry: NoteEntry, index: int) -> bool:
+	return entry != null and deciphered.has(entry.title) and (deciphered[entry.title] as Dictionary).has(index)
+
+
+func page_solved(entry: NoteEntry) -> bool:
+	if entry == null:
+		return false
+	for index in entry.smudges.size():
+		if not solved(entry, index):
+			return false
+	return true
+
+
+func all_deciphered() -> bool:
+	for entry in NoteCatalog.everything():
+		if not page_solved(entry):
+			return false
+	return true
+
+
+func decipher(entry: NoteEntry, index: int, reading: String) -> Reading:
+	if entry == null or index < 0 or index >= entry.smudges.size():
+		return Reading.WRONG
+	if solved(entry, index):
+		return Reading.RIGHT
+	var smudge: Dictionary = entry.smudges[index]
+	if not known(str(smudge.key)):
+		return Reading.LOCKED
+	if reading != str((smudge.readings as Array)[0]):
+		if voice:
+			voice.misread()
+		return Reading.WRONG
+	if not deciphered.has(entry.title):
+		deciphered[entry.title] = {}
+	(deciphered[entry.title] as Dictionary)[index] = true
+	journal_changed.emit()
+	if page_solved(entry):
+		page_deciphered.emit(entry)
+		if voice:
+			voice.deciphered(entry)
+	return Reading.RIGHT
+
+
+## From play, or from the page she is reading (the journal opens on it).
+func open_journal(focus := "") -> void:
+	if phase == Phase.READING:
+		if focus == "" and active_note and active_note.entry:
+			focus = active_note.entry.title
+	elif phase != Phase.PLAYING:
+		return
+	journal_focus = focus
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	set_phase(Phase.JOURNAL)
+
+
+func close_journal() -> void:
+	if phase != Phase.JOURNAL:
+		return
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	set_phase(Phase.PLAYING)
+
+
+## Dev hook (RUN_JOURNAL): every page in the journal with its first smudge
+## solved, opened on title.
+func dev_journal(title: String) -> void:
+	for entry in NoteCatalog.everything():
+		add_to_journal(entry)
+		if not deciphered.has(entry.title):
+			deciphered[entry.title] = {}
+		(deciphered[entry.title] as Dictionary)[0] = true
+	journal_changed.emit()
+	open_journal(title)
+
+
 func toggle_pause() -> void:
+	if phase == Phase.JOURNAL:
+		close_journal()
+		return
 	if phase == Phase.PLAYING:
 		get_tree().paused = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -336,7 +512,7 @@ func _bind_pad() -> void:
 	for button in [["jump", JOY_BUTTON_A], ["slide", JOY_BUTTON_B], ["interact", JOY_BUTTON_X],
 			["sprint", JOY_BUTTON_LEFT_STICK], ["glance_back", JOY_BUTTON_RIGHT_STICK],
 			["walk_slow", JOY_BUTTON_LEFT_SHOULDER], ["hold_breath", JOY_BUTTON_RIGHT_SHOULDER],
-			["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK]]:
+			["journal", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK]]:
 		if not InputMap.has_action(button[0]):
 			InputMap.add_action(button[0])
 		var event := InputEventJoypadButton.new()

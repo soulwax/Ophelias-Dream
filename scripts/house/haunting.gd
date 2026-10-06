@@ -75,7 +75,7 @@ func _process(delta: float) -> void:
 	_update_flicker(delta)
 	if house == null or Game.player == null:
 		return
-	if Game.phase != Game.Phase.PLAYING and Game.phase != Game.Phase.READING:
+	if not Game.awake():
 		return
 	var here := house.room_at(Game.player.global_position + Vector3(0.0, 0.9, 0.0))
 	if here == "":
