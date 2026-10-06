@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.1.1.0 — 2026-10-06
+## 0.2.1.1 â€” 2026-10-06
+
+- Add Mathilda's chapter, chosen from the main menu: a first-person afternoon at the tent beyond the pines, with her own voice, three things to examine and a choice to wait or return.
+- Returning leads to a fully voiced meeting with Ophelia at the unlatched door, answered through 3D dialogue bubbles with mouse, keys or pad, and ending with the light moving for the first time.
+- Clean and time the meeting's speech so turns never overlap, and duck the weather while they talk.
+- Steady the painted menu's gaze and refine the eye shader.
+
+## 0.1.1.0 ï¿½ 2026-10-06
 
 - Rebrand the game as Ophelia's Dream, with updated Windows metadata and documentation.
 - Introduce a painted main menu with subtle mouse-following gaze, creeping shadows, horizontal selection bars and Christian Kling credits.
