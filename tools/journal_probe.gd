@@ -23,6 +23,7 @@ func _run() -> void:
 	_catalog()
 	_knowledge()
 	_phases()
+	_render()
 	print("JOURNAL ", "FAIL (%d)" % _failures if _failures > 0 else "PASS")
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -127,4 +128,28 @@ func _phases() -> void:
 	for pair in Settings.ACTIONS:
 		listed = listed or pair[0] == "journal"
 	_check(listed, "journal is rebindable")
+	Game.reset()
+
+
+func _render() -> void:
+	Game.reset()
+	var pack := NoteCatalog.find("from the pack")
+	var blot := UiChrome.blot(pack.title, 0, 3)
+	_check(blot == UiChrome.blot(pack.title, 0, 3) and blot.length() == 3, "a blot is the same every time")
+	var text := UiChrome.smudge_text(pack)
+	_check(text.contains("[s]") and text.contains(blot), "an unsolved smudge is scratched out")
+	_check(not text.contains("{0}") and not text.contains("[url="), "no placeholders and no links in the field")
+	_check(UiChrome.smudge_text(pack, true).contains("[url=1]"), "the journal can click a smudge")
+	Game.add_to_journal(pack)
+	Game.visit("living")
+	Game.decipher(pack, 0, "two")
+	_check(UiChrome.smudge_text(pack, true).contains("[u]two[/u]") and not UiChrome.smudge_text(pack, true).contains("[url=0]"), "a solved smudge is ink, not a link")
+	var reader := NoteReader.new()
+	add_child(reader)
+	reader.show_entry(pack)
+	_check(reader._body.text.contains("[u]two[/u]") and reader._body.visible_characters == 0, "the reader types the page from the start")
+	reader._process(60.0)
+	_check(reader._body.visible_characters == -1, "the reader finishes typing")
+	_check(not reader._body.text.contains(pack.between), "the line between the lines waits for the whole page")
+	reader.queue_free()
 	Game.reset()

@@ -6,6 +6,10 @@ const MUTED := Color(0.72, 0.75, 0.79)
 const RUST := Color(0.95, 0.48, 0.4)
 const PAPER := Color(0.91, 0.87, 0.78)
 const PAPER_INK := Color(0.17, 0.14, 0.11)
+# Scratched-out words on a page: the letters a blot is drawn with, and its ink.
+const BLOT := "xqvlmnrwzhk"
+const BLOT_INK := Color(0.42, 0.33, 0.25, 0.85)
+
 const PLATE := Color(0.05, 0.06, 0.08, 0.78)
 
 
@@ -165,3 +169,46 @@ static func paper_button(text: String) -> Button:
 	button.add_theme_stylebox_override("pressed", button_style(Color(0.17, 0.14, 0.11, 0.24)))
 	button.add_theme_stylebox_override("focus", button_style(Color(0.17, 0.14, 0.11, 0.08)))
 	return button
+
+
+## The letters a smudge is scratched out with: the same for that smudge on
+## every page view, at least three long.
+static func blot(title: String, index: int, length: int) -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(title + "#" + str(index))
+	var out := ""
+	for _i in maxi(length, 3):
+		out += BLOT[rng.randi() % BLOT.length()]
+	return out
+
+
+## A page body as BBCode: solved smudges underlined in ink, the rest scratched
+## out. links: each unsolved smudge is a [url=<index>] the journal can click.
+static func smudge_text(entry: NoteEntry, links := false) -> String:
+	var text := entry.body.replace("[", "[lb]")
+	for index in entry.smudges.size():
+		var word := str((entry.smudges[index].readings as Array)[0])
+		var shown: String
+		if Game.solved(entry, index):
+			shown = "[u]%s[/u]" % word
+		else:
+			shown = "[s][color=#%s]%s[/color][/s]" % [BLOT_INK.to_html(true), blot(entry.title, index, word.length())]
+			if links:
+				shown = "[url=%d]%s[/url]" % [index, shown]
+		text = text.replace("{%d}" % index, shown)
+	return text
+
+
+## The paper's text: BBCode, wrapping, ink on paper, growing with its text.
+static func page_label(size: int) -> RichTextLabel:
+	var node := RichTextLabel.new()
+	node.bbcode_enabled = true
+	node.fit_content = true
+	node.scroll_active = false
+	node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	node.add_theme_font_size_override("normal_font_size", size)
+	node.add_theme_color_override("default_color", PAPER_INK)
+	node.add_theme_constant_override("line_separation", 6)
+	return node
