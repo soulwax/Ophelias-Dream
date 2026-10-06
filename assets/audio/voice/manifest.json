@@ -1,136 +1,61 @@
 {
-  "voice": "af_sarah",
-  "speed": 0.92,
+  "engine": "qwen",
+  "identity": "A woman around thirty. A low, soft alto with a little breath in it, plain North American accent. She is cold, tired, and talking quietly to herself in an empty place; never theatrical, never narrating.",
   "clips": [
     {
-      "text": "Whoever wrote this woke to a lantern they didn't light. So did I.",
-      "file": "751779049d23c49a7667f41db203305834b228744a51ba49636838f9cedadd62.wav",
-      "seconds": 3.776
+      "text": "\"Stay in.\" She's the one out there, and she's telling me to stay in.",
+      "mood": "shaken",
+      "category": "pages",
+      "file": "4ee2ce4a0c98cb4bbd66fae92518b993f2bcd09d112b2e3e36db6b31b617f4c9.wav",
+      "seconds": 4.672041666666667,
+      "wer": 0.0,
+      "similarity": 0.8064448833465576,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     },
     {
-      "text": "One more print going in than coming out. Something stayed in this house. Maybe that's me.",
-      "file": "b0db9548f037754747e9342b79b96cee4f7de2e276ee197a581f26d26feb1afb.wav",
-      "seconds": 4.8853333333333335
+      "text": "Two cups. She packed for both of us. She knew I'd come.",
+      "mood": "breaking",
+      "category": "pages",
+      "file": "17fd7082c4f7d17491c36ede7b844c02fd7139b0c22d29d26fce2d39e9d4e28e.wav",
+      "seconds": 4.606958333333333,
+      "wer": 0.0,
+      "similarity": 0.8035738468170166,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     },
     {
-      "text": "Bare branches in a shape. I've been telling myself the tree line is only branches, too.",
-      "file": "4906685ca48d43d2c99e71f1c7caeafb5c79ee60222138924463a84fb9a6433d.wav",
-      "seconds": 5.205333333333333
+      "text": "Then I heard it again, from the trees. Okay. I won't answer. I won't.",
+      "mood": "hushed",
+      "category": "pages",
+      "file": "a050137b5cf807934b4c3d94bca70c37745dd7cc1df5a693b3c6b777ce75945b.wav",
+      "seconds": 8.233208333333334,
+      "wer": 0.0,
+      "similarity": 0.6346792578697205,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
     },
     {
-      "text": "If the hand that waved is the hand that wrote this, whose hand came back to the cabin?",
-      "file": "d016d52d1c559e3fcaf0dd4a2bc371a759a4e87e97e12c41697618ec1317c4d4.wav",
-      "seconds": 4.608
+      "text": "Prints that just stop. She's describing mine. I haven't been to the pines yet. Have I?",
+      "mood": "shaken",
+      "category": "pages",
+      "file": "e2838a94d1ceca6231ed9b9cee94000818cb0b560e858d6ef736c9c73237298c.wav",
+      "seconds": 6.875333333333334,
+      "wer": 0.0,
+      "similarity": 0.8122336268424988,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     },
     {
-      "text": "Stay. Finish. Don't go to the lights. Everything on this page wants me standing still.",
-      "file": "4ed64a06c774f471622eab530198a9bf2041ee6fffa6eda9fcfeebd7a8ae5706.wav",
-      "seconds": 5.269333333333333
-    },
-    {
-      "text": "They burned the candle down so they'd know if they'd been here before. It's burned down, and I don't remember.",
-      "file": "3a083c12e85bb173be412a155353842beaef0e4b24eeb526612b3ef6f5031590.wav",
-      "seconds": 6.016
-    },
-    {
-      "text": "The strap said M. Whoever copied it wrote R. Either they read it wrong, or it changed for them.",
-      "file": "104daeea399caddc56fd7a4a21b7801c316b3bdc48062bca162411e4ba261cbf.wav",
-      "seconds": 5.632
-    },
-    {
-      "text": "The blanket's warm on the side I didn't sleep on.",
-      "file": "b87136a8114fbb98d940c5e97adb114a6e3d4035f1e616e9f6da63ec6b9b221f.wav",
-      "seconds": 2.6666666666666665
-    },
-    {
-      "text": "One way out, and the mat's lying perfectly straight, like nobody ever came in.",
-      "file": "8cc1bb6b960043d3925870721a998603919c71637ac046e7aadb5c8c421ef9fa.wav",
-      "seconds": 4.8853333333333335
-    },
-    {
-      "text": "Somebody sat up with that candle until it went out. Keeping watch, or waiting to be let in.",
-      "file": "8cf562c4b0553f60b9fe6cacdd4270dad55798687b95b55e45f5f38fe4ff0eb4.wav",
-      "seconds": 5.312
-    },
-    {
-      "text": "Any other house would have a back door. This one only goes down.",
-      "file": "b3221dce330ba3678213dce707dc529fdb344982d8e1036ecc690cd061b32199.wav",
-      "seconds": 3.8186666666666667
-    },
-    {
-      "text": "Count the steps. If there's one more on the way back up, I'm done counting.",
-      "file": "74b89e9fdb9133a00bae9439724302d466b4fbf735a4290c8d1d771ae32d7710.wav",
-      "seconds": 4.074666666666666
-    },
-    {
-      "text": "Down here the wind's gone. If anything else is breathing, I'll hear it.",
-      "file": "682d2e29137153fdad736c248bdf6364675ecc7593919bf66679fd62d54fe77d.wav",
-      "seconds": 3.904
-    },
-    {
-      "text": "No windows. Whatever this house keeps, it keeps down here.",
-      "file": "9350be3c2eac2bc7816fb6655dae9c14e00b0d0775f22571b88078e3b0e5d1bc.wav",
-      "seconds": 3.456
-    },
-    {
-      "text": "Someone mopped this floor. Someone cleans up after whatever happens here.",
-      "file": "44fcd324673f22e3ca783de03a2a245ab7773a7b19720a6772f72d358b7ed5b3.wav",
-      "seconds": 4.245333333333333
-    },
-    {
-      "text": "A drawer for every one of us. I'm not going to count them.",
-      "file": "0fabf26dccaf680732318ad0fffc89ed8028609bd8bcd175d49208e3eedd39ca.wav",
-      "seconds": 3.4133333333333336
-    },
-    {
-      "text": "My own prints are the only thing out here I can trust. So I'll keep counting them.",
-      "file": "935fa46157f7c04460b5bef19f13bbded9d0856cfc16d417b474292d503b490d.wav",
-      "seconds": 4.8213333333333335
-    },
-    {
-      "text": "They've been on since before the snow. Nobody leaves an engine running that long for a stranger.",
-      "file": "eb952bef8c250a3e29edcbc14804190cdde3474aa77f864bd307d66f3fb8026f.wav",
-      "seconds": 5.504
-    },
-    {
-      "text": "Standing still is exactly how the pages wanted me. I should move.",
-      "file": "ed1a25aeda1ad70f9af7bd900cefc46587a0cb165f23f44685c8851882dd5272.wav",
-      "seconds": 4.288
-    },
-    {
-      "text": "Mara. I keep saying it, to hear if it sounds like mine.",
-      "file": "b42f40d84ae00ecafa631c54c5ab866a928251a9266c1206adfc828a346d3f92.wav",
-      "seconds": 3.456
-    },
-    {
-      "text": "I keep watching my right hand, as if it might wave without me.",
-      "file": "ff9a7440da7aac63307c81c9218d77e35d97b96850ac5d6d7949b40528acb14d.wav",
-      "seconds": 3.8186666666666667
-    },
-    {
-      "text": "Three knocks, the page said. I've been waiting for the first one.",
-      "file": "7d255a922ad07fad28a71ca4cb0b88194acaa69f29dd0ca4202bfbc380159159.wav",
-      "seconds": 3.562666666666667
-    },
-    {
-      "text": "If I stop counting my breaths, is anything else keeping count?",
-      "file": "b1eeba86c3b654dc4d98f89939a457096a5c26a9152c48ed826a9b7d046d02e0.wav",
-      "seconds": 3.6053333333333333
-    },
-    {
-      "text": "Nobody is out here looking for me. Or nobody knows who to look for.",
-      "file": "212daf04be73f018b26e44d136e81d18016eab7abc28b845fc7610b5ce9751c5.wav",
-      "seconds": 4.053333333333334
-    },
-    {
-      "text": "Somewhere, someone wrote down how tall I am. I'd rather they'd written my name.",
-      "file": "51c103b81ca4dee31461b9dc05465ef6dd53f91e8eb63cbd0ec4033e4a774ab9.wav",
-      "seconds": 4.501333333333333
-    },
-    {
-      "text": "The road is closed, the lights are on, and I'm the only one still walking toward them.",
-      "file": "e733c1e76dbf798775dccba85f776b38ef9e567d46dd669c071b230dc948e051.wav",
-      "seconds": 4.928
+      "text": "That's my handwriting. That's how I make my M's.",
+      "mood": "hushed",
+      "category": "pages",
+      "file": "b610104be3f855bcdd85aab03852fbd742258be7d8b70184ce3c6a4a3e90cba4.wav",
+      "seconds": 3.6882083333333333,
+      "wer": 0.0,
+      "similarity": 0.7604011297225952,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }

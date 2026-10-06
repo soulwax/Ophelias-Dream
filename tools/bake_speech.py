@@ -292,6 +292,8 @@ def main():
                                           seconds=float(sf.info(target).duration), engine="unknown")
             entry["category"] = category
             clips.append(entry)
+            manifest_path.write_text(json.dumps({"engine": args.engine, "identity": IDENTITY, "clips": clips},
+                                                indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             continue
         print(f"[{mood}] {text}", flush=True)
         if kokoro:
@@ -312,6 +314,8 @@ def main():
         clips.append(dict(text=text, mood=mood, category=category, file=name,
                           seconds=len(samples) / result["rate"], wer=result["wer"],
                           similarity=result["similarity"], engine=result["engine"], model=result["model"]))
+        manifest_path.write_text(json.dumps({"engine": args.engine, "identity": IDENTITY, "clips": clips},
+                                            indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if args.only is None:
         for stale in OUT.glob("*.wav"):
             if stale.name not in keep:
