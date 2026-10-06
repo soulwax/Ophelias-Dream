@@ -9,3 +9,6 @@ decrypt.key
 # Owner-supplied commercial house downloads and their derived resource scenes.
 /assets/vendor/requested_house/
 /assets/derived/requested_house/
+
+# Local-only music: commercial tracks and a downloader config holding a session cookie. Never commit or push.
+assets/audio/music/
