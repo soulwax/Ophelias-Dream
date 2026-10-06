@@ -1,6 +1,9 @@
 class_name Trail
 extends Node3D
 
+# How far along the route (from the start) each trail page lies.
+const PAGE_MARKS: Array[float] = [15.0, 40.0, 70.0, 138.0, 176.0]
+
 var curve: Curve3D
 var ground: Ground
 var house: House
@@ -36,6 +39,7 @@ func _ready() -> void:
 	ground.route = curve
 	ground.route_from = player_start_offset
 	ground.route_to = exit_offset
+	ground.story_points = _story_points(house_frame)
 	add_child(ground)
 	house = House.new()
 	house.name = "House"
@@ -157,6 +161,24 @@ func _house_frame() -> Transform3D:
 	return Transform3D(Basis(Vector3.UP, atan2(facing.x, facing.z)), at)
 
 
+# Where the story happens besides the path itself, worked out from the route
+# alone (before there is ground): the house, the pages, the camp, the lookout.
+# Keep in step with _build_landmarks.
+func _story_points(house_frame: Transform3D) -> PackedVector3Array:
+	var points := PackedVector3Array([house_frame.origin])
+	var marks: Array[float] = PAGE_MARKS
+	for index in marks.size():
+		var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
+		var frame := frame_at(along)
+		var side := -1.0 if index % 2 == 0 else 1.0
+		points.append(frame.origin + frame.basis.x * side * 3.6)
+	var camp := frame_at(player_start_offset + 98.0)
+	points.append(camp.origin + camp.basis.x * 7.5)
+	var ending := frame_at(exit_offset)
+	points.append(ending.origin + ending.basis.x * 6.0)
+	return points
+
+
 func _build_landmarks() -> void:
 	var start := frame_at(player_start_offset)
 	_prop("SM_Prop_Bench_01.fbx", on_ground(start.origin + start.basis.x * -4.2 + (-start.basis.z) * 2.0), start, 1.0, false, Vector3.ZERO)
@@ -165,7 +187,7 @@ func _build_landmarks() -> void:
 	_light(on_ground(start.origin) + Vector3(0, 1.8, 0), Color(1.0, 0.62, 0.32), 1.1, 9.0)
 
 	var notes := NoteCatalog.all()
-	var marks: Array[float] = [15.0, 40.0, 70.0, 138.0, 176.0]
+	var marks: Array[float] = PAGE_MARKS
 	for index in notes.size():
 		var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
 		var frame := frame_at(along)

@@ -233,6 +233,47 @@ const RAVINE_TO := 0.6
 const RAVINE_RISE := 10.0
 const RAVINE_INNER := 6.0
 const RAVINE_OUTER := 9.0
+# The world: 1080 m across (whole chunks), centred on the story. The FENCE_* rectangle
+# above is now the story field, where the land is built in full detail.
+const WORLD_MIN_X := -540.0
+const WORLD_MAX_X := 540.0
+const WORLD_MIN_Z := -615.0
+const WORLD_MAX_Z := 465.0
+# Snow lies where the story happens: everything within SNOW_CORE_IN of it is
+# mostly snow, fading out by SNOW_CORE_OUT; green patches are allowed in the core
+# only past SNOW_PATCH_CLEAR, and within SNOW_FORCE it is always snow.
+const SNOW_CORE_IN := 200.0
+const SNOW_CORE_OUT := 250.0
+const SNOW_PATCH_CLEAR := 80.0
+const SNOW_FORCE := 60.0
+# Beyond the core a biome noise (wavelength about 1 / BIOME_FREQ) decides,
+# pushed greener by bearing from the story (north-east and north-west most,
+# south-east some, south-west less), snowy again above BIOME_SNOWLINE metres.
+# BIOME_THAW is the noise half-width of the snow-to-green band.
+const BIOME_FREQ := 0.004
+const BIOME_NE := 0.35
+const BIOME_NW := 0.35
+const BIOME_SE := 0.15
+const BIOME_SW := -0.15
+const BIOME_SNOWLINE := 70.0
+const BIOME_THAW := 0.3
+# Mountains: ridged relief up to MOUNTAIN_RELIEF metres, rising from
+# MOUNTAIN_FROM to MOUNTAIN_FULL metres away from the route and house, and a
+# ring RING_HEIGHT metres high over the last RING_WIDTH metres of the world.
+const MOUNTAIN_FREQ := 0.005
+const MOUNTAIN_RELIEF := 90.0
+const MOUNTAIN_FROM := 60.0
+const MOUNTAIN_FULL := 200.0
+const RING_HEIGHT := 140.0
+const RING_WIDTH := 80.0
+# The ground is built in CHUNK_SIZE squares, cells CHUNK_CELL_NEAR within
+# CHUNK_NEAR of the story, CHUNK_CELL_MID within CHUNK_MID, else CHUNK_CELL_FAR.
+const CHUNK_SIZE := 60.0
+const CHUNK_NEAR := 100.0
+const CHUNK_MID := 260.0
+const CHUNK_CELL_NEAR := 1.5
+const CHUNK_CELL_MID := 3.0
+const CHUNK_CELL_FAR := 6.0
 
 const LAYER_WORLD := 1
 const LAYER_ACTOR := 2

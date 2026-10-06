@@ -1,51 +1,67 @@
 class_name Ground
 extends Node3D
 
-# The snow field: one heightfield from the seed, built in layers. Warped hills,
-# a gentle valley along the route with banks rising either side, cliff bands
-# that wind across the hillsides and the field's edges, one ravine the route
-# runs through, and a rim beyond the fence.
+# The land: one height function from the seed, built in layers, and one snow
+# weight shared by every system that cares where the snow lies.
+#
+# Height: warped hills; a gentle valley along the route with banks rising
+# either side; cliff bands winding across hillsides; one ravine the route runs
+# through; ridged mountains rising away from the story; a ring of peaks at the
+# world's edge. The house sits on a flat pad.
+#
+# Snow (snow_at, 0 green .. 1 snow): snow wherever the story happens, mostly
+# snow within SNOW_CORE_IN of it, and beyond that a biome noise, greener to the
+# north-east and north-west, partly to the south-east (north is -Z), snowy
+# again on high peaks. Every edge between them is a thaw band.
+#
+# The mesh is built in CHUNK_SIZE squares, finer near the story. Where a fine
+# chunk meets a coarser one its edge is stitched onto the coarse edge, so the
+# land and its collision are continuous across every seam.
+#
 # Bump TERRAIN_REVISION whenever the land's shape changes, so an older
 # editable-level snapshot does not lay its saved ground over the new one.
-const TERRAIN_REVISION := 2
-# Coarse grid (metres) for the route fields: distance to the path, the valley
-# floor's height and the ravine's weight, read bilinearly between nodes.
-const ROUTE_CELL := 6.0
+const TERRAIN_REVISION := 3
+# Coarse grid (metres) for the route fields: distance to the path and to the
+# story, the valley floor's height and the ravine's weight.
+const FIELD_CELL := 6.0
 # The valley floor is the hills along the route, sampled this often (metres).
 const PROFILE_STEP := 2.0
 # Steeper than this (cos 55°) is a cliff face.
 const CLIFF_FACE := 0.574
 
 var seed_value := 1701
-# The route the land is shaped around (in this node's space), and the played
-# stretch of it, from the start to the exit.
+# The route the land is shaped around (in this node's space) and the played
+# stretch of it, from the start to the exit. Set before the ground is ready.
 var route: Curve3D
 var route_from := 0.0
 var route_to := 0.0
-
-var _heights := PackedFloat32Array()
-var _normals := PackedVector3Array()
-var _origin_x := 0.0
-var _origin_z := 0.0
-var _step_x := 1.0
-var _step_z := 1.0
-var _points_x := 2
-var _points_z := 2
+# Where the story happens besides the route itself: the house, the camp, the
+# lookout, the pages. Set before the ground is ready.
+var story_points := PackedVector3Array()
+# The middle of the story, which bearings for the biome bias are taken from.
+var story_centre := Vector3.ZERO
 
 # Flat pads (the house sits on one): [Vector2 centre, inner radius, outer
-# radius]. Inside the inner radius the snow is level at the height the land
-# had at the centre; it blends back out by the outer radius.
+# radius]. Inside the inner radius the land is level at the height it had at
+# the centre; it blends back out by the outer radius.
 var pads: Array = []
-# Cuts: [Transform3D local-to-world, Rect2 local x/z]. Grid cells touching a
-# cut are left out of the mesh and the collision (the stair well).
+# Cuts: [Transform3D local-to-world, Rect2 local x/z]. Cells touching a cut are
+# left out of the mesh and the collision (the stair well).
 var cuts: Array = []
 var _pad_heights: Array[float] = []
-# The snow's material, so patches can match it exactly.
+# The ground's material, so patches can match it exactly.
 var snow_material: ShaderMaterial
 # What was built, for probes.
 var build_msec := 0
 var cliff_cells := 0
 var rock_count := 0
+var chunks_x := 1
+var chunks_z := 1
+
+var _chunk_cell := PackedFloat32Array()
+var _chunk_points := PackedInt32Array()
+var _chunk_heights: Array[PackedFloat32Array] = []
+var _chunk_normals: Array[PackedVector3Array] = []
 
 var _hills := FastNoiseLite.new()
 var _warp := FastNoiseLite.new()
@@ -53,12 +69,16 @@ var _detail := FastNoiseLite.new()
 var _cliff := FastNoiseLite.new()
 var _cliff_zone := FastNoiseLite.new()
 var _cliff_rise := FastNoiseLite.new()
+var _mountain := FastNoiseLite.new()
+var _biome := FastNoiseLite.new()
+var _snow_wobble := FastNoiseLite.new()
+var _patch := FastNoiseLite.new()
 var _dirt := FastNoiseLite.new()
 var _rng := RandomNumberGenerator.new()
 
-var _field_origin := Vector2.ZERO
 var _field_size := Vector2i(1, 1)
 var _route_distance := PackedFloat32Array()
+var _story_distance := PackedFloat32Array()
 var _valley_floor := PackedFloat32Array()
 var _ravine := PackedFloat32Array()
 
@@ -68,36 +88,46 @@ func _ready() -> void:
 	var started := Time.get_ticks_msec()
 	_rng.seed = seed_value + 404
 	_configure_noise()
-	_build_route_fields()
-	_build()
+	_build_fields()
+	_build_chunks()
+	_build_edge()
 	build_msec = Time.get_ticks_msec() - started
 
 
 func height_at(x: float, z: float) -> float:
-	if _heights.is_empty():
+	if _chunk_heights.is_empty():
 		return 0.0
-	var fx := clampf((x - _origin_x) / _step_x, 0.0, float(_points_x - 1))
-	var fz := clampf((z - _origin_z) / _step_z, 0.0, float(_points_z - 1))
-	var x0 := int(floor(fx))
-	var z0 := int(floor(fz))
-	var x1 := mini(x0 + 1, _points_x - 1)
-	var z1 := mini(z0 + 1, _points_z - 1)
+	var cx := clampi(int(floor((x - Tune.WORLD_MIN_X) / Tune.CHUNK_SIZE)), 0, chunks_x - 1)
+	var cz := clampi(int(floor((z - Tune.WORLD_MIN_Z) / Tune.CHUNK_SIZE)), 0, chunks_z - 1)
+	var index := cz * chunks_x + cx
+	var cell := _chunk_cell[index]
+	var points := _chunk_points[index]
+	var heights := _chunk_heights[index]
+	var fx := clampf((x - Tune.WORLD_MIN_X - float(cx) * Tune.CHUNK_SIZE) / cell, 0.0, float(points - 1))
+	var fz := clampf((z - Tune.WORLD_MIN_Z - float(cz) * Tune.CHUNK_SIZE) / cell, 0.0, float(points - 1))
+	var x0 := mini(int(floor(fx)), points - 2)
+	var z0 := mini(int(floor(fz)), points - 2)
 	var tx := fx - float(x0)
 	var tz := fz - float(z0)
-	var h00 := _heights[z0 * _points_x + x0]
-	var h10 := _heights[z0 * _points_x + x1]
-	var h01 := _heights[z1 * _points_x + x0]
-	var h11 := _heights[z1 * _points_x + x1]
+	var h00 := heights[z0 * points + x0]
+	var h10 := heights[z0 * points + x0 + 1]
+	var h01 := heights[(z0 + 1) * points + x0]
+	var h11 := heights[(z0 + 1) * points + x0 + 1]
 	return lerpf(lerpf(h00, h10, tx), lerpf(h01, h11, tx), tz)
 
 
 # The ground's up direction at the grid point nearest (x, z).
 func normal_at(x: float, z: float) -> Vector3:
-	if _normals.is_empty():
+	if _chunk_normals.is_empty():
 		return Vector3.UP
-	var ix := clampi(int(round((x - _origin_x) / _step_x)), 0, _points_x - 1)
-	var iz := clampi(int(round((z - _origin_z) / _step_z)), 0, _points_z - 1)
-	return _normals[iz * _points_x + ix]
+	var cx := clampi(int(floor((x - Tune.WORLD_MIN_X) / Tune.CHUNK_SIZE)), 0, chunks_x - 1)
+	var cz := clampi(int(floor((z - Tune.WORLD_MIN_Z) / Tune.CHUNK_SIZE)), 0, chunks_z - 1)
+	var index := cz * chunks_x + cx
+	var cell := _chunk_cell[index]
+	var points := _chunk_points[index]
+	var ix := clampi(int(round((x - Tune.WORLD_MIN_X - float(cx) * Tune.CHUNK_SIZE) / cell)), 0, points - 1)
+	var iz := clampi(int(round((z - Tune.WORLD_MIN_Z - float(cz) * Tune.CHUNK_SIZE) / cell)), 0, points - 1)
+	return _chunk_normals[index][iz * points + ix]
 
 
 # How steep the ground is at (x, z), in degrees.
@@ -110,6 +140,17 @@ func route_distance(x: float, z: float) -> float:
 	return _field(_route_distance, x, z, 1.0e6)
 
 
+# Metres from wherever the story happens: the route, the house, the camp, the
+# lookout, the pages.
+func story_distance(x: float, z: float) -> float:
+	return _field(_story_distance, x, z, 1.0e6)
+
+
+# 0 green .. 1 snow at (x, z).
+func snow_at(x: float, z: float) -> float:
+	return _snow(x, z, height_at(x, z))
+
+
 func _configure_noise() -> void:
 	_setup(_hills, seed_value, Tune.TERRAIN_HILL_FREQ, 5)
 	_setup(_warp, seed_value + 1, Tune.TERRAIN_HILL_FREQ * 1.7, 2)
@@ -117,7 +158,12 @@ func _configure_noise() -> void:
 	_setup(_cliff, seed_value + 3, Tune.CLIFF_FREQ, 3)
 	_setup(_cliff_zone, seed_value + 4, 0.006, 2)
 	_setup(_cliff_rise, seed_value + 5, 0.02, 1)
-	_setup(_dirt, seed_value + 6, 0.02, 3)
+	_setup(_mountain, seed_value + 6, Tune.MOUNTAIN_FREQ, 5)
+	_mountain.fractal_type = FastNoiseLite.FRACTAL_RIDGED
+	_setup(_biome, seed_value + 7, Tune.BIOME_FREQ, 3)
+	_setup(_snow_wobble, seed_value + 8, 0.012, 2)
+	_setup(_patch, seed_value + 9, 0.03, 2)
+	_setup(_dirt, seed_value + 10, 0.02, 3)
 
 
 func _setup(noise: FastNoiseLite, noise_seed: int, frequency: float, octaves: int) -> void:
@@ -161,31 +207,46 @@ func _valley_profile() -> PackedFloat32Array:
 	return smooth
 
 
-func _build_route_fields() -> void:
-	var min_x := Tune.FENCE_MIN_X - Tune.GROUND_PAD
-	var max_x := Tune.FENCE_MAX_X + Tune.GROUND_PAD
-	var min_z := Tune.FENCE_MIN_Z - Tune.GROUND_PAD
-	var max_z := Tune.FENCE_MAX_Z + Tune.GROUND_PAD
-	_field_origin = Vector2(min_x, min_z)
-	_field_size = Vector2i(int(ceil((max_x - min_x) / ROUTE_CELL)) + 1, int(ceil((max_z - min_z) / ROUTE_CELL)) + 1)
+func _build_fields() -> void:
+	_field_size = Vector2i(int(ceil((Tune.WORLD_MAX_X - Tune.WORLD_MIN_X) / FIELD_CELL)) + 1, int(ceil((Tune.WORLD_MAX_Z - Tune.WORLD_MIN_Z) / FIELD_CELL)) + 1)
 	var count := _field_size.x * _field_size.y
 	_route_distance.resize(count)
+	_story_distance.resize(count)
 	_valley_floor.resize(count)
 	_ravine.resize(count)
 	if route == null or route.get_baked_length() <= 0.0:
 		_route_distance.fill(1.0e6)
+		_story_distance.fill(1.0e6)
 		_valley_floor.fill(0.0)
 		_ravine.fill(0.0)
 		return
+	# The story's middle: the played route, evenly sampled, and its places.
+	var sum := Vector3.ZERO
+	var samples := 0
+	var along := route_from
+	while along <= route_to:
+		sum += route.sample_baked(along)
+		samples += 1
+		along += 10.0
+	for point in story_points:
+		sum += point
+		samples += 1
+	story_centre = sum / float(maxi(samples, 1))
+	story_centre.y = 0.0
 	var profile := _valley_profile()
 	var span := maxf(route_to - route_from, 1.0)
 	for j in _field_size.y:
 		for i in _field_size.x:
-			var p := Vector3(_field_origin.x + float(i) * ROUTE_CELL, 0.0, _field_origin.y + float(j) * ROUTE_CELL)
+			var p := Vector3(Tune.WORLD_MIN_X + float(i) * FIELD_CELL, 0.0, Tune.WORLD_MIN_Z + float(j) * FIELD_CELL)
 			var offset := route.get_closest_offset(p)
 			var on := route.sample_baked(offset)
 			var index := j * _field_size.x + i
-			_route_distance[index] = Vector2(p.x - on.x, p.z - on.z).length()
+			var distance := Vector2(p.x - on.x, p.z - on.z).length()
+			_route_distance[index] = distance
+			var story := distance
+			for point in story_points:
+				story = minf(story, Vector2(p.x - point.x, p.z - point.z).length())
+			_story_distance[index] = story
 			var at := offset / PROFILE_STEP
 			var k := clampi(int(floor(at)), 0, profile.size() - 1)
 			_valley_floor[index] = lerpf(profile[k], profile[mini(k + 1, profile.size() - 1)], at - floor(at))
@@ -193,12 +254,12 @@ func _build_route_fields() -> void:
 			_ravine[index] = smoothstep(Tune.RAVINE_FROM, Tune.RAVINE_FROM + 0.05, t) * (1.0 - smoothstep(Tune.RAVINE_TO - 0.05, Tune.RAVINE_TO, t))
 
 
-# A coarse route field, bilinear between its nodes.
+# A coarse field, bilinear between its nodes.
 func _field(values: PackedFloat32Array, x: float, z: float, fallback: float) -> float:
 	if values.is_empty():
 		return fallback
-	var fx := clampf((x - _field_origin.x) / ROUTE_CELL, 0.0, float(_field_size.x - 1))
-	var fz := clampf((z - _field_origin.y) / ROUTE_CELL, 0.0, float(_field_size.y - 1))
+	var fx := clampf((x - Tune.WORLD_MIN_X) / FIELD_CELL, 0.0, float(_field_size.x - 1))
+	var fz := clampf((z - Tune.WORLD_MIN_Z) / FIELD_CELL, 0.0, float(_field_size.y - 1))
 	var x0 := int(floor(fx))
 	var z0 := int(floor(fz))
 	var x1 := mini(x0 + 1, _field_size.x - 1)
@@ -210,13 +271,14 @@ func _field(values: PackedFloat32Array, x: float, z: float, fallback: float) -> 
 	return lerpf(a, b, tz)
 
 
-# Metres inside the fence (negative outside it).
-func _fence_distance(x: float, z: float) -> float:
-	return minf(minf(x - Tune.FENCE_MIN_X, Tune.FENCE_MAX_X - x), minf(z - Tune.FENCE_MIN_Z, Tune.FENCE_MAX_Z - z))
+# Metres inside the world's edge (negative outside it).
+func _edge_distance(x: float, z: float) -> float:
+	return minf(minf(x - Tune.WORLD_MIN_X, Tune.WORLD_MAX_X - x), minf(z - Tune.WORLD_MIN_Z, Tune.WORLD_MAX_Z - z))
 
 
 func _sample(x: float, z: float) -> float:
 	var distance := _field(_route_distance, x, z, 1.0e6)
+	var story := _field(_story_distance, x, z, 1.0e6)
 	var h := _hills_at(x, z)
 	# Banks rise away from the path; near it the land eases onto the floor.
 	h += minf(maxf(distance - Tune.VALLEY_HALF, 0.0) * Tune.VALLEY_BANK, Tune.VALLEY_BANK_MAX)
@@ -225,7 +287,12 @@ func _sample(x: float, z: float) -> float:
 	h += _cliffs(x, z, distance)
 	var walls := smoothstep(Tune.RAVINE_INNER, Tune.RAVINE_OUTER, distance) * (1.0 - smoothstep(40.0, 70.0, distance))
 	h += _field(_ravine, x, z, 0.0) * walls * Tune.RAVINE_RISE
-	h += smoothstep(0.0, Tune.GROUND_PAD, -_fence_distance(x, z)) * Tune.TERRAIN_RIM
+	# Mountains rise away from the story: ridged, highest along their crests.
+	var ridge := _mountain.get_noise_2d(x, z) * 0.5 + 0.5
+	h += ridge * ridge * Tune.MOUNTAIN_RELIEF * smoothstep(Tune.MOUNTAIN_FROM, Tune.MOUNTAIN_FULL, story)
+	# A ring of peaks walls the world in.
+	var edge := _edge_distance(x, z)
+	h += (1.0 - smoothstep(0.0, Tune.RING_WIDTH, edge)) * Tune.RING_HEIGHT * (0.75 + 0.25 * ridge)
 	for index in _pad_heights.size():
 		var pad: Array = pads[index]
 		var centre: Vector2 = pad[0]
@@ -236,15 +303,12 @@ func _sample(x: float, z: float) -> float:
 
 # Mesa edges: where the cliff noise crosses its threshold the ground steps up
 # several metres within a couple, so cliff lines follow the noise's contours.
-# Only near the field's edges and on chosen hillsides, never near the route,
-# the fence or a pad; where that allowance fades, a cliff softens into a slope.
+# On chosen hillsides, never near the route, the world's edge or a pad; where
+# that allowance fades, a cliff softens into a slope.
 func _cliffs(x: float, z: float, distance: float) -> float:
-	var inside := _fence_distance(x, z)
-	var edge := 1.0 - smoothstep(30.0, 60.0, inside)
-	var hillside := smoothstep(0.05, 0.25, _cliff_zone.get_noise_2d(x, z))
-	var allowed := maxf(edge, hillside)
+	var allowed := smoothstep(0.05, 0.25, _cliff_zone.get_noise_2d(x, z))
 	allowed *= smoothstep(Tune.CLIFF_CLEAR, Tune.CLIFF_CLEAR + 15.0, distance)
-	allowed *= smoothstep(Tune.CLIFF_FENCE, Tune.CLIFF_FENCE + 4.0, inside)
+	allowed *= smoothstep(Tune.CLIFF_FENCE + Tune.RING_WIDTH, Tune.CLIFF_FENCE + Tune.RING_WIDTH + 4.0, _edge_distance(x, z))
 	for pad: Array in pads:
 		allowed *= smoothstep(float(pad[2]), float(pad[2]) + 15.0, Vector2(x, z).distance_to(pad[0]))
 	if allowed <= 0.0:
@@ -254,15 +318,47 @@ func _cliffs(x: float, z: float, distance: float) -> float:
 	return step * rise * allowed
 
 
+# Snow, given the height there.
+func _snow(x: float, z: float, h: float) -> float:
+	var story := _field(_story_distance, x, z, 1.0e6)
+	if story < Tune.SNOW_FORCE:
+		return 1.0
+	# The core: snow, fading out round SNOW_CORE_IN..SNOW_CORE_OUT, its edge
+	# wandering a little; past SNOW_PATCH_CLEAR a few green patches break it.
+	var wobble := _snow_wobble.get_noise_2d(x, z) * 20.0
+	var core := 1.0 - smoothstep(Tune.SNOW_CORE_IN - 20.0 + wobble, Tune.SNOW_CORE_OUT + 30.0 + wobble, story)
+	if story > Tune.SNOW_PATCH_CLEAR:
+		var patch := smoothstep(0.45, 0.6, _patch.get_noise_2d(x, z))
+		core *= 1.0 - 0.8 * patch * smoothstep(Tune.SNOW_PATCH_CLEAR, Tune.SNOW_PATCH_CLEAR + 30.0, story)
+	# Beyond it, the biome: noise, pushed greener by bearing, snowy on peaks.
+	var b := _biome.get_noise_2d(x, z) + _bias(x, z) - smoothstep(Tune.BIOME_SNOWLINE, Tune.BIOME_SNOWLINE + 30.0, h)
+	var biome := 1.0 - smoothstep(-Tune.BIOME_THAW, Tune.BIOME_THAW, b)
+	return clampf(maxf(core, biome), 0.0, 1.0)
+
+
+# How much greener the land is by its bearing from the story. North is -Z.
+func _bias(x: float, z: float) -> float:
+	var away := Vector2(x - story_centre.x, z - story_centre.z)
+	if away.length() < 1.0:
+		return 0.0
+	away = away.normalized()
+	var bias := 0.0
+	bias += Tune.BIOME_NE * pow(maxf(away.dot(Vector2(1.0, -1.0).normalized()), 0.0), 2.0)
+	bias += Tune.BIOME_NW * pow(maxf(away.dot(Vector2(-1.0, -1.0).normalized()), 0.0), 2.0)
+	bias += Tune.BIOME_SE * pow(maxf(away.dot(Vector2(1.0, 1.0).normalized()), 0.0), 2.0)
+	bias += Tune.BIOME_SW * pow(maxf(away.dot(Vector2(-1.0, 1.0).normalized()), 0.0), 2.0)
+	return bias
+
+
 func _cut(x0: float, z0: float, size_x: float, size_z: float) -> bool:
 	for cut in cuts:
-		var to_local: Transform3D = (cut[0] as Transform3D).affine_inverse()
+		var into: Transform3D = (cut[0] as Transform3D).affine_inverse()
 		var rect: Rect2 = cut[1]
 		# The cell, seen in the cut's frame, against the cut rectangle.
 		var bounds := Rect2()
 		var first := true
 		for corner in [Vector3(x0, 0, z0), Vector3(x0 + size_x, 0, z0), Vector3(x0, 0, z0 + size_z), Vector3(x0 + size_x, 0, z0 + size_z)]:
-			var local: Vector3 = to_local * corner
+			var local: Vector3 = into * corner
 			if first:
 				bounds = Rect2(local.x, local.z, 0, 0)
 				first = false
@@ -273,120 +369,209 @@ func _cut(x0: float, z0: float, size_x: float, size_z: float) -> bool:
 	return false
 
 
-func _build() -> void:
-	var min_x := Tune.FENCE_MIN_X - Tune.GROUND_PAD
-	var max_x := Tune.FENCE_MAX_X + Tune.GROUND_PAD
-	var min_z := Tune.FENCE_MIN_Z - Tune.GROUND_PAD
-	var max_z := Tune.FENCE_MAX_Z + Tune.GROUND_PAD
-	var cells_x := int(ceil((max_x - min_x) / Tune.GROUND_CELL))
-	var cells_z := int(ceil((max_z - min_z) / Tune.GROUND_CELL))
-	_points_x = cells_x + 1
-	_points_z = cells_z + 1
-	_origin_x = min_x
-	_origin_z = min_z
-	_step_x = (max_x - min_x) / float(cells_x)
-	_step_z = (max_z - min_z) / float(cells_z)
+# The cuts' extent on the ground, so only chunks under one test every cell.
+func _cut_bounds() -> Rect2:
+	var bounds := Rect2()
+	var first := true
+	for cut in cuts:
+		var to_world: Transform3D = cut[0]
+		var rect: Rect2 = cut[1]
+		for corner in [rect.position, rect.position + Vector2(rect.size.x, 0.0), rect.position + Vector2(0.0, rect.size.y), rect.end]:
+			var at: Vector3 = to_world * Vector3(corner.x, 0.0, corner.y)
+			bounds = Rect2(at.x, at.z, 0, 0) if first else bounds.expand(Vector2(at.x, at.z))
+			first = false
+	return bounds.grow(2.0) if not first else Rect2()
 
+
+func _chunk_cell_for(cx: int, cz: int) -> float:
+	if cx < 0 or cz < 0 or cx >= chunks_x or cz >= chunks_z:
+		return 0.0
+	return _chunk_cell[cz * chunks_x + cx]
+
+
+func _build_chunks() -> void:
+	chunks_x = int(round((Tune.WORLD_MAX_X - Tune.WORLD_MIN_X) / Tune.CHUNK_SIZE))
+	chunks_z = int(round((Tune.WORLD_MAX_Z - Tune.WORLD_MIN_Z) / Tune.CHUNK_SIZE))
+	var count := chunks_x * chunks_z
+	_chunk_cell.resize(count)
+	_chunk_points.resize(count)
+	_chunk_heights.resize(count)
+	_chunk_normals.resize(count)
+	# Cell size from how near the chunk comes to the story.
+	for cz in chunks_z:
+		for cx in chunks_x:
+			var nearest := 1.0e6
+			for sz in 5:
+				for sx in 5:
+					var x := Tune.WORLD_MIN_X + (float(cx) + float(sx) / 4.0) * Tune.CHUNK_SIZE
+					var z := Tune.WORLD_MIN_Z + (float(cz) + float(sz) / 4.0) * Tune.CHUNK_SIZE
+					nearest = minf(nearest, story_distance(x, z))
+			var cell := Tune.CHUNK_CELL_FAR
+			if nearest < Tune.CHUNK_NEAR:
+				cell = Tune.CHUNK_CELL_NEAR
+			elif nearest < Tune.CHUNK_MID:
+				cell = Tune.CHUNK_CELL_MID
+			_chunk_cell[cz * chunks_x + cx] = cell
 	_pad_heights.clear()
 	var raw: Array[float] = []
 	for pad in pads:
 		raw.append(_sample((pad[0] as Vector2).x, (pad[0] as Vector2).y))
 	_pad_heights = raw
+	snow_material = _material()
+	var cut_area := _cut_bounds()
+	cliff_cells = 0
+	var root := Node3D.new()
+	root.name = "Chunks"
+	add_child(root)
+	for cz in chunks_z:
+		for cx in chunks_x:
+			_build_chunk(root, cx, cz, cut_area)
+
+
+func _build_chunk(root: Node3D, cx: int, cz: int, cut_area: Rect2) -> void:
+	var index := cz * chunks_x + cx
+	var cell := _chunk_cell[index]
+	var cells := int(round(Tune.CHUNK_SIZE / cell))
+	var points := cells + 1
+	var x0 := Tune.WORLD_MIN_X + float(cx) * Tune.CHUNK_SIZE
+	var z0 := Tune.WORLD_MIN_Z + float(cz) * Tune.CHUNK_SIZE
+	# Heights with a one-cell border, so normals at the edges see past them.
+	var wide := points + 2
+	var padded := PackedFloat32Array()
+	padded.resize(wide * wide)
+	for j in wide:
+		for i in wide:
+			padded[j * wide + i] = _sample(x0 + float(i - 1) * cell, z0 + float(j - 1) * cell)
+	var heights := PackedFloat32Array()
+	heights.resize(points * points)
+	var normals := PackedVector3Array()
+	normals.resize(points * points)
+	for j in points:
+		for i in points:
+			var c := (j + 1) * wide + (i + 1)
+			heights[j * points + i] = padded[c]
+			var dx := (padded[c + 1] - padded[c - 1]) / (2.0 * cell)
+			var dz := (padded[c + wide] - padded[c - wide]) / (2.0 * cell)
+			var n := Vector3(-dx, 1.0, -dz).normalized()
+			normals[j * points + i] = n
+			if n.y < CLIFF_FACE and cell <= Tune.CHUNK_CELL_NEAR:
+				cliff_cells += 1
+	# Stitch: along an edge shared with a coarser chunk, lie on its straight
+	# edge between its vertices, so the two meet exactly.
+	var sides := [[cx - 1, cz, true, 0], [cx + 1, cz, true, points - 1], [cx, cz - 1, false, 0], [cx, cz + 1, false, points - 1]]
+	for side: Array in sides:
+		var other := _chunk_cell_for(int(side[0]), int(side[1]))
+		if other <= cell:
+			continue
+		var ratio := int(round(other / cell))
+		for k in points:
+			var r := k % ratio
+			if r == 0:
+				continue
+			var a := k - r
+			var b := mini(a + ratio, points - 1)
+			var t := float(r) / float(ratio)
+			if side[2]:
+				var col: int = side[3]
+				heights[k * points + col] = lerpf(heights[a * points + col], heights[b * points + col], t)
+			else:
+				var row: int = side[3]
+				heights[row * points + k] = lerpf(heights[row * points + a], heights[row * points + b], t)
+	_chunk_cell[index] = cell
+	_chunk_points[index] = points
+	_chunk_heights[index] = heights
+	_chunk_normals[index] = normals
 
 	var vertices := PackedVector3Array()
-	vertices.resize(_points_x * _points_z)
-	_heights.resize(_points_x * _points_z)
-	for z in _points_z:
-		for x in _points_x:
-			var wx := _origin_x + float(x) * _step_x
-			var wz := _origin_z + float(z) * _step_z
-			var h := _sample(wx, wz)
-			var index := z * _points_x + x
-			_heights[index] = h
-			vertices[index] = Vector3(wx, h, wz)
-
-	# Normals from the heights themselves (central differences), so shading
-	# runs smoothly across cells instead of showing the grid.
-	var normals := PackedVector3Array()
-	normals.resize(vertices.size())
-	cliff_cells = 0
-	for z in _points_z:
-		var up := maxi(z - 1, 0)
-		var down := mini(z + 1, _points_z - 1)
-		for x in _points_x:
-			var left := maxi(x - 1, 0)
-			var right := mini(x + 1, _points_x - 1)
-			var dx := (_heights[z * _points_x + right] - _heights[z * _points_x + left]) / (_step_x * float(right - left))
-			var dz := (_heights[down * _points_x + x] - _heights[up * _points_x + x]) / (_step_z * float(down - up))
-			var n := Vector3(-dx, 1.0, -dz).normalized()
-			normals[z * _points_x + x] = n
-			if n.y < CLIFF_FACE:
-				cliff_cells += 1
-	_normals = normals.duplicate()
-
+	vertices.resize(points * points)
+	var colors := PackedColorArray()
+	colors.resize(points * points)
+	for j in points:
+		for i in points:
+			var x := x0 + float(i) * cell
+			var z := z0 + float(j) * cell
+			var h := heights[j * points + i]
+			vertices[j * points + i] = Vector3(x, h, z)
+			colors[j * points + i] = Color(_snow(x, z, h), 0.0, 0.0, 1.0)
+	var chunk_rect := Rect2(x0, z0, Tune.CHUNK_SIZE, Tune.CHUNK_SIZE)
+	var cut_here := not cuts.is_empty() and cut_area.size != Vector2.ZERO and chunk_rect.intersects(cut_area)
+	var kept := PackedByteArray()
+	kept.resize(cells * cells)
+	kept.fill(1)
+	if cut_here:
+		for j in cells:
+			for i in cells:
+				if _cut(x0 + float(i) * cell, z0 + float(j) * cell, cell, cell):
+					kept[j * cells + i] = 0
 	var indices := PackedInt32Array()
 	var faces := PackedVector3Array()
-	var kept := PackedByteArray()
-	kept.resize(cells_x * cells_z)
-	for z in cells_z:
-		for x in cells_x:
-			if not cuts.is_empty() and _cut(_origin_x + float(x) * _step_x, _origin_z + float(z) * _step_z, _step_x, _step_z):
+	for j in cells:
+		for i in cells:
+			if kept[j * cells + i] == 0:
 				continue
-			kept[z * cells_x + x] = 1
-			var i00 := z * _points_x + x
+			var i00 := j * points + i
 			var i10 := i00 + 1
-			var i01 := i00 + _points_x
+			var i01 := i00 + points
 			var i11 := i01 + 1
 			# Clockwise seen from above: Godot's front face. (Counter-clockwise
 			# was culled from above, so for a long time the "snow" on screen
 			# was only the sky colour behind an invisible terrain.)
 			for tri in [[i00, i11, i01], [i00, i10, i11]]:
-				var a: int = tri[0]
-				var b: int = tri[1]
-				var c: int = tri[2]
-				indices.append(a)
-				indices.append(b)
-				indices.append(c)
-				faces.append(vertices[a])
-				faces.append(vertices[b])
-				faces.append(vertices[c])
-	# The walkable surface is the top. The pack continues SNOW_DEPTH straight
-	# down, with a wall wherever a cell was cut out, so the depth is real.
-	var grid := vertices.size()
-	var bottom := PackedVector3Array()
-	bottom.resize(grid)
-	var bottom_normals := PackedVector3Array()
-	bottom_normals.resize(grid)
-	for i in grid:
-		var top := vertices[i]
-		bottom[i] = Vector3(top.x, top.y - Tune.SNOW_DEPTH, top.z)
-		bottom_normals[i] = -normals[i]
-	vertices.append_array(bottom)
-	normals.append_array(bottom_normals)
-	var top_indices := indices.duplicate()
-	for i in range(0, top_indices.size(), 3):
-		indices.append(top_indices[i] + grid)
-		indices.append(top_indices[i + 2] + grid)
-		indices.append(top_indices[i + 1] + grid)
+				for corner: int in tri:
+					indices.append(corner)
+					faces.append(vertices[corner])
+	if cut_here:
+		_add_depth(vertices, normals, colors, indices, kept, cells, points)
+
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var chunk := MeshInstance3D.new()
+	chunk.name = "Chunk_%d_%d" % [cx, cz]
+	chunk.mesh = mesh
+	chunk.material_override = snow_material
+	chunk.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	root.add_child(chunk)
+	var body := StaticBody3D.new()
+	body.name = "Collision"
+	body.collision_layer = Tune.LAYER_WORLD
+	body.collision_mask = 0
+	var shape := CollisionShape3D.new()
+	var concave := ConcavePolygonShape3D.new()
+	concave.data = faces
+	concave.backface_collision = true
+	shape.shape = concave
+	body.add_child(shape)
+	chunk.add_child(body)
+
+
+# Where cells are cut out (the stair well), the snow shows its depth: the pack
+# continues SNOW_DEPTH straight down, with a wall along every cut edge.
+func _add_depth(vertices: PackedVector3Array, normals: PackedVector3Array, colors: PackedColorArray, indices: PackedInt32Array, kept: PackedByteArray, cells: int, points: int) -> void:
 	var lips: Array[Vector3] = []
-	for z in cells_z:
-		for x in cells_x:
-			if kept[z * cells_x + x] == 0:
+	for j in cells:
+		for i in cells:
+			if kept[j * cells + i] == 0:
 				continue
-			var i00 := z * _points_x + x
+			var i00 := j * points + i
 			var i10 := i00 + 1
-			var i01 := i00 + _points_x
+			var i01 := i00 + points
 			var i11 := i01 + 1
-			if not _cell(kept, cells_x, cells_z, x - 1, z):
+			if i > 0 and kept[j * cells + i - 1] == 0:
 				lips.append(vertices[i01])
 				lips.append(vertices[i00])
-			if not _cell(kept, cells_x, cells_z, x + 1, z):
+			if i < cells - 1 and kept[j * cells + i + 1] == 0:
 				lips.append(vertices[i10])
 				lips.append(vertices[i11])
-			if not _cell(kept, cells_x, cells_z, x, z - 1):
+			if j > 0 and kept[(j - 1) * cells + i] == 0:
 				lips.append(vertices[i00])
 				lips.append(vertices[i10])
-			if not _cell(kept, cells_x, cells_z, x, z + 1):
+			if j < cells - 1 and kept[(j + 1) * cells + i] == 0:
 				lips.append(vertices[i11])
 				lips.append(vertices[i01])
 	var lip := 0
@@ -403,10 +588,9 @@ func _build() -> void:
 		vertices.append(top_b)
 		vertices.append(Vector3(top_b.x, top_b.y - Tune.SNOW_DEPTH, top_b.z))
 		vertices.append(Vector3(top_a.x, top_a.y - Tune.SNOW_DEPTH, top_a.z))
-		normals.append(outward)
-		normals.append(outward)
-		normals.append(outward)
-		normals.append(outward)
+		for k in 4:
+			normals.append(outward)
+			colors.append(Color(1.0, 0.0, 0.0, 1.0))
 		indices.append(base)
 		indices.append(base + 1)
 		indices.append(base + 2)
@@ -414,40 +598,31 @@ func _build() -> void:
 		indices.append(base + 2)
 		indices.append(base + 3)
 
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
-	var mesh_instance := MeshInstance3D.new()
-	mesh_instance.name = "SnowSurface"
-	mesh_instance.mesh = mesh
-	snow_material = _material()
-	mesh_instance.material_override = snow_material
-	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	add_child(mesh_instance)
-
+# An invisible wall just inside the world's edge, behind the ring of peaks.
+func _build_edge() -> void:
 	var body := StaticBody3D.new()
-	body.name = "GroundCollision"
+	body.name = "WorldEdge"
 	body.collision_layer = Tune.LAYER_WORLD
 	body.collision_mask = 0
-	var shape := CollisionShape3D.new()
-	shape.name = "SnowShape"
-	var concave := ConcavePolygonShape3D.new()
-	concave.data = faces
-	concave.backface_collision = true
-	shape.shape = concave
-	body.add_child(shape)
+	var inset := 12.0
+	var width := Tune.WORLD_MAX_X - Tune.WORLD_MIN_X
+	var depth := Tune.WORLD_MAX_Z - Tune.WORLD_MIN_Z
+	var centre := Vector3((Tune.WORLD_MIN_X + Tune.WORLD_MAX_X) * 0.5, 0.0, (Tune.WORLD_MIN_Z + Tune.WORLD_MAX_Z) * 0.5)
+	var walls := [
+		[Vector3(Tune.WORLD_MIN_X + inset - 2.0, 0.0, centre.z), Vector3(4.0, 800.0, depth)],
+		[Vector3(Tune.WORLD_MAX_X - inset + 2.0, 0.0, centre.z), Vector3(4.0, 800.0, depth)],
+		[Vector3(centre.x, 0.0, Tune.WORLD_MIN_Z + inset - 2.0), Vector3(width, 800.0, 4.0)],
+		[Vector3(centre.x, 0.0, Tune.WORLD_MAX_Z - inset + 2.0), Vector3(width, 800.0, 4.0)],
+	]
+	for wall: Array in walls:
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = wall[1]
+		shape.shape = box
+		shape.position = wall[0]
+		body.add_child(shape)
 	add_child(body)
-
-
-func _cell(kept: PackedByteArray, cells_x: int, cells_z: int, x: int, z: int) -> bool:
-	if x < 0 or z < 0 or x >= cells_x or z >= cells_z:
-		return false
-	return kept[z * cells_x + x] != 0
 
 
 func _material() -> ShaderMaterial:

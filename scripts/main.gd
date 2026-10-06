@@ -78,6 +78,20 @@ func _ready() -> void:
 		if saved_house and int(saved_house.get_meta("layout_revision", 0)) != House.LAYOUT_REVISION:
 			retain.append(trail.house)
 			house_changed = true
+	# A snapshot of older land: keep the ground, woods, landmarks and fence as
+	# generated now. The house keeps its edits and is set back onto its pad.
+	var terrain_changed := false
+	if use_snapshot:
+		var saved_ground := snapshot.get_node_or_null("Trail/Ground")
+		if saved_ground == null or int(saved_ground.get_meta("terrain_revision", 0)) != Ground.TERRAIN_REVISION:
+			terrain_changed = true
+			var keep: Array[Node] = trail.route_derived()
+			var fence := trail.get_node_or_null("Fence")
+			if fence:
+				keep.append(fence)
+			for node in keep:
+				if not retain.has(node):
+					retain.append(node)
 	# An old bake stored a page as a trail child in the slot Threats uses.
 	# Hold that branch aside until the snapshot contains the slot, so the
 	# page is not painted onto it.
@@ -86,6 +100,8 @@ func _ready() -> void:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
 		_settle_route(trail, shift, built_house, built_exit)
+		if terrain_changed:
+			trail.settle_house()
 		if trail.house:
 			trail.house.settle_comfort()
 		player.apply_authored_spawn(house_changed)
@@ -101,6 +117,8 @@ func _ready() -> void:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
 		_settle_route(trail, shift, built_house, built_exit)
+		if terrain_changed:
+			trail.settle_house()
 		player.apply_authored_spawn(house_changed)
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
