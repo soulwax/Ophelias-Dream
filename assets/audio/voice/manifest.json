@@ -56,6 +56,61 @@
       "similarity": 0.7604011297225952,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Don't turn around. Fine. I won't. Just be at the lights.",
+      "mood": "resolve",
+      "category": "pages",
+      "file": "eff959d41255497ab7c465b57cd97801a32704b87a4b9974af6307fc9daf83b1.wav",
+      "seconds": 5.4290416666666665,
+      "wer": 0.0,
+      "similarity": 0.8186920881271362,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "One cup. Just one. I'm not lifting that sheet. I'm not.",
+      "mood": "breaking",
+      "category": "pages",
+      "file": "03742d079929e91ac272576277f7314d30bffcee608af94b844d96e2d92e0f33.wav",
+      "seconds": 5.426916666666667,
+      "wer": 0.0,
+      "similarity": 0.8017343282699585,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "She left the door open for me. Or for herself. She never could decide which of us needed rescuing.",
+      "mood": "warm",
+      "category": "deciphered",
+      "file": "b27040aa1e8fbde58747f6aec660c82bd38074e4321893f71cd597342aba5e3c.wav",
+      "seconds": 7.402166666666667,
+      "wer": 0.0,
+      "similarity": 0.6615484356880188,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "One cup. The intake said one cup. I'm not counting again. I'm not.",
+      "mood": "breaking",
+      "category": "deciphered",
+      "file": "b47fd982e0f5d888ee18738b3c3d2f862e63a0d45342aaff1875955f027ed888.wav",
+      "seconds": 7.1645,
+      "wer": 0.0,
+      "similarity": 0.6454510688781738,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "It knew my name. It used my name on her.",
+      "mood": "shaken",
+      "category": "deciphered",
+      "file": "961a6d951167c69b83ef56885ae7134244e7208bc9f1e06422f6633471465a83.wav",
+      "seconds": 3.631875,
+      "wer": 0.0,
+      "similarity": 0.7309876680374146,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }
