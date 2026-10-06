@@ -24,11 +24,15 @@ uv pip install --python build/voice/gpu-venv/Scripts/python.exe --reinstall torc
 build/voice/gpu-venv/Scripts/python.exe -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 build/voice/gpu-venv/Scripts/hf.exe download Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign --local-dir build/voice/hf/VoiceDesign
 build/voice/gpu-venv/Scripts/hf.exe download Qwen/Qwen3-TTS-12Hz-1.7B-Base --local-dir build/voice/hf/Base
+build/voice/gpu-venv/Scripts/hf.exe download mobiuslabsgmbh/faster-whisper-large-v3-turbo --local-dir build/voice/hf/whisper-model
+build/voice/gpu-venv/Scripts/hf.exe download speechbrain/spkrec-ecapa-voxceleb --local-dir build/voice/hf/ecapa-model
 python tools/bake_speech.py --self-test
 build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --anchor-only
 ```
 
 Listen to `build/voice/ref/anchor.wav` before baking the lines. Keep it explicitly, or re-roll with `--anchor-only --new-anchor --anchor-seed N`. Then run `build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --force`. Four VoiceDesign takes receive the identity and mood direction. Whisper measures word error rate (WER); takes with WER ≤ 0.15 compete by highest ECAPA speaker similarity to the anchor. If no take reaches similarity 0.60 with acceptable WER, two Base-clone takes provide a fallback. The final choice is the highest similarity among takes passing WER, so 0.60 triggers fallback rather than imposing a final rejection threshold.
+
+The baker uses CUDA for Qwen. It scores on CUDA when enough memory remains and uses CPU scoring when the GPU is crowded. Each accepted clip is saved immediately, with a manifest checkpoint. Run the command without `--force` to resume missing clips.
 
 `--only "exact line text"` re-bakes a single line. Failed lines are listed and return exit 1; listen and re-bake them, or explicitly keep the best with `--only "exact line text" --accept-bad`. `--engine kokoro` is an optional CPU fallback using the old `build/voice/models/` ONNX files; it needs kokoro-onnx installed in its environment and does not provide mood direction. `--voice` and `--speed` apply to Kokoro. `manifest.json` records text, mood, category, file, duration, engine, model, WER and similarity. Listen to all clips in manifest order after the bake.
 
