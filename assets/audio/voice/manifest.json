@@ -298,6 +298,72 @@
       "similarity": 0.7864711284637451,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Still two chairs. I keep thinking one of them will be pushed in.",
+      "mood": "hushed",
+      "category": "revisits",
+      "file": "a8c1ad6f6cc15c1902b39116fa3bccf373b82ed34790bb3fa2281221b7fc9748.wav",
+      "seconds": 4.550041666666667,
+      "wer": 0.0,
+      "similarity": 0.7653911709785461,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "I said I wouldn't come back down here. I keep coming back down here.",
+      "mood": "breaking",
+      "category": "revisits",
+      "file": "fa224de6b980c81ab9cf1b96a8763cab9d14918c6dec20fdbb664ff2a5f2eedb.wav",
+      "seconds": 4.241791666666667,
+      "wer": 0.0,
+      "similarity": 0.7460074424743652,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Every set of prints out here could be mine.",
+      "mood": "hushed",
+      "category": "revisits",
+      "file": "4fb9326d1f4929a96f1db5a54583c05932e26cd3a513096c875215296eabf76f.wav",
+      "seconds": 2.7405833333333334,
+      "wer": 0.0,
+      "similarity": 0.7542833089828491,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "She knows this field better than I do. She'll have found shelter.",
+      "mood": "steady",
+      "category": "bored",
+      "file": "b73ce488353d30f9700cfcb68a3bddda338c7c651548f71ef2388479bc414b5e.wav",
+      "seconds": 3.846375,
+      "wer": 0.0,
+      "similarity": 0.7352501749992371,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Ten minutes, she said. Ten minutes, and then the snow came in sideways.",
+      "mood": "shaken",
+      "category": "bored",
+      "file": "c6043abf83185a9f533e7342851cffeae8fff53630c07b7ce3f8c802819b8d41.wav",
+      "seconds": 4.984583333333333,
+      "wer": 0.0,
+      "similarity": 0.7815170884132385,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "When I find her I'm going to be so angry. And then I'm not letting go.",
+      "mood": "warm",
+      "category": "bored",
+      "file": "88b4833a7e0d5277b5f007d0dca0d9fda8d053eba760d512e01b1bac58b73320.wav",
+      "seconds": 4.540416666666666,
+      "wer": 0.0,
+      "similarity": 0.7727537751197815,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }
