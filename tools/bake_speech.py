@@ -1,10 +1,14 @@
-"""Bake her reviewed lines into clips; no model runs during gameplay.
+"""Perform her lines into clips; no model runs during gameplay.
 
-Engines: qwen (default) speaks each line with Qwen3-TTS VoiceDesign on CUDA,
-directed by its mood, renders four takes, and keeps the one Whisper hears
-right and that sounds most like her anchor; kokoro is the old CPU voice.
-Setup: docs/VOICE.md. Clips land in assets/audio/voice/ as
-sha256("text|mood").wav with manifest.json beside them.
+Her script is docs/MATHILDA_STORY.md (tools/script_to_lines.py writes lines.json).
+Each of the 14 moods has an impression: a short reference performance rendered
+once with Qwen3-TTS VoiceDesign (`--impressions`, in build/voice/gpu-venv).
+Every line is then performed by Chatterbox (build/voice/cb-venv), cloned from
+its mood's impression and pushed by that mood's controls. Three takes, Whisper
+drops takes with wrong words, the take most like the impression wins.
+`build/voice/review.html` lists every clip to listen to. Clips land in
+assets/audio/voice/ as sha256("text|mood").wav, and are never deleted: replaced
+or scrapped clips move to build/voice/archive/. Setup: docs/VOICE.md.
 """
 
 import argparse
@@ -18,26 +22,31 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets/audio/voice"
 REF = ROOT / "build/voice/ref"
+CANDIDATES = REF / "candidates"
 HF = ROOT / "build/voice/hf"
+ARCHIVE = ROOT / "build/voice/archive"
 DESIGN_MODEL = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
-BASE_MODEL = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
 IDENTITY = ("A woman around thirty. A low, soft alto with a little breath in it, plain North American accent. "
             "She is cold, tired, and talking quietly to herself in an empty place; never theatrical, never narrating.")
-# Mood: (direction appended to her identity, loudest-50-ms level in dBFS).
+# Mood: direction (impressions), impression text, Chatterbox exaggeration, cfg_weight, temperature, level dBFS.
 MOODS = {
-    "steady": ("Calm and even, trying to reassure herself.", -12.0),
-    "warm": ("Tender and fond, almost smiling, a catch at the end.", -12.0),
-    "hushed": ("Barely above a whisper, close and careful, as if something might hear.", -18.0),
-    "shaken": ("Unsteady, breath short, words coming a little too fast.", -12.0),
-    "breaking": ("On the edge of tears, voice cracking, pauses where it gives out.", -13.0),
-    "resolve": ("Low and determined, jaw set, each word placed.", -12.0),
-    "calling": ("Shouting as loud as she can into a strong wind, straining, desperate.", -10.0),
+    "steady": ("Calm and even, talking herself into calm.", "Okay. The kettle's on, the door's shut, the lantern's lit. Everything is where it should be. I'm fine.", 0.45, 0.50, 0.80, -12.0),
+    "warm": ("Tender and fond, almost smiling, a catch at the end.", "You always do this. You show up late with snow in your hair and you think a smile fixes it. ...It does, a bit.", 0.55, 0.45, 0.80, -12.0),
+    "hushed": ("Barely above a whisper, close and careful, as if something might hear.", "Shh. Don't move. If we stay very still, maybe it won't hear us breathing.", 0.35, 0.55, 0.70, -18.0),
+    "shaken": ("Unsteady, breath short, words coming a little too fast.", "I don't... I don't understand, it was right here, I put it right here, I know I did.", 0.70, 0.40, 0.85, -12.0),
+    "breaking": ("On the edge of tears, voice cracking, pauses where it gives out.", "I'm sorry. I'm so sorry. I didn't mean it, I never meant any of it, please come back.", 0.85, 0.35, 0.90, -13.0),
+    "resolve": ("Low and determined, jaw set, each word placed.", "No. I'm not stopping. Not now. I'll walk until there's nowhere left to walk.", 0.55, 0.45, 0.75, -12.0),
+    "calling": ("Shouting as loud as she can into a strong wind, straining, desperate.", "Can you hear me? Hello? I'm over here! Over here!", 1.00, 0.30, 0.85, -9.0),
+    "numb": ("Flat, slow and far away, the feeling gone out of her voice.", "It doesn't hurt any more. That's the strange part. Nothing hurts. It's all very far away.", 0.25, 0.60, 0.60, -15.0),
+    "bitter": ("Hurt turned into anger, clipped, a little too loud, then quiet.", "Oh, of course. Of course you did. You always get to leave, and I always get to clean up after.", 0.75, 0.40, 0.85, -11.0),
+    "pleading": ("Small and begging, bargaining with something that isn't listening.", "Please. I'll do anything. Just this once. Just let her be all right, and I won't ask for anything else.", 0.70, 0.35, 0.85, -13.0),
+    "wry": ("Dark humour under her breath, half a laugh, to keep from crying.", "Well. That went about as well as everything else today. Brilliant. Really.", 0.50, 0.45, 0.85, -13.0),
+    "remembering": ("Soft and slow, looking at something far away, a smile that hurts.", "We used to skate on the lake when it froze. She'd hold my hands and go backwards, laughing, the whole way across.", 0.40, 0.50, 0.75, -14.0),
+    "panicked": ("Fast and breathless, words tripping over each other.", "No no no, where is it, where did it go, I can't, I can't breathe, where is it...", 0.95, 0.30, 0.95, -11.0),
+    "spent": ("Completely out of breath, gasping between the words.", "Wait... wait... I just... I need... one second. Okay. Okay.", 0.80, 0.35, 0.90, -13.0),
 }
-ANCHOR_TEXT = "I'm going to find her. The lantern's lit, the door's open, and she can't have gone far in this."
-TAKES = 4
-CLONE_TAKES = 2
+TAKES = 3
 MAX_WER = 0.15
-MIN_SIMILARITY = 0.60
 
 
 def clip_name(text, mood):
@@ -45,31 +54,35 @@ def clip_name(text, mood):
 
 
 def lines(data):
-    """Every (category, text, mood) in lines.json, in file order, once each."""
+    """Every (category, text, mood, overrides) in lines.json, once each."""
     found = []
 
     def add(category, item):
         if isinstance(item, str):
             item = {"text": item, "mood": "steady"}
-        found.append((category, item["text"].strip(), item.get("mood", "steady")))
+        extra = {k: item[k] for k in ("exaggeration", "cfg", "temperature") if k in item}
+        found.append((category, item["text"].strip(), item.get("mood", "steady"), extra))
 
-    for category in ("pages", "deciphered", "places", "revisits"):
+    for category in ("pages", "deciphered", "places", "revisits", "endings", "answers"):
         for item in data.get(category, {}).values():
             add(category, item)
-    for category in ("bored", "calls"):
+    for category in ("bored", "memories", "calls"):
         group = data.get(category, {})
         if isinstance(group, list):
             group = {"hope": group}
-        for stage in ("hope", "doubt", "resolve"):
+        for stage in ("hope", "doubt", "resolve", "after"):
             for item in group.get(stage, []):
                 add(category, item)
-    for item in data.get("misread", []):
-        add("misread", item)
+    for category in ("misread", "spent", "cold", "falls"):
+        for item in data.get(category, []):
+            add(category, item)
+    if isinstance(data.get("turned"), dict):
+        add("turned", data["turned"])
     seen, unique = set(), []
-    for category, text, mood in found:
-        if (text, mood) not in seen:
-            seen.add((text, mood))
-            unique.append((category, text, mood))
+    for entry in found:
+        if (entry[1], entry[2]) not in seen:
+            seen.add((entry[1], entry[2]))
+            unique.append(entry)
     return unique
 
 
@@ -108,49 +121,72 @@ def trim(samples, rate, keep=0.06, floor_db=-45.0):
     return samples[max(idx[0] - pad, 0): idx[-1] + pad + 1]
 
 
+def archive(paths, label=""):
+    """Move clips (with their .import files) out of the game, never deleting them."""
+    import datetime
+    import shutil
+    target = ARCHIVE / (datetime.date.today().isoformat() + (f"-{label}" if label else ""))
+    target.mkdir(parents=True, exist_ok=True)
+    for path in paths:
+        for item in (path, path.with_name(path.name + ".import")):
+            if item.exists():
+                shutil.move(str(item), str(target / item.name))
+    return target
+
+
+def write_page(path, title, groups):
+    """A local listening page: groups of (src, label, detail) rows, each with an audio player."""
+    import html
+    parts = [f"<!doctype html><meta charset=utf-8><title>{title}</title>",
+             "<style>body{font:15px system-ui;margin:24px;max-width:980px}h2{margin-top:28px}"
+             ".row{display:flex;gap:12px;align-items:center;margin:6px 0}.d{color:#777;font-size:13px}</style>",
+             f"<h1>{title}</h1>"]
+    for heading, rows in groups:
+        parts.append(f"<h2>{html.escape(heading)}</h2>")
+        for src, label, detail in rows:
+            parts.append(f"<div class=row><audio controls preload=none src='{html.escape(src)}'></audio>"
+                         f"<div>{html.escape(label)}<div class=d>{html.escape(detail)}</div></div></div>")
+    path.write_text("\n".join(parts), encoding="utf-8")
+
+
 class Qwen:
-    """Qwen3-TTS: VoiceDesign speaks from a direction; Base clones the anchor."""
+    """Qwen3-TTS VoiceDesign, used only to perform the per-mood impressions."""
 
     def __init__(self):
         import torch
         from qwen_tts import Qwen3TTSModel
         self.torch = torch
-        self.loader = Qwen3TTSModel
-        self.kwargs = dict(device_map="cuda:0", dtype=torch.bfloat16, attn_implementation="sdpa")
-        self.design = Qwen3TTSModel.from_pretrained(str(HF / "VoiceDesign"), **self.kwargs)
-        self.base = None
-        self.prompt = None
+        self.design = Qwen3TTSModel.from_pretrained(
+            str(HF / "VoiceDesign"), device_map="cuda:0", dtype=torch.bfloat16, attn_implementation="sdpa")
 
-    def speak(self, text, mood, seed):
+    def perform(self, mood, count):
         import numpy as np
+        direction, text = MOODS[mood][0], MOODS[mood][1]
+        self.torch.manual_seed(500)
+        wavs, rate = self.design.generate_voice_design(
+            text=[text] * count, language="English", instruct=[f"{IDENTITY} {direction}"] * count,
+            max_new_tokens=384)
+        return [(np.asarray(w, dtype=np.float32).reshape(-1), int(rate)) for w in wavs]
+
+
+class Chatter:
+    """Chatterbox clones each line from its mood's impression, acted by that mood's controls."""
+
+    def __init__(self):
+        import torch
+        from chatterbox.tts import ChatterboxTTS
+        self.torch = torch
+        self.model = ChatterboxTTS.from_pretrained(device="cuda")
+
+    def perform(self, text, mood, extra, seed):
+        import numpy as np
+        _, _, exaggeration, cfg, temperature, _ = MOODS[mood]
         self.torch.manual_seed(seed)
-        wavs, rate = self.design.generate_voice_design(
-            text=text, language="English", instruct=f"{IDENTITY} {MOODS[mood][0]}",
-            max_new_tokens=192)
-        return np.asarray(wavs[0], dtype=np.float32).reshape(-1), int(rate)
-
-    def speak_many(self, text, mood):
-        import numpy as np
-        # VoiceDesign accepts a batch; four independently sampled takes are
-        # much quicker than four serial calls on the release GPU.
-        self.torch.manual_seed(1000)
-        wavs, rate = self.design.generate_voice_design(
-            text=[text] * TAKES, language="English",
-            instruct=[f"{IDENTITY} {MOODS[mood][0]}"] * TAKES,
-            max_new_tokens=192)
-        return [(np.asarray(wav, dtype=np.float32).reshape(-1), int(rate)) for wav in wavs]
-
-    def clone_many(self, text):
-        import numpy as np
-        if self.base is None:
-            self.base = self.loader.from_pretrained(str(HF / "Base"), **self.kwargs)
-            self.prompt = self.base.create_voice_clone_prompt(
-                ref_audio=str(REF / "anchor.wav"), ref_text=ANCHOR_TEXT, x_vector_only_mode=False)
-        self.torch.manual_seed(2000)
-        wavs, rate = self.base.generate_voice_clone(
-            text=[text] * CLONE_TAKES, language="English", voice_clone_prompt=self.prompt,
-            max_new_tokens=192)
-        return [(np.asarray(wav, dtype=np.float32).reshape(-1), int(rate)) for wav in wavs]
+        wav = self.model.generate(
+            text, audio_prompt_path=str(REF / f"{mood}.wav"),
+            exaggeration=extra.get("exaggeration", exaggeration),
+            cfg_weight=extra.get("cfg", cfg), temperature=extra.get("temperature", temperature))
+        return wav.squeeze(0).cpu().numpy().astype(np.float32), int(self.model.sr)
 
 
 class Judge:
@@ -189,43 +225,53 @@ class Judge:
             vector = self.ecapa.encode_batch(self._16k(samples, rate).to(self.device)).squeeze()
         return vector / vector.norm()
 
+    def embed_file(self, path):
+        import soundfile as sf
+        samples, rate = sf.read(path, dtype="float32")
+        if samples.ndim > 1:
+            samples = samples.mean(axis=1)
+        return self.embed(samples, rate)
+
     def similarity(self, samples, rate):
         return float((self.embed(samples, rate) * self.anchor).sum())
 
 
-def ensure_anchor(engine, judge, new, seed):
+def impressions(args):
+    """Render candidate impressions per mood, pick one each, and write impressions.html."""
+    import shutil
     import soundfile as sf
-    path = REF / "anchor.wav"
-    if new or not path.exists():
-        REF.mkdir(parents=True, exist_ok=True)
-        samples, rate = engine.speak(ANCHOR_TEXT, "steady", seed)
-        sf.write(path, level(trim(samples, rate), rate, -12.0), rate, subtype="PCM_16")
-        print(f"New anchor: {path}  (listen; re-roll with --new-anchor --anchor-seed N)")
-    if judge is not None:
-        samples, rate = sf.read(path, dtype="float32")
-        judge.anchor = judge.embed(samples, rate)
+    judge, qwen = Judge(), Qwen()
+    CANDIDATES.mkdir(parents=True, exist_ok=True)
+    moods = args.moods.split(",") if args.moods else list(MOODS)
+    if "steady" in moods:
+        moods = ["steady"] + [m for m in moods if m != "steady"]
+    picks = dict(p.split("=") for p in args.pick or [])
+    rows = []
+    for mood in moods:
+        print(f"[{mood}] {MOODS[mood][1]}", flush=True)
+        # Steady is measured against the approved anchor; every other mood against steady.
+        judge.anchor = judge.embed_file(REF / ("anchor.wav" if mood == "steady" else "steady.wav"))
+        scored = []
+        for n, (samples, rate) in enumerate(qwen.perform(mood, args.candidates)):
+            samples = trim(samples, rate)
+            path = CANDIDATES / f"{mood}_{n}.wav"
+            sf.write(path, level(samples, rate, MOODS[mood][5]), rate, subtype="PCM_16")
+            heard = judge.hear(samples, rate)
+            scored.append(dict(n=n, path=path, wer=wer(MOODS[mood][1], heard),
+                               similarity=judge.similarity(samples, rate), heard=heard))
+            print(f"    {n}: wer {scored[-1]['wer']:.2f} sim {scored[-1]['similarity']:.2f} | {heard}", flush=True)
+        usable = [s for s in scored if s["wer"] <= 0.25] or scored
+        chosen = int(picks[mood]) if mood in picks else max(usable, key=lambda s: s["similarity"])["n"]
+        shutil.copyfile(CANDIDATES / f"{mood}_{chosen}.wav", REF / f"{mood}.wav")
+        print(f"    picked {chosen}", flush=True)
+        rows.append((mood, scored, chosen))
+    write_page(REF.parent / "impressions.html", "Impressions", [
+        (mood, [(f"ref/candidates/{s['path'].name}", f"#{s['n']}{' (picked)' if s['n'] == chosen else ''}",
+                 f"wer {s['wer']:.2f} · sim {s['similarity']:.2f} · {s['heard']}") for s in scored])
+        for mood, scored, chosen in rows])
 
 
-def best_take(engine, judge, text, mood):
-    takes = [("qwen-design", DESIGN_MODEL, trim(samples, rate), rate)
-             for samples, rate in engine.speak_many(text, mood)]
-    scored = [score(judge, text, *take) for take in takes]
-    if not any(s["wer"] <= MAX_WER and s["similarity"] >= MIN_SIMILARITY for s in scored):
-        for samples, rate in engine.clone_many(text):
-            scored.append(score(judge, text, "qwen-clone", BASE_MODEL, trim(samples, rate), rate))
-    good = [s for s in scored if s["wer"] <= MAX_WER]
-    return max(good, key=lambda s: s["similarity"]) if good else min(scored, key=lambda s: s["wer"]), bool(good)
-
-
-def score(judge, text, engine, model, samples, rate):
-    heard = judge.hear(samples, rate)
-    result = dict(engine=engine, model=model, samples=samples, rate=rate,
-                  wer=wer(text, heard), similarity=judge.similarity(samples, rate), heard=heard)
-    print(f"    {engine:12s} wer {result['wer']:.2f}  sim {result['similarity']:.2f}  | {heard}", flush=True)
-    return result
-
-
-def bake_kokoro(args, todo):
+def bake_kokoro(args):
     import numpy as np
     import onnxruntime as ort
     from kokoro_onnx import Kokoro
@@ -236,10 +282,38 @@ def bake_kokoro(args, todo):
                                    providers=["CPUExecutionProvider"])
     kokoro = Kokoro.from_session(session, str(models / "voices-v1.0.bin"))
 
-    def speak(text, mood):
+    def speak(text):
         samples, rate = kokoro.create(text, voice=args.voice, speed=args.speed, lang="en-us")
         return np.asarray(samples, dtype=np.float32), rate
     return speak
+
+
+def best_take(chatter, judge, text, mood, extra):
+    judge.anchor = judge.embed_file(REF / f"{mood}.wav")
+    scored = []
+    for seed in range(1, TAKES + 1):
+        samples, rate = chatter.perform(text, mood, extra, seed)
+        samples = trim(samples, rate)
+        heard = judge.hear(samples, rate)
+        scored.append(dict(samples=samples, rate=rate, wer=wer(text, heard),
+                           similarity=judge.similarity(samples, rate), heard=heard))
+        print(f"    take {seed}: wer {scored[-1]['wer']:.2f}  sim {scored[-1]['similarity']:.2f}  | {heard}", flush=True)
+    good = [s for s in scored if s["wer"] <= MAX_WER]
+    return (max(good, key=lambda s: s["similarity"]) if good else min(scored, key=lambda s: s["wer"])), bool(good)
+
+
+def write_review(clips):
+    order = ["pages", "deciphered", "places", "revisits", "bored", "memories", "calls", "spent", "cold",
+             "falls", "turned", "answers", "misread", "endings"]
+    groups = []
+    for category in order + sorted({c["category"] for c in clips} - set(order)):
+        rows = [(f"../../assets/audio/voice/{c['file']}", c["text"],
+                 f"[{c['mood']}] wer {c.get('wer') if c.get('wer') is not None else '-'} · "
+                 f"sim {round(c['similarity'], 2) if c.get('similarity') is not None else '-'}")
+                for c in clips if c["category"] == category]
+        if rows:
+            groups.append((category, rows))
+    write_page(ROOT / "build/voice/review.html", "Her lines", groups)
 
 
 def self_test():
@@ -250,93 +324,108 @@ def self_test():
     assert wer("I'm not lifting that sheet", "im not lifting the sheet") > 0.0
     data = json.loads((OUT / "lines.json").read_text(encoding="utf-8"))
     every = lines(data)
-    assert len(every) == 62, len(every)
-    assert all(mood in MOODS for _, _, mood in every)
+    assert len(every) == 137, len(every)
+    assert all(mood in MOODS for _, _, mood, _ in every), {m for _, _, m, _ in every} - set(MOODS)
+    assert len(MOODS) == 14 and all(len(v) == 6 and v[1] for v in MOODS.values())
+    assert any(extra.get("exaggeration") == 0.9 for _, text, _, extra in every if text == "Go, then!")
     print("SELF-TEST PASS")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--engine", choices=["qwen", "kokoro"], default="qwen")
-    parser.add_argument("--force", action="store_true", help="Re-bake every line")
-    parser.add_argument("--only", help="Re-bake only the line with exactly this text")
-    parser.add_argument("--new-anchor", action="store_true", help="Render a new anchor voice")
-    parser.add_argument("--anchor-seed", type=int, default=7)
-    parser.add_argument("--anchor-only", action="store_true", help="Render the anchor and stop")
+    parser.add_argument("--engine", choices=["chatterbox", "kokoro"], default="chatterbox")
+    parser.add_argument("--force", action="store_true", help="Re-perform every line")
+    parser.add_argument("--only", help="Re-perform only the line with exactly this text")
+    parser.add_argument("--mood", help="Re-perform only the lines in this mood")
     parser.add_argument("--accept-bad", action="store_true", help="Keep the best take even above MAX_WER")
+    parser.add_argument("--scrap", action="store_true", help="Archive every clip and start fresh")
+    parser.add_argument("--impressions", action="store_true", help="Render per-mood impressions (gpu-venv)")
+    parser.add_argument("--moods", help="Comma list of moods for --impressions")
+    parser.add_argument("--candidates", type=int, default=4)
+    parser.add_argument("--pick", action="append", help="mood=n: keep that impression candidate")
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--voice", default="af_sarah", help="kokoro voice")
     parser.add_argument("--speed", type=float, default=0.92, help="kokoro speed")
     args = parser.parse_args()
     if args.self_test:
         return self_test()
+    manifest_path = OUT / "manifest.json"
+    if args.scrap:
+        where = archive(sorted(OUT.glob("*.wav")) + [manifest_path], "qwen")
+        manifest_path.write_text(json.dumps({"engine": None, "clips": []}, indent=2) + "\n", encoding="utf-8")
+        print(f"Archived the old clips to {where}")
+        return
+    if args.impressions:
+        return impressions(args)
     import numpy as np
     import soundfile as sf
 
     todo = lines(json.loads((OUT / "lines.json").read_text(encoding="utf-8")))
-    manifest_path = OUT / "manifest.json"
     old = {}
     if manifest_path.exists():
         for clip in json.loads(manifest_path.read_text(encoding="utf-8")).get("clips", []):
             old[clip["file"]] = clip
-    engine = judge = kokoro = None
-    if args.engine == "qwen":
-        engine = Qwen()
-        if args.anchor_only:
-            ensure_anchor(engine, None, args.new_anchor, args.anchor_seed)
-            return
-        judge = Judge()
-        ensure_anchor(engine, judge, args.new_anchor, args.anchor_seed)
+    chatter = judge = kokoro = None
+    if args.engine == "chatterbox":
+        missing = sorted({mood for _, _, mood, _ in todo if not (REF / f"{mood}.wav").exists()})
+        if missing:
+            sys.exit(f"No impression for {', '.join(missing)}; run --impressions first.")
+        chatter, judge = Chatter(), Judge()
     else:
-        kokoro = bake_kokoro(args, todo)
+        kokoro = bake_kokoro(args)
 
+    def save(clips):
+        manifest_path.write_text(json.dumps({"engine": args.engine, "clips": clips},
+                                            indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    partial = args.only is not None or args.mood is not None
     clips, bad, keep = [], [], set()
-    for category, text, mood in todo:
+    for category, text, mood, extra in todo:
         name = clip_name(text, mood)
         keep.add(name)
         target = OUT / name
-        redo = (text == args.only) if args.only is not None else (args.force or not target.exists())
+        if partial:
+            redo = text == args.only or mood == args.mood
+        else:
+            redo = args.force or not target.exists()
         if not redo:
-            if not target.exists():
-                continue
-            entry = old.get(name) or dict(text=text, mood=mood, file=name,
-                                          seconds=float(sf.info(target).duration), engine="unknown")
-            entry["category"] = category
-            clips.append(entry)
-            manifest_path.write_text(json.dumps({"engine": args.engine, "identity": IDENTITY, "clips": clips},
-                                                indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            if target.exists():
+                entry = old.get(name) or dict(text=text, mood=mood, file=name,
+                                              seconds=float(sf.info(target).duration), engine="unknown")
+                entry["category"] = category
+                clips.append(entry)
             continue
         print(f"[{mood}] {text}", flush=True)
         if kokoro:
-            samples, rate = kokoro(text, mood)
-            result, ok = dict(engine="kokoro", model=args.voice, samples=trim(samples, rate), rate=rate,
-                              wer=None, similarity=None), True
+            samples, rate = kokoro(text)
+            result, ok = dict(samples=trim(samples, rate), rate=rate, wer=None, similarity=None), True
         else:
-            result, ok = best_take(engine, judge, text, mood)
+            result, ok = best_take(chatter, judge, text, mood, extra)
         if not ok:
             bad.append(text)
             if not args.accept_bad:
-                print("    no take passed; skipped (re-run with --accept-bad to keep the best)")
+                print("    no take passed; skipped (re-run with --accept-bad to keep the best)", flush=True)
+                if target.exists():
+                    clips.append(old.get(name) or dict(text=text, mood=mood, category=category, file=name))
                 continue
-        samples = level(result["samples"], result["rate"], MOODS[mood][1])
+        samples = level(result["samples"], result["rate"], MOODS[mood][5])
         if len(samples) == 0 or not np.isfinite(samples).all():
             raise ValueError(f"Invalid speech for {text!r}")
+        if target.exists():
+            archive([target], "replaced")
         sf.write(target, samples, result["rate"], subtype="PCM_16")
         clips.append(dict(text=text, mood=mood, category=category, file=name,
                           seconds=len(samples) / result["rate"], wer=result["wer"],
-                          similarity=result["similarity"], engine=result["engine"], model=result["model"]))
-        manifest_path.write_text(json.dumps({"engine": args.engine, "identity": IDENTITY, "clips": clips},
-                                            indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    if args.only is None:
-        for stale in OUT.glob("*.wav"):
-            if stale.name not in keep:
-                stale.unlink()
-                imported = OUT / (stale.name + ".import")
-                if imported.exists():
-                    imported.unlink()
-    manifest = {"engine": args.engine, "identity": IDENTITY, "clips": clips}
-    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Baked {len(clips)} clips into {OUT}")
+                          similarity=result["similarity"], engine=args.engine,
+                          reference=f"{mood}.wav" if chatter else None))
+        save(clips)
+    if not partial:
+        stale = [path for path in OUT.glob("*.wav") if path.name not in keep]
+        if stale:
+            print(f"Archived {len(stale)} clips no longer in the script to {archive(stale, 'stale')}")
+    save(clips)
+    write_review(clips)
+    print(f"Baked {len(clips)} clips into {OUT}; listen at build/voice/review.html")
     if bad:
         print("No take passed for:\n  " + "\n  ".join(bad))
         if not args.accept_bad:
