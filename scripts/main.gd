@@ -116,6 +116,10 @@ func _ready() -> void:
 		var journal_page := OS.get_environment("RUN_JOURNAL")
 		if journal_page != "":
 			Game.dev_journal.call_deferred(journal_page)
+		# Dev hook: RUN_ENDING=road|prints shows that escape card.
+		var ending_kind := OS.get_environment("RUN_ENDING")
+		if ending_kind != "":
+			Game.dev_ending.call_deferred(ending_kind)
 
 
 func _process(_delta: float) -> void:

@@ -3,6 +3,9 @@ extends CharacterBody3D
 
 # Every footfall she sounds, takeoffs and landings included; probes count them.
 signal stepped(left: bool)
+# The sprint ran her out of breath; a landing came down hard (Voice).
+signal exhausted
+signal landed_hard(fall_speed: float)
 
 const BOOM_LENGTH := 3.35
 const BOOM_STEPS := 16
@@ -249,6 +252,7 @@ func _physics_process(delta: float) -> void:
 			exhaust_left = Tune.EXHAUST_LOCK
 			_sprinting = false
 			_stumble()
+			exhausted.emit()
 	elif exhaust_left <= 0.0 and not holding_breath and not sliding:
 		stamina = minf(stamina + delta * Tune.STAMINA_REGEN, Tune.STAMINA_MAX)
 	if on_floor:
@@ -369,7 +373,14 @@ func _track_air(delta: float) -> void:
 
 # The harder she comes down, the deeper the absorb, the bigger the jolt and
 # spray, and the more speed it costs.
+## The way her body faces (yaw); forward is Basis(Vector3.UP, facing()) * Vector3.FORWARD.
+func facing() -> float:
+	return _facing
+
+
 func _land(fall_speed: float) -> void:
+	if fall_speed >= Tune.FALL_HARD:
+		landed_hard.emit(fall_speed)
 	# An ordinary jump lands at about 5.5 m/s and should feel light; only a
 	# real drop comes down hard.
 	var power := clampf((fall_speed - 6.0) / 6.0, 0.0, 1.0)

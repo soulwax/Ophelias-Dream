@@ -5,6 +5,8 @@ extends Node
 #   godot-mono --headless --path . tools/journal_probe.tscn
 
 var _failures := 0
+# Set at the end of _turning(): a script error mid-section aborts it silently.
+var _turning_ran := false
 
 
 func _ready() -> void:
@@ -25,6 +27,8 @@ func _run() -> void:
 	_phases()
 	_render()
 	_journal_ui()
+	_turning()
+	_check(_turning_ran, "the turning checks ran to the end")
 	print("JOURNAL ", "FAIL (%d)" % _failures if _failures > 0 else "PASS")
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -205,3 +209,41 @@ func _journal_ui() -> void:
 	_check(not journal.visible and Game.phase == Game.Phase.PLAYING, "Esc closes it")
 	journal.queue_free()
 	Game.reset()
+
+
+func _turning() -> void:
+	Game.reset()
+	var turns := [0]
+	Game.turned.connect(func() -> void: turns[0] += 1)
+	Game.turn_around()
+	_check(not Game.turned_around, "no turning around before the last page")
+	var actor := Player.new()
+	add_child(actor)
+	Game.player = actor
+	Game.set_phase(Game.Phase.PLAYING)
+	actor.glance = 1.0
+	Game._watch_turn(2.0)
+	_check(not Game.turned_around, "glancing back before the last page changes nothing")
+	Game.read_last_page = true
+	actor.glance = 0.5
+	Game._watch_turn(2.0)
+	_check(not Game.turned_around, "a half glance is not turning around")
+	actor.glance = 1.0
+	Game._watch_turn(0.6)
+	_check(not Game.turned_around, "a quick look is not turning around")
+	Game._watch_turn(0.6)
+	_check(Game.turned_around and turns[0] == 1, "holding the look back for a second turns her around")
+	Game.turn_around()
+	_check(turns[0] == 1, "she turns around once")
+	var card := EndCard.new()
+	add_child(card)
+	card._on_phase(Game.Phase.ESCAPED)
+	_check(card._title.text == "One set of prints", "turning around ends on one set of prints")
+	Game.turned_around = false
+	card._on_phase(Game.Phase.ESCAPED)
+	_check(card._title.text == "The road", "not turning around ends on the road")
+	card.queue_free()
+	actor.queue_free()
+	Game.reset()
+	_check(not Game.turned_around and Game._turn_hold == 0.0, "reset forgets the turn")
+	_turning_ran = true

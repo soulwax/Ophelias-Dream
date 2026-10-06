@@ -11,6 +11,8 @@ signal journal_changed
 signal page_added(entry: NoteEntry)
 # Every smudge on this page is solved; the line between the lines shows.
 signal page_deciphered(entry: NoteEntry)
+# She looked back after the last page (turn_around).
+signal turned
 
 enum Reading { LOCKED, WRONG, RIGHT }
 
@@ -57,6 +59,9 @@ var visited: Dictionary = {}
 var heard_events: Dictionary = {}
 # title -> {smudge index: true}
 var deciphered: Dictionary = {}
+# She looked back after the last page: one set of prints (EndCard, Voice).
+var turned_around := false
+var _turn_hold := 0.0
 
 var hunt_started := false
 var _hunt_seconds := 0.0
@@ -116,6 +121,8 @@ func _process(delta: float) -> void:
 			_hunt_seconds += delta
 	if awake() and player:
 		visit(place_at(player.global_position))
+	if phase == Phase.PLAYING and player:
+		_watch_turn(delta)
 	if phase != Phase.INTRO:
 		return
 	intro_left -= delta
@@ -154,6 +161,8 @@ func reset() -> void:
 	visited.clear()
 	heard_events.clear()
 	deciphered.clear()
+	turned_around = false
+	_turn_hold = 0.0
 	hunt_started = false
 	_hunt_seconds = 0.0
 	audio_fade = 0.0
@@ -377,6 +386,37 @@ func close_journal() -> void:
 
 ## Dev hook (RUN_JOURNAL): every page in the journal with its first smudge
 ## solved, opened on title.
+# Holding glance-back after the last page, outdoors, is turning around.
+func _watch_turn(delta: float) -> void:
+	if turned_around or not read_last_page or player == null or player.glance < 0.9 \
+			or indoors(player.global_position + Vector3.UP * 0.9):
+		_turn_hold = 0.0
+		return
+	_turn_hold += delta
+	if _turn_hold >= Tune.TURN_HOLD:
+		turn_around()
+
+
+func turn_around() -> void:
+	if turned_around or not read_last_page:
+		return
+	if player and indoors(player.global_position + Vector3.UP * 0.9):
+		return
+	turned_around = true
+	_turn_hold = 0.0
+	mark("turned around")
+	turned.emit()
+	if voice and voice.has_method("turned"):
+		voice.turned()
+
+
+## Dev hook (RUN_ENDING=road|prints): reach the lights, turned around or not.
+func dev_ending(kind: String) -> void:
+	read_last_page = true
+	turned_around = kind == "prints"
+	escape()
+
+
 func dev_journal(title: String) -> void:
 	for entry in NoteCatalog.everything():
 		add_to_journal(entry)

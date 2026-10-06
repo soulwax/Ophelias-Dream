@@ -22,12 +22,18 @@ func _on_phase(next: Game.Phase) -> void:
 			var body := Game.ending_body if Game.ending_body != "" else "You stopped. The snow closed over the place you were."
 			_show(title, body, "Wake in the cabin")
 		Game.Phase.ESCAPED:
-			var road := "The engine is running. The driver's door is open, the seat still warm."
-			if Game.read_last_page:
-				road += " You didn't turn around."
-			if Game.all_deciphered():
-				road += " Beside the cup on the dash, a second one. Still warm."
-			_show("The road", road, "Walk the ridge again")
+			if Game.turned_around:
+				var prints := "You turned around. One set of prints, all the way back to the lit cabin. You get in on the driver's side; the seat is warm because it was always yours."
+				if Game.all_deciphered():
+					prints += " On the dash, two cups, one fitted inside the other."
+				_show("One set of prints", prints, "Walk the ridge again")
+			else:
+				var road := "The engine is running. The driver's door is open, the seat still warm."
+				if Game.read_last_page:
+					road += " You didn't turn around."
+				if Game.all_deciphered():
+					road += " Beside the cup on the dash, a second one. Still warm."
+				_show("The road", road, "Walk the ridge again")
 		_:
 			visible = false
 

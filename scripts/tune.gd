@@ -171,6 +171,10 @@ const VOICE_GAP := 14.0
 const VOICE_SPL := 55.0
 # Within this flat distance (m) of the exit she is at "the lights".
 const LIGHTS_NEAR := 40.0
+# After the last page, holding glance-back this long (s) outdoors is turning around.
+const TURN_HOLD := 1.0
+# A landing at least this fast (m/s) is a fall she remarks on.
+const FALL_HARD := 7.5
 # How long (s) "Added to the journal" stays after a page is found.
 const JOURNAL_TOAST := 3.0
 
