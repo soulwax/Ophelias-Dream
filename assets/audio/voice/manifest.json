@@ -287,6 +287,17 @@
       "similarity": 0.6315382719039917,
       "engine": "qwen-design",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "I latched it behind me. I know I did.",
+      "mood": "shaken",
+      "category": "revisits",
+      "file": "1b274e9d06f94b643f616205fccedf9ce8636b9b401ad48442c45a395abf782a.wav",
+      "seconds": 2.899875,
+      "wer": 0.0,
+      "similarity": 0.7864711284637451,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }
