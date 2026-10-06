@@ -451,6 +451,39 @@
       "similarity": 0.795245885848999,
       "engine": "chatterbox",
       "reference": "shaken.wav"
+    },
+    {
+      "text": "When I find her I'm going to be so angry. And then I'm not letting go.",
+      "mood": "warm",
+      "category": "bored",
+      "file": "88b4833a7e0d5277b5f007d0dca0d9fda8d053eba760d512e01b1bac58b73320.wav",
+      "seconds": 6.189916666666667,
+      "wer": 0.0,
+      "similarity": 0.8740401864051819,
+      "engine": "chatterbox",
+      "reference": "warm.wav"
+    },
+    {
+      "text": "She always leaves something behind so I can find her. Always.",
+      "mood": "steady",
+      "category": "bored",
+      "file": "a7ccc165f5f586681af631a5666cff4029d6cf3adde380639738c269aba774e5.wav",
+      "seconds": 3.496125,
+      "wer": 0.0,
+      "similarity": 0.8213406801223755,
+      "engine": "chatterbox",
+      "reference": "steady.wav"
+    },
+    {
+      "text": "Every white shape is her coat, until it isn't.",
+      "mood": "hushed",
+      "category": "bored",
+      "file": "901094d9bf3eb2fea9ec44f9754f73a0d77988bf74a386f3e7a70edb68e954f3.wav",
+      "seconds": 4.685416666666667,
+      "wer": 0.0,
+      "similarity": 0.8338954448699951,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
     }
   ]
 }
