@@ -51,6 +51,7 @@ var cuts: Array = []
 var _pad_heights: Array[float] = []
 # The ground's material, so patches can match it exactly.
 var snow_material: ShaderMaterial
+var _terrain_material: ShaderMaterial
 # What was built, for probes.
 var build_msec := 0
 var cliff_cells := 0
@@ -81,6 +82,7 @@ var _route_distance := PackedFloat32Array()
 var _story_distance := PackedFloat32Array()
 var _valley_floor := PackedFloat32Array()
 var _ravine := PackedFloat32Array()
+var _snow_distance := PackedFloat32Array()
 
 
 func _ready() -> void:
@@ -113,21 +115,34 @@ func height_at(x: float, z: float) -> float:
 	var h10 := heights[z0 * points + x0 + 1]
 	var h01 := heights[(z0 + 1) * points + x0]
 	var h11 := heights[(z0 + 1) * points + x0 + 1]
-	return lerpf(lerpf(h00, h10, tx), lerpf(h01, h11, tx), tz)
+	# The mesh/collider diagonal is 00..11, not a bilinear patch.
+	if tx >= tz:
+		return h00 + tx * (h10 - h00) + tz * (h11 - h10)
+	return h00 + tz * (h01 - h00) + tx * (h11 - h01)
 
 
-# The ground's up direction at the grid point nearest (x, z).
+# The walkable triangle's up direction at (x, z). Vertex normals remain
+# smoothed for rendering, but must not spread a wall's slope onto its floor.
 func normal_at(x: float, z: float) -> Vector3:
-	if _chunk_normals.is_empty():
+	if _chunk_heights.is_empty():
 		return Vector3.UP
 	var cx := clampi(int(floor((x - Tune.WORLD_MIN_X) / Tune.CHUNK_SIZE)), 0, chunks_x - 1)
 	var cz := clampi(int(floor((z - Tune.WORLD_MIN_Z) / Tune.CHUNK_SIZE)), 0, chunks_z - 1)
 	var index := cz * chunks_x + cx
 	var cell := _chunk_cell[index]
 	var points := _chunk_points[index]
-	var ix := clampi(int(round((x - Tune.WORLD_MIN_X - float(cx) * Tune.CHUNK_SIZE) / cell)), 0, points - 1)
-	var iz := clampi(int(round((z - Tune.WORLD_MIN_Z - float(cz) * Tune.CHUNK_SIZE) / cell)), 0, points - 1)
-	return _chunk_normals[index][iz * points + ix]
+	var fx := clampf((x - Tune.WORLD_MIN_X - float(cx) * Tune.CHUNK_SIZE) / cell, 0.0, float(points - 1))
+	var fz := clampf((z - Tune.WORLD_MIN_Z - float(cz) * Tune.CHUNK_SIZE) / cell, 0.0, float(points - 1))
+	var ix := mini(int(floor(fx)), points - 2)
+	var iz := mini(int(floor(fz)), points - 2)
+	var heights := _chunk_heights[index]
+	var h00 := heights[iz * points + ix]
+	var h10 := heights[iz * points + ix + 1]
+	var h01 := heights[(iz + 1) * points + ix]
+	var h11 := heights[(iz + 1) * points + ix + 1]
+	var dx := h10 - h00 if fx - float(ix) >= fz - float(iz) else h11 - h01
+	var dz := h11 - h10 if fx - float(ix) >= fz - float(iz) else h01 - h00
+	return Vector3(-dx / cell, 1.0, -dz / cell).normalized()
 
 
 # How steep the ground is at (x, z), in degrees.
@@ -320,6 +335,16 @@ func _cliffs(x: float, z: float, distance: float) -> float:
 
 # Snow, given the height there.
 func _snow(x: float, z: float, h: float) -> float:
+	if not _snow_distance.is_empty():
+		if story_distance(x, z) < Tune.SNOW_FORCE:
+			return 1.0
+		# smoothstep(-a,+a) has its 0.2..0.8 span at 0.4257185*a*2.
+		var half_band := Tune.BIOME_THAW / 0.851437
+		return smoothstep(-half_band, half_band, _field(_snow_distance, x, z, half_band))
+	return _raw_snow(x, z, h)
+
+
+func _raw_snow(x: float, z: float, h: float) -> float:
 	var story := _field(_story_distance, x, z, 1.0e6)
 	if story < Tune.SNOW_FORCE:
 		return 1.0
@@ -332,8 +357,80 @@ func _snow(x: float, z: float, h: float) -> float:
 		core *= 1.0 - 0.8 * patch * smoothstep(Tune.SNOW_PATCH_CLEAR, Tune.SNOW_PATCH_CLEAR + 30.0, story)
 	# Beyond it, the biome: noise, pushed greener by bearing, snowy on peaks.
 	var b := _biome.get_noise_2d(x, z) + _bias(x, z) - smoothstep(Tune.BIOME_SNOWLINE, Tune.BIOME_SNOWLINE + 30.0, h)
-	var biome := 1.0 - smoothstep(-Tune.BIOME_THAW, Tune.BIOME_THAW, b)
+	var biome := 1.0 - smoothstep(-0.3, 0.3, b)
 	return clampf(maxf(core, biome), 0.0, 1.0)
+
+
+# Redistance the combined field, including core/patch unions and altitude.
+# Seed exact interpolated S=.5 crossings, then propagate nearest edge points.
+# Unlike a noise-space width, this remains in world metres on steep snowlines.
+func _build_snow_field() -> void:
+	var count := _field_size.x * _field_size.y
+	var raw := PackedFloat32Array()
+	raw.resize(count)
+	var nearest := PackedVector2Array()
+	nearest.resize(count)
+	nearest.fill(Vector2(1.0e6, 1.0e6))
+	for j in _field_size.y:
+		for i in _field_size.x:
+			var x := Tune.WORLD_MIN_X + float(i) * FIELD_CELL
+			var z := Tune.WORLD_MIN_Z + float(j) * FIELD_CELL
+			raw[j * _field_size.x + i] = _raw_snow(x, z, _sample(x, z))
+	# Sub-band islands cannot contain both threshold endpoints. Smooth their
+	# competing edges before redistancing rather than spreading narrow holes
+	# across the snowy core. A separable 54 m box filters terrain/noise detail.
+	var horizontal := PackedFloat32Array()
+	horizontal.resize(count)
+	for j in _field_size.y:
+		for i in _field_size.x:
+			var total := 0.0
+			for k in range(-4, 5):
+				total += raw[j * _field_size.x + clampi(i + k, 0, _field_size.x - 1)]
+			horizontal[j * _field_size.x + i] = total / 9.0
+	for j in _field_size.y:
+		for i in _field_size.x:
+			var total := 0.0
+			for k in range(-4, 5):
+				total += horizontal[clampi(j + k, 0, _field_size.y - 1) * _field_size.x + i]
+			raw[j * _field_size.x + i] = total / 9.0
+	for j in _field_size.y:
+		for i in _field_size.x:
+			var index := j * _field_size.x + i
+			var at := Vector2(i, j) * FIELD_CELL
+			for offset: Vector2i in [Vector2i(1, 0), Vector2i(0, 1)]:
+				var next := Vector2i(i, j) + offset
+				if next.x >= _field_size.x or next.y >= _field_size.y:
+					continue
+				var other := next.y * _field_size.x + next.x
+				if (raw[index] - 0.5) * (raw[other] - 0.5) > 0.0 or is_equal_approx(raw[index], raw[other]):
+					continue
+				var edge := at + Vector2(offset) * FIELD_CELL * ((0.5 - raw[index]) / (raw[other] - raw[index]))
+				if at.distance_squared_to(edge) < at.distance_squared_to(nearest[index]):
+					nearest[index] = edge
+				var other_at := Vector2(next) * FIELD_CELL
+				if other_at.distance_squared_to(edge) < other_at.distance_squared_to(nearest[other]):
+					nearest[other] = edge
+	for sweep in 2:
+		var direction := 1 if sweep == 0 else -1
+		var offsets: Array[Vector2i] = [Vector2i(-direction, 0), Vector2i(0, -direction), Vector2i(-direction, -direction), Vector2i(direction, -direction)]
+		for row in _field_size.y:
+			var j := row if sweep == 0 else _field_size.y - 1 - row
+			for column in _field_size.x:
+				var i := column if sweep == 0 else _field_size.x - 1 - column
+				var index := j * _field_size.x + i
+				var at := Vector2(i, j) * FIELD_CELL
+				for offset in offsets:
+					var next := Vector2i(i, j) + offset
+					if next.x < 0 or next.y < 0 or next.x >= _field_size.x or next.y >= _field_size.y:
+						continue
+					var edge := nearest[next.y * _field_size.x + next.x]
+					if at.distance_squared_to(edge) < at.distance_squared_to(nearest[index]):
+						nearest[index] = edge
+	_snow_distance.resize(count)
+	for j in _field_size.y:
+		for i in _field_size.x:
+			var index := j * _field_size.x + i
+			_snow_distance[index] = (Vector2(i, j) * FIELD_CELL).distance_to(nearest[index]) * (1.0 if raw[index] >= 0.5 else -1.0)
 
 
 # How much greener the land is by its bearing from the story. North is -Z.
@@ -415,9 +512,15 @@ func _build_chunks() -> void:
 	_pad_heights.clear()
 	var raw: Array[float] = []
 	for pad in pads:
-		raw.append(_sample((pad[0] as Vector2).x, (pad[0] as Vector2).y))
+		var centre := pad[0] as Vector2
+		# The house apron meets the walking valley; using the unflattened hill
+		# here creates a steep lip where the apron overlaps the route.
+		raw.append(_field(_valley_floor, centre.x, centre.y, _sample(centre.x, centre.y)))
 	_pad_heights = raw
+	_build_snow_field()
 	snow_material = _material()
+	_terrain_material = snow_material.duplicate() as ShaderMaterial
+	_terrain_material.set_shader_parameter("use_vertex_snow", true)
 	var cut_area := _cut_bounds()
 	cliff_cells = 0
 	var root := Node3D.new()
@@ -477,6 +580,17 @@ func _build_chunk(root: Node3D, cx: int, cz: int, cut_area: Rect2) -> void:
 			else:
 				var row: int = side[3]
 				heights[row * points + k] = lerpf(heights[row * points + a], heights[row * points + b], t)
+	# Refresh derivatives after stitching changes heights. Retain the raw
+	# one-cell halo only outside this chunk, use final vertices inside it.
+	for j in points:
+		for i in points:
+			padded[(j + 1) * wide + i + 1] = heights[j * points + i]
+	for j in points:
+		for i in points:
+			var c := (j + 1) * wide + i + 1
+			var dx := (padded[c + 1] - padded[c - 1]) / (2.0 * cell)
+			var dz := (padded[c + wide] - padded[c - wide]) / (2.0 * cell)
+			normals[j * points + i] = Vector3(-dx, 1.0, -dz).normalized()
 	_chunk_cell[index] = cell
 	_chunk_points[index] = points
 	_chunk_heights[index] = heights
@@ -534,7 +648,7 @@ func _build_chunk(root: Node3D, cx: int, cz: int, cut_area: Rect2) -> void:
 	var chunk := MeshInstance3D.new()
 	chunk.name = "Chunk_%d_%d" % [cx, cz]
 	chunk.mesh = mesh
-	chunk.material_override = snow_material
+	chunk.material_override = _terrain_material
 	chunk.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	root.add_child(chunk)
 	var body := StaticBody3D.new()
@@ -632,6 +746,31 @@ func _material() -> ShaderMaterial:
 		material.set_shader_parameter("snow_tex", load("res://assets/environment/Snow_01.png"))
 	material.set_shader_parameter("dirt_tex", _dirt_texture())
 	material.set_shader_parameter("snow_depth", Tune.SNOW_DEPTH)
+	material.set_shader_parameter("lean_graphics", Game.lean_graphics)
+	material.set_shader_parameter("use_vertex_snow", false)
+	material.set_shader_parameter("snow_default", 1.0)
+	var maps := {
+		"green_tex": "forrest_ground_01/forrest_ground_01_diff_1k.jpg",
+		"grass_tex": "aerial_grass_rock/aerial_grass_rock_diff_1k.jpg",
+		"mud_tex": "brown_mud_leaves_01/brown_mud_leaves_01_diff_1k.jpg",
+		"green_normal": "forrest_ground_01/forrest_ground_01_nor_gl_1k.jpg",
+		"grass_normal": "aerial_grass_rock/aerial_grass_rock_nor_gl_1k.jpg",
+		"mud_normal": "brown_mud_leaves_01/brown_mud_leaves_01_nor_gl_1k.jpg",
+	}
+	var complete := true
+	for uniform: String in maps:
+		var path: String = "res://assets/vendor/polyhaven/" + maps[uniform]
+		if ResourceLoader.exists(path):
+			var texture := load(path) as Texture2D
+			if texture != null:
+				material.set_shader_parameter(uniform, texture)
+			else:
+				complete = false
+		else:
+			complete = false
+	if not complete:
+		push_warning("Ground biome textures missing; using procedural earth. Run py tools/fetch_ground_textures.py and reimport.")
+	material.set_shader_parameter("ground_textures", complete)
 	return material
 
 

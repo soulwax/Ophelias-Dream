@@ -18,6 +18,8 @@ func _ready() -> void:
 
 func _run() -> void:
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	if OS.has_environment("TERRAIN_PROBE_SEED"):
+		main.get_node("EditableLevel").set_meta("seed", int(OS.get_environment("TERRAIN_PROBE_SEED")))
 	get_tree().root.add_child(main)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -46,6 +48,9 @@ func _route(trail: Trail, ground: Ground) -> void:
 	var worst_side := 0.0
 	var worst_side_at := 0.0
 	var worst_side_point := Vector3.ZERO
+	var worst_side_offset := 0.0
+	var exempt_walls := 0
+	var nearest_wall_offset := INF
 	var span := trail.exit_offset - trail.player_start_offset
 	var ravine_from := trail.player_start_offset + span * Tune.RAVINE_FROM
 	var ravine_to := trail.player_start_offset + span * Tune.RAVINE_TO
@@ -65,22 +70,43 @@ func _route(trail: Trail, ground: Ground) -> void:
 		if ground.slope_at(here.x, here.z) > worst_slope:
 			worst_slope_at = here
 		worst_slope = maxf(worst_slope, ground.slope_at(here.x, here.z))
-		var sides: Array[float] = [2.0, 5.0]
-		if offset <= ravine_from or offset >= ravine_to:
-			sides.append_array([8.0, 11.0])
+		var sides: Array[float] = [2.0, 5.0, 8.0, 11.0]
 		for side in sides:
 			for sign_value in [-1.0, 1.0]:
 				var at: Vector3 = frame.origin + frame.basis.x * side * float(sign_value)
+				# A side frame at a bend can reach an earlier part of the route.
+				# Classify the sampled ground itself, not its originating frame.
+				var nearest_offset := trail.offset_of(at)
+				var nearest_point := trail.position_at(nearest_offset)
+				var actual_distance := Vector2(at.x - nearest_point.x, at.z - nearest_point.z).length()
+				var ravine_weight: float = ground.call("_field", ground.get("_ravine"), at.x, at.z, 0.0)
+				# "6 m and further out" is lateral clearance, not elevation.
+				# The 6 m crest rise is a separate check at the ravine middle.
+				# A 6 m field blends the physical cap past its nominal offsets.
+				if side >= Tune.RAVINE_INNER and actual_distance >= Tune.RAVINE_INNER and ravine_weight > 0.0:
+					exempt_walls += 1
+					nearest_wall_offset = minf(nearest_wall_offset, actual_distance)
+					continue
 				var slope := ground.slope_at(at.x, at.z)
 				if slope > worst_side:
 					worst_side = slope
 					worst_side_at = offset - trail.player_start_offset
 					worst_side_point = at
-	_check(worst_grade <= 0.12, "the route's steepest grade is %.0f%% (at most 12%%)" % (worst_grade * 100.0))
+					worst_side_offset = side
+	_check(worst_grade <= 0.12, "the route's steepest grade is %.2f%% (at most 12%%)" % (worst_grade * 100.0))
 	print("  route diagnostic: worst grade at %s, route field %.2f m" % [worst_grade_at, ground.route_distance(worst_grade_at.x, worst_grade_at.z)])
-	_check(worst_slope <= 25.0, "the ground under the path is at most %.0f° (at most 25°)" % worst_slope)
+	_check(worst_slope <= 25.0, "the ground under the path is at most %.2f° (at most 25°)" % worst_slope)
 	print("  slope diagnostic: under %s distance %.2f; side %s distance %.2f" % [worst_slope_at, ground.route_distance(worst_slope_at.x, worst_slope_at.z), worst_side_point, ground.route_distance(worst_side_point.x, worst_side_point.z)])
-	_check(worst_side <= 45.0, "nothing beside the path is a cliff (%.0f° at %.0f m)" % [worst_side, worst_side_at])
+	var nearest := trail.offset_of(worst_side_point) - trail.player_start_offset
+	var distance := ground.route_distance(worst_side_point.x, worst_side_point.z)
+	var ravine_weight: float = ground.call("_field", ground.get("_ravine"), worst_side_point.x, worst_side_point.z, 0.0)
+	var wall := ravine_weight * smoothstep(Tune.RAVINE_INNER, Tune.RAVINE_OUTER, distance) * (1.0 - smoothstep(40.0, 70.0, distance)) * Tune.RAVINE_RISE
+	print("  side diagnostic: %.1f m frame offset, nearest route %.2f m, story %.2f m, ravine weight %.3f wall contribution %.2f m" % [worst_side_offset, nearest, ground.story_distance(worst_side_point.x, worst_side_point.z), ravine_weight, wall])
+	var gx := (ground.height_at(worst_side_point.x + 0.01, worst_side_point.z) - ground.height_at(worst_side_point.x - 0.01, worst_side_point.z)) / 0.02
+	var gz := (ground.height_at(worst_side_point.x, worst_side_point.z + 0.01) - ground.height_at(worst_side_point.x, worst_side_point.z - 0.01)) / 0.02
+	print("  triangle finite slope %.2f degrees" % rad_to_deg(atan(Vector2(gx, gz).length())))
+	_check(worst_side <= 45.0, "nothing beside the path is a cliff (%.2f° at %.0f m)" % [worst_side, worst_side_at])
+	_check(exempt_walls > 0 and nearest_wall_offset >= 6.0, "ravine exception starts 6 m off the actual route (%d wall samples, closest %.2f m)" % [exempt_walls, nearest_wall_offset])
 
 
 func _ravine(trail: Trail, ground: Ground) -> void:

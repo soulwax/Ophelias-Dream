@@ -249,14 +249,15 @@ const SNOW_FORCE := 60.0
 # Beyond the core a biome noise (wavelength about 1 / BIOME_FREQ) decides,
 # pushed greener by bearing from the story (north-east and north-west most,
 # south-east some, south-west less), snowy again above BIOME_SNOWLINE metres.
-# BIOME_THAW is the noise half-width of the snow-to-green band.
+# BIOME_THAW is the 0.2..0.8 snow-to-green span in world metres after
+# redistancing the combined core, patches, directional biome and snowline.
 const BIOME_FREQ := 0.004
 const BIOME_NE := 0.35
 const BIOME_NW := 0.35
 const BIOME_SE := 0.15
 const BIOME_SW := -0.15
 const BIOME_SNOWLINE := 70.0
-const BIOME_THAW := 0.3
+const BIOME_THAW := 36.0
 # Mountains: ridged relief up to MOUNTAIN_RELIEF metres, rising from
 # MOUNTAIN_FROM to MOUNTAIN_FULL metres away from the route and house, and a
 # ring RING_HEIGHT metres high over the last RING_WIDTH metres of the world.

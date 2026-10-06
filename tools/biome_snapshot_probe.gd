@@ -137,41 +137,106 @@ func _terrain(ground: Ground) -> void:
 				hits += 1
 				worst = maxf(worst, absf((hit["position"] as Vector3).y - height))
 	_check(hits == 24 and worst < 0.2, "24 terrain collision rays outside the stair cut (%d hits, worst %.3f m)" % [hits, worst])
+	var attempted := 0
 	var sampled := 0
+	var cut_skips := 0
+	var bound_skips := 0
 	var max_error := 0.0
 	var normal_error := 0.0
-	# Off-centre cells in thaw regions and either side of every LOD seam.
-	# A tall ray catches disagreement even when the sampler is below collision.
+	var face_error := 0.0
+	var probes: Array[Vector2] = []
+	var labels: Array[String] = []
+	var lod_edges := {"west_fine": 0, "east_fine": 0, "north_fine": 0, "south_fine": 0}
+	var cells: PackedFloat32Array = ground.get("_chunk_cell")
+	# Keep thaw rays independent of seams so both forms of coverage are visible.
 	for cz in ground.chunks_z:
 		for cx in ground.chunks_x:
 			var index := cz * ground.chunks_x + cx
-			var cell: float = ground.get("_chunk_cell")[index]
+			var cell := cells[index]
 			var x := Tune.WORLD_MIN_X + float(cx) * Tune.CHUNK_SIZE + cell * 3.27
 			var z := Tune.WORLD_MIN_Z + float(cz) * Tune.CHUNK_SIZE + cell * 4.73
 			var snow := ground.snow_at(x, z)
-			var seam := cx > 0 and cell < float(ground.get("_chunk_cell")[index - 1])
-			if not seam and (snow < 0.2 or snow > 0.8):
-				continue
-			for side in [-1.0, 1.0] if seam else [1.0]:
-				var at_x := Tune.WORLD_MIN_X + float(cx) * Tune.CHUNK_SIZE + 0.37 * float(side) if seam else x
-				var height := ground.height_at(at_x, z)
-				var query := PhysicsRayQueryParameters3D.create(Vector3(at_x, height + 30.0, z), Vector3(at_x, height - 30.0, z), Tune.LAYER_WORLD)
-				var hit := ground.get_world_3d().direct_space_state.intersect_ray(query)
-				if not hit.is_empty():
-					sampled += 1
-					max_error = maxf(max_error, absf((hit["position"] as Vector3).y - height))
-					# Mesh normals must be recomputed from the stitched heights,
-					# rather than retaining gradients of discarded raw vertices.
-					if seam:
-						var points: int = ground.get("_chunk_points")[index]
-						var heights: PackedFloat32Array = ground.get("_chunk_heights")[index]
-						var normals: PackedVector3Array = ground.get("_chunk_normals")[index]
-						var k := 4
-						var dz := (heights[(k + 1) * points] - heights[(k - 1) * points]) / (2.0 * cell)
-						var normal := normals[k * points]
-						normal_error = maxf(normal_error, absf(-normal.z / normal.y - dz))
-	_check(sampled >= 8 and max_error < 0.2, "thaw/LOD collision agreement (%d rays, worst %.3f m)" % [sampled, max_error])
+			if snow >= 0.2 and snow <= 0.8:
+				probes.append(Vector2(x, z))
+				labels.append("thaw %d,%d" % [cx, cz])
+			# Enumerate each adjacent pair once (east and south), regardless of
+			# which chunk is finer, and sample both sides of every actual border.
+			if cx + 1 < ground.chunks_x and cell != cells[index + 1]:
+				var fine_west := cell < cells[index + 1]
+				var orientation := "west_fine" if fine_west else "east_fine"
+				lod_edges[orientation] += 1
+				var border := Tune.WORLD_MIN_X + float(cx + 1) * Tune.CHUNK_SIZE
+				var along := Tune.WORLD_MIN_Z + (float(cz) + 0.413) * Tune.CHUNK_SIZE
+				for side in [-1.0, 1.0]:
+					probes.append(Vector2(border + 0.37 * float(side), along))
+					labels.append("LOD %s %d,%d side %.0f" % [orientation, cx, cz, side])
+				var fine_index := index if fine_west else index + 1
+				normal_error = maxf(normal_error, _stitched_derivative_error(ground, fine_index, true, fine_west))
+			if cz + 1 < ground.chunks_z and cell != cells[index + ground.chunks_x]:
+				var fine_north := cell < cells[index + ground.chunks_x]
+				var orientation := "north_fine" if fine_north else "south_fine"
+				lod_edges[orientation] += 1
+				var border := Tune.WORLD_MIN_Z + float(cz + 1) * Tune.CHUNK_SIZE
+				var along := Tune.WORLD_MIN_X + (float(cx) + 0.413) * Tune.CHUNK_SIZE
+				for side in [-1.0, 1.0]:
+					probes.append(Vector2(along, border + 0.37 * float(side)))
+					labels.append("LOD %s %d,%d side %.0f" % [orientation, cx, cz, side])
+				var fine_index := index if fine_north else index + ground.chunks_x
+				normal_error = maxf(normal_error, _stitched_derivative_error(ground, fine_index, false, fine_north))
+	# A tall ray catches disagreement even when the sampler is below collision.
+	# Skipped bounds/cut cells are deliberate; every other ray must hit.
+	for index in probes.size():
+		var at := probes[index]
+		var skip := _terrain_ray_skip(ground, at)
+		if skip != "":
+			cut_skips += 1 if skip == "cut" else 0
+			bound_skips += 1 if skip == "bounds" else 0
+			print("  skip %s ray %s at %s" % [skip, labels[index], at])
+			continue
+		attempted += 1
+		var height := ground.height_at(at.x, at.y)
+		var query := PhysicsRayQueryParameters3D.create(Vector3(at.x, height + 30.0, at.y), Vector3(at.x, height - 30.0, at.y), Tune.LAYER_WORLD)
+		var hit := ground.get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty():
+			_check(false, "terrain collision miss: %s at %s" % [labels[index], at])
+			continue
+		sampled += 1
+		max_error = maxf(max_error, absf((hit["position"] as Vector3).y - height))
+		face_error = maxf(face_error, (hit["normal"] as Vector3).distance_to(ground.normal_at(at.x, at.y)))
+	print("  LOD border coverage west-fine %d east-fine %d north-fine %d south-fine %d; two rays per border" % [lod_edges.west_fine, lod_edges.east_fine, lod_edges.north_fine, lod_edges.south_fine])
+	_check(attempted >= 8 and sampled == attempted and max_error < 0.2, "thaw/LOD collision agreement (%d/%d attempted rays hit, %d cut/%d bounds skipped, worst %.3f m)" % [sampled, attempted, cut_skips, bound_skips, max_error])
 	_check(normal_error < 0.001, "stitched edge normals use final heights (gradient error %.4f)" % normal_error)
+	_check(face_error < 0.001, "sampled normals agree with collision triangles (vector error %.4f)" % face_error)
+
+
+# Return only intentional absences, based on the actual cell omitted by cuts.
+func _terrain_ray_skip(ground: Ground, at: Vector2) -> String:
+	if at.x < Tune.WORLD_MIN_X or at.x >= Tune.WORLD_MAX_X or at.y < Tune.WORLD_MIN_Z or at.y >= Tune.WORLD_MAX_Z:
+		return "bounds"
+	var cx := int(floor((at.x - Tune.WORLD_MIN_X) / Tune.CHUNK_SIZE))
+	var cz := int(floor((at.y - Tune.WORLD_MIN_Z) / Tune.CHUNK_SIZE))
+	var cell: float = ground.get("_chunk_cell")[cz * ground.chunks_x + cx]
+	var x0 := Tune.WORLD_MIN_X + float(cx) * Tune.CHUNK_SIZE
+	var z0 := Tune.WORLD_MIN_Z + float(cz) * Tune.CHUNK_SIZE
+	var cell_x := x0 + floorf((at.x - x0) / cell) * cell
+	var cell_z := z0 + floorf((at.y - z0) / cell) * cell
+	return "cut" if ground.call("_cut", cell_x, cell_z, cell, cell) else ""
+
+
+# Check the derivative tangent to each fine edge at a stitched grid vertex.
+func _stitched_derivative_error(ground: Ground, index: int, vertical: bool, far_edge: bool) -> float:
+	var points: int = ground.get("_chunk_points")[index]
+	var heights: PackedFloat32Array = ground.get("_chunk_heights")[index]
+	var normals: PackedVector3Array = ground.get("_chunk_normals")[index]
+	var cell: float = ground.get("_chunk_cell")[index]
+	var edge := points - 1 if far_edge else 0
+	var k := 4
+	var vertex := k * points + edge if vertical else edge * points + k
+	var stride := points if vertical else 1
+	var gradient := (heights[vertex + stride] - heights[vertex - stride]) / (2.0 * cell)
+	var normal := normals[vertex]
+	var component := normal.z if vertical else normal.x
+	return absf(-component / normal.y - gradient)
 
 
 func _hud(main: Node) -> void:
