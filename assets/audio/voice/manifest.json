@@ -419,6 +419,17 @@
       "similarity": 0.6962561011314392,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "What if she's back at the cabin, by the lantern, writing to me?",
+      "mood": "shaken",
+      "category": "bored",
+      "file": "2b8bea5c79ea6ac277fe7fcb629eba1442857abddcb31d61e7db62dcaa08ae4d.wav",
+      "seconds": 3.4279166666666665,
+      "wer": 0.0,
+      "similarity": 0.7743157148361206,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }
