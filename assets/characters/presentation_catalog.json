@@ -23,5 +23,23 @@
     "scene": "res://assets/characters/variants/midnight.tscn",
     "description": "Dark hair, violet eyes, deep teal cloth and the original gold ornament.",
     "scale": 0.8
+  },
+  {
+    "name": "Mathilda — Frost Bob",
+    "scene": "res://assets/characters/hairstyles/cropped_bob.tscn",
+    "description": "A cropped silver bob with a short jaw-length silhouette and glacier-blue eyes.",
+    "scale": 0.8
+  },
+  {
+    "name": "Mathilda — Ember Crown",
+    "scene": "res://assets/characters/hairstyles/high_bun.tscn",
+    "description": "Swept-up auburn hair crowned with a woven high bun, amber eyes and burgundy cloth.",
+    "scale": 0.8
+  },
+  {
+    "name": "Mathilda — Midnight Braids",
+    "scene": "res://assets/characters/hairstyles/twin_braids.tscn",
+    "description": "Twin dark braids with gold bindings, violet eyes and deep teal cloth.",
+    "scale": 0.8
   }
 ]
