@@ -1,6 +1,8 @@
 extends Node3D
 
 const CATALOG := "res://assets/characters/presentation_catalog.json"
+const CHARACTER := preload("res://scripts/player/creator_character.gd")
+const SAVES := "user://characters"
 
 var variants: Array[Dictionary] = []
 var selected: int = 0
@@ -20,6 +22,14 @@ var _clips: Array[String] = []
 var _clip_index: int = 0
 var _rest_pose: bool = false
 var _animation_label: Label
+var _working_configuration: Dictionary = CHARACTER.DEFAULT.duplicate()
+var _hair_select: OptionButton
+var _outfit_select: OptionButton
+var _animation_select: OptionButton
+var _name_edit: LineEdit
+var _color_controls: Dictionary = {}
+var _save_status: Label
+var _custom_index: int = -1
 
 
 func _ready() -> void:
@@ -27,7 +37,13 @@ func _ready() -> void:
 	_build_stage()
 	_build_ui()
 	_load_catalog()
-	show_variant(int(OS.get_environment("RUN_PRESENTATION_INDEX")))
+	var start := OS.get_environment("RUN_PRESENTATION_INDEX")
+	var default_index: int = 0
+	for index: int in variants.size():
+		if variants[index].get("configuration", {}).get("outfit", "") == "wayfarer":
+			default_index = index
+			break
+	show_variant(default_index if start.is_empty() else int(start))
 	var capture := OS.get_environment("RUN_PRESENTATION_SHOT")
 	if not capture.is_empty():
 		_capture(capture)
@@ -43,6 +59,9 @@ func _load_catalog() -> void:
 			push_warning("Skipping invalid character catalog entry.")
 			continue
 		var path: String = str(entry.get("scene", ""))
+		if entry.get("configuration") is Dictionary:
+			variants.append(entry)
+			continue
 		if not path.begins_with("res://") or not ResourceLoader.exists(path):
 			push_warning("Skipping missing character scene: " + path)
 			continue
@@ -50,6 +69,13 @@ func _load_catalog() -> void:
 			push_warning("Skipping character resource that is not a scene: " + path)
 			continue
 		variants.append(entry)
+	var directory := DirAccess.open(SAVES)
+	if directory != null:
+		for filename: String in directory.get_files():
+			if filename.ends_with(".json"):
+				var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(SAVES.path_join(filename)))
+				if saved is Dictionary and saved.get("configuration") is Dictionary:
+					variants.append(saved)
 
 
 func show_variant(index: int) -> void:
@@ -70,8 +96,23 @@ func show_variant(index: int) -> void:
 		return
 	selected = posmod(index, variants.size())
 	var entry: Dictionary = variants[selected]
-	var packed := load(str(entry["scene"])) as PackedScene
-	var instance := packed.instantiate()
+	var instance: Node
+	if entry.get("configuration") is Dictionary:
+		instance = CHARACTER.new()
+		_working_configuration = CHARACTER.DEFAULT.duplicate()
+		_working_configuration.merge(entry["configuration"], true)
+		instance.configuration = _working_configuration.duplicate()
+	else:
+		var packed := load(str(entry["scene"])) as PackedScene
+		instance = packed.instantiate()
+		_working_configuration = CHARACTER.DEFAULT.duplicate()
+		_working_configuration.name = str(entry.get("name", "Mathilda"))
+		_working_configuration.outfit = "elf"
+		_working_configuration.hair = ["long", "long", "long", "long", "bob", "bun", "braids"][mini(selected, 6)]
+		var palette_index := [0, 1, 2, 3, 1, 2, 3][mini(selected, 6)] as int
+		_working_configuration.hair_color = ["cfb37d", "d4e2eb", "8c3f26", "292c34"][palette_index]
+		_working_configuration.eye_color = ["5d9167", "428ecc", "b77b29", "9874bc"][palette_index]
+		_working_configuration.cloth_color = ["4d6235", "3c6eac", "7a2a46", "28655e"][palette_index]
 	if not instance is Node3D:
 		instance.free()
 		_title.text = "Character scene needs a 3D root"
@@ -89,6 +130,81 @@ func show_variant(index: int) -> void:
 	_description.text = str(entry.get("description", ""))
 	_counter.text = "%d / %d" % [selected + 1, variants.size()]
 	_build_animation_preview()
+	_sync_creator_controls()
+
+
+func _sync_creator_controls() -> void:
+	_hair_select.select(maxi(CHARACTER.HAIRS.find(_working_configuration.hair), 0))
+	_outfit_select.select(maxi(CHARACTER.OUTFITS.find(_working_configuration.outfit), 0))
+	_name_edit.text = str(_working_configuration.name)
+	for key: String in _color_controls:
+		(_color_controls[key] as ColorPickerButton).color = Color.html(str(_working_configuration[key]))
+
+
+func _ensure_custom() -> void:
+	if _custom_index < 0:
+		_custom_index = variants.size()
+		variants.append({"name": "Custom design", "description": "Your character, your choices.", "configuration": {}, "scale": 0.8})
+	variants[_custom_index]["configuration"] = _working_configuration.duplicate()
+	variants[_custom_index]["name"] = str(_working_configuration.name)
+
+
+func _change_component(key: String, value: String) -> void:
+	_working_configuration[key] = value
+	_ensure_custom()
+	var turn := _turn
+	var clip := _clips[_clip_index] if not _clips.is_empty() else "Idle"
+	show_variant(_custom_index)
+	_turn = turn
+	_display.rotation.y = turn
+	var index := _clips.find(clip)
+	if index >= 0:
+		show_animation(index)
+	_save_status.text = "Unsaved design"
+
+
+func _change_color(key: String, value: Color) -> void:
+	_working_configuration[key] = value.to_html(false)
+	_ensure_custom()
+	if not _model.has_method("apply_colors"):
+		show_variant(_custom_index)
+	else:
+		_model.configuration = _working_configuration.duplicate()
+		_model.apply_colors()
+	selected = _custom_index
+	_counter.text = "%d / %d" % [selected + 1, variants.size()]
+	_title.text = str(_working_configuration.name)
+	_save_status.text = "Unsaved design"
+
+
+func save_design() -> String:
+	_working_configuration.name = _name_edit.text.strip_edges() if not _name_edit.text.strip_edges().is_empty() else "Mathilda"
+	DirAccess.make_dir_recursive_absolute(SAVES)
+	var entry := {"name": _working_configuration.name, "description": "Saved character design", "configuration": _working_configuration.duplicate(), "scale": 0.8}
+	var filename := "%s_%d_%d.json" % [str(_working_configuration.name).validate_filename(), int(Time.get_unix_time_from_system()), Time.get_ticks_msec()]
+	var path := SAVES.path_join(filename)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		_save_status.text = "Could not save this design"
+		return ""
+	file.store_string(JSON.stringify(entry, "\t"))
+	file.close()
+	variants.append(entry)
+	selected = variants.size() - 1
+	_counter.text = "%d / %d" % [selected + 1, variants.size()]
+	_title.text = str(_working_configuration.name)
+	_description.text = "Saved character design"
+	_save_status.text = "Saved • available in the collection"
+	return path
+
+
+func _randomize_design() -> void:
+	_working_configuration.hair = CHARACTER.HAIRS.pick_random()
+	_working_configuration.outfit = CHARACTER.OUTFITS.pick_random()
+	_working_configuration.hair_color = ["32231e", "a96740", "d3b884", "d8dfe5", "392e48"].pick_random()
+	_working_configuration.eye_color = ["629789", "5d97b6", "af8440", "8874a7"].pick_random()
+	_working_configuration.cloth_color = ["354e60", "69364b", "3b5649", "857a69"].pick_random()
+	_change_component("hair", str(_working_configuration.hair))
 
 
 func _build_animation_preview() -> void:
@@ -122,6 +238,9 @@ func _build_animation_preview() -> void:
 		if clip != "Idle" and clip != "RESET" and not clip.ends_with("/RESET"):
 			_clips.append(clip)
 	_clip_index = 0
+	_animation_select.clear()
+	for clip: String in _clips:
+		_animation_select.add_item(clip.replace("_", " "))
 	_skeleton.reset_bone_poses()
 	show_animation(0)
 
@@ -136,6 +255,7 @@ func show_animation(index: int) -> void:
 	_animation_player.play(_clips[_clip_index], 0.18)
 	_animation_player.advance(0.0)
 	_animation_label.text = "↑ / ↓ Animation: %s   (%d / %d)" % [_clips[_clip_index].replace("_", " "), _clip_index + 1, _clips.size()]
+	_animation_select.select(_clip_index)
 
 
 func _toggle_t_pose() -> void:
@@ -267,6 +387,7 @@ func _build_stage() -> void:
 	_camera = Camera3D.new()
 	_camera.current = true
 	_camera.fov = 38.0
+	_camera.h_offset = 0.33
 	_camera.position = Vector3(0.0, 1.0, _distance)
 	add_child(_camera)
 
@@ -277,7 +398,7 @@ func _build_ui() -> void:
 	var root := MarginContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("margin_left", 40)
-	root.add_theme_constant_override("margin_right", 40)
+	root.add_theme_constant_override("margin_right", 390)
 	root.add_theme_constant_override("margin_top", 28)
 	root.add_theme_constant_override("margin_bottom", 28)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -286,7 +407,7 @@ func _build_ui() -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(column)
 	var heading := Label.new()
-	heading.text = "CHARACTER COLLECTION"
+	heading.text = "MATHILDA  /  CHARACTER STUDIO"
 	heading.add_theme_color_override("font_color", Color("a9c5d8"))
 	heading.add_theme_font_size_override("font_size", 18)
 	column.add_child(heading)
@@ -330,6 +451,117 @@ func _build_ui() -> void:
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_color_override("font_color", Color("a9c5d8"))
 	column.add_child(hint)
+	_build_creator_panel(layer)
+
+
+func _build_creator_panel(layer: CanvasLayer) -> void:
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+	panel.offset_left = -350.0
+	panel.offset_right = -24.0
+	panel.offset_top = 24.0
+	panel.offset_bottom = -24.0
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("101c27")
+	style.border_color = Color("405668")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(12)
+	style.content_margin_left = 22.0
+	style.content_margin_right = 22.0
+	style.content_margin_top = 24.0
+	style.content_margin_bottom = 24.0
+	panel.add_theme_stylebox_override("panel", style)
+	layer.add_child(panel)
+	var scroll := ScrollContainer.new()
+	panel.add_child(scroll)
+	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", 12)
+	scroll.add_child(column)
+	var title := Label.new()
+	title.text = "CREATE A CHARACTER"
+	title.add_theme_font_size_override("font_size", 21)
+	column.add_child(title)
+	var intro := Label.new()
+	intro.text = "Mix silhouettes. Make her yours."
+	intro.add_theme_color_override("font_color", Color("9bb2c3"))
+	column.add_child(intro)
+	_name_edit = LineEdit.new()
+	_name_edit.placeholder_text = "Character name"
+	_name_edit.text = "Mathilda"
+	_name_edit.text_changed.connect(func(value: String) -> void:
+		_working_configuration.name = value
+		_ensure_custom()
+		_title.text = value)
+	column.add_child(_name_edit)
+	_creator_label(column, "HAIRSTYLE")
+	_hair_select = OptionButton.new()
+	for name: String in ["Long • original", "Frost bob", "Gathered bun", "Twin braids"]:
+		_hair_select.add_item(name)
+	_hair_select.item_selected.connect(func(index: int) -> void: _change_component("hair", CHARACTER.HAIRS[index]))
+	column.add_child(_hair_select)
+	_creator_label(column, "OUTFIT")
+	_outfit_select = OptionButton.new()
+	for name: String in ["Elf • original", "Wayfarer • fitted winter suit", "Nocturne • high-neck catsuit", "Trailwarden • fitted leather"]:
+		_outfit_select.add_item(name)
+	_outfit_select.item_selected.connect(func(index: int) -> void: _change_component("outfit", CHARACTER.OUTFITS[index]))
+	column.add_child(_outfit_select)
+	for key: String in ["hair_color", "eye_color", "cloth_color", "trim_color"]:
+		var row := HBoxContainer.new()
+		var label := Label.new()
+		label.text = {"hair_color": "Hair", "eye_color": "Eyes", "cloth_color": "Cloth", "trim_color": "Trim"}[key]
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+		var picker := ColorPickerButton.new()
+		picker.custom_minimum_size = Vector2(116, 34)
+		picker.edit_alpha = false
+		picker.color = Color.html(str(_working_configuration[key]))
+		picker.color_changed.connect(func(value: Color) -> void: _change_color(key, value))
+		row.add_child(picker)
+		_color_controls[key] = picker
+		column.add_child(row)
+	_creator_label(column, "MOTION PREVIEW")
+	_animation_select = OptionButton.new()
+	_animation_select.item_selected.connect(show_animation)
+	column.add_child(_animation_select)
+	var pose := Button.new()
+	pose.text = "X  •  Toggle T pose"
+	pose.pressed.connect(_toggle_t_pose)
+	column.add_child(pose)
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 14
+	column.add_child(spacer)
+	var randomize := Button.new()
+	randomize.text = "Surprise me"
+	randomize.pressed.connect(_randomize_design)
+	column.add_child(randomize)
+	var save := Button.new()
+	save.text = "Save character"
+	save.pressed.connect(func() -> void: save_design())
+	column.add_child(save)
+	var reset := Button.new()
+	reset.text = "Reset design"
+	reset.pressed.connect(func() -> void:
+		_working_configuration = CHARACTER.DEFAULT.duplicate()
+		_change_component("hair", str(_working_configuration.hair)))
+	column.add_child(reset)
+	_save_status = Label.new()
+	_save_status.text = "Designs are saved on this computer."
+	_save_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_save_status.add_theme_color_override("font_color", Color("9bb2c3"))
+	column.add_child(_save_status)
+	for control: Control in column.get_children():
+		if control is Button:
+			control.focus_mode = Control.FOCUS_NONE
+			(control as Button).clip_text = true
+
+
+func _creator_label(column: VBoxContainer, text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 13)
+	label.add_theme_color_override("font_color", Color("91aabd"))
+	column.add_child(label)
 
 
 func _capture(path: String) -> void:
