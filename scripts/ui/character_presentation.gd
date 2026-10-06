@@ -40,7 +40,7 @@ func _ready() -> void:
 	var start := OS.get_environment("RUN_PRESENTATION_INDEX")
 	var default_index: int = 0
 	for index: int in variants.size():
-		if variants[index].get("configuration", {}).get("outfit", "") == "wayfarer":
+		if variants[index].get("configuration", {}).get("outfit", "") == "elf":
 			default_index = index
 			break
 	show_variant(default_index if start.is_empty() else int(start))
@@ -101,6 +101,9 @@ func show_variant(index: int) -> void:
 		instance = CHARACTER.new()
 		_working_configuration = CHARACTER.DEFAULT.duplicate()
 		_working_configuration.merge(entry["configuration"], true)
+		if _working_configuration.outfit not in CHARACTER.OUTFITS:
+			_working_configuration.outfit = "elf"
+			_save_status.text = "Retired outfit replaced with the original costume."
 		instance.configuration = _working_configuration.duplicate()
 	else:
 		var packed := load(str(entry["scene"])) as PackedScene
@@ -502,10 +505,16 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	column.add_child(_hair_select)
 	_creator_label(column, "OUTFIT")
 	_outfit_select = OptionButton.new()
-	for name: String in ["Elf • original", "Wayfarer • fitted winter suit", "Nocturne • high-neck catsuit", "Trailwarden • fitted leather"]:
+	for name: String in ["Elf • original costume"]:
 		_outfit_select.add_item(name)
+	_outfit_select.disabled = true
 	_outfit_select.item_selected.connect(func(index: int) -> void: _change_component("outfit", CHARACTER.OUTFITS[index]))
 	column.add_child(_outfit_select)
+	var outfit_note := Label.new()
+	outfit_note.text = "New garments are being rebuilt from the source body."
+	outfit_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	outfit_note.add_theme_color_override("font_color", Color("9bb2c3"))
+	column.add_child(outfit_note)
 	for key: String in ["hair_color", "eye_color", "cloth_color", "trim_color"]:
 		var row := HBoxContainer.new()
 		var label := Label.new()

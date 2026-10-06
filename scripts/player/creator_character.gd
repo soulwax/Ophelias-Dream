@@ -4,14 +4,14 @@ extends Node3D
 const DEFAULT := {
 	"name": "Mathilda",
 	"hair": "bob",
-	"outfit": "wayfarer",
+	"outfit": "elf",
 	"hair_color": "69402d",
 	"eye_color": "5b9fae",
 	"cloth_color": "344e66",
 	"trim_color": "bca57b",
 }
 const HAIRS := ["long", "bob", "bun", "braids"]
-const OUTFITS := ["elf", "wayfarer", "hearth", "ranger"]
+const OUTFITS := ["elf"]
 
 var configuration: Dictionary = DEFAULT.duplicate()
 static var _material_cache: Dictionary = {}
@@ -19,10 +19,11 @@ static var _source_materials: Dictionary = {}
 
 
 func _ready() -> void:
-	var outfit: String = str(configuration.get("outfit", "wayfarer"))
+	var outfit: String = str(configuration.get("outfit", "elf"))
 	var hair: String = str(configuration.get("hair", "bob"))
 	if outfit not in OUTFITS:
-		outfit = "wayfarer"
+		outfit = "elf"
+	configuration["outfit"] = outfit
 	if hair not in HAIRS:
 		hair = "bob"
 	var model := (load("res://assets/characters/creator/outfit_%s.glb" % outfit) as PackedScene).instantiate() as Node3D
@@ -68,8 +69,6 @@ func apply_colors() -> void:
 				colors = hair.to_html() + eye.to_html()
 			elif name.begins_with("stylehair"):
 				colors = hair.to_html()
-			elif name == "creatorcloth":
-				colors = cloth.to_html() + str(configuration.outfit)
 			elif name == "elfsecond":
 				colors = cloth.to_html() + trim.to_html()
 			elif name == "creatortrim" or name == "braidtie":
@@ -77,15 +76,6 @@ func apply_colors() -> void:
 			var key := "%d/%s" % [original.get_instance_id(), colors]
 			if _material_cache.has(key):
 				mesh.set_surface_override_material(surface, _material_cache[key])
-				continue
-			if name == "creatorcloth":
-				var fabric := ShaderMaterial.new()
-				fabric.shader = load("res://shaders/creator_fabric.gdshader")
-				fabric.set_shader_parameter("cloth_color", cloth)
-				fabric.set_shader_parameter("accent_color", cloth.darkened(0.50) if configuration.outfit != "ranger" else Color("322c29"))
-				fabric.set_shader_parameter("design", {"wayfarer": 0, "hearth": 1, "ranger": 2}.get(configuration.outfit, 0))
-				mesh.set_surface_override_material(surface, fabric)
-				_material_cache[key] = fabric
 				continue
 			if name == "elffirst":
 				var appearance := ShaderMaterial.new()
@@ -108,8 +98,6 @@ func apply_colors() -> void:
 				var material := original.duplicate() as StandardMaterial3D
 				if name.begins_with("stylehair"):
 					material.albedo_color = hair.lightened(0.06) if name.contains("highlight") else hair
-				elif name == "creatorcloth":
-					material.albedo_color = cloth
 				elif name == "creatortrim" or name == "braidtie":
 					material.albedo_color = trim
 				mesh.set_surface_override_material(surface, material)

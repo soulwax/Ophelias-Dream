@@ -43,21 +43,17 @@
     "scale": 0.8
   },
   {
-    "name": "Wayfarer",
-    "description": "A fitted winter bodysuit with dark side panels, a close collar and understated fastenings.",
+    "name": "Character studio",
+    "description": "Original costume with independent hair and colour controls.",
     "scale": 0.8,
-    "configuration": {"name": "Wayfarer", "hair": "bob", "outfit": "wayfarer", "hair_color": "875432", "eye_color": "5d9bb6", "cloth_color": "38566f", "trim_color": "c9b584"}
-  },
-  {
-    "name": "Nocturne",
-    "description": "A high-neck catsuit with a contrasting central panel, delicate waist piping and a collar clasp.",
-    "scale": 0.8,
-    "configuration": {"name": "Nocturne", "hair": "bun", "outfit": "hearth", "hair_color": "813b2b", "eye_color": "af8745", "cloth_color": "6b3348", "trim_color": "c4a676"}
-  },
-  {
-    "name": "Trailwarden",
-    "description": "A close-fitting ranger suit with leather flank panels, a shaped waist and a slim belt.",
-    "scale": 0.8,
-    "configuration": {"name": "Trailwarden", "hair": "braids", "outfit": "ranger", "hair_color": "292831", "eye_color": "77947d", "cloth_color": "46604d", "trim_color": "b79456"}
+    "configuration": {
+      "name": "Mathilda",
+      "hair": "bob",
+      "outfit": "elf",
+      "hair_color": "69402d",
+      "eye_color": "5b9fae",
+      "cloth_color": "344e66",
+      "trim_color": "bca57b"
+    }
   }
 ]
