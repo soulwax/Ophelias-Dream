@@ -11,16 +11,20 @@ extends Node3D
 ## walls; the terrain is flattened over it and holed only under the house.
 
 const PLINTH := 0.4
+const LAYOUT_REVISION := 3
+const UPSTAIRS := Rect2(-6.3, -4.9, 12.6, 9.8)
+const DOOR_WIDTH := 1.3
+const DOOR_HEIGHT := 2.3
 # Ground-floor windows: wall centre at the boards and the yaw it faces out.
 const WINDOWS := [
-	[Vector3(-2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, 3.5), 0.0], [Vector3(2.9, 0.0, -3.5), PI],
-	[Vector3(-4.5, 0.0, 2.0), -PI * 0.5], [Vector3(4.5, 0.0, 1.8), PI * 0.5], [Vector3(4.5, 0.0, -1.5), PI * 0.5],
+	[Vector3(-4.3, 0.0, 4.9), 0.0], [Vector3(4.3, 0.0, 4.9), 0.0], [Vector3(4.3, 0.0, -4.9), PI],
+	[Vector3(-6.3, 0.0, 2.8), -PI * 0.5], [Vector3(6.3, 0.0, 2.5), PI * 0.5], [Vector3(6.3, 0.0, -2.4), PI * 0.5],
 ]
 const WINDOW_NAMES := ["FrontWest", "FrontEast", "Back", "West", "EastFront", "EastBack"]
 # Someone crossing the boards above the cellar, toward the head of the stair.
 const STEPS_ABOVE: Array[Vector3] = [Vector3(-3.2, 0.2, 2.2), Vector3(-1.6, 0.2, 1.9), Vector3(-0.2, 0.2, 1.2), Vector3(0.1, 0.2, 0.0), Vector3(-0.6, 0.2, -1.1), Vector3(0.4, 0.2, -1.9), Vector3(0.9, 0.2, -2.6)]
-const CEILING := 2.75
-const WALL_TOP := 2.95
+const CEILING := 3.15
+const WALL_TOP := 3.35
 const EXTERIOR := 0.24
 const PARTITION := 0.12
 const MASONRY := 0.3
@@ -34,7 +38,7 @@ const STAIR_BOTTOM_X := -3.9
 const STAIR_Z := -2.775
 const STAIR_WIDTH := 1.1
 const STAIR_STEPS := 19
-const FOOTPRINT := Rect2(-4.62, -3.62, 9.24, 7.24)
+const FOOTPRINT := Rect2(-6.42, -5.02, 12.84, 10.04)
 # Cellar rooms (x/z).
 const LANDING := Rect2(-6.2, -3.5, 2.45, 1.9)
 const CORRIDOR := Rect2(-6.2, -1.6, 1.6, 7.5)
@@ -45,8 +49,8 @@ const JANITOR_DOOR_Z := 0.5
 # Named spots for RUN_SPAWN, in house-local space: position, facing.
 const SPAWNS := {
 	"outside": [Vector3(2.5, -PLINTH, 15.0), Vector3(-0.15, 0.0, -1.0)],
-	"bedroom": [Vector3(-2.7, 0.05, 1.7), Vector3(1.0, 0.0, 0.25)],
-	"living": [Vector3(2.4, 0.05, 2.6), Vector3(0.3, 0.0, -1.0)],
+	"bedroom": [Vector3(-3.8, 0.05, 2.7), Vector3(1.0, 0.0, 0.05)],
+	"living": [Vector3(3.0, 0.05, 3.6), Vector3(0.5, 0.0, -1.0)],
 	"stair": [Vector3(1.0, 0.05, -2.775), Vector3(-1.0, 0.0, 0.0)],
 	"cellar": [Vector3(-5.2, CELLAR_FLOOR + 0.05, -2.8), Vector3(0.0, 0.0, 1.0)],
 	"janitor": [Vector3(-5.6, CELLAR_FLOOR + 0.05, JANITOR_DOOR_Z), Vector3(-1.0, 0.0, 0.0)],
@@ -62,10 +66,10 @@ var lantern_light: OmniLight3D
 var _volumes: Array[AABB] = []
 # Rooms by name, in house-local x/z; ground floor above y = -0.5.
 const GROUND_ROOMS := {
-	"bedroom": Rect2(-4.5, 0.4, 3.3, 3.1),
-	"hall": Rect2(-1.2, 0.4, 2.4, 3.1),
-	"living": Rect2(1.2, -3.5, 3.3, 7.0),
-	"backhall": Rect2(-4.5, -3.5, 5.7, 3.9),
+	"bedroom": Rect2(-6.3, 0.6, 4.8, 4.3),
+	"hall": Rect2(-1.5, 0.6, 3.0, 4.3),
+	"living": Rect2(1.5, -4.9, 4.8, 9.8),
+	"backhall": Rect2(-6.3, -4.9, 7.8, 5.5),
 }
 var _plank_out: Material
 var _plank_floor: Material
@@ -77,17 +81,18 @@ var _timber: Material
 
 
 func _ready() -> void:
+	set_meta("layout_revision", LAYOUT_REVISION)
 	_plank_out = HouseKit.scan("weathered_plank_siding", Color(0.62, 0.54, 0.47))
 	_plank_floor = HouseKit.surface(HouseKit.scan("weathered_plank_siding", Color(0.55, 0.4, 0.29), 0.7), "wood")
 	# Clean warm paint upstairs; the scanned plaster is grimy enough for the
 	# cellar's limewash once lifted toward white.
-	_plaster = HouseKit.paint(Color("d9d2c3"), 0.92)
+	_plaster = HouseKit.paint(Color("e0d8c9"), 0.92)
 	_limewash = HouseKit.scan("white_plaster_rough_01", Color(1.0, 1.0, 0.97), 1.4)
 	_concrete = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.42, 0.42, 0.42), 2.0), "stone")
 	_stone = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.45, 0.46, 0.48), 0.6), "stone")
 	_timber = HouseKit.paint(Color("4a3222"), 0.8)
 	_volumes = [
-		AABB(Vector3(-4.5, -0.3, -3.5), Vector3(9.0, 3.2, 7.0)),
+		AABB(Vector3(UPSTAIRS.position.x, -0.3, UPSTAIRS.position.y), Vector3(UPSTAIRS.size.x, CEILING + 0.3, UPSTAIRS.size.y)),
 		AABB(Vector3(STAIR_BOTTOM_X - 0.1, CELLAR_FLOOR - 0.2, -3.5), Vector3(STAIR_TOP_X - STAIR_BOTTOM_X + 0.2, 3.7, 1.4)),
 		_room_volume(LANDING),
 		_room_volume(CORRIDOR),
@@ -201,7 +206,7 @@ func contains(world_point: Vector3) -> bool:
 ## Where she wakes: beside the day bed, facing the bedroom door.
 func spawn_point() -> Vector3:
 	var spot := dev_spawn("bedroom")
-	return spot[0] if not spot.is_empty() else to_global(Vector3(-2.7, 0.05, 1.7))
+	return spot[0] if not spot.is_empty() else to_global(SPAWNS["bedroom"][0])
 
 
 func spawn_facing() -> Vector3:
@@ -283,7 +288,7 @@ func add_authoring() -> void:
 	_room_box(rooms, "corridor", CORRIDOR, CELLAR_FLOOR - 0.2, -0.55)
 	_room_box(rooms, "janitor", JANITOR, CELLAR_FLOOR - 0.2, -0.55)
 	_room_box(rooms, "morgue", MORGUE, CELLAR_FLOOR - 0.2, -0.55)
-	_marker(root, "Doorstep", Vector3(0.0, -PLINTH, 6.5), Vector3(0.0, 0.0, 1.0), 0.45)
+	_marker(root, "Doorstep", Vector3(0.0, -PLINTH, 7.9), Vector3(0.0, 0.0, 1.0), 0.45)
 	var doorstep_marker := root.get_node_or_null("Doorstep")
 	if doorstep_marker:
 		doorstep_marker.add_to_group(EditableLevel.AUTHORING_GROUP)
@@ -298,15 +303,15 @@ func _add_traces(authoring: Node3D) -> void:
 	traces.name = "Traces"
 	traces.add_to_group(EditableLevel.AUTHORING_GROUP)
 	authoring.add_child(traces)
-	_trace_page(traces, "NightstandPage", Vector3(-3.85, 0.68, 2.82), NoteCatalog.bedside())
+	_trace_page(traces, "NightstandPage", Vector3(-5.35, 0.68, 3.97), NoteCatalog.bedside())
 	var desk := _morgue_desk()
 	_trace_page(traces, "Intake", desk + Vector3(0.12, 0.76, -0.08), NoteCatalog.intake())
 	var wax := HouseKit.paint(Color(0.86, 0.78, 0.62), 0.55)
 	var soot := HouseKit.paint(Color(0.12, 0.1, 0.09), 0.85)
-	HouseKit.box(traces, "CandleStub", Vector3(-4.28, 0.655, 2.78), Vector3(0.045, 0.07, 0.045), wax)
-	HouseKit.box(traces, "CandleSoot", Vector3(-4.28, 0.695, 2.78), Vector3(0.04, 0.018, 0.04), soot)
+	HouseKit.box(traces, "CandleStub", Vector3(-5.78, 0.655, 3.93), Vector3(0.045, 0.07, 0.045), wax)
+	HouseKit.box(traces, "CandleSoot", Vector3(-5.78, 0.695, 3.93), Vector3(0.04, 0.018, 0.04), soot)
 	var wool := HouseKit.paint(Color(0.38, 0.16, 0.14), 0.92)
-	HouseKit.box(traces, "Mat", Vector3(0.0, -0.004, 3.95), Vector3(0.92, 0.012, 0.48), wool)
+	HouseKit.box(traces, "Mat", Vector3(0.0, -0.004, 5.4), Vector3(1.12, 0.012, 0.58), wool)
 
 
 ## Rugs, a throw, and the lamps that make the ground floor a room. Appended
@@ -319,23 +324,48 @@ func _add_comfort(authoring: Node3D) -> void:
 	var oat := HouseKit.paint(Color(0.78, 0.7, 0.58), 0.96)
 	var rust := HouseKit.paint(Color(0.62, 0.32, 0.24), 0.94)
 	var cream := HouseKit.paint(Color(0.9, 0.84, 0.74), 0.9)
-	var shade := HouseKit.paint(Color(0.93, 0.86, 0.74), 0.7)
-	HouseKit.box(comfort, "LivingRug", Vector3(3.15, 0.012, 1.15), Vector3(2.15, 0.015, 2.6), oat)
-	HouseKit.box(comfort, "Throw", Vector3(3.85, 0.46, 1.85), Vector3(0.55, 0.035, 1.15), rust)
-	HouseKit.box(comfort, "Cushion", Vector3(3.85, 0.58, 2.55), Vector3(0.16, 0.28, 0.32), cream)
-	HouseKit.box(comfort, "BedRug", Vector3(-3.35, 0.01, 1.55), Vector3(1.7, 0.012, 1.15), rust)
-	var stand := Vector3(2.55, 0.0, 1.15)
-	HouseKit.box(comfort, "LampStand", stand + Vector3(0.0, 0.62, 0.0), Vector3(0.035, 1.24, 0.035), HouseKit.paint(Color(0.22, 0.18, 0.14), 0.45, 0.4))
-	HouseKit.box(comfort, "LampShade", stand + Vector3(0.0, 1.28, 0.0), Vector3(0.32, 0.18, 0.32), shade)
-	var living := HouseKit.light(comfort, "LivingLamp", stand + Vector3(0.0, 1.12, 0.0), Color("ffc090"), 1.45, 6.8)
-	living.omni_attenuation = 0.65
-	_keep_light("living", living)
-	var bedroom := HouseKit.light(comfort, "BedroomFill", Vector3(-3.3, 1.7, 1.7), Color("ffc49a"), 0.55, 4.8)
-	bedroom.omni_attenuation = 0.6
+	HouseKit.box(comfort, "LivingRugBorder", Vector3(4.45, 0.012, 2.6), Vector3(2.9, 0.015, 3.25), rust)
+	HouseKit.box(comfort, "LivingRug", Vector3(4.45, 0.021, 2.6), Vector3(2.68, 0.006, 3.03), oat)
+	HouseKit.box(comfort, "Throw", Vector3(5.5, 0.44, 3.08), Vector3(0.6, 0.035, 0.65), rust)
+	HouseKit.box(comfort, "BedRugBorder", Vector3(-4.2, 0.01, 2.3), Vector3(2.15, 0.012, 2.5), rust)
+	HouseKit.box(comfort, "BedRug", Vector3(-4.2, 0.018, 2.3), Vector3(1.95, 0.005, 2.3), oat)
+	HouseKit.box(comfort, "HallRunner", Vector3(0.0, 0.01, 2.7), Vector3(1.25, 0.012, 2.6), oat)
+	# Linen panels flank the glass and leave the sill and daylight open.
+	for spot in WINDOWS:
+		var at: Vector3 = spot[0]
+		var yaw: float = spot[1]
+		var basis := Basis(Vector3.UP, yaw)
+		for side in [-1.0, 1.0]:
+			HouseKit.box(comfort, "LinenCurtain", at + basis * Vector3(side * 0.77, 1.53, -0.16), Vector3(0.3, 1.62, 0.07), cream, yaw)
+		HouseKit.box(comfort, "CurtainRod", at + Vector3(0.0, 2.42, 0.0) + basis * Vector3(0.0, 0.0, -0.18), Vector3(1.98, 0.025, 0.025), _timber, yaw)
+	_floor_lamp(comfort, "Living", Vector3(5.65, 0.0, 1.15), "living")
+	_floor_lamp(comfort, "Reading", Vector3(-4.2, 0.0, 4.25), "bedroom")
+	var bedroom := HouseKit.light(comfort, "BedroomFill", Vector3(-3.8, 2.2, 2.2), Color("ffd5ac"), 0.3, 6.0)
+	bedroom.omni_attenuation = 0.8
 	_keep_light("bedroom", bedroom)
-	var passage := HouseKit.light(comfort, "PassageFill", Vector3(-1.6, 2.15, -1.3), Color("ffd0a8"), 0.32, 4.5)
+	var passage := HouseKit.light(comfort, "PassageFill", Vector3(-2.3, 2.5, -1.3), Color("ffd0a8"), 0.3, 6.0)
 	passage.omni_attenuation = 0.9
 	_keep_light("backhall", passage)
+
+
+func _floor_lamp(parent: Node3D, label: String, at: Vector3, room: String) -> void:
+	var metal := HouseKit.paint(Color("42382c"), 0.45, 0.4)
+	HouseKit.box(parent, label + "LampBase", at + Vector3(0.0, 0.025, 0.0), Vector3(0.3, 0.05, 0.3), metal)
+	HouseKit.box(parent, label + "LampStand", at + Vector3(0.0, 0.69, 0.0), Vector3(0.025, 1.38, 0.025), metal)
+	var shade := MeshInstance3D.new()
+	shade.name = label + "LampShade"
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.15
+	mesh.bottom_radius = 0.25
+	mesh.height = 0.32
+	mesh.radial_segments = 20
+	shade.mesh = mesh
+	shade.material_override = HouseKit.glow(Color("e6c69d"), 0.3)
+	shade.position = at + Vector3(0.0, 1.48, 0.0)
+	parent.add_child(shade)
+	var lamp := HouseKit.light(parent, label + "Lamp", at + Vector3(0.0, 1.28, 0.0), Color("ffc89a"), 0.7, 6.0)
+	lamp.omni_attenuation = 0.8
+	_keep_light(room, lamp)
 
 
 ## After the editable level copies stored lamp values, put the warmth back.
@@ -424,7 +454,7 @@ func doorstep() -> Vector3:
 	var marker := get_node_or_null("Authoring/Doorstep") as Marker3D
 	if marker:
 		return marker.global_position
-	return to_global(Vector3(0.0, -PLINTH, 6.5))
+	return to_global(Vector3(0.0, -PLINTH, 7.9))
 
 
 ## The stair well, which the terrain must not cross.
@@ -451,37 +481,35 @@ func _room_volume(rect: Rect2) -> AABB:
 
 func _build_ground_floor() -> void:
 	var root := _group("GroundFloor")
-	# Stone plinth from below the snow to the boards.
-	for side in [[Vector2(-4.62, 3.62), Vector2(4.62, 3.62)], [Vector2(4.62, -3.62), Vector2(-4.62, -3.62)], [Vector2(-4.62, -3.38), Vector2(-4.62, 3.38)], [Vector2(4.62, 3.38), Vector2(4.62, -3.38)]]:
-		# Only a hand under the snow: any deeper and it hangs through the
-		# ceiling of the mortuary, which runs out beneath the front of the house.
+	var west := UPSTAIRS.position.x
+	var east := UPSTAIRS.end.x
+	var back := UPSTAIRS.position.y
+	var front := UPSTAIRS.end.y
+	for side in [[Vector2(west - 0.12, front + 0.12), Vector2(east + 0.12, front + 0.12)], [Vector2(east + 0.12, back - 0.12), Vector2(west - 0.12, back - 0.12)], [Vector2(west - 0.12, back + 0.12), Vector2(west - 0.12, front - 0.12)], [Vector2(east + 0.12, front - 0.12), Vector2(east + 0.12, back + 0.12)]]:
 		HouseKit.wall(root, "Plinth", side[0], side[1], SLAB_TOP, 0.0, EXTERIOR + 0.04, _stone)
-	var inner := Rect2(-4.5, -3.5, 9.0, 7.0)
 	var stair_hole := Rect2(STAIR_BOTTOM_X, STAIR_Z - STAIR_WIDTH * 0.5, STAIR_TOP_X - STAIR_BOTTOM_X, STAIR_WIDTH)
-	HouseKit.slab(root, "Floor", inner, -0.25, 0.0, _plank_floor, [stair_hole])
-	HouseKit.slab(root, "Ceiling", inner, CEILING, CEILING + 0.15, HouseKit.scan("weathered_plank_siding", Color(0.7, 0.6, 0.5), 0.7))
-	# Exterior walls: planks outside, plaster inside.
-	var window := {"width": 0.9, "height": 1.15, "sill": 0.9}
-	HouseKit.wall(root, "FrontWall", Vector2(-4.62, 3.5), Vector2(4.62, 3.5), 0.0, WALL_TOP, EXTERIOR, _plank_out, [
-		{"at": 4.62, "width": 1.0, "height": 2.1},
-		_at(window, 1.72), _at(window, 7.52)], _plaster, _plank_out)
-	HouseKit.wall(root, "BackWall", Vector2(4.62, -3.5), Vector2(-4.62, -3.5), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 1.72)], _plaster, _plank_out)
-	HouseKit.wall(root, "WestWall", Vector2(-4.5, -3.38), Vector2(-4.5, 3.38), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 5.38)], _plaster, _plank_out)
-	HouseKit.wall(root, "EastWall", Vector2(4.5, 3.38), Vector2(4.5, -3.38), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 1.58), _at(window, 4.88)], _plaster, _plank_out)
+	HouseKit.slab(root, "Floor", UPSTAIRS, -0.25, 0.0, _plank_floor, [stair_hole])
+	HouseKit.slab(root, "Ceiling", UPSTAIRS, CEILING, CEILING + 0.15, HouseKit.scan("weathered_plank_siding", Color(0.7, 0.6, 0.5), 0.7))
+	var window := {"width": 1.15, "height": 1.15, "sill": 0.9}
+	HouseKit.wall(root, "FrontWall", Vector2(west - 0.12, front), Vector2(east + 0.12, front), 0.0, WALL_TOP, EXTERIOR, _plank_out, [
+		{"at": -west + 0.12, "width": DOOR_WIDTH, "height": DOOR_HEIGHT},
+		_at(window, -4.3 - west + 0.12), _at(window, 4.3 - west + 0.12)], _plaster, _plank_out)
+	HouseKit.wall(root, "BackWall", Vector2(east + 0.12, back), Vector2(west - 0.12, back), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, east + 0.12 - 4.3)], _plaster, _plank_out)
+	HouseKit.wall(root, "WestWall", Vector2(west, back + 0.12), Vector2(west, front - 0.12), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 2.8 - back - 0.12)], _plaster, _plank_out)
+	HouseKit.wall(root, "EastWall", Vector2(east, front - 0.12), Vector2(east, back + 0.12), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, front - 0.12 - 2.5), _at(window, front - 0.12 + 2.4)], _plaster, _plank_out)
 	for spot in WINDOWS:
 		_glaze(root, spot[0], spot[1], window)
-	# Partitions.
-	HouseKit.wall(root, "BedroomWall", Vector2(-1.2, 0.4), Vector2(-1.2, 3.44), 0.0, CEILING, PARTITION, _plaster, [{"at": 1.6, "width": 0.92, "height": 2.05}])
-	HouseKit.wall(root, "LivingWall", Vector2(1.2, -3.44), Vector2(1.2, 3.44), 0.0, CEILING, PARTITION, _plaster, [{"at": 5.44, "width": 0.92, "height": 2.05}, {"at": 2.44, "width": 1.2, "height": 2.15}])
-	HouseKit.wall(root, "BackHallWall", Vector2(-4.44, 0.4), Vector2(1.14, 0.4), 0.0, CEILING, PARTITION, _plaster, [{"at": 4.44, "width": 0.92, "height": 2.05}])
-	# Doors: front, bedroom, living room, back hall.
-	doors["front"] = HouseDoor.make(root, "FrontDoor", Vector3(0.0, 0.0, 3.5), 0.0, Vector3(0.98, 2.08, 0.05), "plank", _timber, -1.0, 100.0, "Front door")
-	doors["bedroom"] = HouseDoor.make(root, "BedroomDoor", Vector3(-1.2, 0.0, 2.0), PI * 0.5, Vector3(0.9, 2.03, 0.045), "plank", _timber, 1.0, 95.0, "Bedroom door")
-	doors["living"] = HouseDoor.make(root, "LivingDoor", Vector3(1.2, 0.0, 2.0), -PI * 0.5, Vector3(0.9, 2.03, 0.045), "plank", _timber, -1.0, 95.0, "Living room door")
-	doors["backhall"] = HouseDoor.make(root, "CellarHallDoor", Vector3(0.0, 0.0, 0.4), 0.0, Vector3(0.9, 2.03, 0.045), "plank", _timber, 1.0, 95.0, "Back hall door")
-	# Porch: a landing and a step down to the snow.
-	HouseKit.solid(root, "PorchLanding", Vector3(0.0, -0.11, 3.95), Vector3(2.0, 0.2, 0.66), _stone)
-	HouseKit.solid(root, "PorchStep", Vector3(0.0, -0.31, 4.46), Vector3(1.8, 0.2, 0.36), _stone)
+	HouseKit.wall(root, "BedroomWall", Vector2(-1.5, 0.6), Vector2(-1.5, front - 0.06), 0.0, CEILING, PARTITION, _plaster, [{"at": 2.2, "width": DOOR_WIDTH, "height": DOOR_HEIGHT}])
+	HouseKit.wall(root, "LivingWall", Vector2(1.5, back + 0.06), Vector2(1.5, front - 0.06), 0.0, CEILING, PARTITION, _plaster, [{"at": 2.8 - back - 0.06, "width": DOOR_WIDTH, "height": DOOR_HEIGHT}, {"at": -1.4 - back - 0.06, "width": 1.6, "height": 2.4}])
+	HouseKit.wall(root, "BackHallWall", Vector2(west + 0.06, 0.6), Vector2(1.44, 0.6), 0.0, CEILING, PARTITION, _plaster, [{"at": -west - 0.06, "width": DOOR_WIDTH, "height": DOOR_HEIGHT}])
+	# Three centimetres at each jamb clears the rotating leaf's hinge corner.
+	var leaf := Vector3(DOOR_WIDTH - 0.06, DOOR_HEIGHT - 0.02, 0.045)
+	doors["front"] = HouseDoor.make(root, "FrontDoor", Vector3(0.0, 0.0, front), 0.0, leaf, "plank", _timber, -1.0, 100.0, "Front door")
+	doors["bedroom"] = HouseDoor.make(root, "BedroomDoor", Vector3(-1.5, 0.0, 2.8), PI * 0.5, leaf, "plank", _timber, 1.0, 95.0, "Bedroom door")
+	doors["living"] = HouseDoor.make(root, "LivingDoor", Vector3(1.5, 0.0, 2.8), -PI * 0.5, leaf, "plank", _timber, -1.0, 95.0, "Living room door")
+	doors["backhall"] = HouseDoor.make(root, "CellarHallDoor", Vector3(0.0, 0.0, 0.6), 0.0, leaf, "plank", _timber, 1.0, 95.0, "Back hall door")
+	HouseKit.solid(root, "PorchLanding", Vector3(0.0, -0.11, 5.4), Vector3(2.6, 0.2, 0.9), _stone)
+	HouseKit.solid(root, "PorchStep", Vector3(0.0, -0.31, 6.02), Vector3(2.3, 0.2, 0.4), _stone)
 
 
 func _at(spec: Dictionary, along: float) -> Dictionary:
@@ -508,7 +536,7 @@ func _build_roof() -> void:
 	var root := _group("Roof")
 	var slate := HouseKit.scan("roof_slates_02", Color(0.42, 0.44, 0.47))
 	var rise := 2.0
-	var half := 3.62
+	var half := FOOTPRINT.size.y * 0.5
 	var overhang := 0.5
 	var angle := atan2(rise, half)
 	var length := (half + overhang) / cos(angle)
@@ -536,8 +564,8 @@ func _build_roof() -> void:
 	for x in [FOOTPRINT.position.x + 0.05, FOOTPRINT.end.x - 0.05]:
 		_gable(root, x, rise, half)
 	# A stone chimney stack at the east gable.
-	HouseKit.solid(root, "Chimney", Vector3(3.6, WALL_TOP + 1.6, -0.9), Vector3(0.7, 3.4, 0.6), _stone)
-	HouseKit.box(root, "ChimneyCap", Vector3(3.6, WALL_TOP + 3.34, -0.9), Vector3(0.82, 0.08, 0.72), HouseKit.paint(Color("2f3236"), 0.7))
+	HouseKit.solid(root, "Chimney", Vector3(5.4, WALL_TOP + 1.6, -1.2), Vector3(0.7, 3.4, 0.6), _stone)
+	HouseKit.box(root, "ChimneyCap", Vector3(5.4, WALL_TOP + 3.34, -1.2), Vector3(0.82, 0.08, 0.72), HouseKit.paint(Color("2f3236"), 0.7))
 
 
 ## A triangular gable of planks above the wall top.
@@ -666,20 +694,23 @@ func _janitor_room(root: Node3D) -> void:
 
 func _furnish() -> void:
 	var root := _group("Furniture")
-	# Bedroom: where she wakes.
-	HouseKit.prop(root, "vintage_day_bed", Vector3(-3.75, 0.0, 1.55), 90.0)
-	HouseKit.prop(root, "painted_wooden_nightstand", Vector3(-4.1, 0.0, 2.95), 90.0)
-	HouseKit.prop(root, "Lantern_01", Vector3(-4.1, 0.62, 2.95))
-	HouseKit.prop(root, "wicker_basket_01", Vector3(-1.75, 0.0, 0.85))
-	# Living room and kitchen.
-	HouseKit.prop(root, "sofa_02", Vector3(3.85, 0.0, 1.9), -90.0)
-	HouseKit.prop(root, "wooden_table_02", Vector3(2.9, 0.0, -1.7))
-	HouseKit.prop(root, "painted_wooden_chair_01", Vector3(2.1, 0.0, -1.7), 90.0)
-	HouseKit.prop(root, "painted_wooden_chair_01", Vector3(3.7, 0.0, -1.7), -90.0)
-	HouseKit.prop(root, "tea_set_01", Vector3(2.9, 0.76, -1.7))
-	HouseKit.prop(root, "wooden_bookshelf_worn", Vector3(1.48, 0.0, 0.4), 90.0)
-	HouseKit.prop(root, "GothicCabinet_01", Vector3(4.2, 0.0, -2.9), -90.0)
-	for blocker in [[Vector3(3.85, 0.4, 1.9), Vector3(0.9, 0.8, 2.0)], [Vector3(2.9, 0.38, -1.7), Vector3(1.4, 0.76, 0.85)], [Vector3(-3.75, 0.3, 1.55), Vector3(0.95, 0.6, 2.0)]]:
+	# Human-sized pieces around the perimeter; the larger shell stays walkable.
+	HouseKit.prop(root, "vintage_day_bed", Vector3(-5.35, 0.0, 2.15), 90.0)
+	HouseKit.prop(root, "painted_wooden_nightstand", Vector3(-5.6, 0.0, 4.1), 90.0)
+	HouseKit.prop(root, "Lantern_01", Vector3(-5.6, 0.62, 4.1))
+	HouseKit.prop(root, "wicker_basket_01", Vector3(-2.1, 0.0, 1.1))
+	HouseKit.prop(root, "ArmChair_01", Vector3(-3.45, 0.0, 4.05), 155.0)
+	HouseKit.prop(root, "round_wooden_table_02", Vector3(-2.25, 0.0, 4.05))
+	HouseKit.prop(root, "tea_set_01", Vector3(-2.25, 0.75, 4.05), 0.0, 0.6)
+	HouseKit.prop(root, "sofa_02", Vector3(5.5, 0.0, 2.6), -90.0)
+	HouseKit.prop(root, "throw_pillows_01", Vector3(5.48, 0.42, 2.6), -90.0)
+	HouseKit.prop(root, "wooden_table_02", Vector3(4.45, 0.0, -2.7))
+	HouseKit.prop(root, "painted_wooden_chair_01", Vector3(3.45, 0.0, -2.7), 90.0)
+	HouseKit.prop(root, "painted_wooden_chair_01", Vector3(5.45, 0.0, -2.7), -90.0)
+	HouseKit.prop(root, "tea_set_01", Vector3(4.45, 0.76, -2.7))
+	HouseKit.prop(root, "wooden_bookshelf_worn", Vector3(1.83, 0.0, 0.25), 90.0)
+	HouseKit.prop(root, "GothicCabinet_01", Vector3(5.9, 0.0, -4.05), -90.0)
+	for blocker in [[Vector3(5.5, 0.4, 2.6), Vector3(0.85, 0.8, 1.85)], [Vector3(4.45, 0.38, -2.7), Vector3(1.4, 0.76, 0.85)], [Vector3(-5.35, 0.3, 2.15), Vector3(0.9, 0.6, 2.0)], [Vector3(-3.45, 0.5, 4.05), Vector3(0.85, 1.0, 0.8)], [Vector3(-2.25, 0.37, 4.05), Vector3(0.8, 0.74, 0.8)]]:
 		HouseKit.blocker(root, "FurnitureBody", blocker[0], blocker[1])
 
 
@@ -689,9 +720,9 @@ func _furnish() -> void:
 func _light_house() -> void:
 	var root := _group("Lights")
 	var warm := Color("ffc88a")
-	lantern_light = HouseKit.light(root, "LanternLight", Vector3(-4.1, 0.95, 2.95), Color("ffb060"), 1.1, 5.0)
+	lantern_light = HouseKit.light(root, "LanternLight", Vector3(-5.6, 0.95, 4.1), Color("ffb060"), 1.1, 5.0)
 	_keep_light("bedroom", lantern_light)
-	for spot in [[Vector3(0.0, CEILING - 0.3, 1.9), "Hall", "hall", 0.45, true], [Vector3(2.85, CEILING - 0.3, -1.6), "Kitchen", "living", 0.6, true], [Vector3(2.85, CEILING - 0.3, 2.0), "Living", "living", 0.6, false], [Vector3(-1.8, CEILING - 0.3, -1.4), "BackHall", "backhall", 0.55, false]]:
+	for spot in [[Vector3(0.0, CEILING - 0.3, 2.7), "Hall", "hall", 0.45, true], [Vector3(4.45, CEILING - 0.3, -2.7), "Kitchen", "living", 0.6, true], [Vector3(4.45, CEILING - 0.3, 2.6), "Living", "living", 0.6, false], [Vector3(-2.3, CEILING - 0.3, -1.4), "BackHall", "backhall", 0.55, false]]:
 		var at: Vector3 = spot[0]
 		var lit: bool = spot[4]
 		HouseKit.box(root, "%sBulb" % spot[1], at + Vector3(0.0, 0.12, 0.0), Vector3(0.12, 0.14, 0.12), HouseKit.glow(warm, 2.0) if lit else HouseKit.paint(Color("b8ab90"), 0.3))

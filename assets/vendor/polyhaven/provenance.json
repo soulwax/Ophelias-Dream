@@ -573,7 +573,7 @@
     "name": "Vintage Day Bed",
     "source": "https://polyhaven.com/a/vintage_day_bed",
     "authors": [
-      "Aron Łyczek"
+      "Aron \u0141yczek"
     ],
     "license": "CC0 1.0 (https://polyhaven.com/license)",
     "retrieved": "2026-10-01",
@@ -910,6 +910,120 @@
         "path": "./assets/vendor/polyhaven/wicker_basket_01/wicker_basket_01.bin",
         "sha256": "8e96025ffcdc64a7e75d1aa980f2491b1219912a4554272cd1e192a966c399f8",
         "bytes": 624920
+      }
+    ]
+  },
+  {
+    "id": "ArmChair_01",
+    "type": "model",
+    "name": "Arm Chair 01",
+    "source": "https://polyhaven.com/a/ArmChair_01",
+    "authors": [
+      "Kirill Sannikov"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-06",
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/ArmChair_01/ArmChair_01_1k.gltf",
+        "sha256": "91e39d5b35f36c8074b7b6432f6fd77f5f1a257c4d6af3924c0b263eb674286b",
+        "bytes": 2643
+      },
+      {
+        "path": "./assets/vendor/polyhaven/ArmChair_01/textures/Armchair_01_diff_1k.jpg",
+        "sha256": "db30fc9ab61ac50c91ab7573583d2855a2910df1ecade02b89e3e8ab8d4e4c2d",
+        "bytes": 184246
+      },
+      {
+        "path": "./assets/vendor/polyhaven/ArmChair_01/ArmChair_01.bin",
+        "sha256": "42a4206ea8bb3f7c3c1500ca3e408e084e8687cd3cc9cbf095b3344e215e0db6",
+        "bytes": 154012
+      },
+      {
+        "path": "./assets/vendor/polyhaven/ArmChair_01/textures/Armchair_01_nor_gl_1k.jpg",
+        "sha256": "f5e4a43a12e79537e53e27c2bd4c5296b3e191cd6b301afce9fafd9d38238dde",
+        "bytes": 289916
+      },
+      {
+        "path": "./assets/vendor/polyhaven/ArmChair_01/textures/Armchair_01_arm_1k.jpg",
+        "sha256": "d272c68e8180f2a381314ac0cef5a9165d15d951a0558cb40a17af71cf6a51c6",
+        "bytes": 138327
+      }
+    ]
+  },
+  {
+    "id": "round_wooden_table_02",
+    "type": "model",
+    "name": "Round Wooden Table 02",
+    "source": "https://polyhaven.com/a/round_wooden_table_02",
+    "authors": [
+      "Ulan Cabanilla"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-06",
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/round_wooden_table_02/round_wooden_table_02_1k.gltf",
+        "sha256": "df65c35148280a06efcc06bfa75432bb13f29318e869597fc94f364ce2b55974",
+        "bytes": 2851
+      },
+      {
+        "path": "./assets/vendor/polyhaven/round_wooden_table_02/textures/round_wooden_table_02_nor_gl_1k.jpg",
+        "sha256": "34989b9a15753b964a4d9d6b2673c048ff2c14feedbe4e6adbeb4bf32be8bc8c",
+        "bytes": 635637
+      },
+      {
+        "path": "./assets/vendor/polyhaven/round_wooden_table_02/textures/round_wooden_table_02_diff_1k.jpg",
+        "sha256": "9872acedc6be92ef232c581c8e9ce435e4aa0d8f5c4b75e4ce445995a3ef8c28",
+        "bytes": 470007
+      },
+      {
+        "path": "./assets/vendor/polyhaven/round_wooden_table_02/textures/round_wooden_table_02_arm_1k.jpg",
+        "sha256": "613d051b4c4e093c5e65eec37d39f6f48ac5476e2cb1b59c4b034f308ef1a7ee",
+        "bytes": 677385
+      },
+      {
+        "path": "./assets/vendor/polyhaven/round_wooden_table_02/round_wooden_table_02.bin",
+        "sha256": "fa9a0ed80be31d9160207913762cedc5de21d1cb37b01a5ae6caa23ce7a741b6",
+        "bytes": 135412
+      }
+    ]
+  },
+  {
+    "id": "throw_pillows_01",
+    "type": "model",
+    "name": "Throw Pillows 01",
+    "source": "https://polyhaven.com/a/throw_pillows_01",
+    "authors": [
+      "Serhii Khromov"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-06",
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/throw_pillows_01/throw_pillows_01_1k.gltf",
+        "sha256": "dd3f985a4446c82035028392ae905b9d996b8be10316a4572a870561a57f76fa",
+        "bytes": 4548
+      },
+      {
+        "path": "./assets/vendor/polyhaven/throw_pillows_01/textures/throw_pillows_01_rough_1k.jpg",
+        "sha256": "05518d80893cd4b0a1390ccf1330e94ecae7f386b60e2b55761a1e9856e29f9b",
+        "bytes": 339241
+      },
+      {
+        "path": "./assets/vendor/polyhaven/throw_pillows_01/textures/throw_pillows_01_diff_1k.jpg",
+        "sha256": "1d52fb47f06b88b5079f20a99309ae1e94547e778a5f89614d70f842c0696412",
+        "bytes": 299887
+      },
+      {
+        "path": "./assets/vendor/polyhaven/throw_pillows_01/throw_pillows_01.bin",
+        "sha256": "cac134c38612894a301d265a0b2ad4ddbe57d15d7473d57592c397d445366476",
+        "bytes": 146012
+      },
+      {
+        "path": "./assets/vendor/polyhaven/throw_pillows_01/textures/throw_pillows_01_nor_gl_1k.jpg",
+        "sha256": "074da9df1286aecf0d107bdd0839f0ec382fa99b16313626c7f6690d2765b4d7",
+        "bytes": 404720
       }
     ]
   }

@@ -20,12 +20,13 @@ func _run() -> void:
 		return
 	Game.set_phase(Game.Phase.PLAYING)
 	player.velocity = Vector3.ZERO
-	var outside := house.to_global(Vector3(-3.85, 0.0, 4.8))
+	var page_at := house.to_local(bedroom_page.global_position)
+	var outside := house.to_global(Vector3(page_at.x, 0.0, House.UPSTAIRS.end.y + 1.3))
 	player.global_position = Vector3(outside.x, Game.trail.ground.height_at(outside.x, outside.z) + 0.5, outside.z)
 	await get_tree().physics_frame
 	var exterior_blocked := player.nearby_note() != bedroom_page
 	print("Exterior wall blocks bedroom note: ", exterior_blocked)
-	var inside := house.to_global(Vector3(-3.0, 0.0, 2.82))
+	var inside := house.to_global(Vector3(page_at.x + 0.9, 0.0, page_at.z))
 	player.global_position = inside + Vector3.UP * 0.5
 	await get_tree().physics_frame
 	var interior_access := player.nearby_note() == bedroom_page

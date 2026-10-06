@@ -62,8 +62,16 @@ func _ready() -> void:
 	var built_exit := trail.exit_point
 	var redrawn: bool = shift["curve"] or shift["start"]
 	var retain: Array[Node] = []
+	var house_changed := false
 	if redrawn:
 		retain = trail.route_derived()
+	# The house blockout changed. Keep the new shell and its matching markers
+	# together instead of copying an older snapshot's indexed children onto it.
+	if use_snapshot:
+		var saved_house := snapshot.get_node_or_null("Trail/House")
+		if saved_house and int(saved_house.get_meta("layout_revision", 0)) != House.LAYOUT_REVISION:
+			retain.append(trail.house)
+			house_changed = true
 	# An old bake stored a page as a trail child in the slot Threats uses.
 	# Hold that branch aside until the snapshot contains the slot, so the
 	# page is not painted onto it.
@@ -74,6 +82,7 @@ func _ready() -> void:
 		_settle_route(trail, shift, built_house, built_exit)
 		if trail.house:
 			trail.house.settle_comfort()
+		player.apply_authored_spawn(house_changed)
 		player.set_process(false)
 		player.set_physics_process(false)
 		snapshot.queue_free()
@@ -86,7 +95,7 @@ func _ready() -> void:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
 		_settle_route(trail, shift, built_house, built_exit)
-		player.apply_authored_spawn()
+		player.apply_authored_spawn(house_changed)
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
 	if trail.house:

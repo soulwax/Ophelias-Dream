@@ -661,8 +661,8 @@ func _apply_look() -> void:
 		ears.global_transform = Transform3D(turn, body + Vector3(0.0, 1.55 - 0.45 * _slide_weight, 0.0))
 
 
-func apply_authored_spawn() -> void:
-	if OS.get_environment("RUN_SPAWN") != "":
+func apply_authored_spawn(reset_house := false) -> void:
+	if reset_house or OS.get_environment("RUN_SPAWN") != "":
 		_place()
 	else:
 		_yaw = rotation.y
