@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1.7 — 2026-10-07
+
+- Rebuild Mathilda's camp to look real: a weathered canvas tent with snow settled on it and guy lines pegged out, a stone-ringed campfire with a split-log tepee, glowing coals, sparks and drifting wood smoke, a woodpile with an axe, a stool, a crate table and a hurricane lantern on a stump.
+- The fire's flames are drawn by a shader, it lights the camp with a flickering, shadow-casting glow, it crackles, and the snow round it slowly melts back to wet earth.
+- Her chapter now begins at early dusk, and the light keeps moving: a whole day passes in 40 minutes, through sunset and blue hour into a moonlit night.
+- Her cups, gloves and note are real objects on the crate, the stool and under the lantern.
+- Glints in the snow are now fine grains of ice instead of square flecks, and lamplight no longer sets them sparkling.
+
 ## 0.2.1.6 — 2026-10-07
 
 0.2.1.5 was prepared but never published; its changes are part of this release.

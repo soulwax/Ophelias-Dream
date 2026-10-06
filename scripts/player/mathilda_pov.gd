@@ -46,6 +46,12 @@ func _start() -> void:
 	Game.player.visual.hide()
 	Game.player.reset_physics_interpolation()
 	_build_objects(frame)
+	# Her afternoon is already ending: the clock starts at early dusk.
+	# Dev hook: RUN_HOUR=<hours> starts it at another time.
+	var atmosphere := get_tree().get_first_node_in_group("atmosphere") as Atmosphere
+	if atmosphere:
+		var hour := OS.get_environment("RUN_HOUR")
+		atmosphere.start_clock(float(hour) if hour.is_valid_float() else Tune.MATHILDA_DUSK)
 	Game.audio_fade = 1.0
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	Game.set_phase(Game.Phase.PLAYING)
@@ -67,6 +73,16 @@ func _start() -> void:
 
 
 func _build_objects(frame: Transform3D) -> void:
+	# The camp lays her things out: cups on the crate, gloves on the stool,
+	# the note under the lantern.
+	var camp := get_tree().get_first_node_in_group("camp") as Camp
+	if camp:
+		camp.ensure_built()
+		if camp.is_built:
+			for object_name in _object_names:
+				camp.place_story_prop(object_name)
+				_objects.append(camp.spots[object_name])
+			return
 	for i in 3:
 		var at := Game.trail.on_ground(frame.origin + frame.basis.x * (4.7 + i * 0.8) + frame.basis.z * 1.8)
 		_objects.append(at)

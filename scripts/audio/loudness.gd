@@ -35,6 +35,8 @@ const TREE_RUSTLE := 70.0
 const SNOW_FLUMP := 66.0
 const TREE_CREAK := 63.0
 const BRANCH_SNAP := 92.0
+# A small wood fire at Mathilda's camp: the hiss of the bed and its crackles.
+const CAMPFIRE := 60.0
 # The storm as it reaches her ears, not at 1 m from anything: from a light
 # wind to a blizzard, with gusts on top. The cabin walls take WALLS of it,
 # the cellar a good deal more; wind whistles in at the windows.

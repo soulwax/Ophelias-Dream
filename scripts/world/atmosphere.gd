@@ -13,6 +13,39 @@ var shelter := 0.0
 # 0..1: how much snow is in the air here, from the snow weight under the camera
 # (set by Weather). Over green land the veil thins away; the fog stays.
 var snow_cover := 1.0
+# Hours on a 24 h clock. It only runs once a chapter starts it (Mathilda's, at
+# early dusk); until then the sun stays where Ophelia's afternoon left it.
+var clock_hours := 14.5
+var clock_running := false
+var _moon: DirectionalLight3D
+
+
+func start_clock(hours: float) -> void:
+	clock_hours = hours
+	clock_running = true
+	if _moon == null:
+		_moon = DirectionalLight3D.new()
+		_moon.name = "Moon"
+		_moon.light_color = Color(0.56, 0.66, 0.92)
+		_moon.light_energy = 0.0
+		_moon.rotation_degrees = Vector3(-48, 150, 0)
+		_moon.light_volumetric_fog_energy = 0.6
+		add_child(_moon)
+
+
+func _process(delta: float) -> void:
+	if clock_running and Game.awake():
+		clock_hours = fposmod(clock_hours + delta * 24.0 / (Tune.DAY_MINUTES * 60.0), 24.0)
+
+
+## Sun height in degrees: up from 06:00 to 18:00, a low winter arc.
+func sun_elevation() -> float:
+	return sin((clock_hours - 6.0) / 12.0 * PI) * 32.0
+
+
+## 1 in full daylight, 0 at night, through civil twilight in between.
+func daylight() -> float:
+	return smoothstep(-8.0, 6.0, sun_elevation()) if clock_running else 1.0
 
 
 func rebind_authoring_resources() -> void:
@@ -31,6 +64,7 @@ func rebind_authoring_resources() -> void:
 
 
 func _ready() -> void:
+	add_to_group("atmosphere")
 	environment = _make_environment()
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
@@ -154,11 +188,49 @@ func apply_weather(
 		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0)) * lerpf(1.0, 0.24, indoors)
 		_sun.light_volumetric_fog_energy = lerpf(1.15, 2.35, clampf(s * 0.6 + g * 0.4 + w * 0.4, 0.0, 1.0)) * lerpf(1.0, 0.18, indoors)
 
+	if clock_running:
+		_apply_clock(indoors)
+
 	var flat_wind := Vector2(wind.x, wind.z)
 	var wind_dir := flat_wind.normalized() if flat_wind.length() > 0.05 else Vector2(0.92, 0.38)
 	var house_inv := Game.house.global_transform.affine_inverse() if Game.house else Transform3D.IDENTITY
 	_update_veil(_veil, s, g, w, wind_dir, wind_scroll, focus_y, house_inv, 0.011, 0.028, 0.036)
 	_update_veil(_local_veil, s, g, w, wind_dir, wind_scroll, focus_y, house_inv, 0.008, 0.042, 0.056)
+
+
+## Lays the hour over the weather's daylight: the sun sinks and warms toward
+## the horizon, the sky and fog go through amber to blue dusk to night, and a
+## faint moon takes over the shadows.
+func _apply_clock(indoors: float) -> void:
+	var elevation := sun_elevation()
+	var day := daylight()
+	# Low sun: 1 near the horizon, 0 once it is well up.
+	var low := 1.0 - smoothstep(1.0, 18.0, elevation)
+	var dusk := low * smoothstep(-7.0, 2.0, elevation)
+	var t := (clock_hours - 6.0) / 12.0
+	if _sun:
+		_sun.rotation_degrees = Vector3(-maxf(elevation, 1.5), lerpf(-125.0, 125.0, clampf(t, 0.0, 1.0)), 0.0)
+		_sun.light_color = _sun.light_color.lerp(Color(1.0, 0.56, 0.32), dusk * 0.85)
+		_sun.light_energy *= smoothstep(-1.5, 7.0, elevation) * lerpf(1.0, 0.7, low)
+		_sun.light_volumetric_fog_energy *= smoothstep(-3.0, 4.0, elevation)
+	if _moon:
+		_moon.light_energy = 0.11 * (1.0 - day) * lerpf(1.0, 0.24, indoors)
+		_moon.visible = _moon.light_energy > 0.002
+	var night_sky := Color(0.025, 0.035, 0.075)
+	var dusk_sky := Color(0.82, 0.52, 0.42)
+	var blue_hour := Color(0.18, 0.24, 0.42)
+	var sky := _env.background_color.lerp(dusk_sky, dusk * 0.55)
+	sky = blue_hour.lerp(sky, smoothstep(-6.0, 3.0, elevation))
+	_env.background_color = night_sky.lerp(sky, day)
+	var fog := _env.fog_light_color.lerp(Color(0.86, 0.6, 0.5), dusk * 0.5)
+	_env.fog_light_color = Color(0.05, 0.065, 0.12).lerp(fog, day)
+	_env.fog_light_energy *= lerpf(0.25, 1.0, day)
+	_env.fog_sun_scatter *= lerpf(1.0, 2.2, dusk)
+	var ambient := _env.ambient_light_color.lerp(Color(0.86, 0.66, 0.6), dusk * 0.35)
+	_env.ambient_light_color = Color(0.32, 0.4, 0.62).lerp(ambient, day)
+	_env.ambient_light_energy *= lerpf(0.13, 1.0, day)
+	_env.volumetric_fog_ambient_inject *= lerpf(0.2, 1.0, day)
+	_env.adjustment_saturation = lerpf(_env.adjustment_saturation, 0.95, dusk * 0.5)
 
 
 func _update_veil(

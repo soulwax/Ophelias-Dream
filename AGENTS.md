@@ -16,6 +16,7 @@ Ophelia's Dream is a third-person winter horror game using Godot 4.7, Forward+ r
   - Reproducibility: the references, raw picks, `voice_lock.json` and frozen requirements are committed in `tools/voice/` (Godot-ignored); refresh them with `--lock`.
   - Clip names: SHA-256 of `text|mood`. Clips are never deleted, only moved to `build/voice/archive/`.
   - See `docs/VOICE.md`; do not run the obsolete `tools/bake_voice.py`.
+- `Camp` (`scripts/world/camp.gd`) builds Mathilda's camp: a canvas tent, a shader-driven campfire whose melted ring grows slowly, smoke, a woodpile, stool, crate table and lantern. Her chapter starts `Atmosphere.start_clock(Tune.MATHILDA_DUSK)`: early dusk, a whole day every `Tune.DAY_MINUTES` minutes; Ophelia's afternoon never moves.
 - After the last page, holding glance-back outdoors turns her around (`Game.turn_around()`); the escape card then reads "One set of prints".
 - `tools/` contains probes, asset generators, and diagnostic scripts. `docs/PLAN.md` records the original design; prefer current code when it disagrees.
 
@@ -40,6 +41,8 @@ godot --headless --path . tools/biome_probe.tscn # Snow weight, thaw bands, seam
 godot --headless --path . tools/flora_probe.tscn # Woods by biome (also with RUN_GRAPHICS=full)
 godot --headless --path . tools/biome_effects_probe.tscn # Grass/thaw steps, prints, snowfall over green
 godot --path . tools/terrain_view.tscn # Overview shots + FPS into build/terrain/ (needs a window)
+python tools/curate_camp_assets.py   # Camp props from the owner's asset bank (ignored)
+godot --path . tools/camp_view.tscn  # Camp shots into build/camp/ (RUN_HOUR=19.5 for night)
 ./tools/run_blackbox.ps1         # Run with logs in build/blackbox/
 ```
 
@@ -76,4 +79,4 @@ History uses descriptive prose sentences without Conventional Commit prefixes. D
 
 ## Asset Hygiene
 
-Preserve vendor provenance and licensing records. Exclude `.godot/`, build outputs, and scratch screenshots from commits. `tools/prepare_elf.py <original-elf.glb>` strips bundled weapons before importing the elf; inspect other asset generators' output paths before running them.
+Preserve vendor provenance and licensing records. Owner-supplied packs without verified redistribution rights stay ignored (`assets/vendor/requested_house/`, `assets/vendor/requested_camp/`) with their manifests in `docs/`, and the game falls back without them; copy them into the export worktree before a release. Exclude `.godot/`, build outputs, and scratch screenshots from commits. `tools/prepare_elf.py <original-elf.glb>` strips bundled weapons before importing the elf; inspect other asset generators' output paths before running them.

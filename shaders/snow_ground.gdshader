@@ -38,6 +38,15 @@ float hash21(vec2 p) {
 	return fract(p.x * p.y);
 }
 
+// A small soft point somewhere in this cell of the grid, so glints read as
+// grains of ice and not as the grid's squares.
+float point_in_cell(vec2 p, float radius) {
+	vec2 cell = floor(p);
+	vec2 at = vec2(hash21(cell + 17.0), hash21(cell + 71.0)) * (1.0 - 2.0 * radius) + radius;
+	float d = length(fract(p) - at);
+	return 1.0 - smoothstep(radius * 0.35, radius, d);
+}
+
 vec2 gradient(vec2 p) {
 	float angle = hash21(p) * 6.2831853;
 	return vec2(cos(angle), sin(angle));
@@ -105,7 +114,7 @@ void fragment() {
 	float grains = field_noise(world_pos.xz * 6.5);
 	float pack = clamp(0.28 + drift * 0.34 + clumps * 0.28 + grains * 0.16, 0.0, 1.0);
 	vec3 snow = mix(shade, tint, pack) * mix(0.86, 1.08, broad) * mix(0.92, 1.05, cloth);
-	float fleck = pow(hash21(floor(world_pos.xz * 32.0)), 36.0);
+	float fleck = pow(hash21(floor(world_pos.xz * 32.0)), 36.0) * point_in_cell(world_pos.xz * 32.0, 0.22);
 	snow = mix(snow, vec3(0.95, 0.97, 1.0), fleck);
 
 	float biome_mix = field_noise(world_pos.xz * 0.045);
@@ -160,7 +169,7 @@ void fragment() {
 		n = normalize(mix(earth_n, snow_n, cover));
 	}
 	NORMAL = normalize(mat3(VIEW_MATRIX) * n);
-	crystal = pow(hash21(floor(world_pos.xz * 40.0)), 16.0) * cover;
+	crystal = pow(hash21(floor(world_pos.xz * 40.0)), 16.0) * point_in_cell(world_pos.xz * 40.0, 0.18) * cover;
 	float earth_roughness = mix(0.98, 0.48, thaw);
 	ROUGHNESS = mix(mix(earth_roughness, mix(0.82, 0.22, crystal), cover), 0.98, rock_mask);
 	SPECULAR = mix(0.16 + thaw * 0.22, 0.45, cover);
@@ -173,5 +182,5 @@ void fragment() {
 void light() {
 	DIFFUSE_LIGHT += max(dot(NORMAL, LIGHT), 0.0) * ATTENUATION * LIGHT_COLOR / PI * 0.28;
 	float spec = pow(clamp(dot(normalize(LIGHT + VIEW), NORMAL), 0.0, 1.0), 64.0);
-	SPECULAR_LIGHT += LIGHT_COLOR * ATTENUATION * spec * crystal * 4.0;
+	SPECULAR_LIGHT += LIGHT_COLOR * ATTENUATION * spec * crystal * 4.0 * SPECULAR_AMOUNT;
 }

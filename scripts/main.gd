@@ -53,6 +53,7 @@ func _ready() -> void:
 	Game.mark("build weather")
 	add_child(Weather.new())
 	add_child(Wildlife.new())
+	add_child(Camp.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
 	if Game.mathilda_pov:

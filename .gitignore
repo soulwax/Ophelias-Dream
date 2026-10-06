@@ -9,6 +9,8 @@ decrypt.key
 # Owner-supplied commercial house downloads and their derived resource scenes.
 /assets/vendor/requested_house/
 /assets/derived/requested_house/
+# Mathilda's camp props from the same asset bank (tools/curate_camp_assets.py).
+/assets/vendor/requested_camp/
 
 # Sketchfab forest pack: the raw diorama and its original textures live in build/vendor/sketchfab_forest/
 # (Sketchfab Standard licence: no stand-alone redistribution). Only the split meshes and the textures they use are tracked.

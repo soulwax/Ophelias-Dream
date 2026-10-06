@@ -185,6 +185,13 @@ const MOUSE_SENS := 0.0022
 const PITCH_DOWN := -0.87
 const PITCH_UP := 0.38
 
+# Day clock. Ophelia's afternoon never moves; Mathilda's chapter starts the
+# clock at early dusk and a whole day passes in DAY_MINUTES real minutes.
+const DAY_MINUTES := 40.0
+const MATHILDA_DUSK := 17.3
+# Mathilda's fire melts the snow round it back over this many seconds.
+const CAMP_MELT_SECONDS := 900.0
+
 const PROP_SCALE := 1.0
 const ACTOR_SCALE := 1.0
 const PLAYER_MODEL_SCALE := 0.8

@@ -82,6 +82,12 @@ godot --headless --path . -s tools/leap_math_probe.gd
 godot --headless --path . tools/leap_probe.tscn
 godot --path . -s tools/leap_sheet.gd                    # build/leap/leap_sheet.png
 godot --headless --path . -s tools/leap_phase_probe.gd   # re-measure Stride.*_PHASES after changing a running clip
+
+# Mathilda's camp: props from the owner's asset bank into ignored assets/vendor/requested_camp/,
+# the synthesized fire crackle, and shots of the camp into build/camp/ (needs a window)
+python tools/curate_camp_assets.py ["<bank root>"]
+python tools/make_campfire.py
+godot --path . tools/camp_view.tscn                       # RUN_HOUR=19.5 for night, RUN_VIEW_TAG names the set
 ```
 
 This machine (ThinkPad, Iris Xe) has hard-frozen while running the game. `Game.lean_graphics` is on automatically for non-discrete GPUs (no volumetric fog/FogVolume/SSAO, 2 shadow splits, half the snow); override with `RUN_GRAPHICS=full|lean`. `RUN_BLACKBOX=<path>` makes `Blackbox` stream startup stages, phases and a 0.5 s performance beat to that file; `Game.mark()` adds a line. After adding a new `class_name` script, run `godot --headless --path . --import` or headless runs fail to resolve it.
@@ -96,7 +102,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 ## Architecture
 
-**Everything is built in code.** `scenes/main.tscn` is just a root `Node3D` with `scripts/main.gd`. `main.gd` instantiates every system with `ClassName.new()` in order: Atmosphere â†’ Trail â†’ Player â†’ Weather â†’ Wildlife â†’ Soundscape â†’ Voice â†’ Hud. Nodes, lights, materials, collision and UI are all constructed in `_ready()`/`_build_*()` methods. New features follow this pattern, not editor-authored scenes. The only other scenes are generated: `scenes/editable_level.scn` and `scenes/generated/` are snapshots of the built level that can be edited by hand and are reapplied at startup (see *Editable level* below and `docs/EDITOR.md`). The `tools/*_probe.tscn` files are test harnesses.
+**Everything is built in code.** `scenes/main.tscn` is just a root `Node3D` with `scripts/main.gd`. `main.gd` instantiates every system with `ClassName.new()` in order: Atmosphere â†’ Trail â†’ Player â†’ Weather â†’ Wildlife â†’ Camp â†’ Soundscape â†’ Voice â†’ Hud. Nodes, lights, materials, collision and UI are all constructed in `_ready()`/`_build_*()` methods. New features follow this pattern, not editor-authored scenes. The only other scenes are generated: `scenes/editable_level.scn` and `scenes/generated/` are snapshots of the built level that can be edited by hand and are reapplied at startup (see *Editable level* below and `docs/EDITOR.md`). The `tools/*_probe.tscn` files are test harnesses.
 
 **`Game` autoload (`scripts/game/game.gd`)** is the hub:
 - Holds the phase state machine (`BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL`) and emits `phase_changed` / `closeness_changed`. UI and audio subscribe to these signals.
@@ -258,6 +264,14 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
  - A hard limiter sits on Master.
 - *Editable level*: `EditableLevel.apply` matches nodes by child order and frees script-less nodes it does not know. Keep sound-only nodes out of the editable trees, or append them last. Set house audio levels at play time (`Loudness.sound`), because the snapshot overwrites stored properties. `House/Authoring` (spawn markers, window markers, the `StepsAbove` path, room and cellar reverb areas, `Rooms` boxes, the `Doorstep` marker) and `Trail/Threats` (the marker slot for threats, empty now; older snapshots call it `Anomalies`, and `main._park_threats` accepts either) plus `Trail/Route` (the path, with `Start` and `Exit`) are appended last and grouped as `level_authoring`, so an older snapshot keeps them until the next repack. She still wakes on the authored Player transform; `RUN_SPAWN` uses the spawn markers. Redrawing `Route` or moving `Start` rebuilds the snow, the pines and the landmarks on the next play; `Exit` only moves where she escapes. House interior edits stay.
  - **Generator changes need a rebuild.** If you change node structure in `scripts/world/` or `scripts/house/`, saved snapshots no longer line up child for child. Rebuild from the editor: select `Main` and use **Randomize / rebuild editable level**; **World Seed** `-1` means a fresh seed. That replaces `scenes/editable_level.scn` and all of `scenes/generated/`, including hand edits, so ask before doing it.
+
+**Mathilda's camp (`scripts/world/camp.gd`)**: `Camp` is added after `Wildlife` and builds deferred, once the snapshot is applied. It hides Trail's stylised tent, campfire and their light and collision rather than removing them, so the editable level still lines up child for child.
+- *Pieces*: a canvas ridge tent (`camp_canvas` shader: weave, hem damp, snow on whichever side faces up, warm glow through the cloth), a stone ring of noise-displaced rocks, a coal bed (`camp_embers`), a split-log tepee, shader flames (`camp_flame`: four upright quads turning to the camera, no particles), sparks, smoke (`camp_smoke`: noise puffs that erode with age, lit, soft against geometry), a flickering shadowed fire light, a woodpile with an axe, a stool, an upside-down crate for a table, Poly Haven's `Lantern_01` on a stump, and a looping crackle (`Loudness.CAMPFIRE`, `tools/make_campfire.py`).
+- *Melt*: a decal of wet earth, ash and slush grows from `MELT_START` to `MELT_END` over `Tune.CAMP_MELT_SECONDS`.
+- *Mathilda's things*: `place_story_prop("cups"|"gloves"|"note")` puts them at `spots`; `mathilda_pov` uses those for its three objects.
+- *Assets*: the Leartes Carpenter's Workshop props and the WW2 note scan come from the owner's asset bank (`OneDrive - Biz\Desktop\Assets`) via `tools/curate_camp_assets.py` into ignored `assets/vendor/requested_camp/` (manifest in `docs/camp/`). Without them the camp builds stand-ins. Copy that folder into the export worktree before a release.
+
+**Day clock**: `Atmosphere.start_clock(hours)` runs a 24 h clock (`Tune.DAY_MINUTES` real minutes per day) that lays sun height and colour, a dim moon, sky, fog and ambient over the weather each frame. Only Mathilda's chapter starts it, at `Tune.MATHILDA_DUSK`; Ophelia's afternoon never moves. Dev hook: `RUN_HOUR=<hours>` in her chapter.
 
 **Weather** follows the camera and drives several `SnowLayer` particle layers, `StormAudio`, and `Atmosphere.apply_storm(intensity)` from one gust/intensity model. `scripts/world/snowfall.gd` (`Snowfall`) is the older snow system and nothing instantiates it any more.
 
