@@ -160,9 +160,14 @@ def archive(paths, label=""):
     target = ARCHIVE / (datetime.date.today().isoformat() + (f"-{label}" if label else ""))
     target.mkdir(parents=True, exist_ok=True)
     for path in paths:
-        for item in (path, path.with_name(path.name + ".import")):
+        # The same text|mood is re-performed many times; never let a later take overwrite an earlier one.
+        name, n = path.name, 1
+        while (target / name).exists() or (target / (name + ".import")).exists():
+            name = f"{path.stem}.{n}{path.suffix}"
+            n += 1
+        for item, dest in ((path, name), (path.with_name(path.name + ".import"), name + ".import")):
             if item.exists():
-                shutil.move(str(item), str(target / item.name))
+                shutil.move(str(item), str(target / dest))
     return target
 
 
@@ -430,6 +435,18 @@ def self_test():
     assert all(mood in MOODS for _, _, mood, _ in every), {m for _, _, m, _ in every} - set(MOODS)
     assert len(MOODS) == 14 and all(len(v) == 6 and v[1] for v in MOODS.values())
     assert any(extra.get("exaggeration") == 0.9 for _, text, _, extra in every if text == "Go, then!")
+    import tempfile
+    global ARCHIVE
+    keep = ARCHIVE
+    with tempfile.TemporaryDirectory() as tmp:
+        ARCHIVE = Path(tmp) / "archive"
+        for take in ("first", "second"):
+            clip = Path(tmp) / "same.wav"
+            clip.write_text(take)
+            archive([clip], "replaced")
+        kept = sorted(p.read_text() for p in ARCHIVE.rglob("*.wav"))
+        assert kept == ["first", "second"], kept
+    ARCHIVE = keep
     print("SELF-TEST PASS")
 
 
@@ -456,7 +473,8 @@ def main():
         return self_test()
     manifest_path = OUT / "manifest.json"
     if args.scrap:
-        where = archive(sorted(OUT.glob("*.wav")) + [manifest_path], "qwen")
+        engine = json.loads(manifest_path.read_text(encoding="utf-8")).get("engine") if manifest_path.exists() else None
+        where = archive(sorted(OUT.glob("*.wav")) + [manifest_path], engine or "old")
         manifest_path.write_text(json.dumps({"engine": None, "clips": []}, indent=2) + "\n", encoding="utf-8")
         print(f"Archived the old clips to {where}")
         return

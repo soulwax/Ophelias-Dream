@@ -273,3 +273,34 @@ func _answers() -> void:
 	Game.turned_around = false
 	Game.set_phase(Game.Phase.PLAYING)
 	_answers_ran = true
+	_review_fixes()
+
+
+# Fixes from the final review: each failed before its fix.
+func _review_fixes() -> void:
+	_check(Hud.murmur_shown(Game.Phase.ESCAPED), "her words over the end card have subtitles")
+	_check(not Hud.murmur_shown(Game.Phase.PAUSED), "no subtitles while paused")
+	Game.read_last_page = true
+	Game.set_phase(Game.Phase.PLAYING)
+	voice._finished()
+	voice._say(voice._pages["by the bed"], true)
+	voice.turned()
+	var queued := voice._queue.any(func(line: Dictionary) -> bool: return str(line.kind) == "turned")
+	_check(queued, "turning around during a page reaction still gets said, after it")
+	voice._queue.clear()
+	voice._finished()
+	var stream := voice._clip(voice._answers["road"])
+	if stream == null:
+		stream = AudioStreamWAV.new()
+	Game.turned_around = false
+	Game.set_phase(Game.Phase.ESCAPED)
+	voice._answer_road(voice._ending_ticket)
+	voice._process(0.016)
+	_check(voice._echo.stream == stream and not voice._echo_stopped_early, "the road answer is not cut off on the next frame")
+	Game.set_phase(Game.Phase.PLAYING)
+	Game.player.global_position = Vector3.ZERO
+	voice._play_echo(stream, Vector3.ZERO, voice._echo_ticket, "resolve", voice._answers["resolve"], true)
+	Game.player.global_position = Vector3(6, 0, 0)
+	voice._process(0.016)
+	_check(voice._echo.global_position.is_equal_approx(voice._behind(1.4)), "the close answer follows her")
+	Game.read_last_page = false

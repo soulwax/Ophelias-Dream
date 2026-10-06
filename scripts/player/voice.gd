@@ -72,6 +72,10 @@ var _outdoor_time := 0.0
 var _spent_at := -99.0
 var _fall_at := -99.0
 var _ending_ticket := 0
+# The answer from right behind her moves with her while it plays.
+var _answer_close := false
+# The probe's witness that _process cut an echo short.
+var _echo_stopped_early := false
 var _call_at := {"hope": 0, "doubt": 0, "resolve": 0}
 var _call_left := -1.0
 var _echoed := {}
@@ -139,6 +143,7 @@ func _build_speaker() -> void:
 	_echo = Loudness.voice(Tune.CALL_SPL - Tune.ECHO_DROP_DB, "Dread", true)
 	_echo.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	add_child(_echo)
+	_echo.finished.connect(func() -> void: _answer_close = false)
 
 
 func _on_phase(next: int) -> void:
@@ -175,8 +180,14 @@ func _finished() -> void:
 func _process(delta: float) -> void:
 	if not _active or Game.player == null:
 		return
-	if _echo and _echo.playing and (Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9)):
+	# Over the escape card only the road answer plays on _echo; let it finish.
+	if _echo and _echo.playing and Game.phase != Game.Phase.ESCAPED \
+			and (Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9)):
 		_echo.stop()
+		_echo_stopped_early = true
+		_answer_close = false
+	if _answer_close and _echo:
+		_echo.global_position = _behind(1.4)
 	_since += delta
 	if _speaker.playing and not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = maxf(Game.murmur_left, 0.2)
@@ -258,6 +269,7 @@ func _play_echo(stream: AudioStream, at: Vector3, ticket: int, echo_stage: Strin
 	_echoes += 1
 	_echo.stream = stream
 	_echo.global_position = _behind(1.4) if close else at
+	_answer_close = close
 	if answer.is_empty():
 		Loudness.place(_echo, Tune.CALL_SPL - Tune.ECHO_DROP_DB, true)
 	elif close:
@@ -318,8 +330,8 @@ func misread() -> void:
 ## She turned around (Game.turn_around): she says so, and nothing answers again.
 func turned() -> void:
 	_cancel_echo()
-	if _active and not _turned.is_empty():
-		_say(_turned)
+	if _active and not _turned.is_empty() and not _say(_turned):
+		_enqueue(_turned)
 
 
 ## The sprint ran her out of breath (Player.exhausted).
@@ -373,6 +385,8 @@ func _answer_road(ticket: int) -> void:
 		return
 	var stream := _clip(line)
 	if stream:
+		_answer_close = false
+		_echo_stopped_early = false
 		_echo.stream = stream
 		_echo.global_position = _behind(3.0)
 		Loudness.place(_echo, Tune.VOICE_SPL - 3.0, false)

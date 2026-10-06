@@ -47,12 +47,13 @@ func _process(delta: float) -> void:
 	if Game.phase != Game.Phase.PAUSED:
 		Game.murmur_left = maxf(0.0, Game.murmur_left - delta)
 	var reading := Game.phase == Game.Phase.READING or Game.phase == Game.Phase.JOURNAL
-	var spoken := Game.murmur_left > 0.0 and (playing or reading)
+	var spoken := Game.murmur_left > 0.0 and Hud.murmur_shown(Game.phase)
 	_murmur.text = Game.murmur if spoken else ""
 	_murmur_plate.visible = spoken
 	if spoken:
-		_murmur_plate.offset_top = -84 if reading else -192
-		_murmur_plate.offset_bottom = -24 if reading else -132
+		var low := reading or Game.phase == Game.Phase.ESCAPED
+		_murmur_plate.offset_top = -84 if low else -192
+		_murmur_plate.offset_bottom = -24 if low else -132
 	_toast_left = maxf(0.0, _toast_left - delta)
 	_toast.visible = _toast_left > 0.0 and (playing or Game.phase == Game.Phase.READING)
 	_toast.modulate.a = clampf(_toast_left / 0.4, 0.0, 1.0)
@@ -67,6 +68,11 @@ func _process(delta: float) -> void:
 	if _debug.visible and Game.player:
 		var wx := Game.weather.regime_name() if Game.weather else "None"
 		_debug.text = "%s   threat %.2f   breath %.1f" % [wx, Game.threat(), Game.player.stamina]
+
+
+## Her subtitles show in play, over a page or the journal, and over the escape card.
+static func murmur_shown(phase: Game.Phase) -> bool:
+	return phase in [Game.Phase.PLAYING, Game.Phase.READING, Game.Phase.JOURNAL, Game.Phase.ESCAPED]
 
 
 func _unhandled_input(event: InputEvent) -> void:
