@@ -174,7 +174,26 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **Testing**: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script (`extends SceneTree`). Test them with a scene probe instead: a `tools/<name>_probe.tscn` whose root script `extends Node` runs with the autoload. It builds or loads the systems it needs (setting `Game.player` etc. itself, as `voice_probe.gd` does), prints its findings, and quits. Copy an existing probe as the template.
 
-**Voice (`scripts/player/voice.gd`, `docs/VOICE.md`)**: 62 Mathilda lines by mood and stage, baked with Qwen3-TTS on CUDA through `build/voice/gpu-venv`. Clips use SHA-256 of `text|mood`. Priorities queue important lines; interruption forgets a line so it can play whole later. Outdoor calls can return as an echo from the pines. No model runs in the game. `tools/bake_voice.py` predates the format and overwrites reviewed lines: do not run it. Listen to and approve `build/voice/ref/anchor.wav` before the full bake. `RUN_VOICE=0`, capture and headless runs keep Voice inactive; journal event keys have fallbacks.
+**Voice (`scripts/player/voice.gd`, `docs/VOICE.md`)**:
+- **Script:** `docs/MATHILDA_STORY.md` is the script of record. `python tools/script_to_lines.py` writes `assets/audio/voice/lines.json` from it, and `--check` fails if the two have drifted.
+- **Lines:** 137, each in one of 14 moods, in these groups:
+  - pages, deciphered, places, revisits
+  - bored by stage (hope/doubt/resolve, plus `after` once she turns around)
+  - memories while walking outdoors, calls
+  - spent (`Player.exhausted`), cold, falls (`Player.landed_hard`)
+  - turned, misread, and endings spoken over the escape card
+- **Playback:** priorities, with forget-on-interrupt.
+- **The trees answer in her own voice** (`answers`): "Go, then!" from a pine, "I'm right behind you." from behind her (`Player.facing()`), and "Okay." behind the car at the road. Mathilda never speaks.
+- **Baking:** `tools/bake_speech.py`:
+  1. `--impressions` (Qwen3-TTS VoiceDesign, `build/voice/gpu-venv`) renders one reference performance per mood into `build/voice/ref/<mood>.wav`.
+  2. The bake (Chatterbox, `build/voice/cb-venv`, `HF_HOME=build/voice/hf/cache`) clones every line from its mood's impression: 3 takes, a Whisper WER gate, the take most like the impression wins.
+  3. It writes `build/voice/review.html` for listening.
+- **Clip names:** SHA-256 of `text|mood`.
+- **Nothing is deleted:** `--scrap` and replaced or stale clips move to `build/voice/archive/`.
+- **No model runs in the game.** `tools/bake_voice.py` is obsolete and overwrites the script: do not run it.
+- **When Voice is inactive:** `RUN_VOICE=0`, capture and headless runs; journal event keys have fallbacks.
+
+**Turning around**: after the last page, holding glance-back for `Tune.TURN_HOLD` outdoors calls `Game.turn_around()`. That sets `Game.turned_around` and emits `turned`. The escape card then reads "One set of prints", and Voice stops calling and answering. `RUN_ENDING=road|prints` with `RUN_CAPTURE` shows either escape card.
 
 **Breath**: `hold_breath` (right mouse, F, pad RT) suppresses `Breath.plume`, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp. Nothing perceives breath at the moment.
 
@@ -218,7 +237,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
  - The sidebar has Resume, Restart and Quit, and five pages: Controls with rebinding, Camera, Display, Audio and Interface.
  - Each page has a reset, and its controls come from `_slider` / `_toggle` / `_choice` / `_binding`.
  - Rebinding listens in `_input` before anything else: Esc cancels and Backspace clears.
- - Dev hooks: `RUN_MENU=<page>` and `RUN_JOURNAL=<title>` with `RUN_CAPTURE` open the menu or a half-deciphered journal for a shot.
+ - Dev hooks: `RUN_MENU=<page>`, `RUN_JOURNAL=<title>` and `RUN_ENDING=road|prints` with `RUN_CAPTURE` open the menu, a half-deciphered journal or an escape card for a shot.
 - In-world key hints (the prompt, the note reader footer, the end card) read `Game.settings.key_label(action)`, so they follow rebinding.
 - Inside `_ready()`, a full-screen Control needs `set_anchors_and_offsets_preset`; anchors alone keep its empty starting rect. Shared styling (plates, paper, key-hint rows, palette constants) lives in the `UiChrome` class (`chrome.gd`). Note text and its corruption level are data in `NoteCatalog`, separate from the world pickup `FieldNote`.
 

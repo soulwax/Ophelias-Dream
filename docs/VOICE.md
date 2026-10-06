@@ -1,49 +1,102 @@
 # Her voice and journal
 
-The story is the search for Mathilda; read the [complete story and spoken script](MATHILDA_STORY.md) before changing it. The [voice README](../assets/audio/voice/README.md) explains how to edit and re-bake individual lines. `assets/audio/voice/lines.json` holds 62 lines: pages, deciphered pages, places, revisits, bored lines and calls by stage, and misreads. Every entry has text and one of seven moods: steady, warm, hushed, shaken, breaking, resolve, calling. Old plain strings load as steady. Do not run `tools/bake_voice.py`: its older format overwrites this script.
+The story is the search for Mathilda. Read the [complete story and spoken script](MATHILDA_STORY.md) before changing it: that document is the **script of record**. `python tools/script_to_lines.py` writes `assets/audio/voice/lines.json` from it, and `--check` exits 1 if the two have drifted. The [voice README](../assets/audio/voice/README.md) covers editing and re-performing single lines. Do not run `tools/bake_voice.py`: its old format overwrites the script.
 
-The HUD has a journal notice instead of an objective. J or Tab (pad Y) opens the journal; these bindings can be changed in the Esc menu. Pages retain their order of discovery. Each smudge has three readings and a key from a read page, visited place or heard event. `Game.known` unlocks readings and `Game.decipher` settles the correct one. Solving a whole page reveals its sentence between the lines. With voice off, visiting the snow substitutes for hearing a call; reading the last page substitutes for an echo. The world continues in `Phase.JOURNAL` through `Game.awake()` while movement and look are locked.
+`lines.json` holds 137 lines. Every entry has text and one of fourteen moods: steady, warm, hushed, shaken, breaking, resolve, calling, numb, bitter, pleading, wry, remembering, panicked, spent. Plain strings load as steady. An entry may carry `exaggeration`, `cfg` or `temperature` for the baker; the game ignores them.
 
-## Playback
+The HUD has a journal notice instead of an objective. J or Tab (pad Y) opens the journal; the bindings can be changed in the Esc menu. Each smudge has three readings and a key: a page read, a place visited or an event heard. `Game.known` unlocks readings and `Game.decipher` settles the right one; solving a whole page reveals its sentence between the lines. With voice off, visiting the snow stands in for hearing a call, and reading the last page stands in for an echo. The world goes on in `Phase.JOURNAL` (`Game.awake()`) while movement and look are locked.
 
-Zero or one trail pages means hope, two or three means doubt, and four or more (or the last page) means resolve. Earlier idle lines are left behind when the stage changes. Page and deciphered reactions have priority 3, places and revisits 2, and idle lines, calls and misreads 1. Only a strictly higher priority interrupts; a misread can interrupt a misread. Important reactions queue. An interrupted line loses its subtitle and heard status; page and deciphered lines queue again, other lines return at their next natural opportunity. Ending cards interrupt too. Revisits wait `Tune.REVISIT_AFTER`; misreads wait `Tune.MISREAD_GAP`.
+## When she speaks
 
-Calls cycle within the stage outdoors during play, starting after `Tune.CALL_FIRST`, then waiting `Tune.CALL_EVERY`. The same mouth speaker uses `Tune.CALL_SPL` for calls and `Tune.VOICE_SPL` for other lines. After the post page, doubt and resolve can each produce an echo, up to `Tune.ECHO_MAX`. The same clip returns 1.6–2.4 seconds later from the nearest pine 25–60 metres away through Dread, with distant filtering and `Tune.ECHO_DROP_DB` less level. Echoes have no subtitle.
+| Group | When | Priority |
+|---|---|---|
+| `endings` (road, prints) | over the escape card, after `Tune.ENDING_DELAY` | 4 |
+| `pages`, `deciphered` | reading a page, solving its last smudge | 3 |
+| `turned` | `Game.turn_around()` | 3 |
+| `places`, `revisits` | first visit; first return in doubt or resolve after `Tune.REVISIT_AFTER` | 2 |
+| `spent` | the sprint runs her out of breath (`Player.exhausted`), at most once per `Tune.SPENT_GAP` | 2 |
+| `falls` | a landing at `Tune.FALL_HARD` or faster (`Player.landed_hard`), at most once per `Tune.FALL_GAP` | 2 |
+| `bored` | standing still for `Tune.BORED_AFTER` | 1 |
+| `memories` | walking outdoors after `Tune.MEMORY_GAP` of quiet | 1 |
+| `calls` | outdoors, first after `Tune.CALL_FIRST`, then every `Tune.CALL_EVERY` | 1 |
+| `cold` | outdoors for `Tune.COLD_AFTER` in a whiteout or hard gust, then a pause of `Tune.COLD_GAP` | 1 |
+| `misread` | a wrong reading in the journal, at most once per `Tune.MISREAD_GAP` | 1 |
 
-Clips are mono PCM16 WAVs named by SHA-256 of the exact UTF-8 `text|mood`, plus `.wav`. Voice loads imported resources and plays through the Voice bus under Effects. Missing clips use timed subtitles. `RUN_VOICE=0`, capture and headless runs disable Voice. Models never run in the game and never ship; environments, models and references stay in ignored `build/voice/`.
+**Stages.** `bored`, `memories` and `calls` come in stages:
+- **hope:** 0–1 trail pages
+- **doubt:** 2–3
+- **resolve:** 4 or more, or the last page
+- **after:** once she has turned around. Only `bored` has an `after` set; she stops calling and stops remembering.
 
-## GPU baking
+**Repeats.** `call`, `misread`, `spent` and `fall` may repeat. Every other line plays once per run.
 
-From the repository root:
+**Interruption.** Only a strictly higher priority interrupts, though a misread may cut a misread. An interrupted line is forgotten as if it never played: its subtitle is cleared, it loses its heard status, and it plays whole at its next chance. Page and deciphered lines queue. Endings interrupt everything.
+
+**The trees answer, in her own voice** (`answers`). After *on the post* is read, the first call she makes in each of the doubt and resolve stages is answered, up to `Tune.ECHO_MAX`:
+- **doubt:** "Go, then!" from the nearest pine 25–60 m off, at `CALL_SPL - ANSWER_DROP_DB`
+- **resolve:** "I'm right behind you." from 1.4 m behind her (`Player.facing()`), at `VOICE_SPL`
+
+Answers show a subtitle with a leading ellipsis and count as `event:echo`. Without an answer clip, the old wordless echo of her call plays at `ECHO_DROP_DB` down. At the road, if she did not turn around, "Okay." comes from behind the car `Tune.ANSWER_ROAD_DELAY` after her plea. Once she has turned around, nothing answers.
+
+Clips are mono PCM16 WAVs named by the SHA-256 of the exact UTF-8 `text|mood`, plus `.wav`. Voice plays through the Voice bus under Effects, and answers through Dread. Missing clips fall back to timed subtitles. `RUN_VOICE=0`, capture and headless runs disable Voice. No model runs in the game or ships with it.
+
+## Performing her lines
+
+Two environments live in ignored `build/voice/`:
+
+- **`gpu-venv`** (Qwen3-TTS, for the impressions)
+- **`cb-venv`** (Chatterbox, for the lines)
+
+Both judge with faster-whisper and SpeechBrain ECAPA.
 
 ```powershell
-uv python install 3.12
+# Once: Chatterbox, plus CUDA torch matching its pin
+uv venv build/voice/cb-venv --python 3.12
+$env:HF_HOME = "$PWD\build\voice\hf\cache"
+uv pip install --python build/voice/cb-venv/Scripts/python.exe chatterbox-tts faster-whisper speechbrain soundfile numpy
+uv pip install --python build/voice/cb-venv/Scripts/python.exe --reinstall "torch==2.6.0" "torchaudio==2.6.0" --index-url https://download.pytorch.org/whl/cu124
+```
+
+The `gpu-venv` setup and model downloads (`VoiceDesign`, `whisper-model`, `ecapa-model` under `build/voice/hf/`) are as before:
+
+```powershell
 uv venv build/voice/gpu-venv --python 3.12
 uv pip install --python build/voice/gpu-venv/Scripts/python.exe qwen-tts faster-whisper speechbrain soundfile numpy huggingface_hub
 uv pip install --python build/voice/gpu-venv/Scripts/python.exe --reinstall torch torchaudio --index-url https://download.pytorch.org/whl/cu128
-build/voice/gpu-venv/Scripts/python.exe -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 build/voice/gpu-venv/Scripts/hf.exe download Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign --local-dir build/voice/hf/VoiceDesign
-build/voice/gpu-venv/Scripts/hf.exe download Qwen/Qwen3-TTS-12Hz-1.7B-Base --local-dir build/voice/hf/Base
 build/voice/gpu-venv/Scripts/hf.exe download mobiuslabsgmbh/faster-whisper-large-v3-turbo --local-dir build/voice/hf/whisper-model
 build/voice/gpu-venv/Scripts/hf.exe download speechbrain/spkrec-ecapa-voxceleb --local-dir build/voice/hf/ecapa-model
-python tools/bake_speech.py --self-test
-build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --anchor-only
 ```
 
-Listen to `build/voice/ref/anchor.wav` before baking the lines. Keep it explicitly, or re-roll with `--anchor-only --new-anchor --anchor-seed N`. Then run `build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --force`. Four VoiceDesign takes receive the identity and mood direction. Whisper measures word error rate (WER); takes with WER ≤ 0.15 compete by highest ECAPA speaker similarity to the anchor. If no take reaches similarity 0.60 with acceptable WER, two Base-clone takes provide a fallback. The final choice is the highest similarity among takes passing WER, so 0.60 triggers fallback rather than imposing a final rejection threshold.
+The run itself:
 
-The baker uses CUDA for Qwen. It scores on CUDA when enough memory remains and uses CPU scoring when the GPU is crowded. Each accepted clip is saved immediately, with a manifest checkpoint. Run the command without `--force` to resume missing clips.
+```powershell
+python tools/script_to_lines.py --check
+python tools/bake_speech.py --self-test
+# 1. Impressions: 4 candidate performances per mood; one is picked automatically
+build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --impressions
+# 2. Every line, cloned from its mood's impression
+$env:HF_HOME = "$PWD\build\voice\hf\cache"
+build/voice/cb-venv/Scripts/python.exe tools/bake_speech.py --force
+```
 
-`--only "exact line text"` re-bakes a single line. Failed lines are listed and return exit 1; listen and re-bake them, or explicitly keep the best with `--only "exact line text" --accept-bad`. `--engine kokoro` is an optional CPU fallback using the old `build/voice/models/` ONNX files; it needs kokoro-onnx installed in its environment and does not provide mood direction. `--voice` and `--speed` apply to Kokoro. `manifest.json` records text, mood, category, file, duration, engine, model, WER and similarity. Listen to all clips in manifest order after the bake.
+**Impressions.** Each impression is a short reference performance written to draw out its mood: a whisper, a crack, a shout into wind. They are rendered with Qwen3-TTS VoiceDesign from her identity description plus the mood's direction, then saved to `build/voice/ref/<mood>.wav`, with the candidates in `ref/candidates/`. *Steady* is picked by ECAPA similarity to `ref/anchor.wav`, and every other mood by similarity to *steady*. `build/voice/impressions.html` lets you listen to every candidate. Swap a pick with `--impressions --moods hushed --pick hushed=2`, and re-roll a mood with `--moods <m> --candidates 6`.
 
-Import and verify:
+**Lines.** Chatterbox clones each line from its mood's impression and drives it with that mood's `exaggeration`, `cfg_weight` and `temperature` (the table in `tools/bake_speech.py`). It renders three takes:
+- takes Whisper hears with more than 15% word error rate are dropped ("Mathilda" and "Matilda" count as the same)
+- the remaining take most similar to the impression wins
+- that take is trimmed and levelled per mood
+
+`build/voice/review.html` lists every clip by group with its mood and scores. **Listening to it is the real check.**
+
+**Single lines.** `--only "exact text"` or `--mood <mood>` re-performs just those. A line with no passing take is skipped with exit 1; keep its best take with `--accept-bad`. `--engine kokoro` is the old CPU voice without moods.
+
+**Nothing is deleted.** `--scrap` moves every clip to `build/voice/archive/<date>-qwen/`. A replaced clip goes to `<date>-replaced/`, and a clip no longer in the script to `<date>-stale/`.
 
 ```powershell
 godot-mono --headless --path . --import
 godot-mono --headless --path . tools/journal_probe.tscn
-$env:PROBE_CLIPS = "1"
-godot-mono --headless --path . tools/voice_probe.tscn
-Remove-Item Env:PROBE_CLIPS
+$env:PROBE_CLIPS = "1"; godot-mono --headless --path . tools/voice_probe.tscn; Remove-Item Env:PROBE_CLIPS
 ```
 
-[Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) and [SpeechBrain ECAPA](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) use Apache-2.0; [faster-whisper](https://github.com/SYSTRAN/faster-whisper) uses MIT. These are build dependencies.
+[Chatterbox](https://github.com/resemble-ai/chatterbox) is MIT. [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) and [SpeechBrain ECAPA](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) are Apache-2.0, and [faster-whisper](https://github.com/SYSTRAN/faster-whisper) is MIT. All are build tools, not game dependencies.
