@@ -244,11 +244,11 @@ class Chatter:
         return wav.squeeze(0).cpu().numpy().astype(np.float32), int(self.model.sr)
 
 
-def best_take(chatter, judge, line, previous, takes=None):
+def best_take(chatter, judge, line, previous, takes=None, first_seed=1):
     judge.anchor = judge.embed_file(REFS[line["speaker"]] / f"{line['mood']}.wav")
     scored = []
     # More takes means new seeds: the first ones always come out the same.
-    for seed in range(1, (takes or bake_speech.TAKES) + 1):
+    for seed in range(first_seed, first_seed + (takes or bake_speech.TAKES)):
         samples, rate = chatter.perform(line, seed)
         samples = dialogue_post.clean(samples, rate, line["mood"])
         heard = judge.hear(samples, rate)
@@ -274,7 +274,7 @@ def missing_refs(lines, speaker):
             if not (REFS[line["speaker"]] / f"{line['mood']}.wav").exists()]
 
 
-def bake(lines, tree, engine, accept_bad, speaker=None, takes=None):
+def bake(lines, tree, engine, accept_bad, speaker=None, takes=None, first_seed=1):
     import soundfile as sf
     by_id = {line["id"]: line for line in lines}
     # The spine's previous line, for continuity; branch lines follow what they answer.
@@ -314,7 +314,7 @@ def bake(lines, tree, engine, accept_bad, speaker=None, takes=None):
             if chatter is None:
                 chatter, judge = Chatter(), bake_speech.Judge()
             previous = previous_of[line["id"]]
-            take = best_take(chatter, judge, line, loudness.get(previous["id"]) if previous else None, takes)
+            take = best_take(chatter, judge, line, loudness.get(previous["id"]) if previous else None, takes, first_seed)
             if take is None:
                 bad.append(f"{line['id']} {line['text']}")
                 if not accept_bad:
@@ -347,7 +347,8 @@ def main():
     parser.add_argument("--engine", choices=["kokoro", "chatterbox"], help="Perform missing clips")
     parser.add_argument("--accept-bad", action="store_true")
     parser.add_argument("--speaker", choices=sorted(REFS), help="Perform only this speaker's lines")
-    parser.add_argument("--takes", type=int, help="Takes per line (seeds 1..N); default bake_speech.TAKES")
+    parser.add_argument("--takes", type=int, help="Takes per line; default bake_speech.TAKES")
+    parser.add_argument("--first-seed", type=int, default=1, help="Seed of the first take, to try new takes after old ones failed")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -370,7 +371,7 @@ def main():
               f"{len(walk(tree, None))} paths; lines.json and timing.json match")
         return
     if args.engine:
-        return bake(lines, tree, args.engine, args.accept_bad, args.speaker, args.takes)
+        return bake(lines, tree, args.engine, args.accept_bad, args.speaker, args.takes, args.first_seed)
     write(lines)
     print(f"Wrote {len(lines)} lines and their timing")
 

@@ -1,9 +1,9 @@
 [
   {
     "id": "01",
-    "source": "draft",
+    "source": "final",
     "file": "3935cfd34710bfcaff9b927a04d2a6529d1fdc9bd0e550703b55db8282ccdffe.wav",
-    "seconds": 2.489,
+    "seconds": 3.183,
     "pause": 0.3,
     "overlap": 0.0
   },
@@ -33,9 +33,9 @@
   },
   {
     "id": "05",
-    "source": "draft",
+    "source": "final",
     "file": "a7fa9caf3e94326dfa35e79ddf586e3dbc8dc13884e94647d9bfb5a99d1102cf.wav",
-    "seconds": 1.548,
+    "seconds": 3.27,
     "pause": 0.45,
     "overlap": 0.0
   },
@@ -145,9 +145,9 @@
   },
   {
     "id": "19",
-    "source": "draft",
+    "source": "final",
     "file": "5e74eff57c9c21b48d04375e8d35b7e3e3b555cfbee0ae78be57055336302096.wav",
-    "seconds": 2.768,
+    "seconds": 3.157,
     "pause": 0.75,
     "overlap": 0.0
   },
@@ -233,9 +233,9 @@
   },
   {
     "id": "a06",
-    "source": "draft",
+    "source": "final",
     "file": "5eb4453b605389eb280536e32cd2ebc5c27b1783540f7fd7b882e471c4d28dd5.wav",
-    "seconds": 2.425,
+    "seconds": 2.879,
     "pause": 0.8,
     "overlap": 0.0
   },
@@ -265,9 +265,9 @@
   },
   {
     "id": "a10",
-    "source": "draft",
+    "source": "final",
     "file": "3d210437f363116b6998d734c922514136571ef9c10b53070d3511a6331f66d8.wav",
-    "seconds": 1.747,
+    "seconds": 3.066,
     "pause": 0.8,
     "overlap": 0.0
   },
@@ -297,9 +297,9 @@
   },
   {
     "id": "a14",
-    "source": "draft",
+    "source": "final",
     "file": "1dc5f42e9a450a5795d520ddd79e315cb3045153c6cc0adfc8e21d9e81148696.wav",
-    "seconds": 2.37,
+    "seconds": 4.449,
     "pause": 0.5,
     "overlap": 0.0
   },
