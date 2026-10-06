@@ -74,7 +74,9 @@ def lines(data):
 
 
 def words(text):
-    return re.findall(r"[a-z0-9']+", text.lower().replace("’", "'"))
+    heard = re.findall(r"[a-z0-9']+", text.lower().replace("’", "'"))
+    # Whisper often uses the more common spelling for the same spoken name.
+    return ["mathilda" if word == "matilda" else word for word in heard]
 
 
 def wer(reference, heard):
@@ -244,6 +246,7 @@ def bake_kokoro(args, todo):
 def self_test():
     assert clip_name("a", "b") == hashlib.sha256(b"a|b").hexdigest() + ".wav"
     assert wer("Mathilda... please.", "Mathilda, please") == 0.0
+    assert wer("Mathilda!", "Matilda!") == 0.0
     assert wer("two cups", "two cups here") == 0.5
     assert wer("I'm not lifting that sheet", "im not lifting the sheet") > 0.0
     data = json.loads((OUT / "lines.json").read_text(encoding="utf-8"))
