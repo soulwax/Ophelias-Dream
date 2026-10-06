@@ -254,6 +254,39 @@
       "similarity": 0.8060165643692017,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Her prints are already filling in. I have to be faster than the snow.",
+      "mood": "resolve",
+      "category": "places",
+      "file": "b5ce26d23d18a359f28f79ff1efc4cf082b7b747459d174259b972a0b2c93143.wav",
+      "seconds": 4.643041666666667,
+      "wer": 0.0,
+      "similarity": 0.7706809043884277,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Headlights. Someone's waiting. Please let it be her.",
+      "mood": "breaking",
+      "category": "places",
+      "file": "a6ef5b81bd0803955edb6bed215f57bc823a0c063fdd7411499cb377d313add8.wav",
+      "seconds": 5.816208333333333,
+      "wer": 0.0,
+      "similarity": 0.6250524520874023,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "The lantern's still lit. Nobody's been here. Or I have, and I don't remember.",
+      "mood": "shaken",
+      "category": "revisits",
+      "file": "5fd10dd8893dd93332a1d21a4d93f462b6c4d8d1dca590e58f07ce4f7b21cdbb.wav",
+      "seconds": 9.525166666666667,
+      "wer": 0.0,
+      "similarity": 0.6315382719039917,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
     }
   ]
 }
