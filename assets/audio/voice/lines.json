@@ -539,7 +539,9 @@
     },
     "road": {
       "text": "Okay.",
-      "mood": "warm"
+      "mood": "warm",
+      "temperature": 0.5,
+      "cfg": 0.6
     }
   },
   "misread": [

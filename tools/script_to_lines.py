@@ -32,7 +32,11 @@ SECTIONS = {
 STAGE = {"hope": "hope", "doubt": "doubt", "resolve": "resolve", "after": "after"}
 ENDING_IDS = {"the road": "road", "one set of prints": "prints"}
 # Per-line delivery overrides for the baker; the game ignores them.
-OVERRIDES = {"Go, then!": {"exaggeration": 0.9}}
+OVERRIDES = {
+    "Go, then!": {"exaggeration": 0.9},
+    # A single word gives Chatterbox too little to hold on to; calmer sampling keeps it a word.
+    "Okay.": {"temperature": 0.5, "cfg": 0.6},
+}
 KEYED = re.compile(r"^- \*\*(.+?):\*\* \[([a-z]+)\] (.+)$")
 PLAIN = re.compile(r"^- \[([a-z]+)\] (.+)$")
 

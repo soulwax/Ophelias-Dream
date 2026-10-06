@@ -92,6 +92,7 @@ def lines(data):
 
 ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",
         "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+FILLERS = {"ugh", "oh", "uh", "um", "hmm", "ah", "shh", "shhh", "huh", "mm"}
 TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
 
 
@@ -105,9 +106,16 @@ def spelled(number):
 
 
 def words(text):
-    heard = re.findall(r"[a-z0-9']+", text.lower().replace("’", "'"))
+    text = text.lower().replace("’", "'")
+    # Spellings Whisper joins that the script keeps apart, and the other way round.
+    text = re.sub(r"\bany more\b", "anymore", text)
+    text = re.sub(r"\ball right\b", "alright", text)
+    heard = re.findall(r"[a-z0-9']+", text)
     out = []
     for word in heard:
+        # Gasps and interjections are acting, not words; Whisper hears them differently each take.
+        if word in FILLERS:
+            continue
         if word.isdigit():
             out += spelled(int(word))
         # Whisper often uses the more common spelling for the same spoken name.
@@ -410,6 +418,10 @@ def self_test():
     assert wer("Mathilda!", "Matilda!") == 0.0
     assert wer("two cups", "two cups here") == 0.5
     assert wer("Nineteen. It's still nineteen.", "19. It's still 19.") == 0.0
+    assert wer("I'm not cold any more. Just let her be all right.", "I'm not cold anymore. Just let her be alright.") == 0.0
+    assert wer("Ugh... that one hurt.", "Oh, that one hurt.") == 0.0
+    assert wer("Ugh... that one hurt.", "That one hurt.") == 0.0
+    assert wer("Ugh... that one hurt.", "Ugh, that won't hurt.") > 0.0
     assert wer("The dog stayed eleven years. Thirty years.", "The dog stayed 11 years. 30 years.") == 0.0
     assert wer("I'm not lifting that sheet", "im not lifting the sheet") > 0.0
     data = json.loads((OUT / "lines.json").read_text(encoding="utf-8"))
