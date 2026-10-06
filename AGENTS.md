@@ -12,7 +12,8 @@ Run Away is a third-person winter horror game using Godot 4.7, Forward+ renderin
   - Groups: pages, places, stages (with `after` once she turns around), memories, calls, breath, cold, falls, spoken endings.
   - Priorities with forget-on-interrupt.
   - The trees answer in her own voice; Mathilda never speaks.
-  - Baking: Qwen3-TTS renders one impression per mood (`build/voice/gpu-venv`, `--impressions`), then Chatterbox (`build/voice/cb-venv`) clones each line from its mood's impression and writes `build/voice/review.html`.
+  - Baking: Qwen3-TTS renders one impression per mood (`build/voice/gpu-venv`, `--impressions`). `--unify` gives each one steady's voice. Chatterbox (`build/voice/cb-venv`) then clones each line from its mood's reference and writes `build/voice/review.html`.
+  - Reproducibility: the references, raw picks, `voice_lock.json` and frozen requirements are committed in `tools/voice/` (Godot-ignored); refresh them with `--lock`.
   - Clip names: SHA-256 of `text|mood`. Clips are never deleted, only moved to `build/voice/archive/`.
   - See `docs/VOICE.md`; do not run the obsolete `tools/bake_voice.py`.
 - After the last page, holding glance-back outdoors turns her around (`Game.turn_around()`); the escape card then reads "One set of prints".

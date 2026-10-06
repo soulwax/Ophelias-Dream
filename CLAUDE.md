@@ -185,7 +185,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 - **Playback:** priorities, with forget-on-interrupt.
 - **The trees answer in her own voice** (`answers`): "Go, then!" from a pine, "I'm right behind you." from behind her (`Player.facing()`), and "Okay." behind the car at the road. Mathilda never speaks.
 - **Baking:** `tools/bake_speech.py`:
-  1. `--impressions` (Qwen3-TTS VoiceDesign, `build/voice/gpu-venv`) renders one reference performance per mood into `build/voice/ref/<mood>.wav`.
+  1. `--impressions` (Qwen3-TTS VoiceDesign, `build/voice/gpu-venv`) renders one reference performance per mood. `--unify` (Chatterbox voice conversion) gives each one steady's voice, and the results go in committed `tools/voice/ref/<mood>.wav` (raw picks in `ref/raw/`). Godot ignores `tools/voice/` via `.gdignore`; `voice_lock.json` and the `requirements-*.txt` there record models, versions, seeds, the mood table and the picks (refresh them with `--lock`).
   2. The bake (Chatterbox, `build/voice/cb-venv`, `HF_HOME=build/voice/hf/cache`) clones every line from its mood's impression: 3 takes, a Whisper WER gate, the take most like the impression wins.
   3. It writes `build/voice/review.html` for listening.
 - **Clip names:** SHA-256 of `text|mood`.

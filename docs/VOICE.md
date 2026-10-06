@@ -75,12 +75,29 @@ python tools/script_to_lines.py --check
 python tools/bake_speech.py --self-test
 # 1. Impressions: 4 candidate performances per mood; one is picked automatically
 build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --impressions
-# 2. Every line, cloned from its mood's impression
+# 2. One voice: convert every mood's impression to steady's voice
 $env:HF_HOME = "$PWD\build\voice\hf\cache"
+build/voice/cb-venv/Scripts/python.exe tools/bake_speech.py --unify
+# 3. Every line, cloned from its mood's reference
 build/voice/cb-venv/Scripts/python.exe tools/bake_speech.py --force
 ```
 
-**Impressions.** Each impression is a short reference performance written to draw out its mood: a whisper, a crack, a shout into wind. They are rendered with Qwen3-TTS VoiceDesign from her identity description plus the mood's direction, then saved to `build/voice/ref/<mood>.wav`, with the candidates in `ref/candidates/`. *Steady* is picked by ECAPA similarity to `ref/anchor.wav`, and every other mood by similarity to *steady*. `build/voice/impressions.html` lets you listen to every candidate. Swap a pick with `--impressions --moods hushed --pick hushed=2`, and re-roll a mood with `--moods <m> --candidates 6`.
+**What is committed.** Everything a bake depends on lives in `tools/voice/`, which Godot ignores (`.gdignore`) so none of it ships:
+- the per-mood references (`ref/<mood>.wav`)
+- the raw impression picks (`ref/raw/`)
+- the approved anchor (`ref/anchor.wav`)
+- `voice_lock.json`: models, package versions, seeds, the mood table and the picks
+- the frozen `requirements-gpu-venv.txt` and `requirements-cb-venv.txt`
+
+To rebuild an environment exactly, install from its requirements file with `uv pip install -r`, using the CUDA index noted for torch. After changing the environments or moods, run `--lock` in each venv; with gpu-venv, add `--picks mood=n,...`. Candidates, `review.html` and `impressions.html` are regenerable scratch in `build/voice/`.
+
+**Impressions.** Each impression is a short reference performance written to draw out its mood: a whisper, a crack, a shout into wind.
+- **Rendering:** Qwen3-TTS VoiceDesign renders four candidates per mood from her identity description plus the mood's direction, into `build/voice/candidates/`.
+- **Picking:** *steady* is picked by ECAPA similarity to `ref/anchor.wav`, and every other mood by similarity to *steady*. The pick is copied to `tools/voice/ref/<mood>.wav` and `ref/raw/<mood>.wav`.
+- **Listening:** `build/voice/impressions.html` lets you listen to every candidate.
+- **Changing them:** swap a pick with `--impressions --moods hushed --pick hushed=2`; re-roll a mood with `--moods <m> --candidates 6`.
+
+**One voice.** VoiceDesign renders each mood as a slightly different woman: before unifying, similarity to *steady* ran 0.13–0.50. `--unify` (in cb-venv) runs Chatterbox's voice conversion over each raw pick with *steady* as the target. That keeps the delivery and gives it her voice, raising similarity to 0.58–0.85 with the words intact. Run it after any change to the impressions.
 
 **Lines.** Chatterbox clones each line from its mood's impression and drives it with that mood's `exaggeration`, `cfg_weight` and `temperature` (the table in `tools/bake_speech.py`). It renders three takes:
 - takes Whisper hears with more than 15% word error rate are dropped ("Mathilda" and "Matilda" count as the same)

@@ -1,4 +1,137 @@
 {
-  "engine": null,
-  "clips": []
+  "engine": "chatterbox",
+  "clips": [
+    {
+      "text": "\"Stay in.\" She's the one out there, and she's telling me to stay in.",
+      "mood": "shaken",
+      "category": "pages",
+      "file": "4ee2ce4a0c98cb4bbd66fae92518b993f2bcd09d112b2e3e36db6b31b617f4c9.wav",
+      "seconds": 3.534708333333333,
+      "wer": 0.0,
+      "similarity": 0.7956345677375793,
+      "engine": "chatterbox",
+      "reference": "shaken.wav"
+    },
+    {
+      "text": "Two cups. She packed for both of us. She knew I'd come.",
+      "mood": "breaking",
+      "category": "pages",
+      "file": "17fd7082c4f7d17491c36ede7b844c02fd7139b0c22d29d26fce2d39e9d4e28e.wav",
+      "seconds": 3.6438333333333333,
+      "wer": 0.08333333333333333,
+      "similarity": 0.7279603481292725,
+      "engine": "chatterbox",
+      "reference": "breaking.wav"
+    },
+    {
+      "text": "Then I heard it again, from the trees. Okay. I won't answer. I won't.",
+      "mood": "hushed",
+      "category": "pages",
+      "file": "a050137b5cf807934b4c3d94bca70c37745dd7cc1df5a693b3c6b777ce75945b.wav",
+      "seconds": 7.992791666666666,
+      "wer": 0.0,
+      "similarity": 0.7681047916412354,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
+    },
+    {
+      "text": "Prints that just stop. She's describing mine. I haven't been to the pines yet. Have I?",
+      "mood": "shaken",
+      "category": "pages",
+      "file": "e2838a94d1ceca6231ed9b9cee94000818cb0b560e858d6ef736c9c73237298c.wav",
+      "seconds": 4.582208333333333,
+      "wer": 0.125,
+      "similarity": 0.7786985039710999,
+      "engine": "chatterbox",
+      "reference": "shaken.wav"
+    },
+    {
+      "text": "That's my handwriting. That's how I make my M's.",
+      "mood": "hushed",
+      "category": "pages",
+      "file": "b610104be3f855bcdd85aab03852fbd742258be7d8b70184ce3c6a4a3e90cba4.wav",
+      "seconds": 5.258041666666666,
+      "wer": 0.0,
+      "similarity": 0.8057153224945068,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
+    },
+    {
+      "text": "Don't turn around. Fine. I won't. Just be at the lights.",
+      "mood": "resolve",
+      "category": "pages",
+      "file": "eff959d41255497ab7c465b57cd97801a32704b87a4b9974af6307fc9daf83b1.wav",
+      "seconds": 4.145458333333333,
+      "wer": 0.0,
+      "similarity": 0.8133813142776489,
+      "engine": "chatterbox",
+      "reference": "resolve.wav"
+    },
+    {
+      "text": "One cup. Just one. I'm not lifting that sheet. I'm not.",
+      "mood": "breaking",
+      "category": "pages",
+      "file": "03742d079929e91ac272576277f7314d30bffcee608af94b844d96e2d92e0f33.wav",
+      "seconds": 4.8617083333333335,
+      "wer": 0.0,
+      "similarity": 0.7879486680030823,
+      "engine": "chatterbox",
+      "reference": "breaking.wav"
+    },
+    {
+      "text": "She left the door open for me. Or for herself. She never could decide which of us needed rescuing.",
+      "mood": "warm",
+      "category": "deciphered",
+      "file": "b27040aa1e8fbde58747f6aec660c82bd38074e4321893f71cd597342aba5e3c.wav",
+      "seconds": 7.71175,
+      "wer": 0.0,
+      "similarity": 0.8195181488990784,
+      "engine": "chatterbox",
+      "reference": "warm.wav"
+    },
+    {
+      "text": "One cup. The intake said one cup. I'm not counting again. I'm not.",
+      "mood": "breaking",
+      "category": "deciphered",
+      "file": "b47fd982e0f5d888ee18738b3c3d2f862e63a0d45342aaff1875955f027ed888.wav",
+      "seconds": 5.51525,
+      "wer": 0.0,
+      "similarity": 0.7581914663314819,
+      "engine": "chatterbox",
+      "reference": "breaking.wav"
+    },
+    {
+      "text": "It used my name on her. And she answered to it. ...So would I.",
+      "mood": "shaken",
+      "category": "deciphered",
+      "file": "f588d841b7f5891a25da01ed94de9dbd1cce6dca1b97d00eced6d10f8dde725c.wav",
+      "seconds": 3.6574583333333335,
+      "wer": 0.07142857142857142,
+      "similarity": 0.7984463572502136,
+      "engine": "chatterbox",
+      "reference": "shaken.wav"
+    },
+    {
+      "text": "Smaller than mine. Then not. Like the prints were growing into me.",
+      "mood": "hushed",
+      "category": "deciphered",
+      "file": "4382ee932249f921da433ece3a999976f2328b724a9ac4db0ce00c6da27e0b5f.wav",
+      "seconds": 7.7065,
+      "wer": 0.08333333333333333,
+      "similarity": 0.8291547894477844,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
+    },
+    {
+      "text": "Same hand, both pages. I'd know it anywhere. That's what scares me.",
+      "mood": "hushed",
+      "category": "deciphered",
+      "file": "fd318cd6d9045730e559cfa4daae174b9a82d08aa96558beca681645d313d08a.wav",
+      "seconds": 8.570958333333333,
+      "wer": 0.0,
+      "similarity": 0.8231101036071777,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
+    }
+  ]
 }
