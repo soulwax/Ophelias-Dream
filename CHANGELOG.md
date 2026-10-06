@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1.3 — 2026-10-06
+
+- Voice the whole meeting at the door with draft performances for both women, cleaned, levelled and timed so no turn overlaps another. Ophelia's draft voice there is not yet her own; her final performances come in a later release.
+- A mouse cursor resting over the conversation's topic list no longer picks the first topic by itself.
+
 ## 0.2.1.1 — 2026-10-06
 
 - Add Mathilda's chapter, chosen from the main menu: a first-person afternoon at the tent beyond the pines, with her own voice, three things to examine and a choice to wait or return.
