@@ -443,7 +443,7 @@ func _both_feet(power: float) -> void:
 		var surface := _surface_at(at)
 		if Game.soundscape:
 			Game.soundscape.play_step(at, surface, power)
-		if surface != "snow":
+		if not _leaves_prints(at, surface):
 			continue
 		var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else at.y
 		if kicks:
@@ -462,7 +462,21 @@ func _surface_at(at: Vector3) -> String:
 	var body: Object = hit.get("collider")
 	if body and body.has_meta("surface"):
 		return str(body.get_meta("surface"))
-	return "wood" if indoors() else "snow"
+	if indoors():
+		return "wood"
+	# Outdoors the snow weight decides: green land is grass, the thaw band
+	# between is wet, thin snow.
+	var snow := trail.ground.snow_at(at.x, at.z) if trail and trail.ground else 1.0
+	if snow < 0.35:
+		return "grass"
+	return "thaw" if snow < 0.65 else "snow"
+
+
+# Prints and powder only where it is really snow.
+func _leaves_prints(at: Vector3, surface: String) -> bool:
+	if surface != "snow" and surface != "thaw":
+		return false
+	return trail == null or trail.ground == null or trail.ground.snow_at(at.x, at.z) > 0.6
 
 
 func _start_slide() -> void:
@@ -673,8 +687,8 @@ func _footfall(left: bool, at: Vector3, speed: float) -> void:
 		Game.soundscape.play_step(at, surface, clampf((speed - 1.0) / (Tune.SPRINT_SPEED - 1.0), 0.0, 1.0))
 	_jolt -= lerpf(0.004, 0.026, power * power)
 	_roll_kick += (1.0 if left else -1.0) * lerpf(0.001, 0.01, power)
-	# Boards and stone take no prints and throw no powder.
-	if surface != "snow":
+	# Boards, stone and grass take no prints and throw no powder.
+	if not _leaves_prints(at, surface):
 		return
 	var forward := Vector3(_glide.x, 0.0, _glide.z).normalized()
 	var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else global_position.y

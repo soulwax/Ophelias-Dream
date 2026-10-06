@@ -371,6 +371,11 @@ func _build_sidebar() -> Control:
 	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit.custom_minimum_size.x = 194
 	box.add_child(credit)
+	# The pack's author and page are still to be supplied (see its README).
+	var forest := UiChrome.label("Green woods: \"Fir forest in the mountains\", Sketchfab, Standard licence, adapted.", 11, UiChrome.MUTED)
+	forest.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	forest.custom_minimum_size.x = 194
+	box.add_child(forest)
 	return margin
 
 

@@ -17,6 +17,8 @@
 
 ## Continuation checkpoint — 2026-10-06
 
+**Status (end of 2026-10-06): packets A–G done.** Every probe passes (terrain, biome, snapshot, ground material, flora lean+full, biome effects, forest pack, leap, leap math, journal, voice, meeting, traversal). Open: the pack's author and page URL for the credit, and the user's go-ahead for a repack. Rulings: thaw/grass pages verified CC0 on Freesound; trunk checks use point queries (a sideways ray meets the hillside on slopes); snow ripple normals use an analytic sine sum (finite differences of lattice noise drew faint squares); the soundscape's re-encoded OGG beds were restored so only grass steps changed.
+
 This section is the execution order for continuing the partially implemented plan below. Read the original task named in each packet for its algorithms and acceptance values; do not repeat completed asset import. The user requested a plan first and small subagent handoffs. No implementation has been performed during this checkpoint.
 
 ### Baseline and decisions
@@ -43,11 +45,11 @@ Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently o
 
 **Interfaces:** add `Trail.settle_house() -> void`; retain `route_derived() -> Array[Node]`. Preserve edited house X/Z and yaw; settle only Y to ground plus `House.PLINTH`. Retain the generated terrain/Flora/landmarks and empty Fence when saved terrain revision differs.
 
-- [ ] Add a snapshot probe loading the real main scene: house Y within 0.05 m of its pad plus plinth; expected chunk count and mesh extent; 24 collision rays within 0.2 m of terrain height outside the stair cut; empty `Fence` node in its existing child position.
-- [ ] Exercise missing revision, old revision, same revision and edited route using in-memory snapshot fixtures; never save those fixtures over the editable level.
-- [ ] Run the probe to record the missing-method/fence failure before changing product code.
-- [ ] Implement house settlement, empty Fence and HUD world-edge cue. Inspect snapshot application so retained server collision can survive the later Flora rewrite.
-- [ ] Run snapshot and biome probes; startup must have no script errors. Existing thaw failure belongs to Packet B.
+- [x] Add a snapshot probe loading the real main scene: house Y within 0.05 m of its pad plus plinth; expected chunk count and mesh extent; 24 collision rays within 0.2 m of terrain height outside the stair cut; empty `Fence` node in its existing child position.
+- [x] Exercise missing revision, old revision, same revision and edited route using in-memory snapshot fixtures; never save those fixtures over the editable level.
+- [x] Run the probe to record the missing-method/fence failure before changing product code.
+- [x] Implement house settlement, empty Fence and HUD world-edge cue. Inspect snapshot application so retained server collision can survive the later Flora rewrite.
+- [x] Run snapshot and biome probes; startup must have no script errors. Existing thaw failure belongs to Packet B.
 
 ### Packet B: Make terrain and transition checks trustworthy
 
@@ -55,11 +57,11 @@ Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently o
 
 **Interfaces:** retain `snow_at(x: float, z: float) -> float`, `height_at`, `normal_at`, `slope_at`, `route_distance`, `story_distance`, `story_points` and chunk counts.
 
-- [ ] Repair the terrain probe's typed conditional array and update only its build budget to 3500 ms. Run it to reveal actual grade/slope outcomes.
-- [ ] Strengthen thaw measurement: keep the existing 16-ray regression, add local edge-normal spans so oblique rays cannot hide genuinely narrow transitions, and retain at least eight crossings. Record default seed and two additional deterministic seeds; distinguish required acceptance from seed coverage observations.
-- [ ] Fix transition width in world metres using the biome-field gradient/distance, including altitude and competing core/patch edges. Preserve the snow invariants and directional coverage; do not simply relax acceptance thresholds.
-- [ ] Check collision interpolation and stitched edge normals. If needed, match height sampling to the generated triangle diagonals and recompute normals after stitching. Preserve pad, stair cut, ravine and route.
-- [ ] Run biome, terrain and snapshot probes. Measure build time after new field calculations.
+- [x] Repair the terrain probe's typed conditional array and update only its build budget to 3500 ms. Run it to reveal actual grade/slope outcomes.
+- [x] Strengthen thaw measurement: keep the existing 16-ray regression, add local edge-normal spans so oblique rays cannot hide genuinely narrow transitions, and retain at least eight crossings. Record default seed and two additional deterministic seeds; distinguish required acceptance from seed coverage observations.
+- [x] Fix transition width in world metres using the biome-field gradient/distance, including altitude and competing core/patch edges. Preserve the snow invariants and directional coverage; do not simply relax acceptance thresholds.
+- [x] Check collision interpolation and stitched edge normals. If needed, match height sampling to the generated triangle diagonals and recompute normals after stitching. Preserve pad, stair cut, ravine and route.
+- [x] Run biome, terrain and snapshot probes. Measure build time after new field calculations.
 
 ### Packet C: Surface materials and overview tool
 
@@ -67,10 +69,10 @@ Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently o
 
 **Interfaces:** consume vertex red snow weight and terrain normals; preserve `ground.snow_material` for the house snow patch. Overview uses actual generated world and explicit full/lean settings.
 
-- [ ] Resolve a Python executable; fetch the three named 1K CC0 textures from Poly Haven official API with checksums and provenance, then import once.
-- [ ] Blend snow, wet thaw, grass/forest floor and slope rock; use rotated/warped noise and a lean path without normal blends. House snow patch must remain snow even where vertex colors are absent.
-- [ ] Add captures for near, high, eye-level, far-aerial and thaw-close, with a warm-up before FPS sampling and outputs under `build/biome-continuation/`.
-- [ ] Inspect all full and lean captures for shader errors, repetitive grids, visible cracks and incorrect house material; rerun biome/terrain probes after binding changes.
+- [x] Resolve a Python executable; fetch the three named 1K CC0 textures from Poly Haven official API with checksums and provenance, then import once.
+- [x] Blend snow, wet thaw, grass/forest floor and slope rock; use rotated/warped noise and a lean path without normal blends. House snow patch must remain snow even where vertex colors are absent.
+- [x] Add captures for near, high, eye-level, far-aerial and thaw-close, with a warm-up before FPS sampling and outputs under `build/biome-continuation/`.
+- [x] Inspect all full and lean captures for shader errors, repetitive grids, visible cracks and incorrect house material; rerun biome/terrain probes after binding changes.
 
 ### Packet D: Deterministic tree placement and chunk rendering
 
@@ -78,11 +80,11 @@ Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently o
 
 **Interfaces:** retain `grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: int = 1701) -> void`; retain `tree_positions() -> PackedVector3Array`, extend with optional centre/radius arguments for nearest-first queries without breaking callers. Expose `build_msec`, `trees: PackedVector3Array`, biome counts and planned/retained ordinary counts for the probe. Keep giant counts separate.
 
-- [ ] Add the tree checks from Task 5 before replacing the old capped generator.
-- [ ] Plant full world snow/green trees deterministically, respecting 12 m route, 25 m reserved clearance and 35 degree slope limits. Use imported spruces/cards with premium-pine fallback; snow gets great pines and 6–8 route giants outside the corridor.
-- [ ] Build MultiMeshes per mesh and `Tune.CHUNK_SIZE`, with the specified visibility ranges. Lean selects a stable half of ordinary placements rather than advancing a different RNG sequence.
-- [ ] Add one server body per chunk with cylinder trunk shapes; own/free all RIDs in `_exit_tree`. Probe cleanup after freeing Flora and verify collision actually blocks a body.
-- [ ] Run full/lean flora probes: snow 300–2500, green 1500–12000 in full, clearance/slope/species checks, nearest query correctness, lean 0.5 ± 0.1, tree position count agreement. Record partial build budget before undergrowth.
+- [x] Add the tree checks from Task 5 before replacing the old capped generator.
+- [x] Plant full world snow/green trees deterministically, respecting 12 m route, 25 m reserved clearance and 35 degree slope limits. Use imported spruces/cards with premium-pine fallback; snow gets great pines and 6–8 route giants outside the corridor.
+- [x] Build MultiMeshes per mesh and `Tune.CHUNK_SIZE`, with the specified visibility ranges. Lean selects a stable half of ordinary placements rather than advancing a different RNG sequence.
+- [x] Add one server body per chunk with cylinder trunk shapes; own/free all RIDs in `_exit_tree`. Probe cleanup after freeing Flora and verify collision actually blocks a body.
+- [x] Run full/lean flora probes: snow 300–2500, green 1500–12000 in full, clearance/slope/species checks, nearest query correctness, lean 0.5 ± 0.1, tree position count agreement. Record partial build budget before undergrowth.
 
 ### Packet E: Undergrowth and cliff dressing
 
@@ -90,10 +92,10 @@ Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently o
 
 **Interfaces:** consume Packet D's deterministic placement/batch infrastructure. Expose undergrowth planned/retained counts; combined Flora build remains below 2500 ms.
 
-- [ ] Plant green fir/bush and clearing grass at 2.5 m candidate spacing, sparse mixed thaw and snow mounds/tufts; batch by mesh/chunk with full 90 m and lean 60 m visibility.
-- [ ] Restore steep near-route rock dressing without putting trunk colliders in the route or blocking story interactions. Remove old horizon props and unconditional grassland that bypass biome placement.
-- [ ] Extend full/lean probe: more than 5000 undergrowth in full, deterministic half in lean, combined time under 2500 ms, and zero leaked physics objects after cleanup.
-- [ ] Inspect near/thaw/eye-level captures using the overview tool.
+- [x] Plant green fir/bush and clearing grass at 2.5 m candidate spacing, sparse mixed thaw and snow mounds/tufts; batch by mesh/chunk with full 90 m and lean 60 m visibility.
+- [x] Restore steep near-route rock dressing without putting trunk colliders in the route or blocking story interactions. Remove old horizon props and unconditional grassland that bypass biome placement.
+- [x] Extend full/lean probe: more than 5000 undergrowth in full, deterministic half in lean, combined time under 2500 ms, and zero leaked physics objects after cleanup.
+- [x] Inspect near/thaw/eye-level captures using the overview tool.
 
 ### Packet F: Biome footsteps, prints and weather
 
@@ -101,20 +103,20 @@ Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently o
 
 **Interfaces:** consume `Ground.snow_at`; expose smoothed `Weather.snow_scale: float` for diagnostics, leave wind running. Preserve indoor surface classification and existing weather regimes.
 
-- [ ] Probe outdoor grass below 0.35, thaw from 0.35–0.65, snow above; preserve indoor wood/other sounds. Prints/powder use the independent exact threshold S > 0.6.
-- [ ] Verify 3–5 CC0 source recordings on their official pages, fetch grass steps and record provenance; add grass playback and thaw snow playback about 4 dB quieter.
-- [ ] Smooth camera snow weight into all snowfall layers/spindrift, including Atmosphere's procedural squall snow densities. Test scale below 0.1 after three seconds over green, recovery over snow, and persistent wind/audio.
-- [ ] Run effect probe and traversal/leap regressions; do not edit or rebake character voice clips.
+- [x] Probe outdoor grass below 0.35, thaw from 0.35–0.65, snow above; preserve indoor wood/other sounds. Prints/powder use the independent exact threshold S > 0.6.
+- [x] Verify 3–5 CC0 source recordings on their official pages, fetch grass steps and record provenance; add grass playback and thaw snow playback about 4 dB quieter.
+- [x] Smooth camera snow weight into all snowfall layers/spindrift, including Atmosphere's procedural squall snow densities. Test scale below 0.1 after three seconds over green, recovery over snow, and persistent wind/audio.
+- [x] Run effect probe and traversal/leap regressions; do not edit or rebake character voice clips.
 
 ### Packet G: Final integration, credits and documentation
 
 **Original task:** 7. **Owner files:** `tools/biome_probe.gd` as coordinator, menu credit location, forest README, `CLAUDE.md` world documentation and this plan's completion checkboxes.
 
-- [ ] Run forest, snapshot, biome, terrain, flora and effects probes in lean and applicable full mode, then traversal, leap, leap-math, journal, voice and meeting coherence/probe checks.
-- [ ] Capture and inspect all five views in full and lean; record startup budgets and steady FPS separately. Capture one normal-play lean smoke frame.
-- [ ] Add factual pack credit with explicitly pending author/model URL; request those details without blocking generation. Do not invent attribution or licensing evidence.
-- [ ] Document current bounds, snow weights, chunks, mountains, edge, forest import, revision and diagnostic commands. Report screenshots, validation failures/limitations and the decisions above.
-- [ ] Obtain explicit repack authorization separately if desired; no repack is part of these packets. No commits or push.
+- [x] Run forest, snapshot, biome, terrain, flora and effects probes in lean and applicable full mode, then traversal, leap, leap-math, journal, voice and meeting coherence/probe checks.
+- [x] Capture and inspect all five views in full and lean; record startup budgets and steady FPS separately. Capture one normal-play lean smoke frame.
+- [x] Add factual pack credit with explicitly pending author/model URL; request those details without blocking generation. Do not invent attribution or licensing evidence.
+- [x] Document current bounds, snow weights, chunks, mountains, edge, forest import, revision and diagnostic commands. Report screenshots, validation failures/limitations and the decisions above.
+- [ ] (open, user's call) Obtain explicit repack authorization separately if desired; no repack is part of these packets. No commits or push.
 
 ### Dependency and shared-file review
 

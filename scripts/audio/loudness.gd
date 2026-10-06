@@ -22,6 +22,8 @@ const FARTHEST := 420.0
 const SNOW_STEP := 57.0
 const WOOD_STEP := 61.0
 const STONE_STEP := 64.0
+# A boot in moss and grass: softer than snow's crunch.
+const GRASS_STEP := 54.0
 const STRIDE_FORCE := 7.0
 const FLOOR_CREAK := 52.0
 # Out on the field: one caw carries far; a whole pine thrashing in a gust;

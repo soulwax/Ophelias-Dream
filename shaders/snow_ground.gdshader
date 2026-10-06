@@ -26,7 +26,10 @@ uniform float grass_uv_scale = 0.1;
 uniform vec3 tint = vec3(0.82, 0.86, 0.9);
 uniform vec3 shade = vec3(0.4, 0.52, 0.7);
 uniform vec3 dirt_color = vec3(0.36, 0.22, 0.11);
-uniform vec3 rock_color = vec3(0.42, 0.41, 0.4);
+uniform vec3 rock_color = vec3(0.30, 0.30, 0.32);
+// How far green land is pushed from the textures' olive toward lush green.
+uniform float lushness : hint_range(0.0, 1.0) = 0.7;
+uniform vec3 moss_color = vec3(0.12, 0.22, 0.06);
 uniform float snow_depth = 0.2;
 
 float hash21(vec2 p) {
@@ -54,6 +57,21 @@ float field_noise(vec2 p) {
 	vec2 rotated = mat2(vec2(0.8, 0.6), vec2(-0.6, 0.8)) * p;
 	vec2 warp = vec2(gradient_noise(rotated * 0.43 + vec2(17.1, 8.7)), gradient_noise(rotated * 0.43 + vec2(-7.4, 31.2)));
 	return clamp(0.5 + gradient_noise(rotated + warp * 1.6), 0.0, 1.0);
+}
+
+// The slope of wind ripples in the snow: a few long waves in unrelated
+// directions, summed. Its gradient is exact and smooth everywhere, so lighting
+// shows no lattice (finite differences of lattice noise did: faint squares).
+vec2 ripple_slope(vec2 p) {
+	vec2 slope = vec2(0.0);
+	vec2 dirs[5] = vec2[](vec2(0.94, 0.34), vec2(-0.41, 0.91), vec2(0.62, -0.78), vec2(-0.97, -0.24), vec2(0.17, 0.99));
+	float freq[5] = float[](1.7, 2.9, 4.3, 6.1, 8.9);
+	float amp[5] = float[](0.09, 0.06, 0.045, 0.03, 0.02);
+	float phase[5] = float[](0.3, 1.9, 4.1, 2.6, 5.2);
+	for (int k = 0; k < 5; k++) {
+		slope += dirs[k] * cos(dot(dirs[k], p) * freq[k] + phase[k]) * amp[k];
+	}
+	return slope;
 }
 
 vec3 triplanar_color(sampler2D map, vec3 p, vec3 weights) {
@@ -106,17 +124,30 @@ void fragment() {
 			texture(grass_tex, world_pos.xz * grass_uv_scale).rgb, smoothstep(0.3, 0.7, biome_mix));
 		mud = texture(mud_tex, world_pos.xz * ground_uv_scale).rgb * 0.62;
 		vec3 rock_sample = triplanar_color(grass_tex, world_pos * ground_uv_scale, weights);
-		rock = rock_color * mix(0.55, 1.6, dot(rock_sample, vec3(0.3, 0.59, 0.11)));
+		rock = rock_color * mix(0.6, 1.35, dot(rock_sample, vec3(0.3, 0.59, 0.11)));
+	}
+	// Lush: the floor textures are olive; pull them toward living green, with
+	// darker moss gathered in patches.
+	float green_level = dot(floor_color, vec3(0.3, 0.59, 0.11));
+	vec3 lush = vec3(green_level * 0.62, green_level * 1.12 + 0.03, green_level * 0.42);
+	floor_color = mix(floor_color, lush, lushness);
+	floor_color = mix(floor_color, moss_color * mix(0.8, 1.2, speckle), smoothstep(0.55, 0.8, field_noise(world_pos.xz * 0.12 + vec2(-13.0, 5.0))) * lushness * 0.7);
+	// Rock in layers: bands that follow height, broken by noise, so cliffs and
+	// mountain flanks read as stone rather than flat planes.
+	float strata = field_noise(vec2(world_pos.y * 0.9 + field_noise(world_pos.xz * 0.05) * 3.0, dot(world_pos.xz, vec2(0.02, 0.03))));
+	rock *= mix(0.72, 1.18, strata);
+	if (ground_textures) {
 	}
 	vec3 earth = mix(floor_color, mud, thaw * 0.85);
 	ALBEDO = mix(mix(earth, snow, cover), rock, rock_mask);
 
 	vec3 n = base;
 	if (!lean_graphics) {
-		float e = 0.08;
-		float hx = field_noise(world_pos.xz * 2.2 + vec2(e, 0.0)) - field_noise(world_pos.xz * 2.2);
-		float hz = field_noise(world_pos.xz * 2.2 + vec2(0.0, e)) - field_noise(world_pos.xz * 2.2);
-		vec3 snow_n = normalize(base + vec3(-hx, 0.0, -hz) * 7.0);
+		// Ripples drift with the wind's own noise; only the noise's value bends
+		// them, never its slope.
+		vec2 warp = vec2(field_noise(world_pos.xz * 0.11), field_noise(world_pos.xz * 0.11 + vec2(23.0, -9.0))) * 6.0;
+		vec2 ripple = ripple_slope(world_pos.xz + warp) * mix(0.6, 1.4, drift);
+		vec3 snow_n = normalize(base + vec3(-ripple.x, 0.0, -ripple.y) * 1.6);
 		vec3 earth_n = base;
 		if (ground_textures) {
 			vec3 floor_n = mix(texture(green_normal, world_pos.xz * ground_uv_scale).xyz,

@@ -36,6 +36,10 @@ godot --headless --path . -s tools/retarget_elf.gd # Rebuild elf movement clips
 godot --headless --path . -s tools/leap_math_probe.gd # Running-leap math checks
 godot --headless --path . tools/leap_probe.tscn # Running leap on the real player
 godot --path . -s tools/leap_sheet.gd # Leap contact sheet (needs a window)
+godot --headless --path . tools/biome_probe.tscn # Snow weight, thaw bands, seams, world edge
+godot --headless --path . tools/flora_probe.tscn # Woods by biome (also with RUN_GRAPHICS=full)
+godot --headless --path . tools/biome_effects_probe.tscn # Grass/thaw steps, prints, snowfall over green
+godot --path . tools/terrain_view.tscn # Overview shots + FPS into build/terrain/ (needs a window)
 ./tools/run_blackbox.ps1         # Run with logs in build/blackbox/
 ```
 

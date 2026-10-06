@@ -10,6 +10,9 @@ var _env: Environment
 # 0 out in the snow .. 1 deep inside the house. Indoors the daylight ambience
 # falls away and the rooms are only what their lamps make of them.
 var shelter := 0.0
+# 0..1: how much snow is in the air here, from the snow weight under the camera
+# (set by Weather). Over green land the veil thins away; the fog stays.
+var snow_cover := 1.0
 
 
 func rebind_authoring_resources() -> void:
@@ -173,9 +176,9 @@ func _update_veil(
 ) -> void:
 	if mat == null:
 		return
-	mat.set_shader_parameter("base_density", base_d)
-	mat.set_shader_parameter("squall_density", squall_d)
-	mat.set_shader_parameter("spindrift_density", spindrift_d)
+	mat.set_shader_parameter("base_density", base_d * snow_cover)
+	mat.set_shader_parameter("squall_density", squall_d * snow_cover)
+	mat.set_shader_parameter("spindrift_density", spindrift_d * snow_cover)
 	mat.set_shader_parameter("ground_level", ground_y)
 	mat.set_shader_parameter("weather_intensity", intensity)
 	mat.set_shader_parameter("gust_strength", gust)

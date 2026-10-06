@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Ophelia's Dream" â€” a short third-person winter horror game in **Godot 4.7** (Forward+, Jolt physics, D3D12 on Windows), written entirely in GDScript. The `godot` binary on PATH (scoop shim) is 4.7.2; on the RTX 3070 Ti desktop it is `godot-mono` (4.7.2 mono build), and every `godot` command below works with it. There is no test suite and no linter; verification is done by running the game, capturing a screenshot, or running a probe (below).
 
-`docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become an open, fenced daylight snowfield. The figure in the tree line and the Listener were removed on 2026-10-05; new threats are being chosen from `docs/THREATS.md`. Older docs (`GDD.md`, `NARRATIVE_INTENT.md`, `TODO.md`, parts of `docs/EDITOR.md`) still describe them. `docs/DIRECTION.md` is the current direction and validation record, and `CHANGELOG.md` tracks releases. Where any doc and the code disagree, trust the code. `AGENTS.md` is a shorter copy of these instructions for other agents; keep it consistent when conventions change.
+`docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become a daylight world about 1.1 km across: a snowy story core inside green, wooded, mountainous land (see *World*). The figure in the tree line and the Listener were removed on 2026-10-05; new threats are being chosen from `docs/THREATS.md`. Older docs (`GDD.md`, `NARRATIVE_INTENT.md`, `TODO.md`, parts of `docs/EDITOR.md`) still describe them. `docs/DIRECTION.md` is the current direction and validation record, and `CHANGELOG.md` tracks releases. Where any doc and the code disagree, trust the code. `AGENTS.md` is a shorter copy of these instructions for other agents; keep it consistent when conventions change.
 
 ## Commands
 
@@ -63,6 +63,19 @@ godot --path . tools/return_evidence_probe.tscn         # renders the doorway cl
 # Crash-safe logging run (game + disk-flushing hardware monitor, logs in build/blackbox/)
 ./tools/run_blackbox.ps1
 
+# The world: terrain and route, biome snow weight, snapshot handling, ground material,
+# woods (run lean and with RUN_GRAPHICS=full), biome footsteps and snowfall, the forest pack
+godot --headless --path . tools/terrain_probe.tscn
+godot --headless --path . tools/biome_probe.tscn
+godot --headless --path . tools/biome_snapshot_probe.tscn
+godot --headless --path . tools/ground_material_probe.tscn
+godot --headless --path . tools/flora_probe.tscn
+godot --headless --path . tools/biome_effects_probe.tscn
+godot --headless --path . -s tools/forest_pack_probe.gd
+godot --headless --path . -s tools/import_forest_pack.gd   # re-split the pack's meshes
+# Overview shots and FPS (needs a window; RUN_GRAPHICS=full|lean, RUN_VIEW_TAG names the set) -> build/terrain/
+godot --path . tools/terrain_view.tscn
+
 # Running leap: pure math; physics and animation on the real player (with a window it
 # also saves build/leap/leap_flight.png); a side-on contact sheet (needs a window)
 godot --headless --path . -s tools/leap_math_probe.gd
@@ -97,9 +110,19 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 - The threat interface: `closeness` (0â€“1) for the one that hunts her, `dread` and `threat_hint` for any other pressure, `threat()` = max of the two, `catch_player(title, body)` for the ending, `something_at_door` (the house knocks hard) and `shown_threat` (a raven scolds beside it). The HUD vignette, heart and warning line react to `threat()`. The UI never shows distances. `hunt_started` turns true after `Tune.HUNT_NOTES` pages or `HUNT_ROUTE_DISTANCE` metres. No threat sets these yet.
 - `Game` ends the run as `ESCAPED` when she is within `EXIT_RADIUS` of `trail.exit_point`.
 
-**`Tune` (`scripts/tune.gd`)** holds all balance constants: speeds, stamina, aim and reach, fence bounds, and collision layers (`LAYER_WORLD=1`, `LAYER_ACTOR=2`). Change feel here, not in the systems.
+**`Tune` (`scripts/tune.gd`)** holds all balance constants: speeds, stamina, aim and reach, the world and story-field bounds (`WORLD_*`, `FENCE_*`), the land, biome and forest values (`TERRAIN_*`, `VALLEY_*`, `CLIFF_*`, `RAVINE_*`, `SNOW_*`, `BIOME_*`, `MOUNTAIN_*`, `RING_*`, `CHUNK_*`, `FOREST_*`, `GREEN_*`, `UNDER_*`), and collision layers (`LAYER_WORLD=1`, `LAYER_ACTOR=2`). Change feel here, not in the systems.
 
-**World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground` (heightfield, `height_at(x,z)`), `Fence`, the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout plus headlights at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1â€“3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box.
+**World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground`, an empty `Fence` node (kept only so editable-level snapshots line up child for child), the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout plus headlights at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1–3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box. Specs and plans: `docs/superpowers/specs/2026-10-06-biome-world-design.md` and its plan.
+- *Ground* (`ground.gd`): one height function over `WORLD_*` (1080 m square), built in layers: warped hills; a gentle valley along the route (floor graded at most `VALLEY_GRADE`, banks rising); cliff bands on hillsides at least `CLIFF_CLEAR` from the route; one ravine over `RAVINE_FROM..TO` of the played route; ridged mountains rising away from the story; a ring of peaks at the edge plus an invisible `WorldEdge` wall; the house pad last. Route and story distances, the valley floor and the ravine weight are coarse fields (`FIELD_CELL` 6 m). Set `route`, `route_from/to` and `story_points` before it enters the tree (`Trail` does).
+ - The mesh is `CHUNK_SIZE` squares with cells of 1.5/3/6 m by distance from the story; a fine chunk's edge is stitched onto a coarser neighbour's so heights and collision are continuous. Each chunk is a `MeshInstance3D` with a trimesh `StaticBody3D`. Normals come from height differences. Helpers: `height_at`, `normal_at`, `slope_at`, `route_distance`, `story_distance`, `snow_at`.
+ - **Snow weight** `snow_at(x, z)` (0 green .. 1 snow) is shared by every system: always snow within `SNOW_FORCE` of the story, mostly snow within `SNOW_CORE_IN..OUT` (a few green patches past `SNOW_PATCH_CLEAR`), and beyond it a biome noise biased greener north-east and north-west, partly south-east (north is −Z), snowy on peaks above `BIOME_SNOWLINE`. It is stored in vertex `COLOR.r`.
+ - `TERRAIN_REVISION` (now 3): bump it whenever the land's shape changes. `main.gd` keeps the newly generated Ground, Flora, landmarks and Fence over a snapshot whose `terrain_revision` differs, and `Trail.settle_house()` sets the house back onto its pad.
+- *Ground shader* (`shaders/snow_ground.gdshader`): blends snow, thaw (wet mud with patchy snow), green (CC0 Poly Haven forest floor and grass from `tools/fetch_ground_textures.py`, pushed toward lush green by `lushness`, with moss patches) and banded triplanar rock on slopes, from the vertex snow weight. Snow ripple normals come from an analytic sine-sum slope, not finite differences of lattice noise (that showed faint squares). Lean skips the normal detail.
+- *Flora* (`flora.gd`): woods by biome over the whole world. Snow woods are the premium pines with great pines (`FOREST_GREAT_*`) and 6–8 lone giants beside the route; green woods are the Sketchfab forest pack's spruces and card trees, denser, with firs and bushes underneath and grass in clearings; logs, mounds and boulders in the open; `SM_Env_Rock_Cliff_02` faces on steep cliffs near the route. Nothing within `FOREST_CLEAR` of the route or on slopes over `FOREST_SLOPE`. Every candidate draws all its random numbers before deciding, so lean keeps a stable half (`FOREST_LEAN_SHARE`) of exactly what full plants.
+ - Drawn as `MultiMeshInstance3D`s per mesh part per chunk with draw distances (`FOREST_DRAW`, `UNDER_DRAW`, lean values). Trunks are cylinders on one `PhysicsServer3D` static body per chunk (no node per tree), freed on predelete.
+ - `tree_positions()` lists every trunk; `tree_positions(centre, radius)` and `nearest_indices(from, count, reach)` query a spatial hash. `Wildlife` uses the latter.
+- *Forest pack* (`assets/vendor/sketchfab_forest/`, Sketchfab Standard licence; author and page still to be supplied, see its README): `tools/import_forest_pack.gd` splits ten pieces out of the FBX into `meshes/*.res`.
+- *Biome effects*: `Player._surface_at` returns `grass` (snow weight under 0.35), `thaw` (to 0.65) or `snow` outdoors; prints and powder only where `_leaves_prints` (snow weight over 0.6). Grass steps are CC0 Freesound recordings cut by `make_soundscape.py`; thaw plays the snow set 4 dB softer. `Weather.snow_scale` (smoothed snow weight under the camera) scales every snow layer and `Atmosphere.snow_cover` the snow veil; the wind keeps blowing over green.
 
 **Threats**: none in the field right now. `docs/THREATS.md` lists the interface above, the `Trail/Threats` marker slot, record pages (`NoteEntry.record_of`, `Game.knows`), and six candidate threats. New threats are original; canon SCP content is CC BY-SA, so do not borrow it. Teleporting ones call `reset_physics_interpolation()` after the move.
 

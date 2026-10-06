@@ -275,6 +275,44 @@ const CHUNK_MID := 260.0
 const CHUNK_CELL_NEAR := 1.5
 const CHUNK_CELL_MID := 3.0
 const CHUNK_CELL_FAR := 6.0
+# Woods. A forest mask (wavelength about 1 / FOREST_FREQ) makes woods with
+# clearings; none within FOREST_CLEAR of the route or FOREST_RESERVED of a
+# landmark, or on slopes over FOREST_SLOPE degrees. Snow woods grow on a
+# FOREST_SPACING jittered grid, green woods on GREEN_SPACING and thicker. Trees
+# stand at least FOREST_MIN_GAP apart (FOREST_GREAT_GAP round a great one).
+# FOREST_GREAT_SHARE of the snow trees are great pines (scale
+# FOREST_GREAT_MIN..MAX); FOREST_GIANTS lone giants stand in clearings
+# FOREST_GIANT_NEAR..FAR metres from the route. Lean graphics keeps
+# FOREST_LEAN_SHARE of the ordinary trees and undergrowth. Woods are drawn out to
+# FOREST_DRAW (FOREST_DRAW_LEAN), undergrowth to UNDER_DRAW (UNDER_DRAW_LEAN).
+const FOREST_FREQ := 0.011
+const FOREST_CLEAR := 12.0
+const FOREST_RESERVED := 25.0
+const FOREST_SLOPE := 35.0
+const FOREST_SPACING := 4.5
+const GREEN_SPACING := 4.0
+const FOREST_MIN_GAP := 3.5
+const FOREST_GREAT_GAP := 7.0
+const FOREST_DENSITY := 0.8
+const GREEN_DENSITY := 0.95
+const FOREST_TREE_MIN := 0.9
+const FOREST_TREE_MAX := 1.4
+const FOREST_GREAT_SHARE := 0.15
+const FOREST_GREAT_MIN := 2.0
+const FOREST_GREAT_MAX := 2.6
+const FOREST_GIANTS := 8
+const FOREST_GIANT_MIN := 2.4
+const FOREST_GIANT_MAX := 2.8
+const FOREST_GIANT_NEAR := 20.0
+const FOREST_GIANT_FAR := 60.0
+const GREEN_TREE_MIN := 1.0
+const GREEN_TREE_MAX := 2.2
+const GREEN_CARD_SHARE := 0.15
+const FOREST_LEAN_SHARE := 0.5
+const FOREST_DRAW := 260.0
+const FOREST_DRAW_LEAN := 150.0
+const UNDER_DRAW := 90.0
+const UNDER_DRAW_LEAN := 60.0
 
 const LAYER_WORLD := 1
 const LAYER_ACTOR := 2
