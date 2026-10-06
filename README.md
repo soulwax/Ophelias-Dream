@@ -1,8 +1,8 @@
 # Run Away
 
-A short third-person winter horror game in Godot 4.7. You wake in a house,
-follow a snowbound ridge toward distant headlights, and decide how long to stop
-for pages that disagree with what the snow shows you.
+A short third-person winter horror game in Godot 4.7. Mathilda has gone into
+the storm. You search the house and snowbound ridge for her, collecting pages
+whose damaged words change what you think happened.
 
 ## Play
 
@@ -15,8 +15,8 @@ godot --path .
 
 Use WASD to move, the mouse to look, Shift to sprint, E to read and interact,
 F or right mouse to hold your breath, Space to jump, and Ctrl or C to slide.
-Esc opens controls and settings. When the run ends, R restarts it. The notes
-are optional; the road is the way out.
+J or Tab opens the journal to decipher pages. Esc opens controls and settings.
+When the run ends, R restarts it. The road is the way out.
 
 The game uses Forward+ and Jolt physics. On constrained GPUs, set
 `RUN_GRAPHICS=lean` before launching. Allow Godot to import the project on its
