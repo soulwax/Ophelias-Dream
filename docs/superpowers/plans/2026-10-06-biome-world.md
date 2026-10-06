@@ -15,6 +15,122 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-06-biome-world-design.md`
 
+## Continuation checkpoint — 2026-10-06
+
+This section is the execution order for continuing the partially implemented plan below. Read the original task named in each packet for its algorithms and acceptance values; do not repeat completed asset import. The user requested a plan first and small subagent handoffs. No implementation has been performed during this checkpoint.
+
+### Baseline and decisions
+
+- Clean working tree at inspection, branch `mathilda-story`, baseline `1ee9181`. Recheck before every dispatch because a separate session may work on this branch.
+- `forest_pack_probe` passes: all ten split meshes are available.
+- `biome_probe` fails: thaw widths pass in only 8/14 crossings; measured widths are 39, 42, 70, 42, 45, 77, 23, 4, 8, 43, 58, 49, 40, 63 m. Ground build 1493 ms; story snow, core coverage (96%), directional green, seam heights (0.007 m worst) and east boundary pass.
+- Startup has a runtime error: `main.gd` calls the absent `Trail.settle_house()`.
+- `terrain_probe` fails: old 1500 ms budget (1523 ms measured) and typed-array assignment at line 60 stop complete route verification. Do not count its route checks as passing.
+- Ruling: retain 1080 × 1080 m bounds and 60 m chunks instead of nominal 1100/64. They meet the approximate size and divide exactly at 1.5/3/6 m cells. Changing this later requires rebuilding chunk geometry and retesting seams.
+- Ruling: keep existing edge stitching if collision, normal and visual checks pass; adding skirts alone would conceal rather than repair a collision seam.
+- Ruling: the enlarged-world ground budget is 3500 ms, replacing the superseded 1500 ms budget in the terrain probe; retain its route grade/slope checks unchanged.
+- Preserve terrain revision 3 for this unfinished generation. Do not regenerate or repack the editable level, commit or push.
+
+### Worker protocol and ownership
+
+Use one bounded implementer at a time, then a fresh reviewer of its diff and test evidence. Each worker reads its packet plus Global Constraints and the relevant original task, writes a report under ignored `build/biome-continuation/`, and returns status, files changed, command/results and unresolved concerns. Workers do not spawn agents. The controller owns the progress ledger, integration and final probe execution. Use file-backed briefs so workers do not need the entire conversation.
+
+Run with `godot-mono` (Godot 4.7.2 on this machine). `python` is not currently on PATH: locate an existing Python interpreter before texture/audio fetches; do not install one implicitly. No simultaneous `--import` processes or edits to the same file. Existing `grow` and zero-argument `tree_positions` callers must continue to work.
+
+### Packet A: Restore normal startup and snapshot safety
+
+**Original task:** 3. **Owner files:** `scripts/world/trail.gd`, `scripts/main.gd`, `scripts/ui/hud.gd`, new `tools/biome_snapshot_probe.gd` and `.tscn`.
+
+**Interfaces:** add `Trail.settle_house() -> void`; retain `route_derived() -> Array[Node]`. Preserve edited house X/Z and yaw; settle only Y to ground plus `House.PLINTH`. Retain the generated terrain/Flora/landmarks and empty Fence when saved terrain revision differs.
+
+- [ ] Add a snapshot probe loading the real main scene: house Y within 0.05 m of its pad plus plinth; expected chunk count and mesh extent; 24 collision rays within 0.2 m of terrain height outside the stair cut; empty `Fence` node in its existing child position.
+- [ ] Exercise missing revision, old revision, same revision and edited route using in-memory snapshot fixtures; never save those fixtures over the editable level.
+- [ ] Run the probe to record the missing-method/fence failure before changing product code.
+- [ ] Implement house settlement, empty Fence and HUD world-edge cue. Inspect snapshot application so retained server collision can survive the later Flora rewrite.
+- [ ] Run snapshot and biome probes; startup must have no script errors. Existing thaw failure belongs to Packet B.
+
+### Packet B: Make terrain and transition checks trustworthy
+
+**Original task:** remaining 2. **Owner files:** `scripts/world/ground.gd`, biome constants in `scripts/tune.gd`, `tools/biome_probe.gd`, `tools/terrain_probe.gd`, snapshot probe only if collision acceptance needs extension.
+
+**Interfaces:** retain `snow_at(x: float, z: float) -> float`, `height_at`, `normal_at`, `slope_at`, `route_distance`, `story_distance`, `story_points` and chunk counts.
+
+- [ ] Repair the terrain probe's typed conditional array and update only its build budget to 3500 ms. Run it to reveal actual grade/slope outcomes.
+- [ ] Strengthen thaw measurement: keep the existing 16-ray regression, add local edge-normal spans so oblique rays cannot hide genuinely narrow transitions, and retain at least eight crossings. Record default seed and two additional deterministic seeds; distinguish required acceptance from seed coverage observations.
+- [ ] Fix transition width in world metres using the biome-field gradient/distance, including altitude and competing core/patch edges. Preserve the snow invariants and directional coverage; do not simply relax acceptance thresholds.
+- [ ] Check collision interpolation and stitched edge normals. If needed, match height sampling to the generated triangle diagonals and recompute normals after stitching. Preserve pad, stair cut, ravine and route.
+- [ ] Run biome, terrain and snapshot probes. Measure build time after new field calculations.
+
+### Packet C: Surface materials and overview tool
+
+**Original task:** 4 and overview portion of 7. **Owner files:** `tools/fetch_ground_textures.py`, `shaders/snow_ground.gdshader`, material binding only in `scripts/world/ground.gd`, `assets/vendor/polyhaven/provenance.json`, new `tools/terrain_view.gd` and `.tscn`.
+
+**Interfaces:** consume vertex red snow weight and terrain normals; preserve `ground.snow_material` for the house snow patch. Overview uses actual generated world and explicit full/lean settings.
+
+- [ ] Resolve a Python executable; fetch the three named 1K CC0 textures from Poly Haven official API with checksums and provenance, then import once.
+- [ ] Blend snow, wet thaw, grass/forest floor and slope rock; use rotated/warped noise and a lean path without normal blends. House snow patch must remain snow even where vertex colors are absent.
+- [ ] Add captures for near, high, eye-level, far-aerial and thaw-close, with a warm-up before FPS sampling and outputs under `build/biome-continuation/`.
+- [ ] Inspect all full and lean captures for shader errors, repetitive grids, visible cracks and incorrect house material; rerun biome/terrain probes after binding changes.
+
+### Packet D: Deterministic tree placement and chunk rendering
+
+**Original task:** tree portion of 5. **Owner files:** `scripts/world/flora.gd`, forest constants only in `scripts/tune.gd`, new `tools/flora_probe.gd` and `.tscn`.
+
+**Interfaces:** retain `grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: int = 1701) -> void`; retain `tree_positions() -> PackedVector3Array`, extend with optional centre/radius arguments for nearest-first queries without breaking callers. Expose `build_msec`, `trees: PackedVector3Array`, biome counts and planned/retained ordinary counts for the probe. Keep giant counts separate.
+
+- [ ] Add the tree checks from Task 5 before replacing the old capped generator.
+- [ ] Plant full world snow/green trees deterministically, respecting 12 m route, 25 m reserved clearance and 35 degree slope limits. Use imported spruces/cards with premium-pine fallback; snow gets great pines and 6–8 route giants outside the corridor.
+- [ ] Build MultiMeshes per mesh and `Tune.CHUNK_SIZE`, with the specified visibility ranges. Lean selects a stable half of ordinary placements rather than advancing a different RNG sequence.
+- [ ] Add one server body per chunk with cylinder trunk shapes; own/free all RIDs in `_exit_tree`. Probe cleanup after freeing Flora and verify collision actually blocks a body.
+- [ ] Run full/lean flora probes: snow 300–2500, green 1500–12000 in full, clearance/slope/species checks, nearest query correctness, lean 0.5 ± 0.1, tree position count agreement. Record partial build budget before undergrowth.
+
+### Packet E: Undergrowth and cliff dressing
+
+**Original task:** remainder of 5 and retained natural-terrain dressing. **Owner files:** `scripts/world/flora.gd`, undergrowth constants in `scripts/tune.gd`, `tools/flora_probe.gd`.
+
+**Interfaces:** consume Packet D's deterministic placement/batch infrastructure. Expose undergrowth planned/retained counts; combined Flora build remains below 2500 ms.
+
+- [ ] Plant green fir/bush and clearing grass at 2.5 m candidate spacing, sparse mixed thaw and snow mounds/tufts; batch by mesh/chunk with full 90 m and lean 60 m visibility.
+- [ ] Restore steep near-route rock dressing without putting trunk colliders in the route or blocking story interactions. Remove old horizon props and unconditional grassland that bypass biome placement.
+- [ ] Extend full/lean probe: more than 5000 undergrowth in full, deterministic half in lean, combined time under 2500 ms, and zero leaked physics objects after cleanup.
+- [ ] Inspect near/thaw/eye-level captures using the overview tool.
+
+### Packet F: Biome footsteps, prints and weather
+
+**Original task:** 6. **Owner files:** `scripts/player/player.gd`, `scripts/audio/soundscape.gd`, `scripts/weather/weather.gd`, `scripts/world/atmosphere.gd`, `tools/fetch_sounds.py`, `tools/make_soundscape.py` and audio provenance; new `tools/biome_effects_probe.gd` and `.tscn`.
+
+**Interfaces:** consume `Ground.snow_at`; expose smoothed `Weather.snow_scale: float` for diagnostics, leave wind running. Preserve indoor surface classification and existing weather regimes.
+
+- [ ] Probe outdoor grass below 0.35, thaw from 0.35–0.65, snow above; preserve indoor wood/other sounds. Prints/powder use the independent exact threshold S > 0.6.
+- [ ] Verify 3–5 CC0 source recordings on their official pages, fetch grass steps and record provenance; add grass playback and thaw snow playback about 4 dB quieter.
+- [ ] Smooth camera snow weight into all snowfall layers/spindrift, including Atmosphere's procedural squall snow densities. Test scale below 0.1 after three seconds over green, recovery over snow, and persistent wind/audio.
+- [ ] Run effect probe and traversal/leap regressions; do not edit or rebake character voice clips.
+
+### Packet G: Final integration, credits and documentation
+
+**Original task:** 7. **Owner files:** `tools/biome_probe.gd` as coordinator, menu credit location, forest README, `CLAUDE.md` world documentation and this plan's completion checkboxes.
+
+- [ ] Run forest, snapshot, biome, terrain, flora and effects probes in lean and applicable full mode, then traversal, leap, leap-math, journal, voice and meeting coherence/probe checks.
+- [ ] Capture and inspect all five views in full and lean; record startup budgets and steady FPS separately. Capture one normal-play lean smoke frame.
+- [ ] Add factual pack credit with explicitly pending author/model URL; request those details without blocking generation. Do not invent attribution or licensing evidence.
+- [ ] Document current bounds, snow weights, chunks, mountains, edge, forest import, revision and diagnostic commands. Report screenshots, validation failures/limitations and the decisions above.
+- [ ] Obtain explicit repack authorization separately if desired; no repack is part of these packets. No commits or push.
+
+### Dependency and shared-file review
+
+| Producer / consumer | Shared contract or file | Required ordering |
+| --- | --- | --- |
+| A / B | Snapshot probe, Ground collision and settled house | A restores startup, B validates geometry |
+| B / C | Ground geometry versus material-only bindings | B finishes before C edits Ground |
+| B / D / E | Tune constants and Ground slope/snow sampling | B then D then E; no concurrent Tune edits |
+| D / E | Flora batching, deterministic placement, RID ownership | E builds on reviewed D |
+| B / F | Snow weight and thresholds | B fixes field before F effects checks |
+| C / E / G | Overview tool and visual output | C tool first, E views, G final views |
+| A / D / G | Retained Flora and snapshot physics lifetime | Verify again after server-body rewrite |
+| All / G | Public interfaces and gameplay | G integrates only reviewed packets |
+
+Every packet has a bounded file set and an independently rejectable probe/review surface. Author/model URL and possible repack are follow-ups, not prerequisites for terrain implementation.
+
 **Plan style ruling:** the terrain's look has to be tuned against renders, so this plan fixes interfaces, algorithms, constants and tests, not every line of code. Each task's probe is its contract.
 
 ## Global Constraints

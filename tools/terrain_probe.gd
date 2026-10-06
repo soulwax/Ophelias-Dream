@@ -7,7 +7,7 @@ extends Node
 #   godot-mono --headless --path . tools/terrain_probe.tscn
 #   (RUN_GRAPHICS=full for the full forest)
 
-const BUILD_BUDGET_MSEC := 1500
+const BUILD_BUDGET_MSEC := 3500
 
 var _failed := 0
 
@@ -40,12 +40,16 @@ func _run() -> void:
 # except the ravine's walls, which start further out.
 func _route(trail: Trail, ground: Ground) -> void:
 	var worst_grade := 0.0
+	var worst_grade_at := Vector3.ZERO
 	var worst_slope := 0.0
+	var worst_slope_at := Vector3.ZERO
 	var worst_side := 0.0
 	var worst_side_at := 0.0
+	var worst_side_point := Vector3.ZERO
 	var span := trail.exit_offset - trail.player_start_offset
 	var ravine_from := trail.player_start_offset + span * Tune.RAVINE_FROM
 	var ravine_to := trail.player_start_offset + span * Tune.RAVINE_TO
+	print("  ravine interval %.2f..%.2f m of %.2f" % [span * Tune.RAVINE_FROM, span * Tune.RAVINE_TO, span])
 	var offset := trail.player_start_offset
 	var last := trail.on_ground(trail.position_at(offset))
 	while offset < trail.exit_offset:
@@ -54,10 +58,16 @@ func _route(trail: Trail, ground: Ground) -> void:
 		var here := trail.on_ground(frame.origin)
 		var run := Vector2(here.x - last.x, here.z - last.z).length()
 		if run > 0.2:
+			if absf(here.y - last.y) / run > worst_grade:
+				worst_grade_at = here
 			worst_grade = maxf(worst_grade, absf(here.y - last.y) / run)
 		last = here
+		if ground.slope_at(here.x, here.z) > worst_slope:
+			worst_slope_at = here
 		worst_slope = maxf(worst_slope, ground.slope_at(here.x, here.z))
-		var sides: Array[float] = [2.0, 5.0] if offset > ravine_from and offset < ravine_to else [2.0, 5.0, 8.0, 11.0]
+		var sides: Array[float] = [2.0, 5.0]
+		if offset <= ravine_from or offset >= ravine_to:
+			sides.append_array([8.0, 11.0])
 		for side in sides:
 			for sign_value in [-1.0, 1.0]:
 				var at: Vector3 = frame.origin + frame.basis.x * side * float(sign_value)
@@ -65,8 +75,11 @@ func _route(trail: Trail, ground: Ground) -> void:
 				if slope > worst_side:
 					worst_side = slope
 					worst_side_at = offset - trail.player_start_offset
+					worst_side_point = at
 	_check(worst_grade <= 0.12, "the route's steepest grade is %.0f%% (at most 12%%)" % (worst_grade * 100.0))
+	print("  route diagnostic: worst grade at %s, route field %.2f m" % [worst_grade_at, ground.route_distance(worst_grade_at.x, worst_grade_at.z)])
 	_check(worst_slope <= 25.0, "the ground under the path is at most %.0f° (at most 25°)" % worst_slope)
+	print("  slope diagnostic: under %s distance %.2f; side %s distance %.2f" % [worst_slope_at, ground.route_distance(worst_slope_at.x, worst_slope_at.z), worst_side_point, ground.route_distance(worst_side_point.x, worst_side_point.z)])
 	_check(worst_side <= 45.0, "nothing beside the path is a cliff (%.0f° at %.0f m)" % [worst_side, worst_side_at])
 
 

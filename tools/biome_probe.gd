@@ -18,6 +18,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	main.get_node("EditableLevel").set_meta("seed", 1701)
 	get_tree().root.add_child(main)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -32,9 +33,96 @@ func _run() -> void:
 	_core(ground)
 	_green_beyond(ground)
 	_thaw_width(ground)
+	_normal_width(ground, true)
+	await _seed_coverage(trail)
 	_seams(ground)
 	await _edge(ground)
 	_finish()
+
+
+# Each seed retains story snow. Additional worlds can legitimately have fewer
+# outbound crossings; report their coverage without applying the default gate.
+func _seed_coverage(trail: Trail) -> void:
+	for seed_number in [7919, 314159]:
+		var ground := Ground.new()
+		ground.seed_value = seed_number
+		ground.route = trail.curve
+		ground.route_from = trail.player_start_offset
+		ground.route_to = trail.exit_offset
+		ground.story_points = trail.ground.story_points
+		ground.pads = trail.ground.pads
+		ground.cuts = trail.ground.cuts
+		add_child(ground)
+		_story_on_snow(trail, ground)
+		_normal_width(ground, false)
+		print("  seed %d build %d ms" % [seed_number, ground.build_msec])
+		ground.queue_free()
+		await get_tree().process_frame
+
+
+# Discover S=0.5 boundaries independently on a grid, then march in the local
+# snow-gradient normal. Threshold brackets are interpolated within <=1 m steps;
+# these widths are horizontal world metres, not oblique radial-ray spans.
+func _normal_width(ground: Ground, required: bool) -> void:
+	var widths: Array[String] = []
+	var boundaries := PackedVector2Array()
+	var good := 0
+	var x := Tune.WORLD_MIN_X + 60.0
+	while x < Tune.WORLD_MAX_X - 60.0:
+		var z := Tune.WORLD_MIN_Z + 60.0
+		while z < Tune.WORLD_MAX_Z - 60.0:
+			var a := Vector2(x, z)
+			var b := a + Vector2(12.0, 0.0)
+			var sa := ground.snow_at(a.x, a.y)
+			var sb := ground.snow_at(b.x, b.y)
+			if (sa - 0.5) * (sb - 0.5) < 0.0:
+				var left := a
+				var right := b
+				for iteration in 10:
+					var middle := (left + right) * 0.5
+					if (ground.snow_at(middle.x, middle.y) - 0.5) * (sa - 0.5) > 0.0:
+						left = middle
+					else:
+						right = middle
+				var edge := (left + right) * 0.5
+				var separate := true
+				for other in boundaries:
+					if edge.distance_to(other) < 30.0:
+						separate = false
+						break
+				if separate:
+					var gradient := Vector2(ground.snow_at(edge.x + 0.5, edge.y) - ground.snow_at(edge.x - 0.5, edge.y), ground.snow_at(edge.x, edge.y + 0.5) - ground.snow_at(edge.x, edge.y - 0.5))
+					if gradient.length() > 0.0001:
+						var normal := gradient.normalized()
+						var high := _threshold_distance(ground, edge, normal, 0.8)
+						var low := _threshold_distance(ground, edge, -normal, 0.2)
+						if high >= 0.0 and low >= 0.0:
+							boundaries.append(edge)
+							var width := high + low
+							widths.append("%.1f" % width)
+							if width >= 30.0 and width <= 60.0:
+								good += 1
+			z += 12.0
+		x += 12.0
+	var label := "seed %d normal thaw widths %d/%d in 30-60 m: %s" % [ground.seed_value, good, widths.size(), ", ".join(widths)]
+	if required:
+		_check(widths.size() >= 8, "seed %d has at least 8 valid normal crossings (%d)" % [ground.seed_value, widths.size()])
+		_check(good >= int(ceil(widths.size() * 0.75)), label)
+	else:
+		print("  observe " + label)
+
+
+func _threshold_distance(ground: Ground, edge: Vector2, direction: Vector2, target: float) -> float:
+	var previous := ground.snow_at(edge.x, edge.y)
+	for metre in range(1, 121):
+		var at := edge + direction * float(metre)
+		if at.x < Tune.WORLD_MIN_X + 1.0 or at.x > Tune.WORLD_MAX_X - 1.0 or at.y < Tune.WORLD_MIN_Z + 1.0 or at.y > Tune.WORLD_MAX_Z - 1.0:
+			return -1.0
+		var value := ground.snow_at(at.x, at.y)
+		if (target > 0.5 and value >= target) or (target < 0.5 and value <= target):
+			return float(metre - 1) + (target - previous) / (value - previous)
+		previous = value
+	return -1.0
 
 
 # Every place the story happens lies on snow.

@@ -167,7 +167,7 @@ func _refresh_prompt() -> void:
 		elif _against_wire():
 			show = true
 			key = ""
-			caption = "The fence does not give."
+			caption = "The mountains close the way."
 		if _feedback_left > 0.0 and _feedback_text != "":
 			show = true
 			key = ""
@@ -225,9 +225,10 @@ func _pulse_prompt(succeeded: bool) -> void:
 
 func _against_wire() -> bool:
 	var at := Game.player.global_position
-	var dx := minf(at.x - Tune.FENCE_MIN_X, Tune.FENCE_MAX_X - at.x)
-	var dz := minf(at.z - Tune.FENCE_MIN_Z, Tune.FENCE_MAX_Z - at.z)
-	return minf(dx, dz) < 2.6
+	var dx := minf(at.x - Tune.WORLD_MIN_X, Tune.WORLD_MAX_X - at.x)
+	var dz := minf(at.z - Tune.WORLD_MIN_Z, Tune.WORLD_MAX_Z - at.z)
+	# Ground's boundary walls stop her 12 m inside the mesh bounds.
+	return minf(dx, dz) < 12.0 + 2.6
 
 
 func _build() -> void:

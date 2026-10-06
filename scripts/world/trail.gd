@@ -52,9 +52,9 @@ func _ready() -> void:
 	for x in range(-12, 13, 3):
 		for z in range(-10, 11, 3):
 			_reserve(house.to_global(Vector3(x, 0.0, z)))
-	var fence := Fence.new()
+	# Keep the authored child slot, but the larger world ends at its mountains.
+	var fence := Node3D.new()
 	fence.name = "Fence"
-	fence.ground = ground
 	add_child(fence)
 	_build_landmarks()
 	flora = Flora.new()
@@ -79,6 +79,11 @@ func route_derived() -> Array[Node]:
 		if child.name in ["Ground", "Flora"] or child.name not in ["House", "Fence", "Threats", "Route"]:
 			derived.append(child)
 	return derived
+
+
+func settle_house() -> void:
+	if house and ground:
+		house.position.y = ground.height_at(house.position.x, house.position.z) + House.PLINTH
 
 
 func adopt_markers() -> void:
