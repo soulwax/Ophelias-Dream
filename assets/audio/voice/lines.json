@@ -1,34 +1,90 @@
 {
   "pages": {
-    "Field Note — Day 3": "Whoever wrote this woke to a lantern they didn't light. So did I.",
-    "from the pack": "One more print going in than coming out. Something stayed in this house. Maybe that's me.",
-    "torn page": "Bare branches in a shape. I've been telling myself the tree line is only branches, too.",
-    "the handwriting changes": "If the hand that waved is the hand that wrote this, whose hand came back to the cabin?",
-    "don't": "Stay. Finish. Don't go to the lights. Everything on this page wants me standing still.",
-    "by the bed": "They burned the candle down so they'd know if they'd been here before. It's burned down, and I don't remember.",
-    "intake": "The strap said M. Whoever copied it wrote R. Either they read it wrong, or it changed for them."
+    "by the bed": {"text": "\"Stay in.\" She's the one out there, and she's telling me to stay in.", "mood": "shaken"},
+    "from the pack": {"text": "Two cups. She packed for both of us. She knew I'd come.", "mood": "breaking"},
+    "on the post": {"text": "Then I heard it again, from the trees. Okay. I won't answer. I won't.", "mood": "hushed"},
+    "torn page": {"text": "Prints that just stop. She's describing mine. I haven't been to the pines yet. Have I?", "mood": "shaken"},
+    "the handwriting changes": {"text": "That's my handwriting. That's how I make my M's.", "mood": "hushed"},
+    "don't turn around": {"text": "Don't turn around. Fine. I won't. Just be at the lights.", "mood": "resolve"},
+    "intake": {"text": "One cup. Just one. I'm not lifting that sheet. I'm not.", "mood": "breaking"}
+  },
+  "deciphered": {
+    "by the bed": {"text": "She left the door open for me. Or for herself. She never could decide which of us needed rescuing.", "mood": "warm"},
+    "from the pack": {"text": "One cup. The intake said one cup. I'm not counting again. I'm not.", "mood": "breaking"},
+    "on the post": {"text": "It knew my name. It used my name on her.", "mood": "shaken"},
+    "torn page": {"text": "Smaller than mine. Then not. Like the prints were growing into me.", "mood": "hushed"},
+    "the handwriting changes": {"text": "Same hand, both pages. I'd know it anywhere. That's what scares me.", "mood": "hushed"},
+    "don't turn around": {"text": "The sheet is not her. The sheet is not her. I'll say it all the way to the road.", "mood": "resolve"},
+    "intake": {"text": "Just an M. It could be either of us. It could be both.", "mood": "breaking"}
   },
   "places": {
-    "bedroom": "The blanket's warm on the side I didn't sleep on.",
-    "hall": "One way out, and the mat's lying perfectly straight, like nobody ever came in.",
-    "living": "Somebody sat up with that candle until it went out. Keeping watch, or waiting to be let in.",
-    "backhall": "Any other house would have a back door. This one only goes down.",
-    "stair": "Count the steps. If there's one more on the way back up, I'm done counting.",
-    "landing": "Down here the wind's gone. If anything else is breathing, I'll hear it.",
-    "corridor": "No windows. Whatever this house keeps, it keeps down here.",
-    "janitor": "Someone mopped this floor. Someone cleans up after whatever happens here.",
-    "morgue": "A drawer for every one of us. I'm not going to count them.",
-    "snow": "My own prints are the only thing out here I can trust. So I'll keep counting them.",
-    "lights": "They've been on since before the snow. Nobody leaves an engine running that long for a stranger."
+    "bedroom": {"text": "Her side of the bed is still warm. She can't be far.", "mood": "warm"},
+    "hall": {"text": "Her boots are gone. The door isn't even latched.", "mood": "shaken"},
+    "living": {"text": "Two chairs pulled out. She sat up with that candle until it went out.", "mood": "hushed"},
+    "backhall": {"text": "Mathilda? She wouldn't go down there. She hates the cellar.", "mood": "hushed"},
+    "stair": {"text": "If she's down here, she's been quiet a long time.", "mood": "hushed"},
+    "landing": {"text": "No wind down here. Just my heart, and I wish it would slow down.", "mood": "hushed"},
+    "corridor": {"text": "Why does a cabin need a hallway this long under the ground?", "mood": "hushed"},
+    "janitor": {"text": "Someone keeps this place clean. Someone expects to use it.", "mood": "shaken"},
+    "morgue": {"text": "No. She wouldn't be here. She's out in the snow. She has to be.", "mood": "breaking"},
+    "snow": {"text": "Her prints are already filling in. I have to be faster than the snow.", "mood": "resolve"},
+    "lights": {"text": "Headlights. Someone's waiting. Please let it be her.", "mood": "breaking"}
   },
-  "bored": [
-    "Standing still is exactly how the pages wanted me. I should move.",
-    "Mara. I keep saying it, to hear if it sounds like mine.",
-    "I keep watching my right hand, as if it might wave without me.",
-    "Three knocks, the page said. I've been waiting for the first one.",
-    "If I stop counting my breaths, is anything else keeping count?",
-    "Nobody is out here looking for me. Or nobody knows who to look for.",
-    "Somewhere, someone wrote down how tall I am. I'd rather they'd written my name.",
-    "The road is closed, the lights are on, and I'm the only one still walking toward them."
+  "revisits": {
+    "bedroom": {"text": "The lantern's still lit. Nobody's been here. Or I have, and I don't remember.", "mood": "shaken"},
+    "hall": {"text": "I latched it behind me. I know I did.", "mood": "shaken"},
+    "living": {"text": "Still two chairs. I keep thinking one of them will be pushed in.", "mood": "hushed"},
+    "morgue": {"text": "I said I wouldn't come back down here. I keep coming back down here.", "mood": "breaking"},
+    "snow": {"text": "Every set of prints out here could be mine.", "mood": "hushed"}
+  },
+  "bored": {
+    "hope": [
+      {"text": "She knows this field better than I do. She'll have found shelter.", "mood": "steady"},
+      {"text": "Ten minutes, she said. Ten minutes, and then the snow came in sideways.", "mood": "shaken"},
+      {"text": "When I find her I'm going to be so angry. And then I'm not letting go.", "mood": "warm"},
+      {"text": "She always leaves something behind so I can find her. Always.", "mood": "steady"},
+      {"text": "Every white shape is her coat, until it isn't.", "mood": "hushed"},
+      {"text": "She'll be cold. She never wears the hat. I should've made her wear the hat.", "mood": "warm"}
+    ],
+    "doubt": [
+      {"text": "Her prints stop. Mine don't. What does that make me?", "mood": "shaken"},
+      {"text": "I've said her name so many times it's just a sound now.", "mood": "hushed"},
+      {"text": "What if she's back at the cabin, by the lantern, writing to me?", "mood": "shaken"},
+      {"text": "I can't remember which of us said we'd stay.", "mood": "breaking"},
+      {"text": "I keep turning to tell her something. There's nobody to tell.", "mood": "breaking"},
+      {"text": "The light hasn't moved. She was right. It's the same afternoon.", "mood": "hushed"}
+    ],
+    "resolve": [
+      {"text": "Don't turn around. I can do that. I can do that much.", "mood": "resolve"},
+      {"text": "If she's behind me, she can see me. That has to be enough.", "mood": "breaking"},
+      {"text": "The engine's running. Someone kept it warm for one of us.", "mood": "hushed"},
+      {"text": "Whatever's at the lights, I'm walking up to it. I'm not stopping now.", "mood": "resolve"},
+      {"text": "I'll find you. Or you'll find me. One of us gets to go home.", "mood": "breaking"},
+      {"text": "I'm not cold any more. That's bad, isn't it. Keep walking.", "mood": "hushed"}
+    ]
+  },
+  "calls": {
+    "hope": [
+      {"text": "Mathilda!", "mood": "calling"},
+      {"text": "Mathilda! Can you hear me?", "mood": "calling"},
+      {"text": "Mathilda! Over here!", "mood": "calling"}
+    ],
+    "doubt": [
+      {"text": "Mathilda! Answer me!", "mood": "calling"},
+      {"text": "Mathilda... where are you?", "mood": "breaking"},
+      {"text": "Mathilda! Say something!", "mood": "calling"}
+    ],
+    "resolve": [
+      {"text": "Mathilda! I'm coming!", "mood": "calling"},
+      {"text": "Mathilda... please.", "mood": "breaking"},
+      {"text": "I'm going to the lights, Mathilda! Meet me there!", "mood": "calling"}
+    ]
+  },
+  "misread": [
+    {"text": "No. That's not it.", "mood": "hushed"},
+    {"text": "That doesn't fit.", "mood": "steady"},
+    {"text": "She'd never write that.", "mood": "shaken"},
+    {"text": "Wrong. Look again.", "mood": "hushed"},
+    {"text": "I want it to say that. It doesn't.", "mood": "breaking"}
   ]
 }
