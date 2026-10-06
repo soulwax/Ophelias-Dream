@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1050" viewBox="0 0 1400 1050">
+<rect width="1400" height="1050" fill="#111f2b"/>
+<style>text{font-family:Segoe UI,Arial,sans-serif;fill:#ecdfbf}.small{font-size:14px;fill:#91a8b5}.wall{stroke:#ecdfbf;stroke-width:7;fill:none}</style>
+<text x="75" y="70" class="small">RUN AWAY Â· F:\Workspace\run Â· DOMESTIC REFINEMENT / FIRST BATCH / 01</text>
+<text x="75" y="125" font-size="34" letter-spacing="3">A HOME THAT MAKES SENSE</text>
+<text x="75" y="164" class="small">Existing footprint and cellar retained Â· bathroom/laundry tucked beside the stair Â· cold storm / warm local hearth</text>
+<rect x="130.0" y="575.0" width="288.0" height="258.00000000000006" fill="#454952"/>
+<rect x="418.0" y="575.0" width="180.0" height="258.00000000000006" fill="#514b40"/>
+<rect x="598.0" y="245.0" width="288.0" height="588.0" fill="#574634"/>
+<rect x="130.0" y="245.0" width="132.0" height="204.00000000000003" fill="#436269"/>
+<rect x="130.0" y="449.0" width="468.0" height="126.0" fill="#344854"/>
+<rect x="262.0" y="245.0" width="336.0" height="204.00000000000003" fill="#344854"/>
+<rect x="694.0" y="248.60000000000002" width="182.39999999999998" height="38.99999999999997" fill="#c7aa6a" fill-opacity=".25" stroke="#ddc28e" stroke-dasharray="5 4"/>
+<rect x="622.0" y="248.60000000000002" width="45.0" height="45.0" fill="#c7aa6a" fill-opacity=".25" stroke="#ddc28e" stroke-dasharray="5 4"/>
+<rect x="808.0" y="440.0" width="47.999999999999986" height="53.99999999999999" fill="#c7aa6a" fill-opacity=".25" stroke="#ddc28e" stroke-dasharray="5 4"/>
+<rect x="790.0" y="419.0" width="83.99999999999997" height="96.0" fill="#c7aa6a" fill-opacity=".25" stroke="#ddc28e" stroke-dasharray="5 4"/>
+<rect x="430.0" y="752.0" width="27.000000000000004" height="60.0" fill="#c7aa6a" fill-opacity=".25" stroke="#ddc28e" stroke-dasharray="5 4"/>
+<rect x="133.59999999999997" y="452.6" width="460.79999999999995" height="118.8" fill="#8bc5c5" opacity=".12"/>
+<rect x="601.5999999999999" y="305.0" width="90.0" height="516.0" fill="#8bc5c5" opacity=".12"/>
+<rect x="130" y="245" width="756" height="588" class="wall"/>
+<path d="M256 245 V449 M130 449 H217 M295 449 H256" stroke="#78c5cb" stroke-width="5" fill="none" stroke-dasharray="8 5"/>
+<path d="M130 575 H470 M548 575 H598 M418 575 V668 M418 746 V833 M598 245 V391 M598 463 V668 M598 746 V833" class="wall"/>
+<path d="M469 833 H547 M418 668 V746 M598 668 V746 M470 575 H548" stroke="#bd9b6b" stroke-width="9"/>
+<rect x="274.0" y="339.5" width="285" height="66" fill="#152631" stroke="#91a8b5" stroke-width="2"/>
+<path d="M534.0 372.5 H299.0 l15 -8 M299.0 372.5 l15 8" stroke="#ecdfbf" fill="none"/>
+<text x="193.0" y="341.0" text-anchor="middle" font-size="18">BATH +</text><text x="193.0" y="366.0" text-anchor="middle" class="small">LAUNDRY</text>
+<text x="388.0" y="320.0" text-anchor="middle" font-size="18">EXISTING STAIR</text><text x="388.0" y="345.0" text-anchor="middle" class="small">Keep void + landing</text>
+<text x="358.0" y="509.0" text-anchor="middle" font-size="18">BACK HALL</text><text x="358.0" y="534.0" text-anchor="middle" class="small">Clear west service route</text>
+<text x="274.0" y="662.0" text-anchor="middle" font-size="18">BEDROOM</text><text x="274.0" y="687.0" text-anchor="middle" class="small">Bedside note / reading</text>
+<text x="508.0" y="677.0" text-anchor="middle" font-size="18">ENTRY</text><text x="508.0" y="702.0" text-anchor="middle" class="small">Coats / boots / turning</text>
+<text x="766.0" y="341.0" text-anchor="middle" font-size="18">KITCHEN</text><text x="766.0" y="366.0" text-anchor="middle" class="small">Dining stays in place</text>
+<text x="766.0" y="677.0" text-anchor="middle" font-size="18">LIVING</text><text x="766.0" y="702.0" text-anchor="middle" class="small">Sofa / wool / hearth</text>
+<text x="970" y="260" font-size="23">BLUEPRINT DECISIONS</text>
+<text x="970" y="303" class="small">12.60 Ã— 9.80 m existing upstairs</text>
+<text x="970" y="338" class="small">2.10 Ã— 3.40 m bath/laundry reservation</text>
+<text x="970" y="373" class="small">New south-facing bathroom door</text>
+<text x="970" y="408" class="small">Stove beneath existing chimney</text>
+<text x="970" y="443" class="small">North-wall kitchen / clear west lane</text>
+<text x="970" y="512" font-size="23">PRESERVE THE FEEL</text>
+<text x="970" y="555" class="small">Recorded winter storm and window wind</text>
+<text x="970" y="590" class="small">Soft timber-room / hard cellar reverb</text>
+<text x="970" y="625" class="small">Local hearth, not global warm ambience</text>
+<text x="970" y="695" font-size="23">LEGEND</text>
+<text x="970" y="738" class="small">Cream solid lines: existing structure</text>
+<text x="970" y="773" class="small">Teal dashed lines: proposed partitions</text>
+<text x="970" y="808" class="small">Amber dashed boxes: fixture envelopes</text>
+<text x="970" y="843" class="small">Pale teal wash: reserved circulation</text>
+<text x="75" y="950" class="small">First batch implemented. Selected fixtures, hinge sweeps, routes and camera spheres checked against the real controller.</text>
+<text x="75" y="1000" class="small">GAME ENVIRONMENT STUDY / NOT A CONSTRUCTION DRAWING Â· EXISTING GAMEPLAY GEOMETRY AND AUDIO UNCHANGED</text>
+</svg>

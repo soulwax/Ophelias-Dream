@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"Run Away" — a short third-person winter horror game in **Godot 4.7** (Forward+, Jolt physics, D3D12 on Windows), written entirely in GDScript. The `godot` binary on PATH (scoop shim) is 4.7.2. There is no test suite and no linter; verification is done by running the game or capturing a screenshot.
+"Run Away" â€” a short third-person winter horror game in **Godot 4.7** (Forward+, Jolt physics, D3D12 on Windows), written entirely in GDScript. The `godot` binary on PATH (scoop shim) is 4.7.2; on the RTX 3070 Ti desktop it is `godot-mono` (4.7.2 mono build), and every `godot` command below works with it. There is no test suite and no linter; verification is done by running the game, capturing a screenshot, or running a probe (below).
 
-`docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become an open, fenced daylight snowfield. The figure in the tree line and the Listener were removed on 2026-10-05; new threats are being chosen from `docs/THREATS.md`. Older docs (`GDD.md`, `NARRATIVE_INTENT.md`, `TODO.md`) still describe them. Where any doc and the code disagree, trust the code.
+`docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become an open, fenced daylight snowfield. The figure in the tree line and the Listener were removed on 2026-10-05; new threats are being chosen from `docs/THREATS.md`. Older docs (`GDD.md`, `NARRATIVE_INTENT.md`, `TODO.md`, parts of `docs/EDITOR.md`) still describe them. `docs/DIRECTION.md` is the current direction and validation record, and `CHANGELOG.md` tracks releases. Where any doc and the code disagree, trust the code. `AGENTS.md` is a shorter copy of these instructions for other agents; keep it consistent when conventions change.
 
 ## Commands
 
@@ -24,6 +24,10 @@ godot --headless --path . --import
 $env:RUN_CAPTURE = "1"; $env:RUN_SHOT = "$PWD\shot.png"; godot --path .
 # (RUN_SHOT defaults to user://run_shot.png; clear both env vars afterwards)
 
+# Journal and voice rules (PROBE_CLIPS=1 also checks baked clips)
+godot --headless --path . tools/journal_probe.tscn
+godot --headless --path . tools/voice_probe.tscn
+
 # Probe mesh bounds / animation names from the asset packs
 godot --headless --path . -s tools/probe.gd
 
@@ -37,11 +41,28 @@ godot --headless --path . -s tools/retarget_bvh.gd
 # Contact sheets of her clips (needs a window), into build/gait/
 godot --path . -s tools/gait_sheet.gd
 
-# Windows export (preset "Windows Desktop", embedded PCK -> build/windows/Run Away.exe)
+# Release build: encrypted PCK -> build/windows/Run Away.exe. Keeps godot.gdkey (gitignored,
+# never commit or print it), builds/caches a custom encryption template in build/templates/
+# with SCons, and syncs the version in project.godot + export_presets.cfg.
+./tools/export_release.ps1 [-Version 0.0.17] [-Unencrypted] [-RotateKey]
+# Plain unencrypted export (needs matching export templates)
 godot --headless --path . --export-release "Windows Desktop" "build/windows/Run Away.exe"
+
+# Scene probes (tools/*_probe.tscn) run the real systems, autoload included, and print results
+godot --headless --path . tools/traversal_probe.tscn    # steer the player along the saved trail
+godot --headless --path . tools/note_access_probe.tscn  # page reach against real walls/terrain
+godot --headless --path . tools/house_space_probe.tscn  # checks the saved editable house
+godot --path . tools/return_evidence_probe.tscn         # renders the doorway clue (needs a window)
 
 # Crash-safe logging run (game + disk-flushing hardware monitor, logs in build/blackbox/)
 ./tools/run_blackbox.ps1
+
+# Running leap: pure math; physics and animation on the real player (with a window it
+# also saves build/leap/leap_flight.png); a side-on contact sheet (needs a window)
+godot --headless --path . -s tools/leap_math_probe.gd
+godot --headless --path . tools/leap_probe.tscn
+godot --path . -s tools/leap_sheet.gd                    # build/leap/leap_sheet.png
+godot --headless --path . -s tools/leap_phase_probe.gd   # re-measure Stride.*_PHASES after changing a running clip
 ```
 
 This machine (ThinkPad, Iris Xe) has hard-frozen while running the game. `Game.lean_graphics` is on automatically for non-discrete GPUs (no volumetric fog/FogVolume/SSAO, 2 shadow splits, half the snow); override with `RUN_GRAPHICS=full|lean`. `RUN_BLACKBOX=<path>` makes `Blackbox` stream startup stages, phases and a 0.5 s performance beat to that file; `Game.mark()` adds a line. After adding a new `class_name` script, run `godot --headless --path . --import` or headless runs fail to resolve it.
@@ -56,34 +77,42 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 ## Architecture
 
-**Everything is built in code.** `scenes/main.tscn` is just a root `Node3D` with `scripts/main.gd`. `main.gd` instantiates every system with `ClassName.new()` in order: Atmosphere → Trail → Player → Weather → Wildlife → Soundscape → Hud. No other `.tscn` files are authored. Nodes, lights, materials, collision and UI are all constructed in `_ready()`/`_build_*()` methods. New features follow this pattern, not editor-authored scenes.
+**Everything is built in code.** `scenes/main.tscn` is just a root `Node3D` with `scripts/main.gd`. `main.gd` instantiates every system with `ClassName.new()` in order: Atmosphere â†’ Trail â†’ Player â†’ Weather â†’ Wildlife â†’ Soundscape â†’ Voice â†’ Hud. Nodes, lights, materials, collision and UI are all constructed in `_ready()`/`_build_*()` methods. New features follow this pattern, not editor-authored scenes. The only other scenes are generated: `scenes/editable_level.scn` and `scenes/generated/` are snapshots of the built level that can be edited by hand and are reapplied at startup (see *Editable level* below and `docs/EDITOR.md`). The `tools/*_probe.tscn` files are test harnesses.
 
 **`Game` autoload (`scripts/game/game.gd`)** is the hub:
-- Holds the phase state machine (`BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED`) and emits `phase_changed` / `closeness_changed`. UI and audio subscribe to these signals.
-- Each system registers itself on the autoload in its `_ready()` (`Game.player = self`, `Game.trail = self`, `Game.weather = self`, …), and other systems reach each other through `Game.*`, not node paths.
+- Holds the phase state machine (`BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL`) and emits `phase_changed` / `closeness_changed`. UI and audio subscribe to these signals.
+- Each system registers itself on the autoload in its `_ready()` (`Game.player = self`, `Game.trail = self`, `Game.weather = self`, â€¦), and other systems reach each other through `Game.*`, not node paths.
 - Registers all input actions in code with `_bind()`. There is no `[input]` section in `project.godot`, so new actions go here.
 - `Game.settings` (`Settings`, `scripts/game/settings.gd`) is created right after the default binds and holds everything the Esc menu changes: look, sprint mode, camera, display, audio levels and HUD options, plus key overrides. It saves to `user://settings.cfg` when the menu closes, on restart and on quit. Systems read `Game.settings.*` when they need a value.
  - New rebindable actions go in `Settings.ACTIONS` (two slots each). A key bound to one action is taken from any other.
  - Audio has three buses created at startup: `Ambience` (wind, drone, storm), `Effects` (steps, slide, doors, switches, house) and `Dread` (heartbeat, stings, threat sounds). Give every new player a `bus`.
  - Graphics detail (Auto/Lean/Full) feeds `_wants_lean_graphics()` after `RUN_GRAPHICS`, and applies on the next restart.
 - `locks_movement()` / `locks_look()` gate player control by phase. `restart()` resets state and reloads the scene.
-- The threat interface: `closeness` (0–1) for the one that hunts her, `dread` and `threat_hint` for any other pressure, `threat()` = max of the two, `catch_player(title, body)` for the ending, `something_at_door` (the house knocks hard) and `shown_threat` (a raven scolds beside it). The HUD vignette, heart and warning line react to `threat()`. The UI never shows distances. `hunt_started` turns true after `Tune.HUNT_NOTES` pages or `HUNT_ROUTE_DISTANCE` metres. No threat sets these yet.
+- The threat interface: `closeness` (0â€“1) for the one that hunts her, `dread` and `threat_hint` for any other pressure, `threat()` = max of the two, `catch_player(title, body)` for the ending, `something_at_door` (the house knocks hard) and `shown_threat` (a raven scolds beside it). The HUD vignette, heart and warning line react to `threat()`. The UI never shows distances. `hunt_started` turns true after `Tune.HUNT_NOTES` pages or `HUNT_ROUTE_DISTANCE` metres. No threat sets these yet.
 - `Game` ends the run as `ESCAPED` when she is within `EXIT_RADIUS` of `trail.exit_point`.
 
 **`Tune` (`scripts/tune.gd`)** holds all balance constants: speeds, stamina, aim and reach, fence bounds, and collision layers (`LAYER_WORLD=1`, `LAYER_ACTOR=2`). Change feel here, not in the systems.
 
-**World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground` (heightfield, `height_at(x,z)`), `Fence`, the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout plus headlights at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1–3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box.
+**World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground` (heightfield, `height_at(x,z)`), `Fence`, the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout plus headlights at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1â€“3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box.
 
 **Threats**: none in the field right now. `docs/THREATS.md` lists the interface above, the `Trail/Threats` marker slot, record pages (`NoteEntry.record_of`, `Game.knows`), and six candidate threats. New threats are original; canon SCP content is CC BY-SA, so do not borrow it. Teleporting ones call `reset_physics_interpolation()` after the move.
 
 **Locomotion (`scripts/player/stride.gd`, `snow_kick.gd`)**:
 - `Stride` builds an `AnimationTree` from code. A BlendSpace1D (Idle, Walk, Jog, Sprint) is driven by her ground speed, and a TimeScale sets the playback rate so the planted foot moves at that speed.
-- Walk and Jog are the Bandai Namco Research Motion Dataset's feminine-style takes, in `assets/characters/styloo_elf/feminine/elf_feminine.res` (library `feminine`). They are CC BY-NC 4.0, so the game is non-commercial; the credit is in the Esc menu and `feminine/README.md`.
+- Since commit `c9fb491` she walks and jogs on the Quaternius `Walk_Formal` and `Jog_Fwd`. The Bandai Namco Research Motion Dataset's feminine-style takes are still built into `assets/characters/styloo_elf/feminine/elf_feminine.res` (library `feminine`, CC BY-NC 4.0; credit in the Esc menu and `feminine/README.md`), but `Player` no longer loads that library.
  - `tools/retarget_bvh.gd` reads the BVH directly, poses the elf from joint positions (limb directions; torso frames relative to their cycle average; neck and head follow the chest), cuts one looping in-place cycle, and prints each clip's natural speed for `Tune.STRIDE_*`.
  - The sprint stays the Quaternius clip; their dash is a light run, too slow for `SPRINT_SPEED`. `Grace` draws its wide elbows in.
 - The other clips (idle, sprint, jump, land, crouch, stumble) are baked to the elf in `assets/characters/styloo_elf/elf_animations.res`; regenerate with `tools/retarget_elf.gd`.
 - A OneShot plays the exhaustion stumble (Hit_Chest).
 - Each running gait spans a plateau (two blend points with the same clip), so a steady speed plays one clip. Blending clips whose cycles differ muddles the legs.
+ - Each blend point is a small blend tree (clip â†’ TimeSeek), named `<clip>_<index>`, so it can be cued on its own through `parameters/locomotion/<name>/seek/seek_request`. The space uses `sync_mode = SYNC_MODE_INDEPENDENT` (4.7's replacement for `sync = true`).
+- *Running leap* (`Player.leaping`, `leap`, `leap_lead_left`; spec and plan in `docs/superpowers/`):
+ - A jump at `Tune.LEAP_FROM` (3.2 m/s) or faster is a leap; in practice that means sprinting, since her input speeds are walk and sprint. `leap` (0..1 up to `SPRINT_SPEED`) lowers the arc, adds a little carry (capped at `LEAP_MAX_SPEED`) and cuts air drag.
+ - It pushes off the foot she last planted and lands on the other, one footstep at each end (`_footfall`, not `_both_feet`), and keeps her speed. Only a real drop costs any. `_on_planted` ignores the rig's own re-plant of the lead foot for 150 ms.
+ - `Stride`'s leap layer plays her jog or sprint from the push-off foot's toe-off to the lead foot's contact (`JOG_PHASES` / `SPRINT_PHASES`, measured by `tools/leap_phase_probe.gd`), slowed over the predicted airtime (`Leap.airtime`). Progress is held at `LEAP_REACH_HOLD` off a ledge until the ground is near (`_drop_below`). On landing, `leap_land` re-cues every running point to the contact frame.
+ - `Leap` (`leap.gd`, a SkeletonModifier3D after `Grace`, same local-rotation technique) adds the split, pointed toes, opening arms and a lifted chest, and a spring dip on the lead leg on landing (a two-bone fold, no IK node). Its math is static and covered by `tools/leap_math_probe.gd`.
+ - The standing hop and the slide jump are unchanged. Tuning is `Tune.LEAP_*`. The camera opens (`LEAP_FOV`, under speed FOV), stretches the boom, trails her rise and rolls toward the lead foot on landing.
+ - `Player.stepped(left)` fires for every sounded footfall; the probes count steps with it.
 - `FootLock` (`foot_lock.gd`) watches the elf's animated feet and emits `planted(left, at)` for sound, prints, `SnowKick` powder and camera jolt. The elf has no leg IK; the distance-based trigger in `_steps` is a fallback.
 - Per-step dynamics: `_step_surge()` swings speed within each step (`Tune.STEP_SURGE_*`), checking on landing and surging on push-off.
 - Jump (Space) and slide (Ctrl/C, from a sprint) are in `Player`.
@@ -95,7 +124,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
   - Alt (held) walks slowly at `WALK_SLOW_SPEED`. Q or the middle mouse button (held) glances back: the camera swings over her right shoulder while she keeps running the way she was going, and `Grace` turns her chest and head with it.
   - Gamepad (bound in `Game._bind_pad`, kept by `Settings._set_events` when keys are rebound): left stick moves with a radial dead zone and a curve, so a part push walks slowly; right stick looks with a ramp when held fully. `Game.rumble()` shakes the pad on landings, stumbles, hard knocks and the catch.
   - Assists: from standing the first tick moves her at once (`START_BURST`); read/open is buffered for `INTERACT_BUFFER`; indoors she slips past the edge of a door frame (`DOOR_ASSIST`); a held jump floats at its apex (`APEX_HANG`); the camera arm pulls in at once and lets back out at `ARM_EXTEND`.
-- Dev hooks: `RUN_AUTOPILOT=walk|sprint|jump|slide|glance` and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
+- Dev hooks: `RUN_AUTOPILOT=walk|jog|sprint|jump|slide|glance|leap` (leap jumps every few seconds once she is near full speed) and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
 - Momentum is in `Player._steer`, which moves speed and heading separately (`Tune.STRIDE_*`, `TURN_*`). At a walk she pivots almost at once; at a sprint she sweeps round at `TURN_RATE_SPRINT`, and hard key turns dip her speed briefly. A reversal at speed plants and brakes first. Letting go skids about 0.5 s, and in the air she keeps her takeoff speed (`AIR_ACCEL`, `AIR_DRAG`). `_slope_factor` slows her uphill.
 - Physics interpolation is on (`physics/common/physics_interpolation`).
  - The camera rig (`spring_arm`) is `top_level`, not interpolated, and placed every frame in `Player._process` from `get_global_transform_interpolated()` and the mouse. Look reads `screen_relative`, so window size never changes sensitivity.
@@ -143,7 +172,9 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **Terrain winding**: `Ground` triangles must be clockwise seen from above (Godot's front face). They used to be counter-clockwise, which culled the whole terrain from above; the "snow" was the sky colour.
 
-**Testing**: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script, so test them in the game.
+**Testing**: scripts that reference the `Game` autoload can't be loaded by a `-s` tool script (`extends SceneTree`). Test them with a scene probe instead: a `tools/<name>_probe.tscn` whose root script `extends Node` runs with the autoload. It builds or loads the systems it needs (setting `Game.player` etc. itself, as `voice_probe.gd` does), prints its findings, and quits. Copy an existing probe as the template.
+
+**Voice (`scripts/player/voice.gd`, `docs/VOICE.md`)**: 62 Mathilda lines by mood and stage, baked with Qwen3-TTS on CUDA through `build/voice/gpu-venv`. Clips use SHA-256 of `text|mood`. Priorities queue important lines; interruption forgets a line so it can play whole later. Outdoor calls can return as an echo from the pines. No model runs in the game. `tools/bake_voice.py` predates the format and overwrites reviewed lines: do not run it. Listen to and approve `build/voice/ref/anchor.wav` before the full bake. `RUN_VOICE=0`, capture and headless runs keep Voice inactive; journal event keys have fallbacks.
 
 **Breath**: `hold_breath` (right mouse, F, pad RT) suppresses `Breath.plume`, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp. Nothing perceives breath at the moment.
 
@@ -174,19 +205,20 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
  - Songbirds (the PAD day-birds from the inventory) sing only in calm.
 - *Buses* (Settings):
  - `Ambience` holds `Outside`, which has the walls low-pass, plus the window whistle.
- - `Effects` is steps and the house; `Room` and `Cellar` are reverbs fed by Area3D zones that `Soundscape` builds from `House.acoustic_zones()`.
+ - `Effects` is steps and the house, with a `Voice` bus under it for her speech; `Room` and `Cellar` are reverbs fed by Area3D zones that `Soundscape` builds from `House.acoustic_zones()`.
  - `Dread` is the heart, drone, sting, and `Soundscape.play_snap` (positional branch snaps a threat can use).
  - A hard limiter sits on Master.
 - *Editable level*: `EditableLevel.apply` matches nodes by child order and frees script-less nodes it does not know. Keep sound-only nodes out of the editable trees, or append them last. Set house audio levels at play time (`Loudness.sound`), because the snapshot overwrites stored properties. `House/Authoring` (spawn markers, window markers, the `StepsAbove` path, room and cellar reverb areas, `Rooms` boxes, the `Doorstep` marker) and `Trail/Threats` (the marker slot for threats, empty now; older snapshots call it `Anomalies`, and `main._park_threats` accepts either) plus `Trail/Route` (the path, with `Start` and `Exit`) are appended last and grouped as `level_authoring`, so an older snapshot keeps them until the next repack. She still wakes on the authored Player transform; `RUN_SPAWN` uses the spawn markers. Redrawing `Route` or moving `Start` rebuilds the snow, the pines and the landmarks on the next play; `Exit` only moves where she escapes. House interior edits stay.
+ - **Generator changes need a rebuild.** If you change node structure in `scripts/world/` or `scripts/house/`, saved snapshots no longer line up child for child. Rebuild from the editor: select `Main` and use **Randomize / rebuild editable level**; **World Seed** `-1` means a fresh seed. That replaces `scenes/editable_level.scn` and all of `scenes/generated/`, including hand edits, so ask before doing it.
 
 **Weather** follows the camera and drives several `SnowLayer` particle layers, `StormAudio`, and `Atmosphere.apply_storm(intensity)` from one gust/intensity model. `scripts/world/snowfall.gd` (`Snowfall`) is the older snow system and nothing instantiates it any more.
 
-**UI (`scripts/ui/`)**: `Hud` creates `NoteReader`, `EndCard` and `PauseMenu`. Controls are not shown on screen; the intro card only points to Esc.
+**UI (`scripts/ui/`)**: `Hud` creates `NoteReader`, `Journal`, `EndCard` and `PauseMenu`. The HUD has no objective; `show_journal_toast` controls the journal notice. J/Tab or pad Y opens the rebindable `journal` action. Smudges use `NoteCatalog` `{word}` markup, `Game.known` keys and `Game.decipher`; `Game.awake()` keeps the world running during `JOURNAL`. Controls are not shown on screen; the intro card only points to Esc.
 - `PauseMenu` (`pause_menu.gd`) is the Esc menu.
  - The sidebar has Resume, Restart and Quit, and five pages: Controls with rebinding, Camera, Display, Audio and Interface.
  - Each page has a reset, and its controls come from `_slider` / `_toggle` / `_choice` / `_binding`.
  - Rebinding listens in `_input` before anything else: Esc cancels and Backspace clears.
- - Dev hook: `RUN_MENU=<page>` with `RUN_CAPTURE` opens it for a shot.
+ - Dev hooks: `RUN_MENU=<page>` and `RUN_JOURNAL=<title>` with `RUN_CAPTURE` open the menu or a half-deciphered journal for a shot.
 - In-world key hints (the prompt, the note reader footer, the end card) read `Game.settings.key_label(action)`, so they follow rebinding.
 - Inside `_ready()`, a full-screen Control needs `set_anchors_and_offsets_preset`; anchors alone keep its empty starting rect. Shared styling (plates, paper, key-hint rows, palette constants) lives in the `UiChrome` class (`chrome.gd`). Note text and its corruption level are data in `NoteCatalog`, separate from the world pickup `FieldNote`.
 

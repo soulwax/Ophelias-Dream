@@ -7,6 +7,8 @@ Run Away is a third-person winter horror game using Godot 4.7, Forward+ renderin
 - `scenes/main.tscn` is the entry scene; `scripts/main.gd` constructs gameplay systems in code.
 - `scripts/` groups GDScript by responsibility: `player/`, `world/`, `house/`, `weather/`, `audio/`, `notes/`, and `ui/`. There are no threats in the field at the moment; candidates are in `docs/THREATS.md`.
 - `assets/characters/styloo_elf/` contains the player model, textures, baked animations, and CC0 license; her walk and jog in `feminine/` are CC BY-NC 4.0, so the game is non-commercial. `addons/quaternius_ik_rigged/` supplies the shared animation source. `shaders/` holds GPU shaders.
+- `Hud` creates `Journal` alongside the reader and menus. The HUD has no objective; `show_journal_toast` controls its journal notice. The rebindable `journal` action uses J/Tab and pad Y. `NoteCatalog` parses `{word}` smudges, unlocked through `Game.known` and solved through `Game.decipher`. `Phase.JOURNAL` locks her controls while `Game.awake()` keeps the world running.
+- `Voice` plays 62 Mathilda lines by mood and stage, using priorities and forget-on-interrupt, with outdoor calls and an echo. Qwen3-TTS on CUDA in `build/voice/gpu-venv` bakes clips as SHA-256 of `text|mood`; approve the anchor before a full bake. Models stay under ignored `build/voice/`. See `docs/VOICE.md`; do not run the obsolete `tools/bake_voice.py`.
 - `tools/` contains probes, asset generators, and diagnostic scripts. `docs/PLAN.md` records the original design; prefer current code when it disagrees.
 
 ## Build, Test, and Development Commands
@@ -17,8 +19,13 @@ Run these from the repository root with Godot 4.7 on PATH:
 godot --path .                  # Run the game
 godot --path . -e               # Open the editor
 godot --headless --path . --import # Import assets/register new classes
+godot --headless --path . tools/journal_probe.tscn # Journal rules and UI
+godot --headless --path . tools/voice_probe.tscn # Voice rules; PROBE_CLIPS=1 checks clips
 godot --headless --path . -s tools/probe.gd # Inspect meshes/animations
 godot --headless --path . -s tools/retarget_elf.gd # Rebuild elf movement clips
+godot --headless --path . -s tools/leap_math_probe.gd # Running-leap math checks
+godot --headless --path . tools/leap_probe.tscn # Running leap on the real player
+godot --path . -s tools/leap_sheet.gd # Leap contact sheet (needs a window)
 ./tools/run_blackbox.ps1         # Run with logs in build/blackbox/
 ```
 
@@ -47,7 +54,7 @@ godot --path .
 Remove-Item Env:RUN_CAPTURE, Env:RUN_SHOT
 ```
 
-This skips the intro, captures frame 150, and exits. Use `RUN_GRAPHICS=lean` on constrained GPUs.
+This skips the intro, captures frame 150, and exits. `RUN_MENU=<page>` opens the Esc menu; `RUN_JOURNAL=<title>` opens a half-deciphered journal for capture. Use `RUN_GRAPHICS=lean` on constrained GPUs.
 
 ## Commit & Pull Request Guidelines
 

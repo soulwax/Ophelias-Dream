@@ -32,6 +32,10 @@ func _ready() -> void:
 	# before the pad's edge.
 	ground.pads = [[Vector2(house_frame.origin.x, house_frame.origin.z), 14.0, 22.0]]
 	ground.cuts = [[house_frame, House.stair_cut()]]
+	# The land is shaped around the path: a valley along it, a ravine on one stretch.
+	ground.route = curve
+	ground.route_from = player_start_offset
+	ground.route_to = exit_offset
 	add_child(ground)
 	house = House.new()
 	house.name = "House"

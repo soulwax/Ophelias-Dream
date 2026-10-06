@@ -1,11 +1,17 @@
 class_name Player
 extends CharacterBody3D
 
+# Every footfall she sounds, takeoffs and landings included; probes count them.
+signal stepped(left: bool)
+
 const BOOM_LENGTH := 3.35
 const BOOM_STEPS := 16
 const BOOM_CLEARANCE := 0.35
 const INDOOR_BOOM := 1.75
 const INDOOR_SHOULDER := 0.36
+# How long after a leap lands it still counts as one (the pose blends out and
+# the rig's own plant of the lead foot is ignored).
+const LEAP_SETTLE_MSEC := 250
 
 var trail: Trail
 
@@ -30,6 +36,7 @@ var stride: Stride
 var kicks: SnowKick
 var foot_lock: FootLock
 var grace: Grace
+var leap_layer: Leap
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -43,6 +50,13 @@ var _jumped := false
 var _air_time := 0.0
 var _fall_speed := 0.0
 var _air_weight := 0.0
+# A jump at a jog or faster is a leap: leap 0..1 sets how flat and carried it
+# is, off the foot she last planted and onto the other one.
+var leaping := false
+var leap := 0.0
+var leap_lead_left := true
+var _leap_airtime := 0.5
+var _landed_msec := 0
 # Sliding out of a sprint.
 var sliding := false
 var _slide_time := 0.0
@@ -63,8 +77,11 @@ var _boom := BOOM_LENGTH
 var _shoulder := 0.0
 var _glow := 0.0
 var _trail_offset := Vector3.ZERO
+var _rise_lag := 0.0
 # Dev hook: RUN_AUTOPILOT=walk, jog, or sprint holds forward (sprint sprints),
-# so RUN_CAPTURE can photograph her mid-stride; glance sprints looking back.
+# so RUN_CAPTURE can photograph her mid-stride; glance sprints looking back;
+# jump, slide and leap sprint and do that every few seconds (leap only once
+# she is near full speed).
 var _autopilot := OS.get_environment("RUN_AUTOPILOT")
 var breath: Breath
 # 0 calm .. 1 gasping. Climbs with sprinting and spent stamina, peaks just
@@ -201,6 +218,9 @@ func _physics_process(delta: float) -> void:
 		if _autopilot == "slide" and _autopilot_clock > 2.2:
 			_autopilot_clock = 0.0
 			slide_pressed = true
+		if _autopilot == "leap" and _autopilot_clock > 2.4 and _ground_speed() > Tune.SPRINT_SPEED * 0.9:
+			_autopilot_clock = 0.0
+			jump_pressed = true
 	var wish := Vector3(input.x, 0.0, input.y)
 	if wish.length() > 1.0:
 		wish = wish.normalized()
@@ -302,8 +322,13 @@ func _jump() -> void:
 	var from_slide := sliding
 	if sliding:
 		_end_slide()
-	# Out of a slide she carries the speed and springs a little higher.
-	velocity.y = Tune.JUMP_VELOCITY * (1.1 if from_slide else 1.0)
+	var speed := _ground_speed()
+	# From a jog or faster it is one long stride: lower, carried further, off
+	# the foot she last planted and onto the other. Out of a slide she keeps
+	# the slide's speed and springs a little higher, as before.
+	leaping = not from_slide and speed >= Tune.LEAP_FROM
+	leap = clampf((speed - Tune.LEAP_FROM) / (Tune.SPRINT_SPEED - Tune.LEAP_FROM), 0.0, 1.0) if leaping else 0.0
+	velocity.y = Tune.JUMP_VELOCITY * (1.1 if from_slide else lerpf(1.0, Tune.LEAP_LIFT, leap))
 	_coyote = 0.0
 	_jump_buffer = 0.0
 	_airborne = true
@@ -312,7 +337,16 @@ func _jump() -> void:
 	stamina = maxf(stamina - Tune.JUMP_STAMINA, 0.0)
 	strain = maxf(strain, 0.4)
 	_jolt -= 0.03
-	_both_feet(0.6)
+	if not leaping:
+		_both_feet(0.6)
+		return
+	var carried := minf(speed * (1.0 + Tune.LEAP_CARRY * leap), maxf(speed, Tune.LEAP_MAX_SPEED))
+	_glide = Vector3(_glide.x, 0.0, _glide.z) / speed * carried
+	leap_lead_left = not _left_foot
+	_leap_airtime = Leap.airtime(velocity.y)
+	_footfall(_left_foot, _foot_spot(_left_foot), _ground_speed())
+	if breath and not holding_breath:
+		breath.gasp(0.0)
 
 
 # Leaving and meeting the ground. Small bumps that drop her off the floor
@@ -321,6 +355,8 @@ func _track_air(delta: float) -> void:
 	if is_on_floor():
 		if _airborne and (_jumped or _air_time > 0.15):
 			_land(_fall_speed)
+		elif leaping and Time.get_ticks_msec() - _landed_msec > LEAP_SETTLE_MSEC:
+			leaping = false
 		_airborne = false
 		_jumped = false
 		_air_time = 0.0
@@ -337,6 +373,10 @@ func _land(fall_speed: float) -> void:
 	# An ordinary jump lands at about 5.5 m/s and should feel light; only a
 	# real drop comes down hard.
 	var power := clampf((fall_speed - 6.0) / 6.0, 0.0, 1.0)
+	_landed_msec = Time.get_ticks_msec()
+	if leaping:
+		_land_leap(power)
+		return
 	if stride:
 		stride.land(power)
 	_jolt -= lerpf(0.03, 0.13, power)
@@ -346,13 +386,37 @@ func _land(fall_speed: float) -> void:
 	_both_feet(maxf(power, 0.45))
 
 
+# A leap comes down on the lead foot alone and runs on: only a real drop
+# costs speed, and half what a hop's landing would.
+func _land_leap(power: float) -> void:
+	if stride:
+		stride.leap_land(leap_lead_left)
+	if leap_layer:
+		leap_layer.dip(power, leap_lead_left)
+	_glide *= lerpf(1.0, 0.85, power)
+	_since_plant = 0.0
+	_last_plant_msec = _landed_msec
+	_footfall(leap_lead_left, _foot_spot(leap_lead_left), _ground_speed())
+	_jolt -= lerpf(0.02, 0.1, power)
+	_roll_kick += (1.0 if leap_lead_left else -1.0) * lerpf(0.008, 0.02, power)
+	Game.rumble(0.08 + 0.3 * power, 0.5 * power, 0.08 + 0.12 * power)
+
+
+# Beside her, where a boot meets the ground for steps the rig does not plant.
+func _foot_spot(left: bool) -> Vector3:
+	var forward := Vector3(_glide.x, 0.0, _glide.z)
+	forward = forward.normalized() if forward.length() > 0.1 else -global_transform.basis.z
+	var side := Vector3(forward.z, 0.0, -forward.x)
+	return global_position + side * (0.12 if left else -0.12)
+
+
 # Both boots at once: takeoff and landing.
 func _both_feet(power: float) -> void:
 	var forward := Vector3(_glide.x, 0.0, _glide.z)
 	forward = forward.normalized() if forward.length() > 0.1 else -global_transform.basis.z
-	var side := Vector3(forward.z, 0.0, -forward.x)
 	for left in [true, false]:
-		var at := global_position + side * (0.12 if left else -0.12)
+		var at := _foot_spot(left)
+		stepped.emit(left)
 		var surface := _surface_at(at)
 		if Game.soundscape:
 			Game.soundscape.play_step(at, surface, power)
@@ -435,7 +499,8 @@ func _steer(wish: Vector3, top: float, sprinting: bool, on_floor: bool, delta: f
 	var asked := wish.length() > 0.05
 	if not on_floor:
 		if not asked:
-			_glide = flat.move_toward(Vector3.ZERO, Tune.AIR_DRAG * delta)
+			var drag := Tune.AIR_DRAG * (1.0 - leap * Tune.LEAP_DRAG_CUT) if leaping else Tune.AIR_DRAG
+			_glide = flat.move_toward(Vector3.ZERO, drag * delta)
 			return
 		var aim := wish.normalized() * maxf(top, current)
 		_glide = flat.move_toward(aim, Tune.AIR_ACCEL * delta)
@@ -512,7 +577,7 @@ func _door_assist(motion: Vector3) -> Vector3:
 # Hold to sprint, or with the toggle setting tap once and she keeps running
 # until she stops, is spent, or it is tapped again.
 func _sprint_wanted(moving: bool) -> bool:
-	if _autopilot in ["sprint", "jump", "slide", "glance"]:
+	if _autopilot in ["sprint", "jump", "slide", "glance", "leap"]:
 		return true
 	if not Game.settings.sprint_toggle:
 		_sprint_latch = false
@@ -563,6 +628,10 @@ func _on_planted(left: bool, at: Vector3) -> void:
 	var speed := _ground_speed()
 	if speed < 0.5 or not is_on_floor() or Game.locks_movement():
 		return
+	# Just down from a leap, the rig's own plant of the lead foot is the
+	# landing she already made.
+	if leaping and left == leap_lead_left and Time.get_ticks_msec() - _landed_msec < 150:
+		return
 	var now := Time.get_ticks_msec()
 	if _last_plant_msec > 0:
 		_step_time = clampf(float(now - _last_plant_msec) / 1000.0, 0.18, 1.0)
@@ -573,6 +642,7 @@ func _on_planted(left: bool, at: Vector3) -> void:
 
 func _footfall(left: bool, at: Vector3, speed: float) -> void:
 	_left_foot = left
+	stepped.emit(left)
 	var heavy := speed > 4.0
 	var power := clampf(speed / Tune.SPRINT_SPEED, 0.2, 1.0)
 	var surface := _surface_at(at)
@@ -646,7 +716,7 @@ func _apply_look() -> void:
 	# Glancing back swings the view round over her right shoulder; the body
 	# keeps _yaw, so she runs on the way she was going.
 	var turn := Basis(Vector3.UP, _yaw + PI * smoothstep(0.0, 1.0, glance))
-	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake, 0.0)
+	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake - _rise_lag, 0.0)
 	var body := get_global_transform_interpolated().origin
 	# The trail behind her momentum stays behind her, whichever way she looks.
 	var trail_behind := Basis(Vector3.UP, _yaw) * _trail_offset
@@ -732,14 +802,40 @@ func _animate(delta: float, moving: bool, sprinting: bool) -> void:
 	var air_target := 1.0 if _airborne and (_jumped or _air_time > 0.12) else 0.0
 	_air_weight = move_toward(_air_weight, air_target, delta * (12.0 if air_target > 0.0 else 9.0))
 	_slide_weight = move_toward(_slide_weight, 1.0 if sliding else 0.0, delta * 8.0)
+	var flight := _leap_progress()
 	if stride:
 		stride.update(_ground_speed())
-		stride.posture(_air_weight, velocity.y / Tune.JUMP_VELOCITY, _slide_weight)
+		stride.posture(0.0 if leaping else _air_weight, velocity.y / Tune.JUMP_VELOCITY, _slide_weight)
+		stride.leap_pose(_air_weight if leaping else 0.0, flight, leap_lead_left, leap)
+	if leap_layer:
+		leap_layer.amount = _air_weight * lerpf(Tune.LEAP_LINE_JOG, 1.0, leap) if leaping else 0.0
+		leap_layer.progress = flight
+		leap_layer.lead_left = leap_lead_left
 	if grace:
 		grace.speed = _ground_speed()
 		grace.poise = (1.0 - _air_weight) * (1.0 - _slide_weight) * (0.0 if exhaust_left > 0.0 else 1.0)
 	# A slight side-to-side carry in time with her steps.
 	_sway = 0.0 if not moving else sin(_stride_phase) * (0.012 if sprinting else 0.02)
+
+
+# 0..1 through a leap's flight: by time at first, then by the ground coming
+# up, so off a ledge she holds her reach. Down again, it is the landing.
+func _leap_progress() -> float:
+	if not leaping:
+		return 0.0
+	if not _airborne:
+		return 1.0
+	var reaching := _air_time / maxf(_leap_airtime, 0.1) >= Tune.LEAP_REACH_HOLD
+	return Leap.flight_progress(_air_time, _leap_airtime, _drop_below() if reaching else 3.0)
+
+
+# Metres of air under her boots, up to 3.
+func _drop_below() -> float:
+	var from := global_position + Vector3.UP * 0.1
+	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 3.1, Tune.LAYER_WORLD)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return 3.0 if hit.is_empty() else maxf(global_position.y - (hit.position as Vector3).y, 0.0)
 
 
 func _breathe(delta: float, sprinting: bool) -> void:
@@ -902,12 +998,13 @@ func _move_camera(delta: float) -> void:
 	if spring_arm == null or camera == null:
 		return
 	var pace := clampf((_ground_speed() - Tune.WALK_SPEED) / (Tune.SPRINT_SPEED - Tune.WALK_SPEED), 0.0, 1.0)
-	var widen := (9.0 * pace + 5.0 * _slide_weight) if Game.settings.speed_fov else 0.0
+	var leap_air := _air_weight * leap if leaping else 0.0
+	var widen := (9.0 * pace + 5.0 * _slide_weight + Tune.LEAP_FOV * leap_air) if Game.settings.speed_fov else 0.0
 	camera.fov = lerpf(camera.fov, Game.settings.fov + widen, 1.0 - exp(-delta * 4.0))
 	# Indoors the camera comes in over her shoulder: rooms are a few metres
 	# across, and a long boom would only be crushed against the walls.
 	var inside := indoors()
-	var outdoors_boom := BOOM_LENGTH * Game.settings.camera_distance + 0.5 * pace
+	var outdoors_boom := BOOM_LENGTH * Game.settings.camera_distance + 0.5 * pace + Tune.LEAP_BOOM * leap_air * Game.settings.camera_shake
 	_boom = lerpf(_boom, minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom, 1.0 - exp(-delta * 3.0))
 	_shoulder = lerpf(_shoulder, INDOOR_SHOULDER if inside else 0.0, 1.0 - exp(-delta * 3.0))
 	# Pressed into her by a wall anyway, it looks past her instead of
@@ -918,6 +1015,9 @@ func _move_camera(delta: float) -> void:
 	_roll_kick = lerpf(_roll_kick, 0.0, 1.0 - exp(-delta * 8.0))
 	var lag := Basis(Vector3.UP, _yaw).inverse() * Vector3(-_glide.x, 0.0, -_glide.z) * 0.04
 	_trail_offset = _trail_offset.lerp(lag.limit_length(0.32), 1.0 - exp(-delta * 3.0))
+	# On a leap the camera trails her rise and fall by a hair.
+	var rise := clampf(velocity.y * 0.012, -0.05, 0.05) * leap_air * Game.settings.camera_shake
+	_rise_lag = lerpf(_rise_lag, rise, 1.0 - exp(-delta * 6.0))
 
 
 func _flicker_lantern(delta: float) -> void:
@@ -1043,3 +1143,4 @@ func _build_model() -> void:
 		return trail.ground.height_at(point.x, point.z)
 	foot_lock.planted.connect(_on_planted)
 	grace = Grace.fit(skeleton)
+	leap_layer = Leap.fit(skeleton)

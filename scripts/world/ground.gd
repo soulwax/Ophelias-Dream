@@ -1,9 +1,30 @@
 class_name Ground
 extends Node3D
 
+# The snow field: one heightfield from the seed, built in layers. Warped hills,
+# a gentle valley along the route with banks rising either side, cliff bands
+# that wind across the hillsides and the field's edges, one ravine the route
+# runs through, and a rim beyond the fence.
+# Bump TERRAIN_REVISION whenever the land's shape changes, so an older
+# editable-level snapshot does not lay its saved ground over the new one.
+const TERRAIN_REVISION := 2
+# Coarse grid (metres) for the route fields: distance to the path, the valley
+# floor's height and the ravine's weight, read bilinearly between nodes.
+const ROUTE_CELL := 6.0
+# The valley floor is the hills along the route, sampled this often (metres).
+const PROFILE_STEP := 2.0
+# Steeper than this (cos 55°) is a cliff face.
+const CLIFF_FACE := 0.574
+
 var seed_value := 1701
+# The route the land is shaped around (in this node's space), and the played
+# stretch of it, from the start to the exit.
+var route: Curve3D
+var route_from := 0.0
+var route_to := 0.0
 
 var _heights := PackedFloat32Array()
+var _normals := PackedVector3Array()
 var _origin_x := 0.0
 var _origin_z := 0.0
 var _step_x := 1.0
@@ -12,7 +33,7 @@ var _points_x := 2
 var _points_z := 2
 
 # Flat pads (the house sits on one): [Vector2 centre, inner radius, outer
-# radius]. Inside the inner radius the snow is level at the height the noise
+# radius]. Inside the inner radius the snow is level at the height the land
 # had at the centre; it blends back out by the outer radius.
 var pads: Array = []
 # Cuts: [Transform3D local-to-world, Rect2 local x/z]. Grid cells touching a
@@ -21,16 +42,35 @@ var cuts: Array = []
 var _pad_heights: Array[float] = []
 # The snow's material, so patches can match it exactly.
 var snow_material: ShaderMaterial
+# What was built, for probes.
+var build_msec := 0
+var cliff_cells := 0
+var rock_count := 0
 
-var _broad := FastNoiseLite.new()
+var _hills := FastNoiseLite.new()
+var _warp := FastNoiseLite.new()
 var _detail := FastNoiseLite.new()
-var _ridge := FastNoiseLite.new()
+var _cliff := FastNoiseLite.new()
+var _cliff_zone := FastNoiseLite.new()
+var _cliff_rise := FastNoiseLite.new()
 var _dirt := FastNoiseLite.new()
+var _rng := RandomNumberGenerator.new()
+
+var _field_origin := Vector2.ZERO
+var _field_size := Vector2i(1, 1)
+var _route_distance := PackedFloat32Array()
+var _valley_floor := PackedFloat32Array()
+var _ravine := PackedFloat32Array()
 
 
 func _ready() -> void:
+	set_meta("terrain_revision", TERRAIN_REVISION)
+	var started := Time.get_ticks_msec()
+	_rng.seed = seed_value + 404
 	_configure_noise()
+	_build_route_fields()
 	_build()
+	build_msec = Time.get_ticks_msec() - started
 
 
 func height_at(x: float, z: float) -> float:
@@ -51,33 +91,167 @@ func height_at(x: float, z: float) -> float:
 	return lerpf(lerpf(h00, h10, tx), lerpf(h01, h11, tx), tz)
 
 
+# The ground's up direction at the grid point nearest (x, z).
+func normal_at(x: float, z: float) -> Vector3:
+	if _normals.is_empty():
+		return Vector3.UP
+	var ix := clampi(int(round((x - _origin_x) / _step_x)), 0, _points_x - 1)
+	var iz := clampi(int(round((z - _origin_z) / _step_z)), 0, _points_z - 1)
+	return _normals[iz * _points_x + ix]
+
+
+# How steep the ground is at (x, z), in degrees.
+func slope_at(x: float, z: float) -> float:
+	return rad_to_deg(acos(clampf(normal_at(x, z).y, -1.0, 1.0)))
+
+
+# Metres from the route's centre line; very far when there is no route.
+func route_distance(x: float, z: float) -> float:
+	return _field(_route_distance, x, z, 1.0e6)
+
+
 func _configure_noise() -> void:
-	_setup(_broad, seed_value, 0.0072, 5, FastNoiseLite.FRACTAL_FBM)
-	_setup(_detail, seed_value + 1, 0.029, 2, FastNoiseLite.FRACTAL_FBM)
-	_setup(_ridge, seed_value + 2, 0.011, 3, FastNoiseLite.FRACTAL_RIDGED)
-	_setup(_dirt, seed_value + 3, 0.02, 3, FastNoiseLite.FRACTAL_FBM)
+	_setup(_hills, seed_value, Tune.TERRAIN_HILL_FREQ, 5)
+	_setup(_warp, seed_value + 1, Tune.TERRAIN_HILL_FREQ * 1.7, 2)
+	_setup(_detail, seed_value + 2, 0.045, 2)
+	_setup(_cliff, seed_value + 3, Tune.CLIFF_FREQ, 3)
+	_setup(_cliff_zone, seed_value + 4, 0.006, 2)
+	_setup(_cliff_rise, seed_value + 5, 0.02, 1)
+	_setup(_dirt, seed_value + 6, 0.02, 3)
 
 
-func _setup(noise: FastNoiseLite, seed_value: int, frequency: float, octaves: int, fractal: FastNoiseLite.FractalType) -> void:
-	noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	noise.seed = seed_value
+func _setup(noise: FastNoiseLite, noise_seed: int, frequency: float, octaves: int) -> void:
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.seed = noise_seed
 	noise.frequency = frequency
-	noise.fractal_type = fractal
+	noise.fractal_type = FastNoiseLite.FRACTAL_FBM
 	noise.fractal_octaves = octaves
 
 
+# Rolling hills, warped so their ridges wander instead of repeating.
+func _hills_at(x: float, z: float) -> float:
+	var wx := x + _warp.get_noise_2d(x, z) * Tune.TERRAIN_WARP
+	var wz := z + _warp.get_noise_2d(x + 517.0, z - 311.0) * Tune.TERRAIN_WARP
+	return _hills.get_noise_2d(wx, wz) * Tune.TERRAIN_HILLS + _detail.get_noise_2d(x, z) * Tune.TERRAIN_DETAIL
+
+
+# The walking floor along the route: the hills under it averaged over about
+# 30 m, then no step steeper than VALLEY_GRADE.
+func _valley_profile() -> PackedFloat32Array:
+	var length := route.get_baked_length()
+	var count := int(ceil(length / PROFILE_STEP)) + 1
+	var raw := PackedFloat32Array()
+	raw.resize(count)
+	for k in count:
+		var p := route.sample_baked(minf(float(k) * PROFILE_STEP, length))
+		raw[k] = _hills_at(p.x, p.z)
+	var half := int(15.0 / PROFILE_STEP)
+	var smooth := PackedFloat32Array()
+	smooth.resize(count)
+	for k in count:
+		var total := 0.0
+		var samples := 0
+		for m in range(maxi(k - half, 0), mini(k + half, count - 1) + 1):
+			total += raw[m]
+			samples += 1
+		smooth[k] = total / float(samples)
+	var rise := Tune.VALLEY_GRADE * PROFILE_STEP
+	for k in range(1, count):
+		smooth[k] = clampf(smooth[k], smooth[k - 1] - rise, smooth[k - 1] + rise)
+	return smooth
+
+
+func _build_route_fields() -> void:
+	var min_x := Tune.FENCE_MIN_X - Tune.GROUND_PAD
+	var max_x := Tune.FENCE_MAX_X + Tune.GROUND_PAD
+	var min_z := Tune.FENCE_MIN_Z - Tune.GROUND_PAD
+	var max_z := Tune.FENCE_MAX_Z + Tune.GROUND_PAD
+	_field_origin = Vector2(min_x, min_z)
+	_field_size = Vector2i(int(ceil((max_x - min_x) / ROUTE_CELL)) + 1, int(ceil((max_z - min_z) / ROUTE_CELL)) + 1)
+	var count := _field_size.x * _field_size.y
+	_route_distance.resize(count)
+	_valley_floor.resize(count)
+	_ravine.resize(count)
+	if route == null or route.get_baked_length() <= 0.0:
+		_route_distance.fill(1.0e6)
+		_valley_floor.fill(0.0)
+		_ravine.fill(0.0)
+		return
+	var profile := _valley_profile()
+	var span := maxf(route_to - route_from, 1.0)
+	for j in _field_size.y:
+		for i in _field_size.x:
+			var p := Vector3(_field_origin.x + float(i) * ROUTE_CELL, 0.0, _field_origin.y + float(j) * ROUTE_CELL)
+			var offset := route.get_closest_offset(p)
+			var on := route.sample_baked(offset)
+			var index := j * _field_size.x + i
+			_route_distance[index] = Vector2(p.x - on.x, p.z - on.z).length()
+			var at := offset / PROFILE_STEP
+			var k := clampi(int(floor(at)), 0, profile.size() - 1)
+			_valley_floor[index] = lerpf(profile[k], profile[mini(k + 1, profile.size() - 1)], at - floor(at))
+			var t := (offset - route_from) / span
+			_ravine[index] = smoothstep(Tune.RAVINE_FROM, Tune.RAVINE_FROM + 0.05, t) * (1.0 - smoothstep(Tune.RAVINE_TO - 0.05, Tune.RAVINE_TO, t))
+
+
+# A coarse route field, bilinear between its nodes.
+func _field(values: PackedFloat32Array, x: float, z: float, fallback: float) -> float:
+	if values.is_empty():
+		return fallback
+	var fx := clampf((x - _field_origin.x) / ROUTE_CELL, 0.0, float(_field_size.x - 1))
+	var fz := clampf((z - _field_origin.y) / ROUTE_CELL, 0.0, float(_field_size.y - 1))
+	var x0 := int(floor(fx))
+	var z0 := int(floor(fz))
+	var x1 := mini(x0 + 1, _field_size.x - 1)
+	var z1 := mini(z0 + 1, _field_size.y - 1)
+	var tx := fx - float(x0)
+	var tz := fz - float(z0)
+	var a := lerpf(values[z0 * _field_size.x + x0], values[z0 * _field_size.x + x1], tx)
+	var b := lerpf(values[z1 * _field_size.x + x0], values[z1 * _field_size.x + x1], tx)
+	return lerpf(a, b, tz)
+
+
+# Metres inside the fence (negative outside it).
+func _fence_distance(x: float, z: float) -> float:
+	return minf(minf(x - Tune.FENCE_MIN_X, Tune.FENCE_MAX_X - x), minf(z - Tune.FENCE_MIN_Z, Tune.FENCE_MAX_Z - z))
+
+
 func _sample(x: float, z: float) -> float:
-	var h := _broad.get_noise_2d(x, z) * 10.5
-	h += _detail.get_noise_2d(x, z) * 2.15
-	h += _ridge.get_noise_2d(x, z) * 3.6
-	h = _flatten(h, x, z, 0.0, 10.0, 16.0)
-	h = _flatten(h, x, z, 10.0, -200.0, 18.0)
+	var distance := _field(_route_distance, x, z, 1.0e6)
+	var h := _hills_at(x, z)
+	# Banks rise away from the path; near it the land eases onto the floor.
+	h += minf(maxf(distance - Tune.VALLEY_HALF, 0.0) * Tune.VALLEY_BANK, Tune.VALLEY_BANK_MAX)
+	var on_floor := 1.0 - smoothstep(Tune.VALLEY_HALF * 0.6, Tune.VALLEY_HALF * 2.0, distance)
+	h = lerpf(h, _field(_valley_floor, x, z, h), on_floor)
+	h += _cliffs(x, z, distance)
+	var walls := smoothstep(Tune.RAVINE_INNER, Tune.RAVINE_OUTER, distance) * (1.0 - smoothstep(40.0, 70.0, distance))
+	h += _field(_ravine, x, z, 0.0) * walls * Tune.RAVINE_RISE
+	h += smoothstep(0.0, Tune.GROUND_PAD, -_fence_distance(x, z)) * Tune.TERRAIN_RIM
 	for index in _pad_heights.size():
 		var pad: Array = pads[index]
 		var centre: Vector2 = pad[0]
 		var level := 1.0 - smoothstep(pad[1], pad[2], Vector2(x, z).distance_to(centre))
 		h = lerpf(h, _pad_heights[index], level)
 	return h
+
+
+# Mesa edges: where the cliff noise crosses its threshold the ground steps up
+# several metres within a couple, so cliff lines follow the noise's contours.
+# Only near the field's edges and on chosen hillsides, never near the route,
+# the fence or a pad; where that allowance fades, a cliff softens into a slope.
+func _cliffs(x: float, z: float, distance: float) -> float:
+	var inside := _fence_distance(x, z)
+	var edge := 1.0 - smoothstep(30.0, 60.0, inside)
+	var hillside := smoothstep(0.05, 0.25, _cliff_zone.get_noise_2d(x, z))
+	var allowed := maxf(edge, hillside)
+	allowed *= smoothstep(Tune.CLIFF_CLEAR, Tune.CLIFF_CLEAR + 15.0, distance)
+	allowed *= smoothstep(Tune.CLIFF_FENCE, Tune.CLIFF_FENCE + 4.0, inside)
+	for pad: Array in pads:
+		allowed *= smoothstep(float(pad[2]), float(pad[2]) + 15.0, Vector2(x, z).distance_to(pad[0]))
+	if allowed <= 0.0:
+		return 0.0
+	var step := smoothstep(Tune.CLIFF_THRESHOLD, Tune.CLIFF_THRESHOLD + Tune.CLIFF_SHARPNESS, _cliff.get_noise_2d(x, z))
+	var rise := lerpf(Tune.CLIFF_RISE_MIN, Tune.CLIFF_RISE_MAX, _cliff_rise.get_noise_2d(x, z) * 0.5 + 0.5)
+	return step * rise * allowed
 
 
 func _cut(x0: float, z0: float, size_x: float, size_z: float) -> bool:
@@ -97,12 +271,6 @@ func _cut(x0: float, z0: float, size_x: float, size_z: float) -> bool:
 		if bounds.intersects(rect):
 			return true
 	return false
-
-
-func _flatten(h: float, x: float, z: float, px: float, pz: float, radius: float) -> float:
-	var distance := Vector2(x - px, z - pz).length()
-	var weight := 1.0 - smoothstep(radius * 0.3, radius, distance)
-	return lerpf(h, h * 0.2, weight)
 
 
 func _build() -> void:
@@ -137,9 +305,25 @@ func _build() -> void:
 			_heights[index] = h
 			vertices[index] = Vector3(wx, h, wz)
 
+	# Normals from the heights themselves (central differences), so shading
+	# runs smoothly across cells instead of showing the grid.
 	var normals := PackedVector3Array()
 	normals.resize(vertices.size())
-	normals.fill(Vector3.ZERO)
+	cliff_cells = 0
+	for z in _points_z:
+		var up := maxi(z - 1, 0)
+		var down := mini(z + 1, _points_z - 1)
+		for x in _points_x:
+			var left := maxi(x - 1, 0)
+			var right := mini(x + 1, _points_x - 1)
+			var dx := (_heights[z * _points_x + right] - _heights[z * _points_x + left]) / (_step_x * float(right - left))
+			var dz := (_heights[down * _points_x + x] - _heights[up * _points_x + x]) / (_step_z * float(down - up))
+			var n := Vector3(-dx, 1.0, -dz).normalized()
+			normals[z * _points_x + x] = n
+			if n.y < CLIFF_FACE:
+				cliff_cells += 1
+	_normals = normals.duplicate()
+
 	var indices := PackedInt32Array()
 	var faces := PackedVector3Array()
 	var kept := PackedByteArray()
@@ -166,16 +350,6 @@ func _build() -> void:
 				faces.append(vertices[a])
 				faces.append(vertices[b])
 				faces.append(vertices[c])
-				# Reversed operands keep the normal pointing up for this winding.
-				var face_normal := (vertices[c] - vertices[a]).cross(vertices[b] - vertices[a])
-				normals[a] += face_normal
-				normals[b] += face_normal
-				normals[c] += face_normal
-	for i in normals.size():
-		if normals[i].length_squared() < 0.0001:
-			normals[i] = Vector3.UP
-		else:
-			normals[i] = normals[i].normalized()
 	# The walkable surface is the top. The pack continues SNOW_DEPTH straight
 	# down, with a wall wherever a cell was cut out, so the depth is real.
 	var grid := vertices.size()

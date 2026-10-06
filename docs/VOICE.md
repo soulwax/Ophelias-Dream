@@ -1,31 +1,45 @@
-# Her voice
+# Her voice and journal
 
-Her reviewed lines live in `assets/audio/voice/lines.json`: seven page reactions, eleven first-visit observations, and eight idle mutters. They stay close to the notes and what she can feel or see, without settling what happened in the house.
+The story is the search for Mathilda; see [the design](superpowers/specs/2026-10-06-mathilda-story-design.md). `assets/audio/voice/lines.json` holds 62 reviewed lines: pages, deciphered pages, places, revisits, bored lines and calls by stage, and misreads. Every entry has text and one of seven moods: steady, warm, hushed, shaken, breaking, resolve, calling. Old plain strings load as steady. Do not run `tools/bake_voice.py`: its older format overwrites this reviewed file.
 
-`tools/bake_voice.py` can draft replacement text using the local Qwen server at `127.0.0.1:8765`. Review its output before baking speech; running it overwrites the reviewed lines. The game never calls either model.
-
-## Bake speech
-
-Kokoro-82M ONNX runs on the CPU, with `af_sarah` at speed 0.92. Models and the isolated Python environment stay under ignored `build/voice/`, while the baked `.wav` clips and `manifest.json` are written directly to `assets/audio/voice/` as game assets. Setup from the repository root:
-
-```powershell
-python -m venv build/voice/venv
-build/voice/venv/Scripts/python.exe -m pip install kokoro-onnx==0.4.7 soundfile==0.14.0
-New-Item -ItemType Directory -Force build/voice/models
-curl.exe -L --fail -o build/voice/models/kokoro-v1.0.int8.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx
-curl.exe -L --fail -o build/voice/models/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
-build/voice/venv/Scripts/python.exe tools/bake_speech.py
-godot --headless --path . --import
-```
-
-Repeat only the last two commands after editing the lines. `--voice` and `--speed` select another delivery. Clips are mono PCM16 wavs named by the SHA-256 of their exact text, levelled to the project's loudest-50-ms reference, with a peak ceiling. `manifest.json` records text, clip names, durations, and delivery settings.
-
-Upstream: [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx), [model releases](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0), [Kokoro model and Apache-2.0 license](https://huggingface.co/hexgrad/Kokoro-82M). Synthesis dependencies are build tools, not game dependencies.
+The HUD has a journal notice instead of an objective. J or Tab (pad Y) opens the journal; these bindings can be changed in the Esc menu. Pages retain their order of discovery. Each smudge has three readings and a key from a read page, visited place or heard event. `Game.known` unlocks readings and `Game.decipher` settles the correct one. Solving a whole page reveals its sentence between the lines. With voice off, visiting the snow substitutes for hearing a call; reading the last page substitutes for an echo. The world continues in `Phase.JOURNAL` through `Game.awake()` while movement and look are locked.
 
 ## Playback
 
-`Voice` loads imported `AudioStream` resources directly from `res://assets/audio/voice/` using the text hash. Speech plays from her mouth attachment through a Voice bus under Effects, at `Tune.VOICE_SPL` (55 dB at one metre), with the existing room reverb. The murmur plate follows clip duration. Page reactions replace current speech; first-visit observations wait for the cooldown and idle chatter waits until speech and the current subtitle finish. Pausing pauses speech with the scene; endings stop it. No lip sync.
+Zero or one trail pages means hope, two or three means doubt, and four or more (or the last page) means resolve. Earlier idle lines are left behind when the stage changes. Page and deciphered reactions have priority 3, places and revisits 2, and idle lines, calls and misreads 1. Only a strictly higher priority interrupts; a misread can interrupt a misread. Important reactions queue. An interrupted line loses its subtitle and heard status; page and deciphered lines queue again, other lines return at their next natural opportunity. Ending cards interrupt too. Revisits wait `Tune.REVISIT_AFTER`; misreads wait `Tune.MISREAD_GAP`.
 
-Missing clips fall back to timed text. `RUN_VOICE=0`, `RUN_CAPTURE=1`, and headless mode suppress the feature. Because the baked `.wav` clips live in `assets/audio/voice/`, Godot imports and packs them into the release executable automatically during export; models and Python in `build/` are never shipped.
+Calls cycle within the stage outdoors during play, starting after `Tune.CALL_FIRST`, then waiting `Tune.CALL_EVERY`. The same mouth speaker uses `Tune.CALL_SPL` for calls and `Tune.VOICE_SPL` for other lines. After the post page, doubt and resolve can each produce an echo, up to `Tune.ECHO_MAX`. The same clip returns 1.6–2.4 seconds later from the nearest pine 25–60 metres away through Dread, with distant filtering and `Tune.ECHO_DROP_DB` less level. Echoes have no subtitle.
 
-`tools/fetch_voice.ps1` downloads the optional Qwen writer into `build/llm/`. It uses llama.cpp on the CPU; no NVIDIA GPU is needed for writing or speech baking.
+Clips are mono PCM16 WAVs named by SHA-256 of the exact UTF-8 `text|mood`, plus `.wav`. Voice loads imported resources and plays through the Voice bus under Effects. Missing clips use timed subtitles. `RUN_VOICE=0`, capture and headless runs disable Voice. Models never run in the game and never ship; environments, models and references stay in ignored `build/voice/`.
+
+## GPU baking
+
+From the repository root:
+
+```powershell
+uv python install 3.12
+uv venv build/voice/gpu-venv --python 3.12
+uv pip install --python build/voice/gpu-venv/Scripts/python.exe qwen-tts faster-whisper speechbrain soundfile numpy huggingface_hub
+uv pip install --python build/voice/gpu-venv/Scripts/python.exe --reinstall torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+build/voice/gpu-venv/Scripts/python.exe -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+build/voice/gpu-venv/Scripts/hf.exe download Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign --local-dir build/voice/hf/VoiceDesign
+build/voice/gpu-venv/Scripts/hf.exe download Qwen/Qwen3-TTS-12Hz-1.7B-Base --local-dir build/voice/hf/Base
+python tools/bake_speech.py --self-test
+build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --anchor-only
+```
+
+Listen to `build/voice/ref/anchor.wav` before baking the lines. Keep it explicitly, or re-roll with `--anchor-only --new-anchor --anchor-seed N`. Then run `build/voice/gpu-venv/Scripts/python.exe tools/bake_speech.py --force`. Four VoiceDesign takes receive the identity and mood direction. Whisper measures word error rate (WER); takes with WER ≤ 0.15 compete by highest ECAPA speaker similarity to the anchor. If no take reaches similarity 0.60 with acceptable WER, two Base-clone takes provide a fallback. The final choice is the highest similarity among takes passing WER, so 0.60 triggers fallback rather than imposing a final rejection threshold.
+
+`--only "exact line text"` re-bakes a single line. Failed lines are listed and return exit 1; listen and re-bake them, or explicitly keep the best with `--only "exact line text" --accept-bad`. `--engine kokoro` is an optional CPU fallback using the old `build/voice/models/` ONNX files; it needs kokoro-onnx installed in its environment and does not provide mood direction. `--voice` and `--speed` apply to Kokoro. `manifest.json` records text, mood, category, file, duration, engine, model, WER and similarity. Listen to all clips in manifest order after the bake.
+
+Import and verify:
+
+```powershell
+godot-mono --headless --path . --import
+godot-mono --headless --path . tools/journal_probe.tscn
+$env:PROBE_CLIPS = "1"
+godot-mono --headless --path . tools/voice_probe.tscn
+Remove-Item Env:PROBE_CLIPS
+```
+
+[Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) and [SpeechBrain ECAPA](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) use Apache-2.0; [faster-whisper](https://github.com/SYSTRAN/faster-whisper) uses MIT. These are build dependencies.

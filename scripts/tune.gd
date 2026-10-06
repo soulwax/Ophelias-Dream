@@ -90,6 +90,38 @@ const APEX_SPEED := 1.2
 # never slow her below the speed she left the ground with.
 const AIR_ACCEL := 5.0
 const AIR_DRAG := 0.6
+# The running leap. A jump taken at LEAP_FROM or faster is one long stride,
+# off the foot she last planted onto the other. leap (0..1 from LEAP_FROM to
+# SPRINT_SPEED at takeoff) lowers the arc to LEAP_LIFT of a hop and adds
+# LEAP_CARRY of forward speed, never past LEAP_MAX_SPEED; the air takes
+# LEAP_DRAG_CUT less of her speed. A jog leap shows LEAP_LINE_JOG of the line.
+const LEAP_FROM := 3.2
+const LEAP_LIFT := 0.88
+const LEAP_CARRY := 0.06
+const LEAP_MAX_SPEED := 7.3
+const LEAP_DRAG_CUT := 0.9
+const LEAP_LINE_JOG := 0.6
+# Flight: time leads to LEAP_REACH_HOLD of the way, then only the ground
+# coming within LEAP_REACH_HEIGHT metres finishes her reach for it.
+const LEAP_REACH_HOLD := 0.85
+const LEAP_REACH_HEIGHT := 0.35
+# Her line in the air, in radians at a full leap: the split at its widest,
+# pointed toes, arms opening, chest lifted.
+const LEAP_SPLIT := 0.35
+const LEAP_POINT := 0.5
+const LEAP_ARMS := 0.45
+const LEAP_CHEST := 0.08
+# The catlike dip: metres on an ordinary leap and on a hard drop, the
+# spring's frequency (rad/s) and damping ratio, and the chest's forward lean
+# per metre of dip.
+const LEAP_DIP_DEPTH := 0.03
+const LEAP_DIP_DROP := 0.15
+const LEAP_DIP_FREQ := 20.0
+const LEAP_DIP_ZETA := 0.6
+const LEAP_DIP_LEAN := 0.8
+# The camera at a full leap: degrees of field of view and metres of boom.
+const LEAP_FOV := 3.0
+const LEAP_BOOM := 0.25
 
 # Slide out of a sprint: a kick of speed, low snow friction, gravity along
 # the slope, a little steering.
@@ -137,6 +169,12 @@ const INTRO_TIME := 3.2
 const BORED_AFTER := 18.0
 const VOICE_GAP := 14.0
 const VOICE_SPL := 55.0
+# Within this flat distance (m) of the exit she is at "the lights".
+const LIGHTS_NEAR := 40.0
+# How long (s) "Added to the journal" stays after a page is found.
+const JOURNAL_TOAST := 3.0
+
+
 const TYPE_CPS := 42.0
 # Radians per screen pixel at sensitivity 1, and the pitch range (rad).
 const MOUSE_SENS := 0.0022
@@ -152,10 +190,60 @@ const FENCE_MAX_X := 150.0
 const FENCE_MIN_Z := -224.0
 const FENCE_MAX_Z := 76.0
 const GROUND_PAD := 26.0
-const GROUND_CELL := 3.0
+const GROUND_CELL := 1.5
 # Vertical depth of the snowpack. The walkable surface stays put; the
 # snow continues this far down, and the shell shows at every cut edge.
 const SNOW_DEPTH := 0.2
+# The land. Warped hills (TERRAIN_HILLS metres of relief, wavelength about
+# 1 / TERRAIN_HILL_FREQ), a route valley (the ground eases onto a walking floor
+# within VALLEY_HALF of the path, no steeper than VALLEY_GRADE, and rises
+# VALLEY_BANK per metre beyond it up to VALLEY_BANK_MAX), a rim of
+# TERRAIN_RIM metres beyond the fence.
+const TERRAIN_HILLS := 9.0
+const TERRAIN_HILL_FREQ := 0.0085
+const TERRAIN_WARP := 25.0
+const TERRAIN_DETAIL := 1.2
+const TERRAIN_RIM := 14.0
+const VALLEY_HALF := 8.0
+const VALLEY_GRADE := 0.08
+const VALLEY_BANK := 0.18
+const VALLEY_BANK_MAX := 6.0
+# Cliffs: where the cliff noise crosses CLIFF_THRESHOLD the ground steps up
+# CLIFF_RISE_MIN..MAX metres over a band CLIFF_SHARPNESS wide in noise units,
+# only CLIFF_CLEAR metres or more from the route and CLIFF_FENCE inside the
+# fence. Rock faces dress them, at least CLIFF_ROCK_GAP apart, CLIFF_ROCKS_MAX at most.
+const CLIFF_FREQ := 0.012
+const CLIFF_THRESHOLD := 0.18
+const CLIFF_SHARPNESS := 0.05
+const CLIFF_RISE_MIN := 6.0
+const CLIFF_RISE_MAX := 12.0
+const CLIFF_CLEAR := 20.0
+const CLIFF_FENCE := 6.0
+const CLIFF_ROCKS_MAX := 70
+const CLIFF_ROCK_GAP := 12.0
+# The ravine: the stretch of the played route (as fractions from start to
+# exit) where walls RAVINE_RISE metres high rise from RAVINE_INNER to
+# RAVINE_OUTER metres either side of the path.
+const RAVINE_FROM := 0.45
+const RAVINE_TO := 0.6
+const RAVINE_RISE := 10.0
+const RAVINE_INNER := 6.0
+const RAVINE_OUTER := 9.0
 
 const LAYER_WORLD := 1
 const LAYER_ACTOR := 2
+
+# A place's second line waits this long (s) after its first.
+const REVISIT_AFTER := 60.0
+# Wrong readings in the journal: at most one muttered line per MISREAD_GAP s.
+const MISREAD_GAP := 8.0
+
+# Her calls for Mathilda outdoors: a shout, dB SPL at 1 m.
+const CALL_SPL := 82.0
+
+# The first call comes CALL_FIRST s after she steps out, then every CALL_EVERY s.
+const CALL_FIRST := Vector2(20.0, 30.0)
+const CALL_EVERY := Vector2(45.0, 80.0)
+# The trees answer at most ECHO_MAX times, this much quieter than her call.
+const ECHO_DROP_DB := 14.0
+const ECHO_MAX := 2
