@@ -1,10 +1,13 @@
 # Changelog
 
-## 0.2.1.5 — 2026-10-06
+## 0.2.1.6 — 2026-10-07
 
-- Plant the first trees, firs, bushes and grass from a hand-made Sketchfab fir-forest pack, as the start of greener woods beyond the snowy story ground.
-- Build a larger world of chunked terrain around the story, with mountains and a new snow ground shader, and keep it in step with older saved levels.
-- Forest textures now use compressed GPU formats, so they load lighter.
+0.2.1.5 was prepared but never published; its changes are part of this release.
+
+- Grow woods across a larger world from a hand-made Sketchfab fir-forest pack: spruces and great pines in the snow, green firs, bushes and grass beyond, a few lone giants near the route, and rock faces on the cliffs. Trees keep clear of the route and of steep slopes, and their trunks block her.
+- Build that world as chunked terrain around the story, with mountains and a ground shader that blends snow, thaw, grass and rock, and keep it in step with older saved levels.
+- Her steps sound like grass on green ground and softer on thawing snow, prints and powder stay on the snow, and the snowfall thins out over green land.
+- Lean graphics plant about half the trees and undergrowth, and forest textures use compressed GPU formats.
 
 ## 0.2.1.4 — 2026-10-06
 
