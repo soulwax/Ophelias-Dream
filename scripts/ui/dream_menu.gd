@@ -9,7 +9,6 @@ var _gaze := 0.5
 var _target := 0.5
 var _gaze_y := 0.65
 var _target_y := 0.65
-var _motion_time := 0.0
 var _panel: PanelContainer
 var _body: Label
 
@@ -134,11 +133,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if visible:
-		_motion_time += delta
 		_gaze = lerpf(_gaze, _target, 1.0 - exp(-delta * 6.0))
 		_gaze_y = lerpf(_gaze_y, _target_y, 1.0 - exp(-delta * 5.0))
-		_eye.set_shader_parameter("gaze", _gaze + sin(_motion_time * 2.7) * 0.0007)
-		_eye.set_shader_parameter("gaze_y", _gaze_y + sin(_motion_time * 3.1) * 0.0005)
+		_eye.set_shader_parameter("gaze", _gaze)
+		_eye.set_shader_parameter("gaze_y", _gaze_y)
 		_eye.set_shader_parameter("aspect", size.x / maxf(size.y, 1.0))
 
 
