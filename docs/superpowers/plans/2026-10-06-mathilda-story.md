@@ -30,7 +30,7 @@
 - **Priorities:** page and deciphered 3; place and revisit 2; bored, call and misread 1. Only a strictly higher priority interrupts, except a misread may interrupt a misread.
 - **No objective text** anywhere on the HUD. The relationship with Mathilda is never named in any text.
 - **The game never runs a model.** Models, venvs and caches stay under ignored `build/voice/`.
-- **Commits:** each task stages only the files it lists. `scripts/tune.gd`, `CLAUDE.md` and `AGENTS.md` already carry unrelated uncommitted work (the running leap). Unless the user has committed that work first, leave those three files unstaged and list them in the final report. Commit messages are one plain descriptive sentence, ending with the `Co-Authored-By` line.
+- **Commits:** each task stages only the files it lists. `scripts/tune.gd`, `CLAUDE.md` and `AGENTS.md` already carry unrelated uncommitted work (the running leap). Unless the user has committed that work first, leave those three files unstaged and list them in the final report. Commit messages are one plain descriptive sentence, with no `Co-Authored-By` or other attribution line.
 - **Two deliberate deviations from the spec:**
   - The pad button for the journal is **Y**, because Back is already restart.
   - Calls play through her one speaker, re-levelled to `CALL_SPL` per line, rather than a second player, so interruption stays uniform.
