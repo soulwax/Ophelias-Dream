@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"Run Away" â€” a short third-person winter horror game in **Godot 4.7** (Forward+, Jolt physics, D3D12 on Windows), written entirely in GDScript. The `godot` binary on PATH (scoop shim) is 4.7.2; on the RTX 3070 Ti desktop it is `godot-mono` (4.7.2 mono build), and every `godot` command below works with it. There is no test suite and no linter; verification is done by running the game, capturing a screenshot, or running a probe (below).
+"Ophelias Dream" â€” a short third-person winter horror game in **Godot 4.7** (Forward+, Jolt physics, D3D12 on Windows), written entirely in GDScript. The `godot` binary on PATH (scoop shim) is 4.7.2; on the RTX 3070 Ti desktop it is `godot-mono` (4.7.2 mono build), and every `godot` command below works with it. There is no test suite and no linter; verification is done by running the game, capturing a screenshot, or running a probe (below).
 
 `docs/PLAN.md` is the original design doc (night ridge, the hunter that follows the trail by offset). The game has since become an open, fenced daylight snowfield. The figure in the tree line and the Listener were removed on 2026-10-05; new threats are being chosen from `docs/THREATS.md`. Older docs (`GDD.md`, `NARRATIVE_INTENT.md`, `TODO.md`, parts of `docs/EDITOR.md`) still describe them. `docs/DIRECTION.md` is the current direction and validation record, and `CHANGELOG.md` tracks releases. Where any doc and the code disagree, trust the code. `AGENTS.md` is a shorter copy of these instructions for other agents; keep it consistent when conventions change.
 
@@ -41,12 +41,12 @@ godot --headless --path . -s tools/retarget_bvh.gd
 # Contact sheets of her clips (needs a window), into build/gait/
 godot --path . -s tools/gait_sheet.gd
 
-# Release build: encrypted PCK -> build/windows/Run Away.exe. Keeps godot.gdkey (gitignored,
+# Release build: encrypted PCK -> build/windows/Ophelias Dream.exe. Keeps godot.gdkey (gitignored,
 # never commit or print it), builds/caches a custom encryption template in build/templates/
 # with SCons, and syncs the version in project.godot + export_presets.cfg.
 ./tools/export_release.ps1 [-Version 0.0.17] [-Unencrypted] [-RotateKey]
 # Plain unencrypted export (needs matching export templates)
-godot --headless --path . --export-release "Windows Desktop" "build/windows/Run Away.exe"
+godot --headless --path . --export-release "Windows Desktop" "build/windows/Ophelias Dream.exe"
 
 # Scene probes (tools/*_probe.tscn) run the real systems, autoload included, and print results
 godot --headless --path . tools/traversal_probe.tscn    # steer the player along the saved trail

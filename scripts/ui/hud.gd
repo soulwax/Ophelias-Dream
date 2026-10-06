@@ -286,7 +286,7 @@ func _build_intro() -> void:
 	box.add_theme_constant_override("separation", 10)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(box)
-	var title := UiChrome.label("RUN AWAY", 54)
+	var title := UiChrome.label("OPHELIAS DREAM", 54)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var line := UiChrome.label("Mathilda went out into the storm.", 18, UiChrome.MUTED)

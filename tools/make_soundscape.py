@@ -302,7 +302,7 @@ def main() -> int:
 	make_beds(info, record)
 	make_above(record)
 	manifest = {
-		"note": "Recorded sounds for Run Away. All sources are CC0 1.0 (public domain); "
+		"note": "Recorded sounds for Ophelias Dream. All sources are CC0 1.0 (public domain); "
 			"credit is not required but is kept here. Regenerate with tools/fetch_sounds.py "
 			"then tools/make_soundscape.py.",
 		"files": dict(sorted(record.items())),

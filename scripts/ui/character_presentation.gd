@@ -511,7 +511,7 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	_outfit_select.item_selected.connect(func(index: int) -> void: _change_component("outfit", CHARACTER.OUTFITS[index]))
 	column.add_child(_outfit_select)
 	var outfit_note := Label.new()
-	outfit_note.text = "New garments are being rebuilt from the source body."
+	outfit_note.text = "Original costume only for now."
 	outfit_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	outfit_note.add_theme_color_override("font_color", Color("9bb2c3"))
 	column.add_child(outfit_note)

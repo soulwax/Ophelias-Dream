@@ -1,4 +1,4 @@
-# Run Away — remaining work
+# Ophelias Dream — remaining work
 
 The [playable direction](docs/DIRECTION.md) is the current plan. The longer
 [narrative intent](docs/NARRATIVE_INTENT.md) is preserved for reference; many of

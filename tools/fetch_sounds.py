@@ -17,7 +17,7 @@ import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "build" / "sfx_src"
-AGENT = {"User-Agent": "RunAway-soundscape-fetch/1.0 (CC0 sources for a Godot game)"}
+AGENT = {"User-Agent": "OpheliasDream-soundscape-fetch/1.0 (CC0 sources for a Godot game)"}
 CC0 = "creativecommons.org/publicdomain/zero/1.0"
 
 # name -> (source, id). Names are what make_soundscape.py refers to.

@@ -1,4 +1,4 @@
-# Run Away: finish the run
+# Ophelias Dream: creative direction
 
 > The figure and the Listener were removed on 2026-10-05. The steps and the validation record below that rely on them wait for replacements from [THREATS.md](THREATS.md).
 

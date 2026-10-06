@@ -14,7 +14,7 @@ import urllib.request
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "build" / "bandai"
 API = "https://api.github.com/repos/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset/contents/dataset/Bandai-Namco-Research-Motiondataset-1/"
-HEADERS = {"User-Agent": "RunAway-motion-fetch/1.0", "Accept": "application/vnd.github.raw"}
+HEADERS = {"User-Agent": "OpheliasDream-motion-fetch/1.0", "Accept": "application/vnd.github.raw"}
 FILES = [
 	"data/dataset-1_walk_feminine_001.bvh",
 	"data/dataset-1_walk_feminine_002.bvh",

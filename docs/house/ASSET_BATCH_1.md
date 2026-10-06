@@ -1,6 +1,6 @@
 # First house asset batch
 
-Imported locally from `C:\Users\soulwax\Downloads\requested_assets_and_more` on 2026-10-06 into the **Run Away** project at `F:\Workspace\run`.
+Imported locally from `C:\Users\soulwax\Downloads\requested_assets_and_more` on 2026-10-06 into the **Ophelias Dream** project at `F:\Workspace\run`.
 
 ## Used in the house
 

@@ -2,7 +2,7 @@
 
 `elf_feminine.res` holds her walk, jog, light run and backward walk. They are adapted from the **Bandai Namco Research Motion Dataset 1** by Bandai Namco Research Inc. ([source](https://github.com/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset)), licensed under [Creative Commons Attribution-NonCommercial 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The full licence text is in `LICENSE.txt`.
 
-**Run Away must stay non-commercial while these clips are in it.**
+**Ophelias Dream must stay non-commercial while these clips are in it.**
 
 | Clip | Take |
 | --- | --- |

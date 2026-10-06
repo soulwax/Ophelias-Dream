@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ("modern_ceiling_lamp_01", "painted_wooden_bench", "modern_wooden_cabinet")
 
 def get(url):
-    request = urllib.request.Request(url,headers={"User-Agent":"RunAway-house-replacements/1.0"})
+    request = urllib.request.Request(url,headers={"User-Agent":"OpheliasDream-house-replacements/1.0"})
     return urllib.request.urlopen(request,timeout=45).read()
 
 def main():

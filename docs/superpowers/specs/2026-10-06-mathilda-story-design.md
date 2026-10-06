@@ -153,7 +153,7 @@ If an echo never happened (for example, she never called while outdoors after *o
 
 ## Frame text
 
-- Intro card, under **RUN AWAY**: *Mathilda went out into the storm.* The Esc line stays.
+- Intro card, under **OPHELIAS DREAM**: *Mathilda went out into the storm.* The Esc line stays.
 - No objective anywhere.
 - Escape card: title **The road**, body *The engine is running. The driver's door is open, the seat still warm.*
   - If `read_last_page`: add *You didn't turn around.*

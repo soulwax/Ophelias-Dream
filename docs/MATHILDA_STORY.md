@@ -34,13 +34,13 @@ The game never says any of this; it's here so every line and page can be checked
 | The ring drawn three times round the lookout | A **mandala**, the Self: "everything out here goes round it" |
 | The engine running since before the snow, the red lights | Life energy waiting for her. Alchemical *rubedo* |
 | Two cups, one fitted inside the other | The **union of opposites** |
-| *Don't turn around*, and the title *Run Away* | You can't integrate a shadow you run from. Turning around is the hard, whole ending; not turning keeps them two, and keeps her waiting |
+| *Don't turn around* | You can't integrate a shadow you run from. Turning around is the hard, whole ending; not turning keeps them two, and keeps her waiting |
 
 The cellar is *nigredo*, the field is *albedo*, and the lights are *rubedo*. Her lines move from projection (she's out there) through recognition (she sounds like me) to integration (whatever is behind me is mine).
 
 ## Frame and endings
 
-**Intro card:** RUN AWAY / *Mathilda went out into the storm.* / *You told her to.* / (Esc line).
+**Intro card:** OPHELIAS DREAM / *Mathilda went out into the storm.* / *You told her to.* / (Esc line).
 
 **The road** (she reaches the lights without turning around):
 > The engine is running. The driver's door is open, the seat still warm.
