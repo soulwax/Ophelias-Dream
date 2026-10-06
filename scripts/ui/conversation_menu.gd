@@ -20,6 +20,8 @@ var _topics: VBoxContainer
 var _hint: Label
 var _buttons: Array[Button] = []
 var _fade: Tween
+# A cursor resting where a topic appears must not steal the first topic.
+var _pointer_moved := false
 
 
 func _ready() -> void:
@@ -122,12 +124,23 @@ func show_choices(topics: Array[Dictionary]) -> void:
 		button.add_theme_stylebox_override("pressed", _topic_style(true))
 		button.add_theme_stylebox_override("focus", _topic_style(true))
 		button.pressed.connect(func() -> void: chosen.emit(i))
-		button.mouse_entered.connect(select.bind(i))
+		button.mouse_entered.connect(func() -> void:
+			if _pointer_moved:
+				select(i))
 		_topics.add_child(button)
 		_buttons.append(button)
 	choices_shown = true
+	_pointer_moved = false
 	_hint.text = "↑ / ↓  Choose   ·   %s / Enter  Say   ·   Esc  Leave" % Game.settings.key_label("interact")
 	select(0)
+
+
+func _input(event: InputEvent) -> void:
+	if choices_shown and event is InputEventMouseMotion and not _pointer_moved:
+		_pointer_moved = true
+		var hovered := get_viewport().gui_get_hovered_control()
+		if hovered in _buttons:
+			select(_buttons.find(hovered))
 
 
 func select(index: int) -> void:
