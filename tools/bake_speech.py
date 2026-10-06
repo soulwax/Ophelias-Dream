@@ -127,6 +127,17 @@ class Qwen:
             max_new_tokens=192)
         return np.asarray(wavs[0], dtype=np.float32).reshape(-1), int(rate)
 
+    def speak_many(self, text, mood):
+        import numpy as np
+        # VoiceDesign accepts a batch; four independently sampled takes are
+        # much quicker than four serial calls on the release GPU.
+        self.torch.manual_seed(1000)
+        wavs, rate = self.design.generate_voice_design(
+            text=[text] * TAKES, language="English",
+            instruct=[f"{IDENTITY} {MOODS[mood][0]}"] * TAKES,
+            max_new_tokens=192)
+        return [(np.asarray(wav, dtype=np.float32).reshape(-1), int(rate)) for wav in wavs]
+
     def clone(self, text, seed):
         import numpy as np
         if self.base is None:
@@ -194,10 +205,8 @@ def ensure_anchor(engine, judge, new, seed):
 
 
 def best_take(engine, judge, text, mood):
-    takes = []
-    for take in range(TAKES):
-        samples, rate = engine.speak(text, mood, seed=1000 + take)
-        takes.append(("qwen-design", DESIGN_MODEL, trim(samples, rate), rate))
+    takes = [("qwen-design", DESIGN_MODEL, trim(samples, rate), rate)
+             for samples, rate in engine.speak_many(text, mood)]
     scored = [score(judge, text, *take) for take in takes]
     if not any(s["wer"] <= MAX_WER and s["similarity"] >= MIN_SIMILARITY for s in scored):
         for take in range(CLONE_TAKES):
