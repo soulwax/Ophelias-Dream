@@ -383,12 +383,14 @@ func _apply_display() -> void:
 
 
 func apply_audio() -> void:
-	var fade := smoothstep(0.0, 1.0, Game.audio_fade) if Game and Game.phase != Game.Phase.PAUSED else 1.0
+	var fade := smoothstep(0.0, 1.0, Game.audio_fade) if Game and Game.phase not in [Game.Phase.PAUSED, Game.Phase.BOOT] else 1.0
 	var levels := {"Master": master_volume * fade, "Ambience": ambience_volume, "Effects": effects_volume, "Dread": dread_volume}
 	for bus in levels:
 		var index := AudioServer.get_bus_index(bus)
 		if index < 0:
 			continue
 		var level: float = levels[bus]
+		if Game.phase == Game.Phase.BOOT and bus != "Master":
+			level = 0.0
 		AudioServer.set_bus_volume_db(index, linear_to_db(maxf(level, 0.0001)))
 		AudioServer.set_bus_mute(index, level <= 0.001 or (bus == "Master" and mute_unfocused and not _focused))

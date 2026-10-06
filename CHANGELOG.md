@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1.0 � 2026-10-06
+
+- Rebrand the game as Ophelia's Dream, with updated Windows metadata and documentation.
+- Introduce a painted main menu with subtle mouse-following gaze, creeping shadows, horizontal selection bars and Christian Kling credits.
+- Connect the search for Mathilda to pages, deciphering, memories, echoes and distinct spoken endings across 137 voice lines.
+- Play Danse Macabre in the main menu, with recording attribution and a fade into gameplay.
+- Include the current character customization and house improvements.
+
+
 ## 0.0.16 — 2026-10-06
 
 - Expand the upstairs to 12.6 × 9.8 metres, with higher ceilings, wider doors and clear circulation around human-sized furniture.

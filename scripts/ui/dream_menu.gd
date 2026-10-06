@@ -2,6 +2,7 @@ extends Control
 
 const STORY := "Ophelia keeps the house. Mathilda goes out into the storm.\nLast night, you told her to go.\n\nNow her pack is in the snow, her words are on the pages,\nand the trees answer in your voice.\n\nLeave the lantern burning. Find her.\nDecide what you can bear to bring home."
 
+var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
 var _buttons: Array[Button] = []
 var _gaze := 0.5
@@ -17,6 +18,16 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = UiChrome.menu_theme()
+	_music = AudioStreamPlayer.new()
+	_music.stream = load("res://assets/audio/music/danse_macabre.ogg")
+	if _music.stream is AudioStreamOggVorbis:
+		(_music.stream as AudioStreamOggVorbis).loop = true
+	_music.volume_db = -12.0
+	add_child(_music)
+	if Game.phase == Game.Phase.BOOT:
+		Game.settings.apply_audio()
+		_music.play()
+
 	var background := ColorRect.new()
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -134,9 +145,12 @@ func _process(delta: float) -> void:
 func _choose(caption: String) -> void:
 	match caption:
 		"BEGIN":
+			var fade := create_tween()
+			fade.tween_property(_music, "volume_db", -60.0, 0.65)
+			fade.tween_callback(_music.stop)
 			Game.begin_intro()
 		"THE DREAM", "CREDITS":
-			_body.text = STORY if caption == "THE DREAM" else "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nBuilt with Godot\n\nAsset provenance and licenses accompany the game."
+			_body.text = STORY if caption == "THE DREAM" else "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nBuilt with Godot\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
 			_panel.show()
 			(_panel.get_child(0).get_child(1) as Button).grab_focus()
 		"QUIT":
