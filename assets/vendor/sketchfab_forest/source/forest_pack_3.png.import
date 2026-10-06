@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cjkbssusd3as2"
-path="res://.godot/imported/forest_pack_3.png-d4b855f87b21b0c9432aff2b986b7c50.ctex"
+path.s3tc="res://.godot/imported/forest_pack_3.png-d4b855f87b21b0c9432aff2b986b7c50.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "cf6f1ada475a4dd8b4f9b4e81f2ab4f0"
@@ -14,7 +15,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/vendor/sketchfab_forest/source/forest_pack_3.png"
-dest_files=["res://.godot/imported/forest_pack_3.png-d4b855f87b21b0c9432aff2b986b7c50.ctex"]
+dest_files=["res://.godot/imported/forest_pack_3.png-d4b855f87b21b0c9432aff2b986b7c50.s3tc.ctex"]
 
 [params]
 
