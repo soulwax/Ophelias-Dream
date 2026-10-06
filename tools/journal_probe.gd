@@ -30,6 +30,15 @@ func _run() -> void:
 
 
 func _catalog() -> void:
+	var by_title := {}
+	for entry in NoteCatalog.everything():
+		by_title[entry.title] = entry
+	_check(by_title["by the bed"].body.contains("You said go, so I am going."), "the bed page knows about the argument")
+	_check(by_title["the handwriting changes"].body.contains("fix the latch. tell her."), "the fridge list ends with tell her")
+	_check(by_title["intake"].body.contains("one coat, buttoned to the throat") and by_title["intake"].body.contains("Cause: exposure."), "the intake lists the coat")
+	_check(by_title["intake"].between == "Note: the coat held its shape after the sheet was lifted.", "the coat held its shape")
+	_check(by_title[NoteCatalog.LAST_TITLE].body.contains("forgive me for going."), "the last page forgives")
+	_check(by_title[NoteCatalog.LAST_TITLE].between.contains("the sheet is the coat."), "the sheet is the coat")
 	var trail := NoteCatalog.all()
 	_check(trail.size() == 5, "five trail pages")
 	_check(trail[4].title == NoteCatalog.LAST_TITLE, "the last trail page is LAST_TITLE")

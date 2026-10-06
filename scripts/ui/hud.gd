@@ -271,8 +271,8 @@ func _build_intro() -> void:
 	card.set_anchors_preset(Control.PRESET_CENTER)
 	card.offset_left = -340
 	card.offset_right = 340
-	card.offset_top = -100
-	card.offset_bottom = 100
+	card.offset_top = -118
+	card.offset_bottom = 118
 	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro.add_child(card)
@@ -286,6 +286,9 @@ func _build_intro() -> void:
 	var line := UiChrome.label("Mathilda went out into the storm.", 18, UiChrome.MUTED)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
+	var told := UiChrome.label("You told her to.", 15, Color(UiChrome.MUTED, 0.75))
+	told.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(told)
 	# The controls live in the Esc menu, not on screen.
 	var menu_line := UiChrome.label("Esc: controls and settings", 13, UiChrome.MUTED)
 	menu_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
