@@ -251,3 +251,16 @@ const CALL_EVERY := Vector2(45.0, 80.0)
 # The trees answer at most ECHO_MAX times, this much quieter than her call.
 const ECHO_DROP_DB := 14.0
 const ECHO_MAX := 2
+# Memories wait this long (s) after any line, and only while she walks outdoors.
+const MEMORY_GAP := 50.0
+# Breath and fall lines repeat at most this often (s).
+const SPENT_GAP := 20.0
+const FALL_GAP := 15.0
+# The cold gets to her after this long (s) outdoors in a hard gust or whiteout, then not again for COLD_GAP.
+const COLD_AFTER := 120.0
+const COLD_GAP := 90.0
+# Her line over the escape card waits this long (s); at the road, the answer waits ANSWER_ROAD_DELAY after it.
+const ENDING_DELAY := 1.2
+const ANSWER_ROAD_DELAY := 1.4
+# The trees' answer is this much quieter (dB) than her call.
+const ANSWER_DROP_DB := 6.0

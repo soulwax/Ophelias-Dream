@@ -406,7 +406,7 @@ func turn_around() -> void:
 	_turn_hold = 0.0
 	mark("turned around")
 	turned.emit()
-	if voice and voice.has_method("turned"):
+	if voice:
 		voice.turned()
 
 

@@ -5,14 +5,20 @@ extends Node
 # mood per line, is in assets/audio/voice/lines.json; tools/bake_speech.py
 # turns each line into a clip named by the SHA-256 of "text|mood". Playing
 # never runs a model. A line cut off by a more important one is forgotten, as
-# if it had never started, and plays whole at its next chance.
+# if it had never started, and plays whole at its next chance. The trees answer in her own voice (answers); Mathilda never speaks.
 
 const LINES := "res://assets/audio/voice/lines.json"
 const CLIPS := "res://assets/audio/voice/"
 # Only a higher number cuts off a playing line (a misread may cut a misread).
-const PRIORITY := {"page": 3, "deciphered": 3, "place": 2, "revisit": 2, "bored": 1, "call": 1, "misread": 1}
+const PRIORITY := {"ending": 4, "page": 3, "deciphered": 3, "turned": 3, "place": 2, "revisit": 2,
+	"spent": 2, "fall": 2, "bored": 1, "memory": 1, "call": 1, "misread": 1, "cold": 1}
 const STAGES := ["hope", "doubt", "resolve"]
-const MOODS := ["steady", "warm", "hushed", "shaken", "breaking", "resolve", "calling"]
+# After she turns around her idle thoughts come from this stage, and she stops calling.
+const AFTER := "after"
+const MOODS := ["steady", "warm", "hushed", "shaken", "breaking", "resolve", "calling",
+	"numb", "bitter", "pleading", "wry", "remembering", "panicked", "spent"]
+# These may play again; every other line plays once per run.
+const REPEATS := ["call", "misread", "spent", "fall"]
 const FALLBACK_PAGE := "She wrote this for me. I have to keep going."
 
 # Where each place is, for the drafter (tools/bake_voice.py) and the probes.
@@ -34,7 +40,14 @@ var _pages := {}
 var _deciphered := {}
 var _places := {}
 var _revisits := {}
-var _bored := {"hope": [], "doubt": [], "resolve": []}
+var _bored := {"hope": [], "doubt": [], "resolve": [], "after": []}
+var _memories := {"hope": [], "doubt": [], "resolve": []}
+var _spent: Array = []
+var _cold: Array = []
+var _falls: Array = []
+var _turned := {}
+var _endings := {}
+var _answers := {}
 var _calls := {"hope": [], "doubt": [], "resolve": []}
 var _misread: Array = []
 var _clips := {}
@@ -51,7 +64,14 @@ var _said_deciphered := {}
 var _seen := {}
 var _first_seen := {}
 var _revisited := {}
-var _bored_at := {"hope": 0, "doubt": 0, "resolve": 0}
+var _bored_at := {"hope": 0, "doubt": 0, "resolve": 0, "after": 0}
+var _memory_at := {"hope": 0, "doubt": 0, "resolve": 0}
+var _cold_at := 0
+var _cold_next := 0.0
+var _outdoor_time := 0.0
+var _spent_at := -99.0
+var _fall_at := -99.0
+var _ending_ticket := 0
 var _call_at := {"hope": 0, "doubt": 0, "resolve": 0}
 var _call_left := -1.0
 var _echoed := {}
@@ -79,6 +99,9 @@ func _ready() -> void:
 	_load()
 	_build_speaker()
 	Game.phase_changed.connect(_on_phase)
+	if Game.player:
+		Game.player.exhausted.connect(out_of_breath)
+		Game.player.landed_hard.connect(fell)
 
 
 func speaks() -> bool:
@@ -98,6 +121,8 @@ static func stage_for(found: int, last: bool) -> String:
 
 
 func stage() -> String:
+	if Game.turned_around:
+		return AFTER
 	return Voice.stage_for(Game.notes_found, Game.read_last_page)
 
 
@@ -119,9 +144,18 @@ func _build_speaker() -> void:
 func _on_phase(next: int) -> void:
 	if next in [Game.Phase.BOOT, Game.Phase.CAUGHT, Game.Phase.ESCAPED]:
 		_interrupt()
-		_pending_echo_stage = ""
-		_echo_ticket += 1
+		_cancel_echo()
+		_ending_ticket += 1
 	if next != Game.Phase.PLAYING and _echo:
+		_echo.stop()
+	if next == Game.Phase.ESCAPED and is_inside_tree():
+		get_tree().create_timer(Tune.ENDING_DELAY).timeout.connect(_speak_ending.bind(_ending_ticket))
+
+
+func _cancel_echo() -> void:
+	_pending_echo_stage = ""
+	_echo_ticket += 1
+	if _echo:
 		_echo.stop()
 
 
@@ -132,6 +166,9 @@ func _finished() -> void:
 			_schedule_echo(_current)
 	if not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = 0.0
+	if not _current.is_empty() and str(_current.get("kind", "")) == "ending" \
+			and str(_current.get("id", "")) == "road" and not Game.turned_around and is_inside_tree():
+		get_tree().create_timer(Tune.ANSWER_ROAD_DELAY).timeout.connect(_answer_road.bind(_ending_ticket))
 	_current = {}
 
 
@@ -157,14 +194,17 @@ func _process(delta: float) -> void:
 	_notice(delta)
 
 
-# Calls for Mathilda (Task 6).
 func _tick_outdoors(delta: float) -> void:
-	_call_tick(delta, not Game.indoors(Game.player.global_position + Vector3.UP * 0.9))
+	var outdoors := not Game.indoors(Game.player.global_position + Vector3.UP * 0.9)
+	_call_tick(delta, outdoors)
+	_outdoor_time = _outdoor_time + delta if outdoors else 0.0
+	_memory_tick(outdoors, Vector2(Game.player.velocity.x, Game.player.velocity.z).length())
+	_cold_tick(outdoors)
 
 
 func _call_tick(delta: float, outdoors: bool) -> void:
 	var now := stage()
-	if not outdoors or (_calls[now] as Array).is_empty():
+	if Game.turned_around or not outdoors or (_calls.get(now, []) as Array).is_empty():
 		return
 	if _call_left < 0.0:
 		_call_left = randf_range(Tune.CALL_FIRST.x, Tune.CALL_FIRST.y)
@@ -180,35 +220,60 @@ func _call_tick(delta: float, outdoors: bool) -> void:
 
 
 func _wants_echo(now: String) -> bool:
-	return Game.read_pages.has("on the post") and now != "hope" and not _echoed.has(now) and _pending_echo_stage == "" and _echoes < Tune.ECHO_MAX
+	return not Game.turned_around and Game.read_pages.has("on the post") and now != "hope" and not _echoed.has(now) and _pending_echo_stage == "" and _echoes < Tune.ECHO_MAX
 
 
 func _schedule_echo(line: Dictionary) -> void:
-	var stream := _clip(line)
-	if stream == null or Game.trail == null or Game.trail.flora == null:
+	var now := str(line.stage)
+	var answer: Dictionary = _answers.get(now, {})
+	var spoken := _clip(answer) if not answer.is_empty() else null
+	# The second answer comes from right behind her, not from the trees.
+	var close := spoken != null and now == "resolve"
+	var stream := spoken if spoken else _clip(line)
+	if stream == null:
 		return
-	var at := Voice.echo_from(Game.player.global_position, Game.trail.flora.tree_positions())
-	if at == Vector3.INF:
-		return
-	_pending_echo_stage = str(line.stage)
+	if spoken == null:
+		answer = {}
+	var at := Vector3.ZERO
+	if not close:
+		if Game.trail == null or Game.trail.flora == null:
+			return
+		at = Voice.echo_from(Game.player.global_position, Game.trail.flora.tree_positions())
+		if at == Vector3.INF:
+			return
+	_pending_echo_stage = now
 	_echo_ticket += 1
-	get_tree().create_timer(randf_range(1.6, 2.4), false).timeout.connect(_play_echo.bind(stream, at, _echo_ticket, _pending_echo_stage))
+	get_tree().create_timer(randf_range(1.6, 2.4), false).timeout.connect(
+		_play_echo.bind(stream, at, _echo_ticket, now, answer, close))
 
 
-# Her own call, back from the trees. No subtitle; the page said not to answer.
-func _play_echo(stream: AudioStream, at: Vector3, ticket: int, echo_stage: String) -> void:
+# Her own voice, back from the trees or from right behind her. Never Mathilda's.
+func _play_echo(stream: AudioStream, at: Vector3, ticket: int, echo_stage: String, answer := {}, close := false) -> void:
 	if ticket != _echo_ticket:
 		return
 	_pending_echo_stage = ""
-	if Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9):
+	if Game.phase != Game.Phase.PLAYING or Game.turned_around or Game.indoors(Game.player.global_position + Vector3.UP * 0.9):
 		return
 	_echoed[echo_stage] = true
 	_echoes += 1
 	_echo.stream = stream
-	_echo.global_position = at
-	Loudness.place(_echo, Tune.CALL_SPL - Tune.ECHO_DROP_DB, true)
+	_echo.global_position = _behind(1.4) if close else at
+	if answer.is_empty():
+		Loudness.place(_echo, Tune.CALL_SPL - Tune.ECHO_DROP_DB, true)
+	elif close:
+		Loudness.place(_echo, Tune.VOICE_SPL, false)
+	else:
+		Loudness.place(_echo, Tune.CALL_SPL - Tune.ANSWER_DROP_DB, true)
 	_echo.play()
+	if not answer.is_empty():
+		Game.murmur_line("…" + str(answer.text))
+		Game.murmur_left = stream.get_length() + 0.6
 	Game.heard("echo")
+
+
+func _behind(distance: float) -> Vector3:
+	var back := Basis(Vector3.UP, Game.player.facing()) * Vector3(0.0, 0.0, distance)
+	return Game.player.global_position + back + Vector3.UP * 1.55
 
 
 static func echo_from(player_at: Vector3, trees: PackedVector3Array) -> Vector3:
@@ -248,6 +313,73 @@ func misread() -> void:
 	if not _active or _misread.is_empty() or _clock - _misread_at < Tune.MISREAD_GAP:
 		return
 	_say(_misread[randi() % _misread.size()])
+
+
+## She turned around (Game.turn_around): she says so, and nothing answers again.
+func turned() -> void:
+	_cancel_echo()
+	if _active and not _turned.is_empty():
+		_say(_turned)
+
+
+## The sprint ran her out of breath (Player.exhausted).
+func out_of_breath() -> void:
+	if not _active or _spent.is_empty() or _clock - _spent_at < Tune.SPENT_GAP or Game.phase != Game.Phase.PLAYING:
+		return
+	_say(_spent[randi() % _spent.size()])
+
+
+## A hard landing (Player.landed_hard).
+func fell(_fall_speed: float) -> void:
+	if not _active or _falls.is_empty() or _clock - _fall_at < Tune.FALL_GAP or Game.phase != Game.Phase.PLAYING:
+		return
+	_say(_falls[randi() % _falls.size()])
+
+
+func _memory_tick(outdoors: bool, speed: float) -> void:
+	var now := stage()
+	if not outdoors or speed < 1.0 or _busy() or _since < Tune.MEMORY_GAP or not _memories.has(now):
+		return
+	var lines: Array = _memories[now]
+	var index := int(_memory_at[now])
+	if index < lines.size():
+		_say(lines[index])
+
+
+func _cold_tick(outdoors: bool) -> void:
+	if not outdoors or _outdoor_time < Tune.COLD_AFTER or _clock < _cold_next or _busy() or _cold_at >= _cold.size():
+		return
+	var weather := Game.weather
+	if weather == null or (weather.whiteout <= 0.5 and weather.gust <= 0.6):
+		return
+	if _say(_cold[_cold_at]):
+		_cold_next = _clock + Tune.COLD_GAP
+
+
+func _speak_ending(ticket: int) -> void:
+	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or not _active:
+		return
+	var line: Dictionary = _endings.get("prints" if Game.turned_around else "road", {})
+	if not line.is_empty():
+		_say(line)
+
+
+# At the road, after her plea: "Okay.", from behind the car, in her own voice.
+func _answer_road(ticket: int) -> void:
+	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or Game.turned_around:
+		return
+	var line: Dictionary = _answers.get("road", {})
+	if line.is_empty():
+		return
+	var stream := _clip(line)
+	if stream:
+		_echo.stream = stream
+		_echo.global_position = _behind(3.0)
+		Loudness.place(_echo, Tune.VOICE_SPL - 3.0, false)
+		_echo.play()
+	Game.murmur_line("…" + str(line.text))
+	if stream:
+		Game.murmur_left = stream.get_length() + 0.6
 
 
 func _notice(delta: float) -> void:
@@ -298,7 +430,7 @@ func _say(line: Dictionary, repeat := false) -> bool:
 	if text == "" or _speaker == null:
 		return false
 	var kind := str(line.get("kind", "bored"))
-	var once := kind != "call" and kind != "misread"
+	var once := not REPEATS.has(kind)
 	if once and _spoken.has(_key(line)) and not repeat:
 		return false
 	if _busy():
@@ -354,6 +486,14 @@ func _mark(line: Dictionary) -> void:
 			_call_at[line.stage] = int(line.index) + 1
 		"misread":
 			_misread_at = _clock
+		"memory":
+			_memory_at[line.stage] = maxi(int(_memory_at[line.stage]), int(line.index) + 1)
+		"cold":
+			_cold_at = maxi(_cold_at, int(line.index) + 1)
+		"spent":
+			_spent_at = _clock
+		"fall":
+			_fall_at = _clock
 
 
 func _forget(line: Dictionary) -> void:
@@ -376,6 +516,10 @@ func _forget(line: Dictionary) -> void:
 		"call":
 			_call_at[line.stage] = int(line.index)
 			_call_left = 0.0
+		"memory":
+			_memory_at[line.stage] = mini(int(_memory_at[line.stage]), int(line.index))
+		"cold":
+			_cold_at = mini(_cold_at, int(line.index))
 
 
 func _enqueue(line: Dictionary) -> void:
@@ -425,26 +569,30 @@ static func read_lines() -> Dictionary:
 func _load() -> void:
 	var data := Voice.read_lines()
 	for pair in [["pages", _pages, "page"], ["deciphered", _deciphered, "deciphered"],
-			["places", _places, "place"], ["revisits", _revisits, "revisit"]]:
+			["places", _places, "place"], ["revisits", _revisits, "revisit"],
+			["endings", _endings, "ending"], ["answers", _answers, "answer"]]:
 		var group: Variant = data.get(pair[0], {})
 		if typeof(group) == TYPE_DICTIONARY:
 			for id in group:
 				(pair[1] as Dictionary)[id] = Voice._parse(group[id], pair[2], str(id))
-	for pair in [["bored", _bored, "bored"], ["calls", _calls, "call"]]:
+	for pair in [["bored", _bored, "bored"], ["memories", _memories, "memory"], ["calls", _calls, "call"]]:
 		var group: Variant = data.get(pair[0], {})
 		# The old format kept one flat list of idle lines.
 		if typeof(group) == TYPE_ARRAY:
 			group = {"hope": group}
 		if typeof(group) != TYPE_DICTIONARY:
 			continue
-		for stage in STAGES:
+		for stage in (pair[1] as Dictionary).keys():
 			var list: Array = (group as Dictionary).get(stage, [])
 			for index in list.size():
 				((pair[1] as Dictionary)[stage] as Array).append(Voice._parse(list[index], pair[2], "%s/%d" % [stage, index], stage, index))
-	var misread: Variant = data.get("misread", [])
-	if typeof(misread) == TYPE_ARRAY:
-		for index in (misread as Array).size():
-			_misread.append(Voice._parse(misread[index], "misread", str(index)))
+	for pair in [["misread", _misread, "misread"], ["spent", _spent, "spent"], ["cold", _cold, "cold"], ["falls", _falls, "fall"]]:
+		var list: Variant = data.get(pair[0], [])
+		if typeof(list) == TYPE_ARRAY:
+			for index in (list as Array).size():
+				(pair[1] as Array).append(Voice._parse(list[index], pair[2], str(index), "", index))
+	if typeof(data.get("turned")) == TYPE_DICTIONARY:
+		_turned = Voice._parse(data["turned"], "turned", "turned")
 
 
 func _stock_place(place: String) -> String:

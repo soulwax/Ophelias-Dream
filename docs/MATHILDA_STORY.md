@@ -382,6 +382,12 @@ Mathilda never speaks. These three are the protagonist's own voice, coming back.
 
 Once she has turned around, nothing answers again.
 
+Lines:
+
+- **doubt:** [bitter] Go, then!
+- **resolve:** [hushed] I'm right behind you.
+- **road:** [warm] Okay.
+
 ### Rejected readings in the journal
 
 - [hushed] No. That's not it.

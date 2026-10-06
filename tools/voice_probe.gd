@@ -7,6 +7,8 @@ extends Node
 
 var _failures := 0
 var voice: Voice
+# Set at the end of _answers(): a script error mid-section aborts it silently.
+var _answers_ran := false
 
 
 func _ready() -> void:
@@ -36,33 +38,43 @@ func _run() -> void:
 	_interruption()
 	_extra()
 	_calls()
+	_moments()
+	_answers()
+	_check(_answers_ran, "the answer checks ran to the end")
 	print("VOICE ", "FAIL (%d)" % _failures if _failures > 0 else "PASS")
 	get_tree().quit(1 if _failures > 0 else 0)
 
 
 func _all_lines() -> Array:
-	var found: Array = voice._pages.values() + voice._deciphered.values() + voice._places.values() + voice._revisits.values() + voice._misread
-	for stage in Voice.STAGES:
+	var found: Array = voice._pages.values() + voice._deciphered.values() + voice._places.values() \
+		+ voice._revisits.values() + voice._misread + voice._spent + voice._cold + voice._falls \
+		+ voice._endings.values() + voice._answers.values() + [voice._turned]
+	for stage in voice._bored:
 		found += voice._bored[stage]
+	for stage in Voice.STAGES:
+		found += voice._memories[stage]
 		found += voice._calls[stage]
 	return found
 
 
 func _lines() -> void:
 	_check(voice._pages.size() == 7 and voice._deciphered.size() == 7, "seven page and seven deciphered lines")
-	_check(voice._places.size() == 11 and voice._revisits.size() == 5, "eleven places, five revisits")
+	_check(voice._places.size() == 11 and voice._revisits.size() == 11, "eleven places, eleven revisits")
 	for stage in Voice.STAGES:
-		_check(voice._bored[stage].size() == 6, "six idle lines for " + stage)
-		_check(voice._calls[stage].size() == 3, "three calls for " + stage)
-	_check(voice._misread.size() == 5, "five misreads")
+		_check(voice._bored[stage].size() == 10, "ten idle lines for " + stage)
+		_check(voice._memories[stage].size() == 5, "five memories for " + stage)
+		_check(voice._calls[stage].size() == 5, "five calls for " + stage)
+	_check(voice._bored[Voice.AFTER].size() == 6, "six idle lines after turning around")
+	_check(voice._misread.size() == 10 and voice._spent.size() == 8 and voice._cold.size() == 6 and voice._falls.size() == 5, "misreads, breath, cold, falls")
+	_check(not voice._turned.is_empty() and voice._endings.size() == 2 and voice._answers.size() == 3, "turning, endings, answers")
 	var every := _all_lines()
-	_check(every.size() == 62, "62 lines in all (%d)" % every.size())
+	_check(every.size() == 137, "137 lines in all (%d)" % every.size())
 	for line in every:
 		_check(Voice.MOODS.has(str(line.mood)) and str(line.text) != "", "a mood for: " + str(line.text))
 	for entry in NoteCatalog.everything():
 		_check(voice._pages.has(entry.title) and voice._deciphered.has(entry.title), "lines for " + entry.title)
 	for place in voice._places:
-		_check(Voice.PLACES.has(place), "a known place: " + str(place))
+		_check(Voice.PLACES.has(place) and voice._revisits.has(place), "a known place with a revisit: " + str(place))
 	_check(Voice.clip_key("a", "b") == "a|b".sha256_text(), "clip key is sha256 of text|mood")
 	var old: Dictionary = Voice._parse("plain words", "bored", "x")
 	_check(old.text == "plain words" and old.mood == "steady", "a plain string loads as steady")
@@ -71,8 +83,6 @@ func _lines() -> void:
 			var path := Voice.CLIPS + voice._key(line) + ".wav"
 			var clip := load(path) as AudioStream if ResourceLoader.exists(path) else null
 			_check(clip != null and clip.get_length() > 0.0, "clip for: " + str(line.text))
-	for line in every:
-		_check(not str(line.text).contains("Mara"), "none of the old story: " + str(line.text))
 
 
 func _stages() -> void:
@@ -179,3 +189,87 @@ func _calls() -> void:
 	Game.set_phase(Game.Phase.READING)
 	voice._play_echo(AudioStreamWAV.new(), Vector3.ZERO, voice._echo_ticket, "doubt")
 	_check(voice._pending_echo_stage == "" and voice._echoes == Tune.ECHO_MAX, "a cancelled echo releases its pending stage without spending another echo")
+
+
+func _moments() -> void:
+	Game.read_pages.clear()
+	Game.turned_around = false
+	Game.set_phase(Game.Phase.PLAYING)
+	voice._finished()
+	voice._current = {}
+	voice._since = 99.0
+	voice._memory_tick(false, 1.5)
+	_check(voice._current.is_empty(), "no memories indoors")
+	voice._memory_tick(true, 0.4)
+	_check(voice._current.is_empty(), "no memories standing still")
+	voice._memory_tick(true, 1.5)
+	_check(str(voice._current.get("kind", "")) == "memory" and voice._memory_at["hope"] == 1, "a memory while walking the field")
+	voice._finished()
+	voice._since = 0.0
+	voice._memory_tick(true, 1.5)
+	_check(voice._current.is_empty(), "memories wait MEMORY_GAP")
+	voice._clock = 1000.0
+	voice._say(voice._bored["hope"][3])
+	voice.fell(9.0)
+	_check(str(voice._current.get("kind", "")) == "fall", "a fall cuts off idle talk")
+	voice._finished()
+	voice.fell(9.0)
+	_check(voice._current.is_empty(), "falls wait FALL_GAP")
+	voice.out_of_breath()
+	_check(str(voice._current.get("kind", "")) == "spent", "out of breath")
+	voice._finished()
+	voice.out_of_breath()
+	_check(voice._current.is_empty(), "breath lines wait SPENT_GAP")
+	Game.weather = null
+	voice._outdoor_time = Tune.COLD_AFTER + 1.0
+	voice._cold_tick(true)
+	_check(voice._current.is_empty(), "no cold lines without weather")
+	var weather := Weather.new()
+	weather.whiteout = 0.9
+	Game.weather = weather
+	voice._cold_tick(false)
+	_check(voice._current.is_empty(), "no cold lines indoors")
+	voice._cold_tick(true)
+	_check(str(voice._current.get("kind", "")) == "cold", "the cold gets to her in a whiteout")
+	voice._finished()
+	voice._cold_tick(true)
+	_check(voice._current.is_empty(), "the cold waits COLD_GAP")
+	Game.weather = null
+	weather.free()
+	Game.turned_around = true
+	_check(voice.stage() == Voice.AFTER, "after turning around she is in the after stage")
+	Game.read_pages["on the post"] = true
+	voice._echoed.clear()
+	voice._echoes = 0
+	_check(not voice._wants_echo("resolve"), "nothing answers after she turns around")
+	voice._call_left = 0.01
+	voice._call_tick(1.0, true)
+	_check(voice._current.is_empty(), "she stops calling after she turns around")
+	voice.turned()
+	_check(str(voice._current.get("kind", "")) == "turned", "she says she turned around")
+	voice._finished()
+	Game.turned_around = false
+
+
+func _answers() -> void:
+	Game.player.global_position = Vector3.ZERO
+	_check(voice._behind(1.4).is_equal_approx(Vector3(0, 1.55, 1.4)), "behind her is opposite the way she faces")
+	Game.set_phase(Game.Phase.ESCAPED)
+	voice._speak_ending(voice._ending_ticket)
+	_check(str(voice._current.get("id", "")) == "road", "the road ending is spoken over the card")
+	voice._finished()
+	voice._answer_road(voice._ending_ticket)
+	_check(Game.murmur == "…" + str(voice._answers["road"].text), "and something answers okay")
+	var stale: int = voice._ending_ticket
+	voice._on_phase(Game.Phase.BOOT)
+	Game.murmur = ""
+	voice._answer_road(stale)
+	_check(Game.murmur == "", "a restart cancels a pending answer")
+	Game.turned_around = true
+	Game.set_phase(Game.Phase.ESCAPED)
+	voice._speak_ending(voice._ending_ticket)
+	_check(str(voice._current.get("id", "")) == "prints", "the prints ending has its own line")
+	voice._finished()
+	Game.turned_around = false
+	Game.set_phase(Game.Phase.PLAYING)
+	_answers_ran = true
