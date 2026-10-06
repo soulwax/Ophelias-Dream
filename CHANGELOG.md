@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1.5 — 2026-10-06
+
+- Plant the first trees, firs, bushes and grass from a hand-made Sketchfab fir-forest pack, as the start of greener woods beyond the snowy story ground.
+- Build a larger world of chunked terrain around the story, with mountains and a new snow ground shader, and keep it in step with older saved levels.
+- Forest textures now use compressed GPU formats, so they load lighter.
+
 ## 0.2.1.4 — 2026-10-06
 
 - Ophelia now speaks fifteen of her twenty lines in the meeting at the door in her own voice, the one she has in the field. Five lines and all of Mathilda's still use draft performances; Mathilda's match her chapter.
