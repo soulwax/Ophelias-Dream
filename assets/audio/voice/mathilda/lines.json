@@ -1,0 +1,168 @@
+{
+  "arrival": [
+    {
+      "mood": "hushed",
+      "text": "The tent is still here. Good. One thing that stayed where I left it."
+    },
+    {
+      "mood": "bitter",
+      "text": "Go, then. She said it so quietly I almost thought she was asking me to stay."
+    },
+    {
+      "mood": "resolve",
+      "text": "I'm not hiding from her. I am waiting where she has to choose to come."
+    }
+  ],
+  "cups": [
+    {
+      "mood": "warm",
+      "text": "Two cups. I packed two before we argued."
+    },
+    {
+      "mood": "shaken",
+      "text": "They fit inside each other. They always have."
+    },
+    {
+      "mood": "resolve",
+      "text": "I'm keeping hers. She can be angry and still be thirsty."
+    }
+  ],
+  "gloves": [
+    {
+      "mood": "warm",
+      "text": "She knitted these too small. I said they were perfect."
+    },
+    {
+      "mood": "bitter",
+      "text": "If I put them on, she'll know I needed something from her."
+    },
+    {
+      "mood": "resolve",
+      "text": "My hands are freezing. That is a stupid reason not to wear gloves."
+    }
+  ],
+  "note": [
+    {
+      "mood": "hushed",
+      "text": "I wrote don't turn around. I meant don't come after me just because you're afraid."
+    },
+    {
+      "mood": "shaken",
+      "text": "No. That's not what the page says now."
+    },
+    {
+      "mood": "resolve",
+      "text": "I want her to come because she wants me. Not because she cannot bear an empty room."
+    }
+  ],
+  "lantern": [
+    {
+      "mood": "warm",
+      "text": "There's the window. She left the lantern burning."
+    },
+    {
+      "mood": "bitter",
+      "text": "A light is not an apology. I know. I'm watching it anyway."
+    },
+    {
+      "mood": "pleading",
+      "text": "Ophelia. You can leave the house. It won't fall down without you."
+    }
+  ],
+  "road": [
+    {
+      "mood": "hushed",
+      "text": "The engine was running when I got here. Nobody was in the seat."
+    },
+    {
+      "mood": "shaken",
+      "text": "I don't remember starting it. I remember the key in my hand."
+    },
+    {
+      "mood": "resolve",
+      "text": "I could leave. That is different from wanting to."
+    }
+  ],
+  "house": [
+    {
+      "mood": "hushed",
+      "text": "The door is unlatched. She never leaves it like that."
+    },
+    {
+      "mood": "warm",
+      "text": "I know which board complains. I know how to come home quietly."
+    },
+    {
+      "mood": "resolve",
+      "text": "I won't make her guess what I need this time."
+    }
+  ],
+  "snow": [
+    {
+      "mood": "shaken",
+      "text": "My prints stop before I do. I'm still walking."
+    },
+    {
+      "mood": "hushed",
+      "text": "Something called her name with my mouth closed."
+    },
+    {
+      "mood": "resolve",
+      "text": "If the trees answer, let them. They don't get to choose for me."
+    }
+  ],
+  "idle": [
+    {
+      "mood": "bitter",
+      "text": "She thinks brave means not being frightened. It means going out frightened."
+    },
+    {
+      "mood": "warm",
+      "text": "She cuts the crusts off when she thinks I'm not looking."
+    },
+    {
+      "mood": "hushed",
+      "text": "I can hear the house from here. Or I know it too well."
+    },
+    {
+      "mood": "shaken",
+      "text": "Same afternoon. I have been waiting through the same afternoon."
+    },
+    {
+      "mood": "resolve",
+      "text": "I left the pack where she could find it. I did not leave it for the trees."
+    },
+    {
+      "mood": "pleading",
+      "text": "Don't call me back just to put me away again."
+    },
+    {
+      "mood": "warm",
+      "text": "Two chairs. Two cups. She remembers in objects before she remembers in words."
+    },
+    {
+      "mood": "resolve",
+      "text": "I can go back without taking back everything I said."
+    }
+  ],
+  "cold": [
+    {
+      "mood": "hushed",
+      "text": "The canvas keeps the wind off. Not the cold."
+    },
+    {
+      "mood": "shaken",
+      "text": "I thought anger would keep me warm longer than this."
+    }
+  ],
+  "ending": [
+    {
+      "mood": "resolve",
+      "text": "I'm coming back. You will have to hear me this time."
+    },
+    {
+      "mood": "hushed",
+      "text": "I will wait a little longer. But I am not disappearing for her."
+    }
+  ]
+}

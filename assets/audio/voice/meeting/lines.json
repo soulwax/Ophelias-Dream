@@ -1,0 +1,314 @@
+[
+  {
+    "id": "01",
+    "speaker": "ophelia",
+    "mood": "pleading",
+    "text": "You're here. Come in. I'll put the kettle on.",
+    "reaction": "relief; reach for a familiar task",
+    "pause": 0.3
+  },
+  {
+    "id": "02",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Not yet.",
+    "reaction": "stop her before welcome becomes avoidance",
+    "pause": 0.8
+  },
+  {
+    "id": "03",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "Are you hurt?",
+    "reaction": "fear replaces relief",
+    "pause": 0.35
+  },
+  {
+    "id": "04",
+    "speaker": "mathilda",
+    "mood": "bitter",
+    "text": "I'm cold. I'm angry. Those are different things.",
+    "reaction": "name the feeling rather than accuse",
+    "pause": 0.7
+  },
+  {
+    "id": "05",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I didn't mean for you to go.",
+    "reaction": "first attempt to undo the action",
+    "pause": 0.45
+  },
+  {
+    "id": "06",
+    "speaker": "mathilda",
+    "mood": "resolve",
+    "text": "You said go. I needed you to notice that I could.",
+    "reaction": "answer the actual claim",
+    "pause": 0.95
+  },
+  {
+    "id": "07",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "I noticed. I watched the door all night.",
+    "reaction": "a concrete confession",
+    "pause": 0.55
+  },
+  {
+    "id": "08",
+    "speaker": "mathilda",
+    "mood": "bitter",
+    "text": "Then why didn't you open it?",
+    "reaction": "hurt asks a precise question",
+    "pause": 1.25
+  },
+  {
+    "id": "09",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "Because if you came back angry, I would have to hear you.",
+    "reaction": "give up the excuse",
+    "pause": 0.9
+  },
+  {
+    "id": "10",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Yes.",
+    "reaction": "recognition; not forgiveness",
+    "pause": 1.1
+  },
+  {
+    "id": "11",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I kept thinking of what to say. I never thought of what to ask.",
+    "reaction": "recognize her pattern",
+    "pause": 0.6
+  },
+  {
+    "id": "12",
+    "speaker": "mathilda",
+    "mood": "resolve",
+    "text": "Ask me now.",
+    "reaction": "offer a chance without rescuing her",
+    "pause": 0.9
+  },
+  {
+    "id": "13",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "What did you need from me?",
+    "reaction": "a real question",
+    "pause": 0.55
+  },
+  {
+    "id": "14",
+    "speaker": "mathilda",
+    "mood": "shaken",
+    "text": "To let me finish. I said I was unhappy, and you handed me a list.",
+    "reaction": "the specific grievance",
+    "pause": 1.1
+  },
+  {
+    "id": "15",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "The shopping list.",
+    "reaction": "remember the small action",
+    "pause": 0.3
+  },
+  {
+    "id": "16",
+    "speaker": "mathilda",
+    "mood": "bitter",
+    "text": "You asked if we needed milk. I was trying to tell you I needed you.",
+    "reaction": "explain the wound, not a new mystery",
+    "pause": 1.25
+  },
+  {
+    "id": "17",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I heard you. I made it smaller because I knew how to fix milk.",
+    "reaction": "take responsibility",
+    "pause": 1.0
+  },
+  {
+    "id": "18",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "You don't have to fix this before you sit beside me.",
+    "reaction": "set a possible boundary",
+    "pause": 0.85
+  },
+  {
+    "id": "19",
+    "speaker": "ophelia",
+    "mood": "resolve",
+    "text": "Then I'll sit. And I'll listen until you're finished.",
+    "reaction": "specific promise",
+    "pause": 0.75
+  },
+  {
+    "id": "20",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "I brought your cup back.",
+    "reaction": "show that anger and care can coexist",
+    "pause": 0.55
+  },
+  {
+    "id": "21",
+    "speaker": "ophelia",
+    "mood": "warm",
+    "text": "You kept it?",
+    "reaction": "surprised tenderness",
+    "pause": 0.35
+  },
+  {
+    "id": "22",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "I was angry with you. I didn't want you gone.",
+    "reaction": "name the distinction",
+    "pause": 1.0
+  },
+  {
+    "id": "23",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "May I take it?",
+    "reaction": "ask instead of reaching",
+    "pause": 0.6
+  },
+  {
+    "id": "24",
+    "speaker": "mathilda",
+    "mood": "resolve",
+    "text": "Yes. Walk beside me.",
+    "reaction": "consent and a small shared action",
+    "pause": 1.2
+  },
+  {
+    "id": "a01",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "You left the lantern burning.",
+    "reaction": "topic at 01, once; the light she watched from the tent",
+    "pause": 0.6
+  },
+  {
+    "id": "a02",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "I didn't know what else to keep lit.",
+    "reaction": "a plain truth, not a plea",
+    "pause": 0.5
+  },
+  {
+    "id": "a03",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "Only my hands. You knitted the gloves too small.",
+    "reaction": "topic at 03 after examining the gloves, once; deflect with a joke",
+    "pause": 0.6
+  },
+  {
+    "id": "a04",
+    "speaker": "ophelia",
+    "mood": "warm",
+    "text": "You said they were perfect.",
+    "reaction": "she remembers the kindness",
+    "pause": 0.5
+  },
+  {
+    "id": "a05",
+    "speaker": "mathilda",
+    "mood": "bitter",
+    "text": "You said it like you meant it.",
+    "reaction": "topic at 05, once; refuse the easy retraction",
+    "pause": 0.7
+  },
+  {
+    "id": "a06",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I did. For as long as it took to say it.",
+    "reaction": "honesty instead of denial",
+    "pause": 0.8
+  },
+  {
+    "id": "a07",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "I left you a note. It says something different every time I read it.",
+    "reaction": "topic at 07 after examining the note, once",
+    "pause": 0.7
+  },
+  {
+    "id": "a08",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "I read it in your voice. Then in mine. So I stopped reading.",
+    "reaction": "the same unease, unexplained",
+    "pause": 0.8
+  },
+  {
+    "id": "a09",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "I'm not sure I know any more.",
+    "reaction": "topic at 13, once; she is allowed not to know yet",
+    "pause": 0.7
+  },
+  {
+    "id": "a10",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "Then I'll wait while you find it.",
+    "reaction": "she waits instead of filling the silence",
+    "pause": 0.8
+  },
+  {
+    "id": "a11",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Not yet. Sit with me out here first.",
+    "reaction": "the other answer to 23; consent deferred, not refused",
+    "pause": 0.8
+  },
+  {
+    "id": "a12",
+    "speaker": "ophelia",
+    "mood": "warm",
+    "text": "Out here. All right.",
+    "reaction": "she accepts without reaching",
+    "pause": 1.0
+  },
+  {
+    "id": "a13",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "I need a minute.",
+    "reaction": "leaving the conversation (any turn)",
+    "pause": 0.5
+  },
+  {
+    "id": "a14",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "I'll be here. I'm not going in without you.",
+    "reaction": "she does not follow and does not close the door",
+    "pause": 0.5
+  },
+  {
+    "id": "a15",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "Still here. Go on.",
+    "reaction": "greeting when Mathilda comes back to the conversation",
+    "pause": 0.5
+  }
+]

@@ -1,0 +1,53 @@
+{
+  "lines": "res://assets/audio/voice/meeting/lines.json",
+  "clips": "res://assets/audio/voice/meeting/",
+  "npc": "ophelia",
+  "names": {"ophelia": "Ophelia", "mathilda": "Mathilda"},
+  "start": "kettle",
+  "resume": ["a15"],
+  "leave": {"say": "a13", "reply": ["a14"]},
+  "nodes": {
+    "kettle": {"say": ["01"], "choices": [
+      {"say": "02", "goto": "hurt"},
+      {"say": "a01", "reply": ["a02"], "once": true}
+    ]},
+    "hurt": {"say": ["03"], "choices": [
+      {"say": "04", "goto": "meant"},
+      {"say": "a03", "reply": ["a04"], "once": true, "requires": ["gloves"]}
+    ]},
+    "meant": {"say": ["05"], "choices": [
+      {"say": "06", "goto": "door"},
+      {"say": "a05", "reply": ["a06"], "once": true}
+    ]},
+    "door": {"say": ["07"], "choices": [
+      {"say": "08", "goto": "why"},
+      {"say": "a07", "reply": ["a08"], "once": true, "requires": ["note"]}
+    ]},
+    "why": {"say": ["09"], "choices": [
+      {"say": "10", "goto": "ask"}
+    ]},
+    "ask": {"say": ["11"], "choices": [
+      {"say": "12", "goto": "need"}
+    ]},
+    "need": {"say": ["13"], "choices": [
+      {"say": "14", "goto": "list"},
+      {"say": "a09", "reply": ["a10"], "once": true}
+    ]},
+    "list": {"say": ["15"], "choices": [
+      {"say": "16", "goto": "milk"}
+    ]},
+    "milk": {"say": ["17"], "sets": ["admitted"], "choices": [
+      {"say": "18", "goto": "sit"}
+    ]},
+    "sit": {"say": ["19"], "choices": [
+      {"say": "20", "goto": "kept", "sets": ["cup_offered"]}
+    ]},
+    "kept": {"say": ["21"], "choices": [
+      {"say": "22", "goto": "take"}
+    ]},
+    "take": {"say": ["23"], "choices": [
+      {"say": "24", "end": "home"},
+      {"say": "a11", "reply": ["a12"], "end": "step"}
+    ]}
+  }
+}

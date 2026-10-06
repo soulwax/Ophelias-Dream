@@ -49,7 +49,7 @@ func _process(delta: float) -> void:
 	var reading := Game.phase == Game.Phase.READING or Game.phase == Game.Phase.JOURNAL
 	var spoken := Game.murmur_left > 0.0 and Hud.murmur_shown(Game.phase)
 	_murmur.text = Game.murmur if spoken else ""
-	_murmur_plate.visible = spoken
+	_murmur_plate.visible = spoken and (Game.dialogue == null or Game.phase != Game.Phase.PLAYING)
 	if spoken:
 		var low := reading or Game.phase == Game.Phase.ESCAPED
 		_murmur_plate.offset_top = -84 if low else -192
@@ -76,7 +76,7 @@ static func murmur_shown(phase: Game.Phase) -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if Game.phase == Game.Phase.BOOT:
+	if Game.phase == Game.Phase.BOOT or Game.mathilda_pov:
 		return
 	if event.is_action_pressed("journal"):
 		if Game.phase == Game.Phase.JOURNAL:
@@ -292,10 +292,10 @@ func _build_intro() -> void:
 	var title := UiChrome.label("OPHELIA'S DREAM", 54)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var line := UiChrome.label("Mathilda went out into the storm.", 18, UiChrome.MUTED)
+	var line := UiChrome.label("Ophelia left the lantern burning." if Game.mathilda_pov else "Mathilda went out into the storm.", 18, UiChrome.MUTED)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
-	var told := UiChrome.label("You told her to.", 15, Color(UiChrome.MUTED, 0.75))
+	var told := UiChrome.label("You kept her cup." if Game.mathilda_pov else "You told her to.", 15, Color(UiChrome.MUTED, 0.75))
 	told.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(told)
 	# The controls live in the Esc menu, not on screen.

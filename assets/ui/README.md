@@ -1,5 +1,13 @@
-# Main menu portrait
+# Main menu eye
 
-`mathilda_eye.png` is original AI-generated menu artwork created with the built-in image generation tool on 2026-10-06. It is not extracted from SIGNALIS. The runtime shader animates the painted iris and creeping shadows; all title and navigation text is rendered by Godot.
+`mathilda_eye.png` is original AI-generated artwork made with the built-in
+image generation tool on 2026-10-06, guided by the user’s supplied anime-eye
+menu reference. It uses a tight graphic close-up, cyan iris, angular dark
+lashes, slate skin and teal-black hair. No reference menu text is baked in.
 
-Art prompt: Original psychological winter horror portrait, extreme close-up of one sorrowful womanâ€™s downward-looking glacial cyan eye, a warm lantern reflection, painterly alabaster skin, charcoal hair, ink-black creeping shadows and crimson wisps. Wide composition with dark upper and lower space for interface text; rich oil-and-ink texture, dramatic chiaroscuro, no text or UI.
+Godot draws the title and navigation. The shader moves the globe within the
+stationary eye opening. A radial iris remap contracts the pupil in brighter
+light and dilates it in shadow, keeping the iris edge stable. The menu’s slowly
+changing illumination drives both brightness and the smoothed pupil reflex.
+Quit reduces gaze movement. Eye calibration is in `dream_menu.gd` and the
+shader’s `iris_radius` and `source_pupil` parameters.

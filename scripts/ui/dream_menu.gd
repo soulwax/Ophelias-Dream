@@ -9,6 +9,10 @@ var _gaze := 0.5
 var _target := 0.5
 var _gaze_y := 0.65
 var _target_y := 0.65
+var _gaze_mobility := 1.0
+var _target_mobility := 1.0
+var _light_level := 0.45
+var _pointer_light := 0.45
 var _panel: PanelContainer
 var _body: Label
 
@@ -32,6 +36,7 @@ func _ready() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_eye = ShaderMaterial.new()
 	_eye.shader = preload("res://shaders/dream_menu.gdshader")
+	_eye.set_shader_parameter("eye_center", Vector2(0.424, 0.454))
 	_eye.set_shader_parameter("portrait", load("res://assets/ui/mathilda_eye.png"))
 	background.material = _eye
 	add_child(background)
@@ -72,7 +77,7 @@ func _ready() -> void:
 	rule.offset_top = 248
 	rule.offset_bottom = 250
 	add_child(rule)
-	for caption in ["BEGIN", "THE DREAM", "CREDITS", "QUIT"]:
+	for caption in ["BEGIN", "MATHILDA", "THE DREAM", "CREDITS", "QUIT"]:
 		var button := Button.new()
 		button.text = caption
 		for letter in range(caption.length() - 1, 0, -1):
@@ -90,8 +95,8 @@ func _ready() -> void:
 		_buttons.append(button)
 		button.mouse_entered.connect(button.grab_focus)
 		button.focus_entered.connect(func() -> void:
-			_target = button.get_global_rect().get_center().x / maxf(size.x, 1.0)
-			_target_y = button.get_global_rect().get_center().y / maxf(size.y, 1.0)
+			_target_mobility = 0.55 if caption == "QUIT" else 1.0
+			_aim_at(button.get_global_rect().get_center())
 		)
 		button.pressed.connect(_choose.bind(caption))
 	for i in _buttons.size():
@@ -126,15 +131,43 @@ func _ready() -> void:
 	back.pressed.connect(_close)
 	box.add_child(back)
 	_panel.hide()
-	Game.phase_changed.connect(func(next: Game.Phase) -> void: visible = next == Game.Phase.BOOT)
+	Game.phase_changed.connect(func(next: Game.Phase) -> void:
+		visible = next == Game.Phase.BOOT
+		if Game.mathilda_pov and next != Game.Phase.BOOT:
+			_music.stop()
+	)
 	visible = Game.phase == Game.Phase.BOOT
 	_buttons[0].grab_focus.call_deferred()
 
 
+func _aim_at(point: Vector2) -> void:
+	var relative := point / size.max(Vector2.ONE) - Vector2(0.424, 0.454)
+	_target = clampf(0.5 + relative.x, 0.08, 0.92)
+	_target_y = clampf(0.5 + relative.y, 0.12, 0.88)
+
+
+func _input(event: InputEvent) -> void:
+	if not visible or _panel.visible or not event is InputEventMouseMotion:
+		return
+	var pointer := (event as InputEventMouseMotion).position / size.max(Vector2.ONE)
+	_aim_at((event as InputEventMouseMotion).position)
+	# Treat the cursor as a nearby soft light; moving it toward the eye
+	# produces a pronounced pupil reflex as well as a change in illumination.
+	var proximity := 1.0 - clampf((pointer - Vector2(0.424, 0.454)).length() / 0.65, 0.0, 1.0)
+	_pointer_light = lerpf(0.08, 0.95, proximity * proximity)
+	_target_mobility = 0.55 if _buttons[-1].get_global_rect().has_point((event as InputEventMouseMotion).position) else 1.0
+
+
 func _process(delta: float) -> void:
 	if visible:
-		_gaze = lerpf(_gaze, _target, 1.0 - exp(-delta * 6.0))
-		_gaze_y = lerpf(_gaze_y, _target_y, 1.0 - exp(-delta * 5.0))
+		_gaze = lerpf(_gaze, _target, 1.0 - exp(-delta * 10.0))
+		_gaze_y = lerpf(_gaze_y, _target_y, 1.0 - exp(-delta * 8.0))
+		_gaze_mobility = lerpf(_gaze_mobility, _target_mobility, 1.0 - exp(-delta * 8.0))
+		# The same soft light drives illumination and the pupil reflex.
+		var light_target := clampf(_pointer_light + 0.08 * sin(Time.get_ticks_msec() * 0.0007), 0.0, 1.0)
+		_light_level = lerpf(_light_level, light_target, 1.0 - exp(-delta * 4.0))
+		_eye.set_shader_parameter("light_level", _light_level)
+		_eye.set_shader_parameter("mobility", _gaze_mobility)
 		_eye.set_shader_parameter("gaze", _gaze)
 		_eye.set_shader_parameter("gaze_y", _gaze_y)
 		_eye.set_shader_parameter("aspect", size.x / maxf(size.y, 1.0))
@@ -142,7 +175,11 @@ func _process(delta: float) -> void:
 
 func _choose(caption: String) -> void:
 	match caption:
+		"MATHILDA":
+			Game.mathilda_pov = true
+			get_tree().reload_current_scene()
 		"BEGIN":
+			Game.mathilda_pov = false
 			var fade := create_tween()
 			fade.tween_property(_music, "volume_db", -60.0, 0.65)
 			fade.tween_callback(_music.stop)
@@ -165,10 +202,3 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _panel.visible:
 			_close()
 		get_viewport().set_input_as_handled()
-
-
-func _input(event: InputEvent) -> void:
-	if visible and event is InputEventMouseMotion:
-		var point := get_local_mouse_position()
-		_target = clampf(point.x / maxf(size.x, 1.0), 0.0, 1.0)
-		_target_y = clampf(point.y / maxf(size.y, 1.0), 0.0, 1.0)

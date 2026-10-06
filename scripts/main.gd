@@ -13,6 +13,8 @@ var _bake_pid := -1
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
+	if OS.get_environment("RUN_MATHILDA") == "1":
+		Game.mathilda_pov = true
 	_capture = OS.get_environment("RUN_CAPTURE") == "1"
 	var repacking := OS.get_cmdline_user_args().has("--repack-editor-level")
 	var baking := repacking or OS.get_cmdline_user_args().has("--bake-editor-level")
@@ -53,7 +55,11 @@ func _ready() -> void:
 	add_child(Wildlife.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
-	add_child(Voice.new())
+	if Game.mathilda_pov:
+		add_child(preload("res://scripts/player/mathilda_pov.gd").new())
+	else:
+		add_child(Voice.new())
+	add_child(DialogueBubble.new())
 	var hud := Hud.new()
 	add_child(hud)
 	Game.mark("scene built")

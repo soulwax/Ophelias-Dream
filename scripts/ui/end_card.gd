@@ -22,7 +22,11 @@ func _on_phase(next: Game.Phase) -> void:
 			var body := Game.ending_body if Game.ending_body != "" else "You stopped. The snow closed over the place you were."
 			_show(title, body, "Wake in the cabin")
 		Game.Phase.ESCAPED:
-			if Game.turned_around:
+			if Game.mathilda_pov:
+				# Her chapter's endings name themselves (MathildaPov.ENDINGS).
+				_show(Game.ending_title, Game.ending_body, "Return to the menu")
+				_hint.text = ""
+			elif Game.turned_around:
 				var prints := "You turned around. One set of prints, all the way back to the lit cabin. You get in on the driver's side; the seat is warm because it was always yours."
 				if Game.all_deciphered():
 					prints += " On the dash, two cups, one fitted inside the other."
@@ -78,7 +82,9 @@ func _build() -> void:
 	box.add_child(_body)
 
 	_again = UiChrome.text_button("Wake in the cabin")
-	_again.pressed.connect(func() -> void: Game.restart())
+	_again.pressed.connect(func() -> void:
+		Game.mathilda_pov = false
+		Game.restart())
 	box.add_child(_again)
 
 	_hint = UiChrome.label("R does the same.", 13, UiChrome.MUTED)

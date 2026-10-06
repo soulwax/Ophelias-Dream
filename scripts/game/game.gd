@@ -1,6 +1,6 @@
 extends Node
 
-enum Phase { BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL }
+enum Phase { BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL, DIALOGUE }
 
 signal phase_changed(next: Phase)
 signal closeness_changed(value: float)
@@ -16,6 +16,7 @@ signal turned
 
 enum Reading { LOCKED, WRONG, RIGHT }
 
+var mathilda_pov := false
 var phase: Phase = Phase.BOOT
 # Threats report here: how near the one that hunts her is (closeness), the
 # strongest other pressure (dread) and the HUD line that goes with it. The
@@ -25,6 +26,7 @@ var closeness: float = 0.0
 var player: Player
 var trail: Trail
 var soundscape: Soundscape
+var dialogue: DialogueBubble
 var voice: Voice
 var weather: Weather
 var active_note: FieldNote
@@ -111,7 +113,7 @@ func _process(delta: float) -> void:
 			audio_fade = move_toward(audio_fade, 1.0, minf(delta, 0.05) / Tune.INTRO_TIME)
 			if settings:
 				settings.apply_audio()
-	if phase == Phase.PLAYING and player and trail and _at_exit():
+	if not mathilda_pov and phase == Phase.PLAYING and player and trail and _at_exit():
 		escape()
 	if awake():
 		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
@@ -140,6 +142,7 @@ func reset() -> void:
 	player = null
 	trail = null
 	soundscape = null
+	dialogue = null
 	voice = null
 	weather = null
 	active_note = null
@@ -202,6 +205,8 @@ func set_closeness(value: float) -> void:
 
 
 func begin_reading() -> void:
+	if mathilda_pov:
+		return
 	if phase != Phase.PLAYING:
 		return
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -255,7 +260,7 @@ func close_reading() -> void:
 
 ## The world keeps going: playing, reading a page or in the journal.
 func awake() -> bool:
-	return phase == Phase.PLAYING or phase == Phase.READING or phase == Phase.JOURNAL
+	return phase == Phase.PLAYING or phase == Phase.READING or phase == Phase.JOURNAL or phase == Phase.DIALOGUE
 
 
 ## Where she is, for her lines and the journal's keys: a house room, the

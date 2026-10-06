@@ -16,6 +16,10 @@ The last page asks her not to turn around. If she does, there is one set of prin
 
 The game never says what the two women are to each other, or whether Mathilda is alive, dead, at the road, or something she sent out into the cold herself. It does say, over and over, that she is sorry.
 
+## Mathilda’s optional perspective
+
+The short companion chapter is documented in [Mathilda: the other side of the afternoon](MATHILDA_POV.md). She waits at the tent with two cups, the gloves and a note. Her distinct voice belongs to that chapter; in Ophelia’s chapter, the trees still answer only in Ophelia’s voice. Her decision is human—return or wait—and does not settle the original story’s ambiguity.
+
 ## The layer underneath (never named in the game)
 
 The game never says any of this; it's here so every line and page can be checked against it.

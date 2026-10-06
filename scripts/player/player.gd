@@ -378,6 +378,18 @@ func facing() -> float:
 	return _facing
 
 
+## Eases the view toward a point, for a conversation that turns her to the
+## one speaking while look is locked (Conversation).
+func look_toward(point: Vector3, delta: float, rate := 3.0) -> void:
+	var from := camera.global_position if camera else global_position + Vector3.UP * 1.5
+	var to := point - from
+	if Vector2(to.x, to.z).length() < 0.05:
+		return
+	var weight := 1.0 - exp(-delta * rate)
+	_yaw = lerp_angle(_yaw, atan2(-to.x, -to.z), weight)
+	_pitch = lerpf(_pitch, clampf(atan2(to.y, Vector2(to.x, to.z).length()), Tune.PITCH_DOWN, Tune.PITCH_UP), weight)
+
+
 func _land(fall_speed: float) -> void:
 	if fall_speed >= Tune.FALL_HARD:
 		landed_hard.emit(fall_speed)
@@ -770,6 +782,9 @@ func _settle_spawn() -> void:
 # The ground mesh is one-sided, so a camera that slips under a slope sees
 # straight through it. Walk the boom outward and stop before it goes under.
 func _fit_boom_to_ground() -> void:
+	if Game.mathilda_pov:
+		spring_arm.spring_length = 0.0
+		return
 	if trail == null or trail.ground == null:
 		return
 	var pivot := spring_arm.global_position

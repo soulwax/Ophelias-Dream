@@ -117,3 +117,7 @@ $env:PROBE_CLIPS = "1"; godot-mono --headless --path . tools/voice_probe.tscn; R
 ```
 
 [Chatterbox](https://github.com/resemble-ai/chatterbox) is MIT. [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) and [SpeechBrain ECAPA](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) are Apache-2.0, and [faster-whisper](https://github.com/SYSTRAN/faster-whisper) is MIT. All are build tools, not game dependencies.
+
+## Mathilda’s optional chapter
+
+Her separate first-person chapter uses `docs/MATHILDA_POV.md` as its script and `tools/bake_mathilda.py` to write and perform `assets/audio/voice/mathilda/lines.json`. The initial distinct performance uses the existing local Kokoro models with af_bella, speed 0.94; mood labels are editorial direction rather than Chatterbox mood cloning. Ophelia’s 137 lines and trees remain unchanged. All 36 Mathilda clips are namespaced separately and follow the same text|mood SHA-256 convention.
