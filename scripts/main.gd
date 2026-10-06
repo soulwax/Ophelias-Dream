@@ -112,6 +112,10 @@ func _ready() -> void:
 			process_mode = Node.PROCESS_MODE_ALWAYS
 			Game.toggle_pause.call_deferred()
 			hud.menu.open_page.call_deferred(page)
+		# Dev hook: RUN_JOURNAL=<title> opens the journal, half deciphered, on that page.
+		var journal_page := OS.get_environment("RUN_JOURNAL")
+		if journal_page != "":
+			Game.dev_journal.call_deferred(journal_page)
 
 
 func _process(_delta: float) -> void:

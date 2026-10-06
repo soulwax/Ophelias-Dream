@@ -24,6 +24,7 @@ func _run() -> void:
 	_knowledge()
 	_phases()
 	_render()
+	_journal_ui()
 	print("JOURNAL ", "FAIL (%d)" % _failures if _failures > 0 else "PASS")
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -152,4 +153,43 @@ func _render() -> void:
 	_check(reader._body.visible_characters == -1, "the reader finishes typing")
 	_check(not reader._body.text.contains(pack.between), "the line between the lines waits for the whole page")
 	reader.queue_free()
+	Game.reset()
+
+
+func _journal_ui() -> void:
+	Game.reset()
+	var journal := Journal.new()
+	add_child(journal)
+	var post := NoteCatalog.find("on the post")
+	Game.add_to_journal(post)
+	Game.set_phase(Game.Phase.PLAYING)
+	Game.open_journal("on the post")
+	_check(journal.visible, "the journal shows in its phase")
+	_check(journal._list.get_child_count() == 1, "one page listed")
+	_check(journal._blots.get_child_count() == 2, "a focusable button for each unsolved smudge")
+	journal._pick(0)
+	_check(journal._hint.text.begins_with("I can't make this out yet."), "a locked smudge says so")
+	_check(journal._readings.get_child_count() == 0, "a locked smudge offers no readings")
+	Game.heard("call")
+	journal._pick(0)
+	_check(journal._readings.get_child_count() == 3, "an unlocked smudge offers three readings")
+	var first := journal._readings.get_child(0) as Button
+	_check(first.focus_mode != Control.FOCUS_NONE, "readings can be chosen with a pad")
+	journal._choose("my")
+	var struck := 0
+	for child in journal._readings.get_children():
+		if (child as Button).disabled:
+			struck += 1
+	_check(struck == 1 and not Game.solved(post, 0), "a wrong reading is struck out")
+	journal._choose("your")
+	_check(Game.solved(post, 0) and journal._readings.get_child_count() == 0, "the right reading settles it")
+	_check(journal._body.text.contains("[u]your[/u]"), "the page shows the word in ink")
+	_check(journal._blots.get_child_count() == 1, "one smudge left")
+	Game.heard("echo")
+	journal._pick(1)
+	journal._choose("answer")
+	_check(journal._between.visible and journal._between.text == post.between, "the whole page shows the line between the lines")
+	Game.toggle_pause()
+	_check(not journal.visible and Game.phase == Game.Phase.PLAYING, "Esc closes it")
+	journal.queue_free()
 	Game.reset()

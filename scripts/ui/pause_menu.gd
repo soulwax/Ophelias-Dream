@@ -20,7 +20,7 @@ const PAGE_KEYS := {
 	"Camera": ["fov", "camera_distance", "camera_shake", "speed_fov"],
 	"Display": ["display_mode", "vsync", "max_fps", "render_scale", "brightness", "graphics"],
 	"Audio": ["master_volume", "ambience_volume", "effects_volume", "dread_volume", "mute_unfocused"],
-	"Interface": ["show_prompts", "show_objective", "breath_meter"],
+	"Interface": ["show_prompts", "show_journal_toast", "breath_meter"],
 }
 const LABEL_WIDTH := 290
 
@@ -151,7 +151,7 @@ func _controls_page() -> void:
 
 
 func _camera_page() -> void:
-	_slider("Field of view", "fov", 55.0, 95.0, 1.0, func(v: float) -> String: return "%d°" % int(v))
+	_slider("Field of view", "fov", 55.0, 95.0, 1.0, func(v: float) -> String: return "%dÂ°" % int(v))
 	_slider("Camera distance", "camera_distance", 0.7, 1.4, 0.05, _percent)
 	_toggle("Widen the view at speed", "speed_fov", "Sprinting and sliding open the lens a few degrees.")
 	_slider("Camera shake", "camera_shake", 0.0, 1.0, 0.05, _percent, "Footfalls, landings and gusts. Turn it down if motion bothers you.")
@@ -180,7 +180,7 @@ func _audio_page() -> void:
 
 func _interface_page() -> void:
 	_toggle("Interaction prompts", "show_prompts", "The key hint when a note, door or switch is in reach.")
-	_toggle("Objective", "show_objective", "The panel with the goal and the notes found.")
+	_toggle("Journal notice", "show_journal_toast", "A note when a page goes into the journal.")
 	_choice("Breath meter", "breath_meter", ["Always", "Only when short of breath"], [0, 1])
 
 

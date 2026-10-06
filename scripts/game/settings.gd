@@ -49,7 +49,7 @@ const DEFAULTS := {
 	"dread_volume": 1.0,
 	"mute_unfocused": true,
 	"show_prompts": true,
-	"show_objective": true,
+	"show_journal_toast": true,
 	"breath_meter": 0,
 }
 
@@ -83,7 +83,7 @@ var dread_volume: float = DEFAULTS.dread_volume
 var mute_unfocused: bool = DEFAULTS.mute_unfocused
 # Interface. breath_meter 0 always, 1 only while she is short of breath.
 var show_prompts: bool = DEFAULTS.show_prompts
-var show_objective: bool = DEFAULTS.show_objective
+var show_journal_toast: bool = DEFAULTS.show_journal_toast
 var breath_meter: int = DEFAULTS.breath_meter
 
 # action -> the events it shipped with, for resetting the keys.
