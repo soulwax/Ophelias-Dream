@@ -46,7 +46,7 @@ def hair_material(name, color):
     return material
 
 
-def tube(name, centers, radius, material, armature, sides=10):
+def tube(name, centers, radius, material, armature, sides=16):
     vertices, faces = [], []
     for i, center in enumerate(centers):
         tangent = Vector(centers[min(i+1, len(centers)-1)]) - Vector(centers[max(0, i-1)])
@@ -56,7 +56,9 @@ def tube(name, centers, radius, material, armature, sides=10):
         binormal = tangent.cross(normal).normalized()
         width = radius * (1 - .28*i/(len(centers)-1))
         for j in range(sides):
-            point = Vector(center) + width*(cos(j*2*pi/sides)*normal + sin(j*2*pi/sides)*binormal)
+            angle = j*2*pi/sides
+            groove = 1.0 + .065*cos(angle*5)
+            point = Vector(center) + width*groove*(cos(angle)*normal + sin(angle)*binormal)
             vertices.append(tuple(point))
         if i:
             for j in range(sides):
@@ -96,12 +98,16 @@ def build(style):
                 point.z = 1.93 - (1.93-point.z)*.42
                 point.x *= 1.05
             else:
-                point.z = 1.93 - (1.93-point.z)*.15
-                point.x *= .94
+                amount = min(1.0, (1.93-point.z)/.23)
+                eased = amount*amount*(3-2*amount)
+                target_x = 0.0 if style == 'high_bun' else (.095 if point.x > 0 else -.095)
+                point.x = point.x*(1-eased)+target_x*eased
+                point.y = point.y*(1-eased)+(.105 if style == 'high_bun' else .055)*eased
+                point.z = 1.93-.025*amount
     # New pieces are rigidly skinned to the head; no physics is implied.
-    base=(.19,.062,.025) if style=='high_bun' else (.036,.047,.055)
+    base=(.13,.024,.008) if style=='high_bun' else (.004,.006,.010)
     dark=hair_material('StyleHairDark',base)
-    light=hair_material('StyleHairHighlight',tuple(c*1.45 for c in base))
+    light=hair_material('StyleHairHighlight',tuple(c*1.2 for c in base))
     if style=='high_bun':
         # A woven coil with three interlaced strands above the crown.
         for strand in range(3):
@@ -109,23 +115,23 @@ def build(style):
             for i in range(181):
                 t=i/180; angle=t*2*pi*2.8
                 weave=angle*6+strand*2*pi/3
-                radius=.078+.011*cos(weave)
-                centers.append((radius*cos(angle), .055+radius*sin(angle), 2.035+.09*t+.011*sin(weave)))
-            tube('BunStrand%d'%strand,centers,.012,light if strand==1 else dark,armature)
+                radius=.052*sin(pi*(.08+.84*t))+.005*cos(weave)
+                centers.append((radius*cos(angle), .082+radius*sin(angle), 1.970+.11*t+.005*sin(weave)))
+            tube('BunStrand%d'%strand,centers,.0075,light if strand==1 else dark,armature)
     elif style=='twin_braids':
         for side in (-1,1):
             for strand in range(3):
                 centers=[]
                 for i in range(100):
                     t=i/99; angle=t*2*pi*4.5+strand*2*pi/3
-                    radius=.018*(1-.45*t)
-                    centers.append((side*(.105+.048*t)+radius*cos(angle), -.014+.025*t+radius*sin(angle), 1.925-.32*t))
-                tube('Braid%dStrand%d'%(side,strand),centers,.012,light if strand==1 else dark,armature)
+                    radius=.013*(1-.65*t)
+                    centers.append((side*(.102+.038*t)+radius*cos(angle), .048+.015*t+radius*sin(angle), 1.913-.30*t))
+                tube('Braid%dStrand%d'%(side,strand),centers,.0075,light if strand==1 else dark,armature)
             # A small gold binding around each braid tip.
             gold=hair_material('BraidTie',(.55,.32,.075))
-            center=Vector((side*.153,.011,1.612))
-            ring=[tuple(center+Vector((.023*cos(i*2*pi/40),.023*sin(i*2*pi/40),0))) for i in range(41)]
-            tube('BraidTie%d'%side,ring,.005,gold,armature)
+            center=Vector((side*.139,.063,1.620))
+            ring=[tuple(center+Vector((.011*cos(i*2*pi/40),.011*sin(i*2*pi/40),0))) for i in range(41)]
+            tube('BraidTie%d'%side,ring,.0025,gold,armature)
     assert rest == [tuple(tuple(row) for row in bone.matrix_local) for bone in armature.data.bones]
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'sources'/(style+'.blend')))
     bpy.ops.export_scene.gltf(filepath=str(OUT/(style+'.glb')), export_format='GLB',
