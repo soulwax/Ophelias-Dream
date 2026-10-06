@@ -140,17 +140,17 @@ class Qwen:
             max_new_tokens=192)
         return [(np.asarray(wav, dtype=np.float32).reshape(-1), int(rate)) for wav in wavs]
 
-    def clone(self, text, seed):
+    def clone_many(self, text):
         import numpy as np
         if self.base is None:
             self.base = self.loader.from_pretrained(str(HF / "Base"), **self.kwargs)
             self.prompt = self.base.create_voice_clone_prompt(
                 ref_audio=str(REF / "anchor.wav"), ref_text=ANCHOR_TEXT, x_vector_only_mode=False)
-        self.torch.manual_seed(seed)
+        self.torch.manual_seed(2000)
         wavs, rate = self.base.generate_voice_clone(
-            text=text, language="English", voice_clone_prompt=self.prompt,
+            text=[text] * CLONE_TAKES, language="English", voice_clone_prompt=self.prompt,
             max_new_tokens=192)
-        return np.asarray(wavs[0], dtype=np.float32).reshape(-1), int(rate)
+        return [(np.asarray(wav, dtype=np.float32).reshape(-1), int(rate)) for wav in wavs]
 
 
 class Judge:
@@ -211,8 +211,7 @@ def best_take(engine, judge, text, mood):
              for samples, rate in engine.speak_many(text, mood)]
     scored = [score(judge, text, *take) for take in takes]
     if not any(s["wer"] <= MAX_WER and s["similarity"] >= MIN_SIMILARITY for s in scored):
-        for take in range(CLONE_TAKES):
-            samples, rate = engine.clone(text, seed=2000 + take)
+        for samples, rate in engine.clone_many(text):
             scored.append(score(judge, text, "qwen-clone", BASE_MODEL, trim(samples, rate), rate))
     good = [s for s in scored if s["wer"] <= MAX_WER]
     return max(good, key=lambda s: s["similarity"]) if good else min(scored, key=lambda s: s["wer"]), bool(good)
