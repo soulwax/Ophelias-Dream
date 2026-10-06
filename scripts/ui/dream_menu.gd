@@ -22,6 +22,7 @@ func _ready() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_eye = ShaderMaterial.new()
 	_eye.shader = preload("res://shaders/dream_menu.gdshader")
+	_eye.set_shader_parameter("portrait", load("res://assets/ui/mathilda_eye.png"))
 	background.material = _eye
 	add_child(background)
 	var title := UiChrome.label("Ophelia's Dream", 42, Color("e5dbd3"))
@@ -123,10 +124,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if visible:
 		_motion_time += delta
-		_gaze = lerpf(_gaze, _target, 1.0 - exp(-delta * 10.0))
-		_gaze_y = lerpf(_gaze_y, _target_y, 1.0 - exp(-delta * 8.0))
-		_eye.set_shader_parameter("gaze", _gaze + sin(_motion_time * 2.7) * 0.002)
-		_eye.set_shader_parameter("gaze_y", _gaze_y + sin(_motion_time * 3.1) * 0.0015)
+		_gaze = lerpf(_gaze, _target, 1.0 - exp(-delta * 6.0))
+		_gaze_y = lerpf(_gaze_y, _target_y, 1.0 - exp(-delta * 5.0))
+		_eye.set_shader_parameter("gaze", _gaze + sin(_motion_time * 2.7) * 0.0007)
+		_eye.set_shader_parameter("gaze_y", _gaze_y + sin(_motion_time * 3.1) * 0.0005)
 		_eye.set_shader_parameter("aspect", size.x / maxf(size.y, 1.0))
 
 
