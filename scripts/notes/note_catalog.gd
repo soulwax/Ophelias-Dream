@@ -31,7 +31,7 @@ static func all() -> Array[NoteEntry]:
 		),
 		_make(
 			"torn page",
-			"â€”your prints from the step. I followed them as far as the pines. They do not go on and they do not come back. They stop, both feet {together}, as if you stood there and the snow decided you had never been here.\n\ni stood in them. they {fit} me.\n\nI am going on to the lights. If you are behind me, you will find this. If I am behind you, I already did.",
+			"—your prints from the step. I followed them as far as the pines. They do not go on and they do not come back. They stop, both feet {together}, as if you stood there and the snow decided you had never been here.\n\ni stood in them. they {fit} me.\n\nI am going on to the lights. If you are behind me, you will find this. If I am behind you, I already did.",
 			0.28,
 			[[["together", "bare", "apart"], "place:snow"], [["fit", "followed", "knew"], "page:the handwriting changes"]],
 			"The prints were smaller than mine. Then they were not."
@@ -45,7 +45,7 @@ static func all() -> Array[NoteEntry]:
 		),
 		_make(
 			LAST_TITLE,
-			"stop looking for me.\n\ngo to the lights. the engine has been running since before the snow. someone kept it warm for {one} of us. i will be there or i will not, but you will.\n\ni am right {behind} you. i always was. do not turn around until you reach the road.\n\nâ€” m",
+			"stop looking for me.\n\ngo to the lights. the engine has been running since before the snow. someone kept it warm for {one} of us. i will be there or i will not, but you will.\n\ni am right {behind} you. i always was. do not turn around until you reach the road.\n\n— m",
 			0.72,
 			[[["one", "both", "neither"], "place:lights"], [["behind", "beside", "ahead of"], "page:on the post"]],
 			"the sheet in the cellar is not me. say it back to me. the sheet is not me."
@@ -73,7 +73,7 @@ static func find(title: String) -> NoteEntry:
 static func bedside() -> NoteEntry:
 	var entry := _make(
 		"by the bed",
-		"I lit the lantern so you would see it from the field. Leave it burning.\n\nIf you are reading this, you came back and {I} did not. Stay in. I mean it this time. Do not do what you always do, which is come after me.\n\nPut your coat on before you argue with me.\n\nâ€” {M.}",
+		"I lit the lantern so you would see it from the field. Leave it burning.\n\nIf you are reading this, you came back and {I} did not. Stay in. I mean it this time. Do not do what you always do, which is come after me.\n\nPut your coat on before you argue with me.\n\n— {M.}",
 		0.10,
 		[[["I", "you", "we"], "page:torn page"], [["M.", "Mum", "Me"], "page:from the pack"]],
 		"I left the door unlatched so you could get back in. Or so I could."
@@ -86,9 +86,9 @@ static func bedside() -> NoteEntry:
 static func intake() -> NoteEntry:
 	var entry := _make(
 		"intake",
-		"Brought in from the step during the storm. Length under the sheet: 1.6 m. Strap stamped M. Aune. Given name, as copied: {Mâ€”}. Personal effects: one cup. Next of kin: {out searching}. Not yet notified.",
+		"Brought in from the step during the storm. Length under the sheet: 1.6 m. Strap stamped M. Aune. Given name, as copied: {M—}. Personal effects: one cup. Next of kin: {out searching}. Not yet notified.",
 		0.06,
-		[[["Mâ€”", "Mathilda", "nobody"], "page:from the pack"], [["out searching", "notified", "none"], "page:by the bed"]],
+		[[["M—", "Mathilda", "nobody"], "page:from the pack"], [["out searching", "notified", "none"], "page:by the bed"]],
 		"Scratched inside the rim of the cup: M."
 	)
 	entry.counts = false
