@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Mathilda — base elf",
+    "scene": "res://assets/characters/styloo_elf/elf.glb",
+    "description": "Styloo's prepared CC0 elf. The starting point for appearance and outfit variants.",
+    "scale": 0.8,
+    "yaw_degrees": 0.0
+  }
+]
