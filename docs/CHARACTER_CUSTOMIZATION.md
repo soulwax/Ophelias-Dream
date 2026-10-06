@@ -10,7 +10,7 @@ godot --path . scenes/character_presentation.tscn
 
 Left/right arrows or Previous/Next buttons cycle through characters and wrap around. Drag with the left mouse button to turn, use the wheel to zoom, Home to reset the view, and Escape to close. Each character is framed from its mesh bounds and placed on a lit presentation platform. The scene is independent of the game's entry scene.
 
-The catalog initially contains the existing base character. Add every completed edit to `assets/characters/presentation_catalog.json` so the collection retains earlier variants. Store editable sources and exports separately from the baseline; no redesigned variants have been created yet.
+The catalog contains the base character plus Snowlight, Ember, and Midnight appearance studies. Add every completed edit to `assets/characters/presentation_catalog.json` so the collection retains earlier variants. Their reproducible Blender generator and provenance are described in `assets/characters/variants/README.md`.
 
 Each catalog entry has:
 
@@ -24,4 +24,4 @@ Each catalog entry has:
 
 Use a wrapper `.tscn` when a variant needs external material overrides or additional clothing nodes. Include them in that scene so the presentation displays the completed character. The gallery shows static geometry; inspect movement and winter lighting in gameplay separately.
 
-For a deterministic screenshot, set `RUN_PRESENTATION_SHOT` to an absolute PNG path in `build/character/`, launch the presentation scene, and restore the environment variable afterward. The scene captures after twelve frames and exits.
+For a deterministic screenshot, set `RUN_PRESENTATION_SHOT` to an absolute PNG path in `build/character/`, optionally set `RUN_PRESENTATION_INDEX` to a zero-based catalog index, launch the presentation scene, and restore the environment variables afterward. The scene captures after twelve frames and exits.

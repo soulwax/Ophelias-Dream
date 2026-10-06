@@ -5,5 +5,23 @@
     "description": "Styloo's prepared CC0 elf. The starting point for appearance and outfit variants.",
     "scale": 0.8,
     "yaw_degrees": 0.0
+  },
+  {
+    "name": "Mathilda — Snowlight",
+    "scene": "res://assets/characters/variants/snowlight.tscn",
+    "description": "Silver hair, glacier-blue eyes, blue cloth and silver-toned ornament.",
+    "scale": 0.8
+  },
+  {
+    "name": "Mathilda — Ember",
+    "scene": "res://assets/characters/variants/ember.tscn",
+    "description": "Auburn hair, amber eyes, burgundy cloth and the original gold ornament.",
+    "scale": 0.8
+  },
+  {
+    "name": "Mathilda — Midnight",
+    "scene": "res://assets/characters/variants/midnight.tscn",
+    "description": "Dark hair, violet eyes, deep teal cloth and the original gold ornament.",
+    "scale": 0.8
   }
 ]

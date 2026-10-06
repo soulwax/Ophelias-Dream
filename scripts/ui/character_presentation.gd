@@ -21,7 +21,7 @@ func _ready() -> void:
 	_build_stage()
 	_build_ui()
 	_load_catalog()
-	show_variant(0)
+	show_variant(int(OS.get_environment("RUN_PRESENTATION_INDEX")))
 	var capture := OS.get_environment("RUN_PRESENTATION_SHOT")
 	if not capture.is_empty():
 		_capture(capture)
