@@ -53,6 +53,11 @@ var _first_seen := {}
 var _revisited := {}
 var _bored_at := {"hope": 0, "doubt": 0, "resolve": 0}
 var _call_at := {"hope": 0, "doubt": 0, "resolve": 0}
+var _call_left := -1.0
+var _echoed := {}
+var _echoes := 0
+var _echo: AudioStreamPlayer3D
+
 var _misread_at := -99.0
 var _clock := 0.0
 var _place_dwell := 0.0
@@ -104,6 +109,9 @@ func _build_speaker() -> void:
 	else:
 		add_child(_speaker)
 	_speaker.finished.connect(_finished)
+	_echo = Loudness.voice(Tune.CALL_SPL - Tune.ECHO_DROP_DB, "Dread", true)
+	_echo.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	add_child(_echo)
 
 
 func _on_phase(next: int) -> void:
@@ -138,8 +146,66 @@ func _process(delta: float) -> void:
 
 
 # Calls for Mathilda (Task 6).
-func _tick_outdoors(_delta: float) -> void:
-	pass
+func _tick_outdoors(delta: float) -> void:
+	_call_tick(delta, not Game.indoors(Game.player.global_position + Vector3.UP * 0.9))
+
+
+func _call_tick(delta: float, outdoors: bool) -> void:
+	var now := stage()
+	if not outdoors or (_calls[now] as Array).is_empty():
+		return
+	if _call_left < 0.0:
+		_call_left = randf_range(Tune.CALL_FIRST.x, Tune.CALL_FIRST.y)
+		return
+	_call_left -= delta
+	if _call_left > 0.0:
+		return
+	var lines: Array = _calls[now]
+	var line: Dictionary = lines[int(_call_at[now]) % lines.size()]
+	if not _say(line):
+		return
+	Game.heard("call")
+	_call_left = randf_range(Tune.CALL_EVERY.x, Tune.CALL_EVERY.y)
+	if _wants_echo(now):
+		_schedule_echo(line)
+
+
+func _wants_echo(now: String) -> bool:
+	return Game.read_pages.has("on the post") and now != "hope" and not _echoed.has(now) and _echoes < Tune.ECHO_MAX
+
+
+func _schedule_echo(line: Dictionary) -> void:
+	var stream := _clip(line)
+	if stream == null or Game.trail == null or Game.trail.flora == null:
+		return
+	var at := Voice.echo_from(Game.player.global_position, Game.trail.flora.tree_positions())
+	if at == Vector3.INF:
+		return
+	_echoed[str(line.stage)] = true
+	_echoes += 1
+	get_tree().create_timer(randf_range(1.6, 2.4), false).timeout.connect(_play_echo.bind(stream, at))
+
+
+# Her own call, back from the trees. No subtitle; the page said not to answer.
+func _play_echo(stream: AudioStream, at: Vector3) -> void:
+	if Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9):
+		return
+	_echo.stream = stream
+	_echo.global_position = at
+	Loudness.place(_echo, Tune.CALL_SPL - Tune.ECHO_DROP_DB, true)
+	_echo.play()
+	Game.heard("echo")
+
+
+static func echo_from(player_at: Vector3, trees: PackedVector3Array) -> Vector3:
+	var best := Vector3.INF
+	var nearest := INF
+	for tree in trees:
+		var flat := Vector2(tree.x - player_at.x, tree.z - player_at.z).length()
+		if flat >= 25.0 and flat <= 60.0 and flat < nearest:
+			nearest = flat
+			best = tree + Vector3.UP * 3.0
+	return best
 
 
 func heard_page(entry: NoteEntry, repeat := false) -> void:

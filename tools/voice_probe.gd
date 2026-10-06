@@ -35,6 +35,7 @@ func _run() -> void:
 	_stages()
 	_interruption()
 	_extra()
+	_calls()
 	print("VOICE ", "FAIL (%d)" % _failures if _failures > 0 else "PASS")
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -128,3 +129,33 @@ func _extra() -> void:
 	_check(str(voice._current.get("kind", "")) == "misread" and voice._misread_at == voice._clock, "a misread may cut off a misread")
 	voice._finished()
 	_check(AudioServer.get_bus_send(AudioServer.get_bus_index("Voice")) == "Effects", "Voice bus under Effects")
+
+
+func _calls() -> void:
+	voice._current = {}
+	Game.murmur = ""
+	voice._call_left = 0.01
+	voice._call_tick(1.0, false)
+	_check(Game.murmur == "", "no calls indoors")
+	voice._call_tick(1.0, true)
+	var hope_calls: Array = voice._calls["hope"].map(func(line: Dictionary) -> String: return str(line.text))
+	_check(hope_calls.has(Game.murmur), "a call outdoors, from the hope stage")
+	_check(Game.heard_events.has("call"), "a call is a heard event")
+	_check(voice._call_left >= Tune.CALL_EVERY.x, "the next call waits CALL_EVERY")
+	voice._finished()
+	voice.heard_page(NoteCatalog.find("torn page"), true)
+	voice._call_left = 0.01
+	voice._call_tick(1.0, true)
+	_check(str(voice._current.kind) == "page", "a call never cuts off a page")
+	voice._finished()
+	_check(not voice._wants_echo("doubt"), "no echo before the post")
+	Game.read_pages["on the post"] = true
+	_check(not voice._wants_echo("hope"), "no echo while still hoping")
+	_check(voice._wants_echo("doubt"), "an echo in doubt, after the post")
+	voice._echoed["doubt"] = true
+	_check(not voice._wants_echo("doubt"), "one echo per stage")
+	voice._echoes = Tune.ECHO_MAX
+	_check(not voice._wants_echo("resolve"), "at most ECHO_MAX echoes")
+	var trees := PackedVector3Array([Vector3(10, 0, 0), Vector3(0, 0, 40), Vector3(70, 0, 0)])
+	_check(Voice.echo_from(Vector3.ZERO, trees) == Vector3(0, 3, 40), "the echo comes from the nearest pine 25-60 m off")
+	_check(Voice.echo_from(Vector3.ZERO, PackedVector3Array([Vector3(5, 0, 0)])) == Vector3.INF, "no pine in range, no echo")
