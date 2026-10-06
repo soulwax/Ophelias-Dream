@@ -176,12 +176,14 @@ func _journal_ui() -> void:
 	var first := journal._readings.get_child(0) as Button
 	_check(first.focus_mode != Control.FOCUS_NONE, "readings can be chosen with a pad")
 	journal._choose("my")
+	_check(journal.get_viewport().gui_get_focus_owner() != null and journal.get_viewport().gui_get_focus_owner().get_parent() == journal._readings, "focus stays on readings after a wrong choice")
 	var struck := 0
 	for child in journal._readings.get_children():
 		if (child as Button).disabled:
 			struck += 1
 	_check(struck == 1 and not Game.solved(post, 0), "a wrong reading is struck out")
 	journal._choose("your")
+	_check(journal.get_viewport().gui_get_focus_owner() != null and journal.get_viewport().gui_get_focus_owner().get_parent() == journal._blots, "focus moves to a remaining blot after solving")
 	_check(Game.solved(post, 0) and journal._readings.get_child_count() == 0, "the right reading settles it")
 	_check(journal._body.text.contains("[u]your[/u]"), "the page shows the word in ink")
 	_check(journal._blots.get_child_count() == 1, "one smudge left")

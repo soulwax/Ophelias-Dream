@@ -77,6 +77,15 @@ func _select(entry: NoteEntry) -> void:
 func _refresh() -> void:
 	if not visible:
 		return
+	var focused := get_viewport().gui_get_focus_owner()
+	var focus_group: HBoxContainer = null
+	var focus_text := ""
+	if focused is Button and focused.get_parent() == _blots:
+		focus_group = _blots
+		focus_text = focused.text
+	elif focused is Button and focused.get_parent() == _readings:
+		focus_group = _readings
+		focus_text = focused.text
 	_fill_list()
 	_empty.visible = Game.journal.is_empty()
 	_title.text = _selected.title if _selected else ""
@@ -86,6 +95,18 @@ func _refresh() -> void:
 	_between.visible = whole
 	_fill_blots()
 	_fill_readings()
+	if focus_group:
+		_focus_child(focus_group, focus_text)
+
+
+func _focus_child(group: HBoxContainer, text_to_find := "") -> void:
+	for child in group.get_children():
+		var button := child as Button
+		if button and not button.disabled and (text_to_find == "" or button.text == text_to_find):
+			button.grab_focus()
+			return
+	if group != _blots:
+		_focus_child(_blots)
 
 
 func _fill_list() -> void:
@@ -171,9 +192,11 @@ func _choose(reading: String) -> void:
 			_smudge = -1
 			_hint.text = ""
 			_refresh()
+			_focus_child(_blots)
 		Game.Reading.WRONG:
 			_wrong["%s|%d|%s" % [_selected.title, _smudge, reading]] = true
 			_fill_readings()
+			_focus_child(_readings)
 		Game.Reading.LOCKED:
 			_pick(_smudge)
 

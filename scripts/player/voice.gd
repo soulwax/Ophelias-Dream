@@ -57,6 +57,8 @@ var _call_left := -1.0
 var _echoed := {}
 var _echoes := 0
 var _echo: AudioStreamPlayer3D
+var _pending_echo_stage := ""
+var _echo_ticket := 0
 
 var _misread_at := -99.0
 var _clock := 0.0
@@ -117,9 +119,17 @@ func _build_speaker() -> void:
 func _on_phase(next: int) -> void:
 	if next in [Game.Phase.BOOT, Game.Phase.CAUGHT, Game.Phase.ESCAPED]:
 		_interrupt()
+		_pending_echo_stage = ""
+		_echo_ticket += 1
+	if next != Game.Phase.PLAYING and _echo:
+		_echo.stop()
 
 
 func _finished() -> void:
+	if not _current.is_empty() and str(_current.get("kind", "")) == "call":
+		Game.heard("call")
+		if _wants_echo(str(_current.stage)):
+			_schedule_echo(_current)
 	if not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = 0.0
 	_current = {}
@@ -128,12 +138,14 @@ func _finished() -> void:
 func _process(delta: float) -> void:
 	if not _active or Game.player == null:
 		return
+	if _echo and _echo.playing and (Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9)):
+		_echo.stop()
 	_since += delta
 	if _speaker.playing and not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = maxf(Game.murmur_left, 0.2)
 	# A line without a clip lasts as long as its subtitle.
 	if not _current.is_empty() and not _speaker.playing and Game.murmur_left <= 0.0:
-		_current = {}
+		_finished()
 	if Game.awake():
 		_clock += delta
 		if not _queue.is_empty() and not _busy() and _since >= Tune.VOICE_GAP * 0.5:
@@ -164,14 +176,11 @@ func _call_tick(delta: float, outdoors: bool) -> void:
 	var line: Dictionary = lines[int(_call_at[now]) % lines.size()]
 	if not _say(line):
 		return
-	Game.heard("call")
 	_call_left = randf_range(Tune.CALL_EVERY.x, Tune.CALL_EVERY.y)
-	if _wants_echo(now):
-		_schedule_echo(line)
 
 
 func _wants_echo(now: String) -> bool:
-	return Game.read_pages.has("on the post") and now != "hope" and not _echoed.has(now) and _echoes < Tune.ECHO_MAX
+	return Game.read_pages.has("on the post") and now != "hope" and not _echoed.has(now) and _pending_echo_stage == "" and _echoes < Tune.ECHO_MAX
 
 
 func _schedule_echo(line: Dictionary) -> void:
@@ -181,15 +190,20 @@ func _schedule_echo(line: Dictionary) -> void:
 	var at := Voice.echo_from(Game.player.global_position, Game.trail.flora.tree_positions())
 	if at == Vector3.INF:
 		return
-	_echoed[str(line.stage)] = true
-	_echoes += 1
-	get_tree().create_timer(randf_range(1.6, 2.4), false).timeout.connect(_play_echo.bind(stream, at))
+	_pending_echo_stage = str(line.stage)
+	_echo_ticket += 1
+	get_tree().create_timer(randf_range(1.6, 2.4), false).timeout.connect(_play_echo.bind(stream, at, _echo_ticket, _pending_echo_stage))
 
 
 # Her own call, back from the trees. No subtitle; the page said not to answer.
-func _play_echo(stream: AudioStream, at: Vector3) -> void:
+func _play_echo(stream: AudioStream, at: Vector3, ticket: int, echo_stage: String) -> void:
+	if ticket != _echo_ticket:
+		return
+	_pending_echo_stage = ""
 	if Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9):
 		return
+	_echoed[echo_stage] = true
+	_echoes += 1
 	_echo.stream = stream
 	_echo.global_position = at
 	Loudness.place(_echo, Tune.CALL_SPL - Tune.ECHO_DROP_DB, true)
@@ -245,14 +259,16 @@ func _notice(delta: float) -> void:
 	else:
 		_place_dwell += delta
 	var free := _since >= 2.2 and not _busy()
+	if _busy() and int(PRIORITY.get(str(_current.get("kind", "")), 1)) < PRIORITY.place:
+		free = true
 	if not _seen.has(place):
 		var wait := 1.2 if place == "bedroom" else 0.45
 		if _place_dwell >= wait and free:
 			_say(_places.get(place, _line(_stock_place(place), "steady", "place", place)))
 		return
 	if _returning and _place_dwell >= 0.45 and free and _wants_revisit(place):
-		_returning = false
-		_say(_revisits[place])
+		if _say(_revisits[place]):
+			_returning = false
 		return
 	var speed := Vector2(Game.player.velocity.x, Game.player.velocity.z).length()
 	if speed > 0.35:
@@ -357,6 +373,9 @@ func _forget(line: Dictionary) -> void:
 			_revisited.erase(id)
 		"bored":
 			_bored_at[line.stage] = mini(int(_bored_at[line.stage]), int(line.index))
+		"call":
+			_call_at[line.stage] = int(line.index)
+			_call_left = 0.0
 
 
 func _enqueue(line: Dictionary) -> void:

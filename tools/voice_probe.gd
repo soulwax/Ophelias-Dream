@@ -129,6 +129,15 @@ func _extra() -> void:
 	_check(str(voice._current.get("kind", "")) == "misread" and voice._misread_at == voice._clock, "a misread may cut off a misread")
 	voice._finished()
 	_check(AudioServer.get_bus_send(AudioServer.get_bus_index("Voice")) == "Effects", "Voice bus under Effects")
+	voice._current = {}
+	voice._spoken.erase(voice._key(voice._places["snow"]))
+	voice._seen.erase("snow")
+	voice._last_place = "snow"
+	voice._place_dwell = 1.0
+	voice._say(voice._bored["hope"][2])
+	voice._notice(0.1)
+	_check(str(voice._current.get("kind", "")) == "place", "entering a place interrupts lower-priority speech")
+	voice._finished()
 
 
 func _calls() -> void:
@@ -140,13 +149,20 @@ func _calls() -> void:
 	voice._call_tick(1.0, true)
 	var hope_calls: Array = voice._calls["hope"].map(func(line: Dictionary) -> String: return str(line.text))
 	_check(hope_calls.has(Game.murmur), "a call outdoors, from the hope stage")
-	_check(Game.heard_events.has("call"), "a call is a heard event")
+	_check(not Game.heard_events.has("call"), "a call is not heard until it finishes")
 	_check(voice._call_left >= Tune.CALL_EVERY.x, "the next call waits CALL_EVERY")
 	voice._finished()
+	_check(Game.heard_events.has("call"), "a completed call is a heard event")
+	Game.heard_events.erase("call")
 	voice.heard_page(NoteCatalog.find("torn page"), true)
 	voice._call_left = 0.01
 	voice._call_tick(1.0, true)
 	_check(str(voice._current.kind) == "page", "a call never cuts off a page")
+	voice._finished()
+	voice._call_left = 0.01
+	voice._call_tick(1.0, true)
+	voice.heard_page(NoteCatalog.find("by the bed"), true)
+	_check(not Game.heard_events.has("call"), "an interrupted call leaves no heard event")
 	voice._finished()
 	_check(not voice._wants_echo("doubt"), "no echo before the post")
 	Game.read_pages["on the post"] = true
@@ -159,3 +175,7 @@ func _calls() -> void:
 	var trees := PackedVector3Array([Vector3(10, 0, 0), Vector3(0, 0, 40), Vector3(70, 0, 0)])
 	_check(Voice.echo_from(Vector3.ZERO, trees) == Vector3(0, 3, 40), "the echo comes from the nearest pine 25-60 m off")
 	_check(Voice.echo_from(Vector3.ZERO, PackedVector3Array([Vector3(5, 0, 0)])) == Vector3.INF, "no pine in range, no echo")
+	voice._pending_echo_stage = "doubt"
+	Game.set_phase(Game.Phase.READING)
+	voice._play_echo(AudioStreamWAV.new(), Vector3.ZERO, voice._echo_ticket, "doubt")
+	_check(voice._pending_echo_stage == "" and voice._echoes == Tune.ECHO_MAX, "a cancelled echo releases its pending stage without spending another echo")
