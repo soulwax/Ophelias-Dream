@@ -90,10 +90,30 @@ def lines(data):
     return unique
 
 
+ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",
+        "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+
+def spelled(number):
+    """Whisper writes small numbers as digits; the script spells them."""
+    if number < 20:
+        return [ONES[number]]
+    if number < 100:
+        return [TENS[number // 10]] + ([ONES[number % 10]] if number % 10 else [])
+    return [str(number)]
+
+
 def words(text):
     heard = re.findall(r"[a-z0-9']+", text.lower().replace("’", "'"))
-    # Whisper often uses the more common spelling for the same spoken name.
-    return ["mathilda" if word == "matilda" else word for word in heard]
+    out = []
+    for word in heard:
+        if word.isdigit():
+            out += spelled(int(word))
+        # Whisper often uses the more common spelling for the same spoken name.
+        else:
+            out.append("mathilda" if word == "matilda" else word)
+    return out
 
 
 def wer(reference, heard):
@@ -389,6 +409,8 @@ def self_test():
     assert wer("Mathilda... please.", "Mathilda, please") == 0.0
     assert wer("Mathilda!", "Matilda!") == 0.0
     assert wer("two cups", "two cups here") == 0.5
+    assert wer("Nineteen. It's still nineteen.", "19. It's still 19.") == 0.0
+    assert wer("The dog stayed eleven years. Thirty years.", "The dog stayed 11 years. 30 years.") == 0.0
     assert wer("I'm not lifting that sheet", "im not lifting the sheet") > 0.0
     data = json.loads((OUT / "lines.json").read_text(encoding="utf-8"))
     every = lines(data)
