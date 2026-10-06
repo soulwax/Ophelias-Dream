@@ -273,11 +273,11 @@ Intensity: 0.45
 
 ### a08 | ophelia | shaken | 0.80
 
-Action / reaction: the same unease, unexplained.
+Action / reaction: the same unease, unexplained; hands back to the door so 08 still lands.
 Answers: a07 "It says something different every time I read it."
 Intensity: 0.50
 
-> I read it in your voice. Then in mine. So I stopped reading.
+> I read it in your voice. Then in mine. So I stopped reading, and watched the door.
 
 ### a09 | mathilda | hushed | 0.70
 

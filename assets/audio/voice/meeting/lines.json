@@ -5,7 +5,11 @@
     "mood": "pleading",
     "text": "You're here. Come in. I'll put the kettle on.",
     "reaction": "relief; reach for a familiar task",
-    "pause": 0.3
+    "pause": 0.3,
+    "answers": "none",
+    "quote": "",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "02",
@@ -13,7 +17,11 @@
     "mood": "hushed",
     "text": "Not yet.",
     "reaction": "stop her before welcome becomes avoidance",
-    "pause": 0.8
+    "pause": 0.8,
+    "answers": "01",
+    "quote": "I'll put the kettle on.",
+    "intensity": 0.3,
+    "overlap": 0.0
   },
   {
     "id": "03",
@@ -21,7 +29,11 @@
     "mood": "shaken",
     "text": "Are you hurt?",
     "reaction": "fear replaces relief",
-    "pause": 0.35
+    "pause": 0.35,
+    "answers": "02",
+    "quote": "Not yet.",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "04",
@@ -29,7 +41,11 @@
     "mood": "bitter",
     "text": "I'm cold. I'm angry. Those are different things.",
     "reaction": "name the feeling rather than accuse",
-    "pause": 0.7
+    "pause": 0.7,
+    "answers": "03",
+    "quote": "Are you hurt?",
+    "intensity": 0.6,
+    "overlap": 0.0
   },
   {
     "id": "05",
@@ -37,7 +53,11 @@
     "mood": "breaking",
     "text": "I didn't mean for you to go.",
     "reaction": "first attempt to undo the action",
-    "pause": 0.45
+    "pause": 0.45,
+    "answers": "04",
+    "quote": "I'm angry.",
+    "intensity": 0.7,
+    "overlap": 0.0
   },
   {
     "id": "06",
@@ -45,7 +65,11 @@
     "mood": "resolve",
     "text": "You said go. I needed you to notice that I could.",
     "reaction": "answer the actual claim",
-    "pause": 0.95
+    "pause": 0.95,
+    "answers": "05",
+    "quote": "I didn't mean for you to go.",
+    "intensity": 0.65,
+    "overlap": 0.0
   },
   {
     "id": "07",
@@ -53,7 +77,11 @@
     "mood": "hushed",
     "text": "I noticed. I watched the door all night.",
     "reaction": "a concrete confession",
-    "pause": 0.55
+    "pause": 0.55,
+    "answers": "06",
+    "quote": "I needed you to notice that I could.",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "08",
@@ -61,7 +89,11 @@
     "mood": "bitter",
     "text": "Then why didn't you open it?",
     "reaction": "hurt asks a precise question",
-    "pause": 1.25
+    "pause": 1.25,
+    "answers": "07",
+    "quote": "I watched the door all night.",
+    "intensity": 0.8,
+    "overlap": 0.0
   },
   {
     "id": "09",
@@ -69,7 +101,11 @@
     "mood": "shaken",
     "text": "Because if you came back angry, I would have to hear you.",
     "reaction": "give up the excuse",
-    "pause": 0.9
+    "pause": 0.9,
+    "answers": "08",
+    "quote": "why didn't you open it?",
+    "intensity": 0.75,
+    "overlap": 0.0
   },
   {
     "id": "10",
@@ -77,7 +113,12 @@
     "mood": "hushed",
     "text": "Yes.",
     "reaction": "recognition; not forgiveness",
-    "pause": 1.1
+    "pause": 1.1,
+    "answers": "09",
+    "quote": "I would have to hear you.",
+    "intensity": 0.35,
+    "overlap": 0.0,
+    "break": true
   },
   {
     "id": "11",
@@ -85,7 +126,11 @@
     "mood": "breaking",
     "text": "I kept thinking of what to say. I never thought of what to ask.",
     "reaction": "recognize her pattern",
-    "pause": 0.6
+    "pause": 0.6,
+    "answers": "10",
+    "quote": "Yes.",
+    "intensity": 0.6,
+    "overlap": 0.0
   },
   {
     "id": "12",
@@ -93,7 +138,11 @@
     "mood": "resolve",
     "text": "Ask me now.",
     "reaction": "offer a chance without rescuing her",
-    "pause": 0.9
+    "pause": 0.9,
+    "answers": "11",
+    "quote": "I never thought of what to ask.",
+    "intensity": 0.5,
+    "overlap": 0.0
   },
   {
     "id": "13",
@@ -101,7 +150,11 @@
     "mood": "hushed",
     "text": "What did you need from me?",
     "reaction": "a real question",
-    "pause": 0.55
+    "pause": 0.55,
+    "answers": "12",
+    "quote": "Ask me now.",
+    "intensity": 0.4,
+    "overlap": 0.0
   },
   {
     "id": "14",
@@ -109,7 +162,11 @@
     "mood": "shaken",
     "text": "To let me finish. I said I was unhappy, and you handed me a list.",
     "reaction": "the specific grievance",
-    "pause": 1.1
+    "pause": 1.1,
+    "answers": "13",
+    "quote": "What did you need from me?",
+    "intensity": 0.65,
+    "overlap": 0.0
   },
   {
     "id": "15",
@@ -117,7 +174,11 @@
     "mood": "hushed",
     "text": "The shopping list.",
     "reaction": "remember the small action",
-    "pause": 0.3
+    "pause": 0.3,
+    "answers": "14",
+    "quote": "you handed me a list.",
+    "intensity": 0.4,
+    "overlap": 0.0
   },
   {
     "id": "16",
@@ -125,7 +186,12 @@
     "mood": "bitter",
     "text": "You asked if we needed milk. I was trying to tell you I needed you.",
     "reaction": "explain the wound, not a new mystery",
-    "pause": 1.25
+    "pause": 1.25,
+    "answers": "15",
+    "quote": "The shopping list.",
+    "intensity": 0.85,
+    "overlap": 0.0,
+    "break": true
   },
   {
     "id": "17",
@@ -133,7 +199,11 @@
     "mood": "breaking",
     "text": "I heard you. I made it smaller because I knew how to fix milk.",
     "reaction": "take responsibility",
-    "pause": 1.0
+    "pause": 1.0,
+    "answers": "16",
+    "quote": "I needed you.",
+    "intensity": 0.8,
+    "overlap": 0.0
   },
   {
     "id": "18",
@@ -141,7 +211,11 @@
     "mood": "hushed",
     "text": "You don't have to fix this before you sit beside me.",
     "reaction": "set a possible boundary",
-    "pause": 0.85
+    "pause": 0.85,
+    "answers": "17",
+    "quote": "I knew how to fix milk.",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "19",
@@ -149,7 +223,11 @@
     "mood": "resolve",
     "text": "Then I'll sit. And I'll listen until you're finished.",
     "reaction": "specific promise",
-    "pause": 0.75
+    "pause": 0.75,
+    "answers": "18",
+    "quote": "sit beside me.",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "20",
@@ -157,7 +235,11 @@
     "mood": "warm",
     "text": "I brought your cup back.",
     "reaction": "show that anger and care can coexist",
-    "pause": 0.55
+    "pause": 0.55,
+    "answers": "19",
+    "quote": "I'll listen until you're finished.",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "21",
@@ -165,7 +247,11 @@
     "mood": "warm",
     "text": "You kept it?",
     "reaction": "surprised tenderness",
-    "pause": 0.35
+    "pause": 0.35,
+    "answers": "20",
+    "quote": "I brought your cup back.",
+    "intensity": 0.4,
+    "overlap": 0.0
   },
   {
     "id": "22",
@@ -173,7 +259,11 @@
     "mood": "warm",
     "text": "I was angry with you. I didn't want you gone.",
     "reaction": "name the distinction",
-    "pause": 1.0
+    "pause": 1.0,
+    "answers": "21",
+    "quote": "You kept it?",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "23",
@@ -181,7 +271,11 @@
     "mood": "hushed",
     "text": "May I take it?",
     "reaction": "ask instead of reaching",
-    "pause": 0.6
+    "pause": 0.6,
+    "answers": "22",
+    "quote": "I didn't want you gone.",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "24",
@@ -189,7 +283,11 @@
     "mood": "resolve",
     "text": "Yes. Walk beside me.",
     "reaction": "consent and a small shared action",
-    "pause": 1.2
+    "pause": 1.2,
+    "answers": "23",
+    "quote": "May I take it?",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "a01",
@@ -197,7 +295,11 @@
     "mood": "warm",
     "text": "You left the lantern burning.",
     "reaction": "topic at 01, once; the light she watched from the tent",
-    "pause": 0.6
+    "pause": 0.6,
+    "answers": "01",
+    "quote": "I'll put the kettle on.",
+    "intensity": 0.3,
+    "overlap": 0.0
   },
   {
     "id": "a02",
@@ -205,7 +307,11 @@
     "mood": "hushed",
     "text": "I didn't know what else to keep lit.",
     "reaction": "a plain truth, not a plea",
-    "pause": 0.5
+    "pause": 0.5,
+    "answers": "a01",
+    "quote": "lantern burning.",
+    "intensity": 0.3,
+    "overlap": 0.0
   },
   {
     "id": "a03",
@@ -213,7 +319,11 @@
     "mood": "wry",
     "text": "Only my hands. You knitted the gloves too small.",
     "reaction": "topic at 03 after examining the gloves, once; deflect with a joke",
-    "pause": 0.6
+    "pause": 0.6,
+    "answers": "03",
+    "quote": "Are you hurt?",
+    "intensity": 0.4,
+    "overlap": 0.0
   },
   {
     "id": "a04",
@@ -221,7 +331,11 @@
     "mood": "warm",
     "text": "You said they were perfect.",
     "reaction": "she remembers the kindness",
-    "pause": 0.5
+    "pause": 0.5,
+    "answers": "a03",
+    "quote": "You knitted the gloves too small.",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "a05",
@@ -229,7 +343,11 @@
     "mood": "bitter",
     "text": "You said it like you meant it.",
     "reaction": "topic at 05, once; refuse the easy retraction",
-    "pause": 0.7
+    "pause": 0.7,
+    "answers": "05",
+    "quote": "I didn't mean for you to go.",
+    "intensity": 0.7,
+    "overlap": 0.0
   },
   {
     "id": "a06",
@@ -237,7 +355,11 @@
     "mood": "breaking",
     "text": "I did. For as long as it took to say it.",
     "reaction": "honesty instead of denial",
-    "pause": 0.8
+    "pause": 0.8,
+    "answers": "a05",
+    "quote": "like you meant it.",
+    "intensity": 0.75,
+    "overlap": 0.0
   },
   {
     "id": "a07",
@@ -245,15 +367,23 @@
     "mood": "hushed",
     "text": "I left you a note. It says something different every time I read it.",
     "reaction": "topic at 07 after examining the note, once",
-    "pause": 0.7
+    "pause": 0.7,
+    "answers": "07",
+    "quote": "I watched the door all night.",
+    "intensity": 0.45,
+    "overlap": 0.0
   },
   {
     "id": "a08",
     "speaker": "ophelia",
     "mood": "shaken",
-    "text": "I read it in your voice. Then in mine. So I stopped reading.",
-    "reaction": "the same unease, unexplained",
-    "pause": 0.8
+    "text": "I read it in your voice. Then in mine. So I stopped reading, and watched the door.",
+    "reaction": "the same unease, unexplained; hands back to the door so 08 still lands",
+    "pause": 0.8,
+    "answers": "a07",
+    "quote": "It says something different every time I read it.",
+    "intensity": 0.5,
+    "overlap": 0.0
   },
   {
     "id": "a09",
@@ -261,7 +391,11 @@
     "mood": "hushed",
     "text": "I'm not sure I know any more.",
     "reaction": "topic at 13, once; she is allowed not to know yet",
-    "pause": 0.7
+    "pause": 0.7,
+    "answers": "13",
+    "quote": "What did you need from me?",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "a10",
@@ -269,7 +403,11 @@
     "mood": "hushed",
     "text": "Then I'll wait while you find it.",
     "reaction": "she waits instead of filling the silence",
-    "pause": 0.8
+    "pause": 0.8,
+    "answers": "a09",
+    "quote": "I'm not sure I know any more.",
+    "intensity": 0.3,
+    "overlap": 0.0
   },
   {
     "id": "a11",
@@ -277,7 +415,11 @@
     "mood": "hushed",
     "text": "Not yet. Sit with me out here first.",
     "reaction": "the other answer to 23; consent deferred, not refused",
-    "pause": 0.8
+    "pause": 0.8,
+    "answers": "23",
+    "quote": "May I take it?",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "a12",
@@ -285,7 +427,11 @@
     "mood": "warm",
     "text": "Out here. All right.",
     "reaction": "she accepts without reaching",
-    "pause": 1.0
+    "pause": 1.0,
+    "answers": "a11",
+    "quote": "Sit with me out here first.",
+    "intensity": 0.35,
+    "overlap": 0.0
   },
   {
     "id": "a13",
@@ -293,7 +439,12 @@
     "mood": "hushed",
     "text": "I need a minute.",
     "reaction": "leaving the conversation (any turn)",
-    "pause": 0.5
+    "pause": 0.5,
+    "answers": "any",
+    "quote": "",
+    "intensity": 0.3,
+    "overlap": 0.0,
+    "break": true
   },
   {
     "id": "a14",
@@ -301,7 +452,11 @@
     "mood": "hushed",
     "text": "I'll be here. I'm not going in without you.",
     "reaction": "she does not follow and does not close the door",
-    "pause": 0.5
+    "pause": 0.5,
+    "answers": "a13",
+    "quote": "I need a minute.",
+    "intensity": 0.3,
+    "overlap": 0.0
   },
   {
     "id": "a15",
@@ -309,6 +464,10 @@
     "mood": "hushed",
     "text": "Still here. Go on.",
     "reaction": "greeting when Mathilda comes back to the conversation",
-    "pause": 0.5
+    "pause": 0.5,
+    "answers": "any",
+    "quote": "",
+    "intensity": 0.3,
+    "overlap": 0.0
   }
 ]

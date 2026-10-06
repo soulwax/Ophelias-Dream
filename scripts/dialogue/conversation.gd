@@ -14,6 +14,8 @@ signal left
 
 ## How far the Ambience and Dread buses drop while they talk.
 const DUCK := 0.35
+## A skipped line still leaves this much of a beat, so the rhythm survives.
+const SKIP_BEAT := 0.35
 
 var tree: DialogueTree
 ## Speaks from its head(); faces her while they talk if it has face().
@@ -42,6 +44,7 @@ static func make(tree_path: String, speaker: Node3D) -> Conversation:
 	var conversation := Conversation.new()
 	conversation.name = "Conversation"
 	conversation.tree = DialogueTree.load_from(tree_path)
+	conversation._apply_timing()
 	conversation.npc = speaker
 	return conversation
 
@@ -80,9 +83,7 @@ func skip() -> void:
 		_their_voice.stop()
 		_own_voice.stop()
 		_line_left = 0.0
-		_gap_left = minf(_gap_left, 0.15)
-	else:
-		_gap_left = 0.0
+	_gap_left = minf(_gap_left, SKIP_BEAT)
 
 
 ## Takes the topic at this index of the ones on screen.
@@ -174,6 +175,22 @@ func _clip(line: Dictionary) -> AudioStream:
 	return null
 
 
+# The timing sheet (tools/dialogue_post.py) is exact: its pauses and authored
+# overlaps replace the line table's, never a global gap.
+func _apply_timing() -> void:
+	var path := tree.clips + "timing.json"
+	if not FileAccess.file_exists(path):
+		return
+	var sheet: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if typeof(sheet) != TYPE_ARRAY:
+		return
+	for entry: Dictionary in sheet:
+		var line := tree.line(str(entry.id))
+		if not line.is_empty():
+			line["pause"] = float(entry.get("pause", line.get("pause", 0.4)))
+			line["overlap"] = float(entry.get("overlap", 0.0))
+
+
 func _walk_away() -> void:
 	_close()
 	left.emit()
@@ -228,6 +245,10 @@ func _process(delta: float) -> void:
 		return
 	if _line_left > 0.0:
 		_line_left -= delta
+		# Someone cuts in only where the script says so, over the other's voice.
+		var cut := float(_queue.front().get("overlap", 0.0)) if not _queue.is_empty() else 0.0
+		if cut > 0.0 and _line_left <= cut:
+			_next()
 		return
 	if _their_voice.playing or _own_voice.playing:
 		return
