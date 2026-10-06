@@ -109,12 +109,25 @@ def build(style):
     dark=hair_material('StyleHairDark',base)
     light=hair_material('StyleHairHighlight',tuple(c*1.2 for c in base))
     if style=='high_bun':
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=20, radius=1.0, location=(0,.082,2.025))
+        core=bpy.context.object
+        core.name='BunCore'
+        core.scale=(.044,.042,.050)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        core.data.materials.append(dark)
+        for polygon in core.data.polygons:
+            polygon.use_smooth=True
+        group=core.vertex_groups.new(name='DEF-spine.006')
+        group.add(list(range(len(core.data.vertices))),1.0,'REPLACE')
+        modifier=core.modifiers.new('Existing elf skeleton','ARMATURE')
+        modifier.object=armature
+        core.parent=armature
         # A woven coil with three interlaced strands above the crown.
         for strand in range(3):
             centers=[]
-            for i in range(181):
-                t=i/180; angle=t*2*pi*2.8
-                weave=angle*6+strand*2*pi/3
+            for i in range(401):
+                t=i/400; angle=t*2*pi*7
+                weave=angle*3+strand*2*pi/3
                 radius=.052*sin(pi*(.08+.84*t))+.005*cos(weave)
                 centers.append((radius*cos(angle), .082+radius*sin(angle), 1.970+.11*t+.005*sin(weave)))
             tube('BunStrand%d'%strand,centers,.0075,light if strand==1 else dark,armature)
