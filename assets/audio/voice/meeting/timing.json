@@ -49,9 +49,9 @@
   },
   {
     "id": "07",
-    "source": "draft",
+    "source": "final",
     "file": "5d97908652a42d6d97a2989026635e8200f85ece5226c5d509b860cc41e86c74.wav",
-    "seconds": 2.389,
+    "seconds": 5.625,
     "pause": 0.55,
     "overlap": 0.0
   },
@@ -65,9 +65,9 @@
   },
   {
     "id": "09",
-    "source": "draft",
+    "source": "final",
     "file": "86b350d91b6b0f5a5310468affa32324196800c4f4130766da92d36b78607f09.wav",
-    "seconds": 2.826,
+    "seconds": 2.522,
     "pause": 0.9,
     "overlap": 0.0
   },
@@ -81,9 +81,9 @@
   },
   {
     "id": "11",
-    "source": "draft",
+    "source": "final",
     "file": "4935865c7bd809fed5fcf36e5455dd37e74436febadd2f288639439d6da37b3f.wav",
-    "seconds": 3.528,
+    "seconds": 3.735,
     "pause": 0.6,
     "overlap": 0.0
   },
@@ -97,9 +97,9 @@
   },
   {
     "id": "13",
-    "source": "draft",
+    "source": "final",
     "file": "0357b9dd3d982c682d53fdbdb393bba3d74c8b685c0a5d048adfc6f651a0459f.wav",
-    "seconds": 1.266,
+    "seconds": 1.765,
     "pause": 0.55,
     "overlap": 0.0
   },
@@ -113,9 +113,9 @@
   },
   {
     "id": "15",
-    "source": "draft",
+    "source": "final",
     "file": "1b8fe9bf431f0e9048ca04e08f13436257ca7f90cfb10b738a2487960a5db304.wav",
-    "seconds": 1.164,
+    "seconds": 1.397,
     "pause": 0.3,
     "overlap": 0.0
   },
@@ -129,9 +129,9 @@
   },
   {
     "id": "17",
-    "source": "draft",
+    "source": "final",
     "file": "5ea205efc2d97876b90c427f2d40155d7782343457f962fd1da301afbd98235e.wav",
-    "seconds": 3.534,
+    "seconds": 3.671,
     "pause": 1.0,
     "overlap": 0.0
   },
@@ -201,9 +201,9 @@
   },
   {
     "id": "a02",
-    "source": "draft",
+    "source": "final",
     "file": "75171f13b4801e13e32ec62bc5bf0c8691246296351f84fc5ec3e61dce893eee.wav",
-    "seconds": 1.895,
+    "seconds": 3.315,
     "pause": 0.5,
     "overlap": 0.0
   },
@@ -249,9 +249,9 @@
   },
   {
     "id": "a08",
-    "source": "draft",
+    "source": "final",
     "file": "3ef4b1183d47bd8a016a1a117c11d22118712130a5be06192d40f121805b9273.wav",
-    "seconds": 4.748,
+    "seconds": 4.553,
     "pause": 0.8,
     "overlap": 0.0
   },
@@ -305,9 +305,9 @@
   },
   {
     "id": "a15",
-    "source": "draft",
+    "source": "final",
     "file": "56fb1de704ed39a1439ae15ba37ce250ec1bd6a9018efb805b755be9fea58877.wav",
-    "seconds": 1.328,
+    "seconds": 3.111,
     "pause": 0.5,
     "overlap": 0.0
   }

@@ -10,5 +10,5 @@ decrypt.key
 /assets/vendor/requested_house/
 /assets/derived/requested_house/
 
-# Local-only music: commercial tracks and a downloader config holding a session cookie. Never commit or push.
-assets/audio/music/
+# Music downloader settings hold a session cookie: keep them out of git (the licensed tracks themselves are tracked).
+assets/audio/music/*.config.json

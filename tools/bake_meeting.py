@@ -244,10 +244,11 @@ class Chatter:
         return wav.squeeze(0).cpu().numpy().astype(np.float32), int(self.model.sr)
 
 
-def best_take(chatter, judge, line, previous):
+def best_take(chatter, judge, line, previous, takes=None):
     judge.anchor = judge.embed_file(REFS[line["speaker"]] / f"{line['mood']}.wav")
     scored = []
-    for seed in range(1, bake_speech.TAKES + 1):
+    # More takes means new seeds: the first ones always come out the same.
+    for seed in range(1, (takes or bake_speech.TAKES) + 1):
         samples, rate = chatter.perform(line, seed)
         samples = dialogue_post.clean(samples, rate, line["mood"])
         heard = judge.hear(samples, rate)
@@ -262,7 +263,18 @@ def best_take(chatter, judge, line, previous):
     return min(good, key=lambda t: t["fit"] - 4.0 * t["similarity"])
 
 
-def bake(lines, tree, engine, accept_bad):
+def performed(lines, speaker):
+    """The lines a bake performs: one speaker's, or everyone's."""
+    return [line for line in lines if speaker is None or line["speaker"] == speaker]
+
+
+def missing_refs(lines, speaker):
+    """Locked references the performed lines need but don't have."""
+    return [REFS[line["speaker"]] / f"{line['mood']}.wav" for line in performed(lines, speaker)
+            if not (REFS[line["speaker"]] / f"{line['mood']}.wav").exists()]
+
+
+def bake(lines, tree, engine, accept_bad, speaker=None, takes=None):
     import soundfile as sf
     by_id = {line["id"]: line for line in lines}
     # The spine's previous line, for continuity; branch lines follow what they answer.
@@ -271,16 +283,24 @@ def bake(lines, tree, engine, accept_bad):
     speakers = {}
     loudness = {}
     if engine == "chatterbox":
-        for line in lines:
-            ref = REFS[line["speaker"]] / f"{line['mood']}.wav"
-            if not ref.exists():
-                sys.exit(f"No locked reference {ref.relative_to(ROOT)}; see docs/MEETING_VOICE.md, stage 3a.")
+        missing = missing_refs(lines, speaker)
+        if missing:
+            sys.exit(f"No locked reference {missing[0].relative_to(ROOT)}; see docs/MEETING_VOICE.md, stage 3a.")
     bad = []
     for line in lines:
+        # Only the chosen speaker is performed, but every existing clip still sets
+        # the loudness the next line's continuity is judged against.
+        skip = speaker is not None and line["speaker"] != speaker
         name = dialogue_post.clip_name(line["text"], line["mood"])
         target = (DRAFT if engine == "kokoro" else OUT) / name
         if target.exists():
             loudness[line["id"]] = dict(db=loudness_db(sf.read(target, dtype="float32")[0]), intensity=line["intensity"])
+            continue
+        if skip:
+            # The other speaker plays her draft in game; judge continuity against that.
+            draft = DRAFT / name
+            if draft.exists():
+                loudness[line["id"]] = dict(db=loudness_db(sf.read(draft, dtype="float32")[0]), intensity=line["intensity"])
             continue
         print(f"{line['id']} {line['speaker']} [{line['mood']}] {line['text']}", flush=True)
         if engine == "kokoro":
@@ -294,7 +314,7 @@ def bake(lines, tree, engine, accept_bad):
             if chatter is None:
                 chatter, judge = Chatter(), bake_speech.Judge()
             previous = previous_of[line["id"]]
-            take = best_take(chatter, judge, line, loudness.get(previous["id"]) if previous else None)
+            take = best_take(chatter, judge, line, loudness.get(previous["id"]) if previous else None, takes)
             if take is None:
                 bad.append(f"{line['id']} {line['text']}")
                 if not accept_bad:
@@ -310,6 +330,15 @@ def bake(lines, tree, engine, accept_bad):
         sys.exit("No take passed for:\n  " + "\n  ".join(bad))
 
 
+def self_test():
+    lines = [dict(id="01", speaker="ophelia", mood="warm"), dict(id="02", speaker="mathilda", mood="warm")]
+    assert [l["id"] for l in performed(lines, "ophelia")] == ["01"]
+    assert [l["id"] for l in performed(lines, None)] == ["01", "02"]
+    missing = missing_refs(lines, "ophelia")
+    assert all("mathilda" not in str(ref) for ref in missing), missing
+    print("SELF-TEST PASS")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="Fail on drift or incoherence")
@@ -317,7 +346,12 @@ def main():
     parser.add_argument("--paths", action="store_true", help="Print every path through the tree")
     parser.add_argument("--engine", choices=["kokoro", "chatterbox"], help="Perform missing clips")
     parser.add_argument("--accept-bad", action="store_true")
+    parser.add_argument("--speaker", choices=sorted(REFS), help="Perform only this speaker's lines")
+    parser.add_argument("--takes", type=int, help="Takes per line (seeds 1..N); default bake_speech.TAKES")
+    parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
+    if args.self_test:
+        return self_test()
     lines = parse()
     tree = json.loads(TREE.read_text(encoding="utf-8"))
     found = problems(lines, tree)
@@ -336,7 +370,7 @@ def main():
               f"{len(walk(tree, None))} paths; lines.json and timing.json match")
         return
     if args.engine:
-        return bake(lines, tree, args.engine, args.accept_bad)
+        return bake(lines, tree, args.engine, args.accept_bad, args.speaker, args.takes)
     write(lines)
     print(f"Wrote {len(lines)} lines and their timing")
 
