@@ -111,6 +111,83 @@
       "similarity": 0.7309876680374146,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Smaller than mine. Then not. Like the prints were growing into me.",
+      "mood": "hushed",
+      "category": "deciphered",
+      "file": "4382ee932249f921da433ece3a999976f2328b724a9ac4db0ce00c6da27e0b5f.wav",
+      "seconds": 4.847833333333333,
+      "wer": 0.0,
+      "similarity": 0.7625163793563843,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Same hand, both pages. I'd know it anywhere. That's what scares me.",
+      "mood": "hushed",
+      "category": "deciphered",
+      "file": "fd318cd6d9045730e559cfa4daae174b9a82d08aa96558beca681645d313d08a.wav",
+      "seconds": 5.490208333333333,
+      "wer": 0.0,
+      "similarity": 0.8501206040382385,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "The sheet is not her. The sheet is not her. I'll say it all the way to the road.",
+      "mood": "resolve",
+      "category": "deciphered",
+      "file": "69fc6801e6d8273919ed7b72f1fecb84e5657e194726d677ca54e2da078ef545.wav",
+      "seconds": 6.061,
+      "wer": 0.0,
+      "similarity": 0.8316149711608887,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Just an M. It could be either of us. It could be both.",
+      "mood": "breaking",
+      "category": "deciphered",
+      "file": "b66750312e0b3c028a69c70e2c67048da8bb9db1dde2ae897275f3eca212a086.wav",
+      "seconds": 4.266708333333334,
+      "wer": 0.0,
+      "similarity": 0.7958230972290039,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Her side of the bed is still warm. She can't be far.",
+      "mood": "warm",
+      "category": "places",
+      "file": "a5c5be2903354ea774e21ed3533775ceece4c291cf59f2f4abf79e5048eee652.wav",
+      "seconds": 3.680875,
+      "wer": 0.0,
+      "similarity": 0.7696252465248108,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Her boots are gone. The door isn't even latched.",
+      "mood": "shaken",
+      "category": "places",
+      "file": "d5a5327d362a462c33a90261a06e05bd6bcd82079ab3e07686c617b624b8ff84.wav",
+      "seconds": 3.8960833333333333,
+      "wer": 0.0,
+      "similarity": 0.8565976619720459,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Two chairs pulled out. She sat up with that candle until it went out.",
+      "mood": "hushed",
+      "category": "places",
+      "file": "99c5b1fd555b9c2b29cbc059875ee7ca89a5359ce4cfc400d8878454a6c17e87.wav",
+      "seconds": 6.446791666666667,
+      "wer": 0.0,
+      "similarity": 0.6271554231643677,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
     }
   ]
 }
