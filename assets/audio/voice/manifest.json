@@ -364,6 +364,61 @@
       "similarity": 0.7727537751197815,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "She always leaves something behind so I can find her. Always.",
+      "mood": "steady",
+      "category": "bored",
+      "file": "a7ccc165f5f586681af631a5666cff4029d6cf3adde380639738c269aba774e5.wav",
+      "seconds": 4.309291666666667,
+      "wer": 0.0,
+      "similarity": 0.78053879737854,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Every white shape is her coat, until it isn't.",
+      "mood": "hushed",
+      "category": "bored",
+      "file": "901094d9bf3eb2fea9ec44f9754f73a0d77988bf74a386f3e7a70edb68e954f3.wav",
+      "seconds": 3.3481666666666667,
+      "wer": 0.0,
+      "similarity": 0.8263997435569763,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "She'll be cold. She never wears the hat. I should've made her wear the hat.",
+      "mood": "warm",
+      "category": "bored",
+      "file": "5f12acf3e2198dde57dded240dce208c52e61ee0883b736690c8bff1a68d7624.wav",
+      "seconds": 6.693125,
+      "wer": 0.13333333333333333,
+      "similarity": 0.6375829577445984,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "Her prints stop. Mine don't. What does that make me?",
+      "mood": "shaken",
+      "category": "bored",
+      "file": "6110d9c021d005ff240631ba75af1d9b52f07a9a10ec35bd1cc56802b6689189.wav",
+      "seconds": 4.291791666666667,
+      "wer": 0.0,
+      "similarity": 0.8027610778808594,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "I've said her name so many times it's just a sound now.",
+      "mood": "hushed",
+      "category": "bored",
+      "file": "d3e2f9096d837b18e7dcf126e55633e705d93884b08cf5f5619883dd9a463f7f.wav",
+      "seconds": 3.404541666666667,
+      "wer": 0.0,
+      "similarity": 0.6962561011314392,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }
