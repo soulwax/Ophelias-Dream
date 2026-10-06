@@ -14,6 +14,12 @@ var _previous: Button
 var _next: Button
 var _turn: float = 0.0
 var _distance: float = 3.8
+var _animation_player: AnimationPlayer
+var _skeleton: Skeleton3D
+var _clips: Array[String] = []
+var _clip_index: int = 0
+var _rest_pose: bool = false
+var _animation_label: Label
 
 
 func _ready() -> void:
@@ -47,6 +53,10 @@ func _load_catalog() -> void:
 
 
 func show_variant(index: int) -> void:
+	_animation_player = null
+	_skeleton = null
+	_clips.clear()
+	_rest_pose = false
 	if _model != null:
 		_display.remove_child(_model)
 		_model.queue_free()
@@ -78,6 +88,85 @@ func show_variant(index: int) -> void:
 	_title.text = str(entry.get("name", "Unnamed character"))
 	_description.text = str(entry.get("description", ""))
 	_counter.text = "%d / %d" % [selected + 1, variants.size()]
+	_build_animation_preview()
+
+
+func _build_animation_preview() -> void:
+	_skeleton = _model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if _skeleton == null:
+		_animation_label.text = "No character skeleton"
+		return
+	for node: Node in _model.find_children("*", "AnimationPlayer", true, false):
+		(node as AnimationPlayer).stop()
+	for node: Node in _model.find_children("*", "AnimationTree", true, false):
+		(node as AnimationTree).active = false
+	_animation_player = AnimationPlayer.new()
+	_animation_player.name = "PresentationAnimations"
+	_skeleton.get_parent().add_child(_animation_player)
+	_animation_player.root_node = NodePath("..")
+	var paths := {
+		"": "res://assets/characters/styloo_elf/elf_animations.res",
+		"Feminine": "res://assets/characters/styloo_elf/feminine/elf_feminine.res",
+	}
+	for library_name: String in paths:
+		var source := load(paths[library_name]) as AnimationLibrary
+		if source == null:
+			continue
+		var library := source.duplicate(true) as AnimationLibrary
+		for clip: StringName in library.get_animation_list():
+			library.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+		_animation_player.add_animation_library(library_name, library)
+	if _animation_player.has_animation("Idle"):
+		_clips.append("Idle")
+	for clip: String in _animation_player.get_animation_list():
+		if clip != "Idle" and clip != "RESET" and not clip.ends_with("/RESET"):
+			_clips.append(clip)
+	_clip_index = 0
+	_skeleton.reset_bone_poses()
+	show_animation(0)
+
+
+func show_animation(index: int) -> void:
+	if _animation_player == null or _clips.is_empty():
+		return
+	_clip_index = posmod(index, _clips.size())
+	if _rest_pose:
+		_skeleton.reset_bone_poses()
+	_rest_pose = false
+	_animation_player.play(_clips[_clip_index], 0.18)
+	_animation_player.advance(0.0)
+	_animation_label.text = "↑ / ↓ Animation: %s   (%d / %d)" % [_clips[_clip_index].replace("_", " "), _clip_index + 1, _clips.size()]
+
+
+func _toggle_t_pose() -> void:
+	if _skeleton == null or _animation_player == null:
+		return
+	if _rest_pose:
+		show_animation(_clip_index)
+		return
+	_animation_player.stop()
+	_skeleton.reset_bone_poses()
+	# The imported rest is an A pose. Straighten both arm chains into a T
+	# without modifying the skeleton's bind/rest transforms.
+	for side: String in ["L", "R"]:
+		var direction := Vector3.RIGHT if side == "L" else Vector3.LEFT
+		_point_bone("DEF-upper_arm." + side, "DEF-forearm." + side, direction)
+		_point_bone("DEF-forearm." + side, "DEF-hand." + side, direction)
+	_rest_pose = true
+	_animation_label.text = "T pose   •   X to resume animation"
+
+
+func _point_bone(name: String, child_name: String, direction: Vector3) -> void:
+	_skeleton.force_update_all_bone_transforms()
+	var bone := _skeleton.find_bone(name)
+	var child := _skeleton.find_bone(child_name)
+	if bone < 0 or child < 0:
+		return
+	var current := _skeleton.get_bone_global_pose(bone)
+	var axis := (_skeleton.get_bone_global_pose(child).origin - current.origin).normalized()
+	var turn := Basis(Quaternion(axis, direction))
+	_skeleton.set_bone_global_pose(bone, Transform3D(turn * current.basis, current.origin))
+	_skeleton.force_update_all_bone_transforms()
 
 
 func _frame_model() -> void:
@@ -117,6 +206,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			KEY_HOME:
 				show_variant(selected)
+				get_viewport().set_input_as_handled()
+			KEY_UP:
+				show_animation(_clip_index + 1)
+				get_viewport().set_input_as_handled()
+			KEY_DOWN:
+				show_animation(_clip_index - 1)
+				get_viewport().set_input_as_handled()
+			KEY_X:
+				_toggle_t_pose()
 				get_viewport().set_input_as_handled()
 			KEY_ESCAPE:
 				get_tree().quit()
@@ -199,6 +297,9 @@ func _build_ui() -> void:
 	_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_description.add_theme_color_override("font_color", Color("bdcbd5"))
 	column.add_child(_description)
+	_animation_label = Label.new()
+	_animation_label.add_theme_color_override("font_color", Color("a9c5d8"))
+	column.add_child(_animation_label)
 	var space := Control.new()
 	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -225,7 +326,7 @@ func _build_ui() -> void:
 	_next.pressed.connect(func() -> void: show_variant(selected + 1))
 	row.add_child(_next)
 	var hint := Label.new()
-	hint.text = "← / → Browse     •     Drag to turn     •     Wheel to zoom     •     Home to reset     •     Esc to close"
+	hint.text = "← / → Characters   •   ↑ / ↓ Animations   •   X T pose   •   Drag to turn   •   Wheel to zoom   •   Home reset   •   Esc close"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_color_override("font_color", Color("a9c5d8"))
 	column.add_child(hint)
