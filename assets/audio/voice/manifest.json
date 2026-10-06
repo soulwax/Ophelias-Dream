@@ -199,6 +199,61 @@
       "similarity": 0.8242409825325012,
       "engine": "qwen-clone",
       "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "If she's down here, she's been quiet a long time.",
+      "mood": "hushed",
+      "category": "places",
+      "file": "2580683fd1faac2be239ee99b6004d9b8204f7df2016f03fd416457e2bd1e674.wav",
+      "seconds": 3.1308333333333334,
+      "wer": 0.0,
+      "similarity": 0.6964184045791626,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "No wind down here. Just my heart, and I wish it would slow down.",
+      "mood": "hushed",
+      "category": "places",
+      "file": "ce080064281c999fce20e459e92a3ead625dbd0aec632a2efa4bd8bb60cd895c.wav",
+      "seconds": 7.415583333333333,
+      "wer": 0.0,
+      "similarity": 0.6173141002655029,
+      "engine": "qwen-design",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    },
+    {
+      "text": "Why does a cabin need a hallway this long under the ground?",
+      "mood": "hushed",
+      "category": "places",
+      "file": "8119c52ffc83b4e3d1c7380db60b2f594b4a261989575895e0f6085210bc75e8.wav",
+      "seconds": 3.8396666666666666,
+      "wer": 0.0,
+      "similarity": 0.6513063907623291,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "Someone keeps this place clean. Someone expects to use it.",
+      "mood": "shaken",
+      "category": "places",
+      "file": "83459668a44711c6cdd0ab9ab17768cfdb3abfe2be01d7b1ef459fedda5ffcf8.wav",
+      "seconds": 4.585166666666667,
+      "wer": 0.0,
+      "similarity": 0.6725999116897583,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    },
+    {
+      "text": "No. She wouldn't be here. She's out in the snow. She has to be.",
+      "mood": "breaking",
+      "category": "places",
+      "file": "eff4e0956f1c832306c3b05ca7c98fc395a7018d4abf42973e8cf97296896afa.wav",
+      "seconds": 4.889166666666667,
+      "wer": 0.0,
+      "similarity": 0.8060165643692017,
+      "engine": "qwen-clone",
+      "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     }
   ]
 }
