@@ -21,7 +21,7 @@ var _idle_left := 18.0
 var _place := ""
 var _chapter_finished := false
 # After Return: Ophelia waits at the doorstep and the meeting can begin.
-var _returning := false
+var _going_home := false
 var _ophelia: OpheliaNpc
 var _meeting: Conversation
 var _cup_view: MeshInstance3D
@@ -124,7 +124,7 @@ func _process(delta: float) -> void:
 	var near := _nearest_object(here)
 	var bind: String = Game.settings.key_label("interact")
 	_caption.text = "MATHILDA · Esc: return to menu"
-	if _returning:
+	if _going_home:
 		_caption.text += ("\n%s: speak to Ophelia" % bind) if _near_ophelia() else "\nReturn to the cabin."
 	elif near >= 0:
 		_caption.text += "\n%s: examine %s" % [bind, _object_names[near]]
@@ -175,7 +175,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif Game.phase == Game.Phase.PLAYING and event.is_action_pressed("interact"):
 		var near := _nearest_object(Game.player.global_position)
-		if _returning:
+		if _going_home:
 			if _near_ophelia():
 				_pending.clear()
 				_interrupt()
@@ -206,9 +206,9 @@ func _choose(id: String) -> void:
 
 ## She chose to go back: Ophelia now waits at the doorstep (docs/MATHILDA_MEETING.md).
 func _return_home(say := true) -> void:
-	if _returning:
+	if _going_home:
 		return
-	_returning = true
+	_going_home = true
 	if say:
 		_pending.clear()
 		_interrupt()

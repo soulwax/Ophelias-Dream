@@ -29,6 +29,8 @@ godot --path . -e               # Open the editor
 godot --headless --path . --import # Import assets/register new classes
 godot --headless --path . tools/journal_probe.tscn # Journal rules and UI
 godot --headless --path . tools/voice_probe.tscn # Voice rules; PROBE_CLIPS=1 checks clips
+python tools/bake_meeting.py --check               # meeting script coherent, lines/timing current
+godot --headless --path . tools/meeting_probe.tscn # Mathilda meets Ophelia at the door (docs/DIALOGUE.md)
 godot --headless --path . -s tools/probe.gd # Inspect meshes/animations
 godot --headless --path . -s tools/retarget_elf.gd # Rebuild elf movement clips
 godot --headless --path . -s tools/leap_math_probe.gd # Running-leap math checks

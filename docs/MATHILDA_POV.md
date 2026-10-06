@@ -8,7 +8,7 @@ Her chapter is subjective: it does not prove that there are two physical women. 
 
 ## Brief playable chapter
 
-Select MATHILDA in the main menu. Begin on the path beside the tent. Examine the cups, gloves and note with E (or the rebound interact action). Walk toward the road or back toward the cabin for location lines. After examining all three objects, use the hideout prompt to choose Return or Wait. Both resolve the vignette and return to the main menu. Esc returns to the menu at any time. This chapter uses a first-person camera and the existing movement and winter world; it does not share Ophelia's journal progress or endings.
+Select MATHILDA in the main menu. Begin on the path beside the tent. Examine the cups, gloves and note with E (or the rebound interact action). Walk toward the road or back toward the cabin for location lines. After examining all three objects, use the hideout prompt to choose Return or Wait. Wait ends on the card *With the light*. Return sends her back to the cabin, where Ophelia waits at the doorstep; speaking to her opens the meeting (`docs/MATHILDA_MEETING.md`), which ends on *Walk beside me* or *On the step*. Each card returns to the main menu. Esc returns to the menu at any time. This chapter uses a first-person camera and the existing movement and winter world; it does not share Ophelia's journal progress or endings.
 
 ## Voice direction
 

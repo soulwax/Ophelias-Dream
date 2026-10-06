@@ -15,7 +15,7 @@ func _ready() -> void:
 	for i in 12:
 		await get_tree().process_frame
 	var chapter: Node = Game.voice
-	assert(chapter._returning and is_instance_valid(chapter._ophelia), "Ophelia waits at the door")
+	assert(chapter._going_home and is_instance_valid(chapter._ophelia), "Ophelia waits at the door")
 	assert(chapter._near_ophelia(), "she starts within reach")
 	var meeting: Conversation = chapter._meeting
 	var tree := meeting.tree

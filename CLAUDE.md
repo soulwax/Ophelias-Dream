@@ -28,6 +28,12 @@ $env:RUN_CAPTURE = "1"; $env:RUN_SHOT = "$PWD\shot.png"; godot --path .
 godot --headless --path . tools/journal_probe.tscn
 godot --headless --path . tools/voice_probe.tscn
 
+# Mathilda's doorway meeting with Ophelia: coherence check, every path as a transcript, the real scene
+# (docs/DIALOGUE.md, docs/MEETING_VOICE.md; RUN_MATHILDA=1 RUN_MEETING=1|open starts at the door)
+python tools/bake_meeting.py --check
+python tools/bake_meeting.py --paths
+godot --headless --path . tools/meeting_probe.tscn
+
 # Probe mesh bounds / animation names from the asset packs
 godot --headless --path . -s tools/probe.gd
 
