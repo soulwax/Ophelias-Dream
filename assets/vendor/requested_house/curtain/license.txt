@@ -1,0 +1,11 @@
+Model Information:
+* title:	Curtain
+* source:	https://sketchfab.com/3d-models/curtain-cb07918102ca40f9b0a4cc6eb20a8aa1
+* author:	lizhou ding (https://sketchfab.com/vancchino)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Curtain" (https://sketchfab.com/3d-models/curtain-cb07918102ca40f9b0a4cc6eb20a8aa1) by lizhou ding (https://sketchfab.com/vancchino) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

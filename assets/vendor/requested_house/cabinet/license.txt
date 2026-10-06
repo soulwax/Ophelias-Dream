@@ -1,0 +1,11 @@
+Model Information:
+* title:	Ikea Cabinet
+* source:	https://sketchfab.com/3d-models/ikea-cabinet-6a3a2a19a048465a90fe97e2556b2996
+* author:	der_typ (https://sketchfab.com/der_typ)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Ikea Cabinet" (https://sketchfab.com/3d-models/ikea-cabinet-6a3a2a19a048465a90fe97e2556b2996) by der_typ (https://sketchfab.com/der_typ) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
