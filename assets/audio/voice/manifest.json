@@ -343,6 +343,17 @@
       "reference": "hushed.wav"
     },
     {
+      "text": "Nineteen. I checked again. It's still nineteen. Good. Good.",
+      "mood": "numb",
+      "category": "revisits",
+      "file": "f571548bf39b6e4794cefba5162229a5ce69fcbfc83ff740cd83f373f979a6a1.wav",
+      "seconds": 7.237333333333333,
+      "wer": 0.0,
+      "similarity": 0.8092579245567322,
+      "engine": "chatterbox",
+      "reference": "numb.wav"
+    },
+    {
       "text": "Back down here. Like something in me keeps choosing it.",
       "mood": "hushed",
       "category": "revisits",
@@ -715,6 +726,17 @@
       "similarity": 0.7451905608177185,
       "engine": "chatterbox",
       "reference": "breaking.wav"
+    },
+    {
+      "text": "I'm not cold any more. That's bad, isn't it. Keep walking.",
+      "mood": "hushed",
+      "category": "bored",
+      "file": "d10df4b098b4837ef3dd75b60142164bff012a1f7d4504c498bdcd78a6af26af.wav",
+      "seconds": 6.82475,
+      "wer": 0.0,
+      "similarity": 0.7577803134918213,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
     },
     {
       "text": "If you can hear me, I kept the lantern lit. I did one thing right.",
@@ -1300,6 +1322,17 @@
       "reference": "spent.wav"
     },
     {
+      "text": "I can't run any more. I can't.",
+      "mood": "spent",
+      "category": "spent",
+      "file": "19fb37045740b1c6fdfe2ee3ba00ba12980447cffcdb62ec1d9bad6f3e77308b.wav",
+      "seconds": 2.041875,
+      "wer": 0.0,
+      "similarity": 0.6089121103286743,
+      "engine": "chatterbox",
+      "reference": "spent.wav"
+    },
+    {
       "text": "Stop. Stop. You're no use to her like this.",
       "mood": "spent",
       "category": "spent",
@@ -1441,6 +1474,17 @@
       "similarity": 0.720206618309021,
       "engine": "chatterbox",
       "reference": "bitter.wav"
+    },
+    {
+      "text": "Ugh... that one hurt.",
+      "mood": "spent",
+      "category": "falls",
+      "file": "2f7eff53229ec413830b3e5ac444932214f6d4806d69afd76c2a70c589ba6414.wav",
+      "seconds": 1.42975,
+      "wer": 0.0,
+      "similarity": 0.5240641832351685,
+      "engine": "chatterbox",
+      "reference": "spent.wav"
     },
     {
       "text": "Stay down a second. No. Up.",

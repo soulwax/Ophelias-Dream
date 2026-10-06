@@ -223,7 +223,7 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 - **morgue:** [breaking] I said I wouldn't come back down here. I keep coming back down here.
 - **snow:** [hushed] Every set of prints out here could be mine.
 - **backhall:** [hushed] Still only goes down. I keep hoping there'll be a back door this time.
-- **stair:** [numb] Nineteen. I counted again. It's still nineteen. Good. Good.
+- **stair:** [numb] Nineteen. I checked again. It's still nineteen. Good. Good.
 - **landing:** [hushed] Back down here. Like something in me keeps choosing it.
 - **corridor:** [wry] Same hallway. Same hum. You'd think I'd stop being scared of a hallway.
 - **janitor:** [bitter] Clean again. Who cleans up after a thing like this? Who does that?
