@@ -484,6 +484,160 @@
       "similarity": 0.8338954448699951,
       "engine": "chatterbox",
       "reference": "hushed.wav"
+    },
+    {
+      "text": "She'll be cold. She never wears the hat. I should've made her wear the hat.",
+      "mood": "warm",
+      "category": "bored",
+      "file": "5f12acf3e2198dde57dded240dce208c52e61ee0883b736690c8bff1a68d7624.wav",
+      "seconds": 5.2595,
+      "wer": 0.13333333333333333,
+      "similarity": 0.7993592619895935,
+      "engine": "chatterbox",
+      "reference": "warm.wav"
+    },
+    {
+      "text": "If she's sitting in some hunting hut eating my chocolate, I swear to God.",
+      "mood": "wry",
+      "category": "bored",
+      "file": "f9ba5926cf1e416961703fce9c1ea05770950e3d3a2c64f0c86bb8d87edc88b0.wav",
+      "seconds": 3.676041666666667,
+      "wer": 0.0,
+      "similarity": 0.8337525725364685,
+      "engine": "chatterbox",
+      "reference": "wry.wav"
+    },
+    {
+      "text": "She hums when she's cold. Badly. I'd give anything to hear it now.",
+      "mood": "remembering",
+      "category": "bored",
+      "file": "157c886b9af11cb35f4ead966379fe83c37c00fc3b5e25aa46842b03763b125a.wav",
+      "seconds": 5.2374583333333335,
+      "wer": 0.0,
+      "similarity": 0.8940748572349548,
+      "engine": "chatterbox",
+      "reference": "remembering.wav"
+    },
+    {
+      "text": "Okay. Think. If I were her, where would I go? ...Exactly where I told her not to.",
+      "mood": "steady",
+      "category": "bored",
+      "file": "3ea5b123aa2eb66079f476618b704729f082450694470b89a98c44e46f9c1857.wav",
+      "seconds": 5.585666666666667,
+      "wer": 0.0,
+      "similarity": 0.8431453704833984,
+      "engine": "chatterbox",
+      "reference": "steady.wav"
+    },
+    {
+      "text": "\"Go, then.\" Great. Brilliant. Best thing I've ever said.",
+      "mood": "bitter",
+      "category": "bored",
+      "file": "d7b7f3cb79893aa09894ce4c1e87d283f4786bf14a7b0cc553c4032b45ae6c74.wav",
+      "seconds": 4.779916666666667,
+      "wer": 0.0,
+      "similarity": 0.8313482999801636,
+      "engine": "chatterbox",
+      "reference": "bitter.wav"
+    },
+    {
+      "text": "Her prints stop. Mine don't. What does that make me?",
+      "mood": "shaken",
+      "category": "bored",
+      "file": "6110d9c021d005ff240631ba75af1d9b52f07a9a10ec35bd1cc56802b6689189.wav",
+      "seconds": 3.0414583333333334,
+      "wer": 0.0,
+      "similarity": 0.8084515929222107,
+      "engine": "chatterbox",
+      "reference": "shaken.wav"
+    },
+    {
+      "text": "I've said her name so many times it's just a sound now.",
+      "mood": "hushed",
+      "category": "bored",
+      "file": "d3e2f9096d837b18e7dcf126e55633e705d93884b08cf5f5619883dd9a463f7f.wav",
+      "seconds": 5.206958333333334,
+      "wer": 0.08333333333333333,
+      "similarity": 0.7969384789466858,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
+    },
+    {
+      "text": "What if she's back at the cabin, by the lantern, writing to me?",
+      "mood": "shaken",
+      "category": "bored",
+      "file": "2b8bea5c79ea6ac277fe7fcb629eba1442857abddcb31d61e7db62dcaa08ae4d.wav",
+      "seconds": 2.897,
+      "wer": 0.0,
+      "similarity": 0.8332183361053467,
+      "engine": "chatterbox",
+      "reference": "shaken.wav"
+    },
+    {
+      "text": "I can't remember which of us said we'd stay.",
+      "mood": "breaking",
+      "category": "bored",
+      "file": "2d310a5fa3a38b7f70e7832a2199836b68ff6ab0d4bcda5494045ae2a3f7e7f4.wav",
+      "seconds": 2.9066666666666667,
+      "wer": 0.0,
+      "similarity": 0.7975698709487915,
+      "engine": "chatterbox",
+      "reference": "breaking.wav"
+    },
+    {
+      "text": "I keep turning to tell her something. There's nobody to tell.",
+      "mood": "breaking",
+      "category": "bored",
+      "file": "e1003ca31612399ec60bed7903cd5074ecbee5682046ac299f4764aa80f0a92c.wav",
+      "seconds": 3.7836666666666665,
+      "wer": 0.0,
+      "similarity": 0.7438775300979614,
+      "engine": "chatterbox",
+      "reference": "breaking.wav"
+    },
+    {
+      "text": "The light hasn't moved. She was right. It's the same afternoon.",
+      "mood": "hushed",
+      "category": "bored",
+      "file": "d4ae4f150e2c90d4edc11837535c2bba5042a2c8a7c029b876192199481456ca.wav",
+      "seconds": 5.492333333333334,
+      "wer": 0.0,
+      "similarity": 0.798539400100708,
+      "engine": "chatterbox",
+      "reference": "hushed.wav"
+    },
+    {
+      "text": "My feet stopped hurting a while ago. I'm choosing not to think about that.",
+      "mood": "numb",
+      "category": "bored",
+      "file": "caaf76ecff58df4a3ff8061cde56f7fbd780790d850a91147305831f594e11f2.wav",
+      "seconds": 4.946,
+      "wer": 0.0,
+      "similarity": 0.8909067511558533,
+      "engine": "chatterbox",
+      "reference": "numb.wav"
+    },
+    {
+      "text": "Sometimes I hear her footsteps right behind mine. Exactly in time. Exactly.",
+      "mood": "shaken",
+      "category": "bored",
+      "file": "674a402be2cfefa33198c8cf1a2f2e0c9bebedd6831071afc7338e3095dccc8b.wav",
+      "seconds": 5.211333333333333,
+      "wer": 0.0,
+      "similarity": 0.8019209504127502,
+      "engine": "chatterbox",
+      "reference": "shaken.wav"
+    },
+    {
+      "text": "She always got to be the brave one. I got to be the one who waited. Who decided that?",
+      "mood": "bitter",
+      "category": "bored",
+      "file": "076209f59805875d1894d5b3f6fd50bc0cb69be408142f7990486b993803e8d0.wav",
+      "seconds": 5.35225,
+      "wer": 0.0,
+      "similarity": 0.7941948175430298,
+      "engine": "chatterbox",
+      "reference": "bitter.wav"
     }
   ]
 }
