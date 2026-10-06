@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1.4 — 2026-10-06
+
+- Ophelia now speaks fifteen of her twenty lines in the meeting at the door in her own voice, the one she has in the field. Five lines and all of Mathilda's still use draft performances; Mathilda's match her chapter.
+- Clean up how voice assets are managed and let meeting takes be re-baked from a chosen seed.
+
 ## 0.2.1.3 — 2026-10-06
 
 - Voice the whole meeting at the door with draft performances for both women, cleaned, levelled and timed so no turn overlaps another. Ophelia's draft voice there is not yet her own; her final performances come in a later release.
