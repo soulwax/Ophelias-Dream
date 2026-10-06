@@ -47,7 +47,7 @@ The cellar is *nigredo*, the field is *albedo*, and the lights are *rubedo*. Her
 
 - if the last page was read: *You didn't turn around.*
 - if every page is deciphered: *Beside the cup on the dash, a second one. Still warm.*
-- Spoken over the card (pleading): **"Mathilda? Please get in. I'll drive. You can pick the music. Just... get in."**
+- Spoken over the card (pleading): **"Mathilda? Please get in. I'll drive. You can pick the music. Just... get in."** Then, from behind the car, in her own voice: **"Okay."**
 
 **One set of prints** (she turned around after the last page):
 > You turned around. One set of prints, all the way back to the lit cabin. You get in on the driver's side; the seat is warm because it was always yours.
@@ -177,7 +177,7 @@ Fourteen moods. Each has its own reference performance (see the design), so the 
 
 ## Spoken script
 
-All lines are hers. Mathilda never speaks aloud.
+All lines are hers. Mathilda never speaks aloud; even the voice from the trees is the protagonist's own.
 
 ### Page reactions
 
@@ -372,6 +372,16 @@ After the last page, outdoors, holding glance-back for a second:
 
 - [numb] There's nobody. Just my prints. Only ever mine.
 
+### The trees answer
+
+Mathilda never speaks. These three are the protagonist's own voice, coming back. They replace the plain echo of her call.
+
+- **First answer** (doubt stage, after *on the post* is read, the first call she makes): from a pine 25–60 m away, her own voice shouts back [bitter] **"Go, then!"** It is the last thing she said to Mathilda, thrown back by the storm.
+- **Second answer** (resolve stage, the first call she makes): not from the trees but from right behind her, close enough to touch, [hushed] **"I'm right behind you."** If she has read the last page, this is the moment the game dares her to turn around.
+- **At the road** (only if she did *not* turn around): after she begs Mathilda to get in, a beat of silence, then from somewhere behind the car, softly, [warm] **"Okay."** Maybe Mathilda got in. Maybe she finally agreed with herself.
+
+Once she has turned around, nothing answers again.
+
 ### Rejected readings in the journal
 
 - [hushed] No. That's not it.
@@ -390,4 +400,4 @@ After the last page, outdoors, holding glance-back for a second:
 - **The road:** [pleading] Mathilda? Please get in. I'll drive. You can pick the music. Just... get in.
 - **One set of prints:** [breaking] I'm sorry I sent you out there alone. ...Come on. Let's go home.
 
-**Total: 134 spoken lines.**
+**Total: 137 spoken lines.**

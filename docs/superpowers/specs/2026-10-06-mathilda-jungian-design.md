@@ -59,6 +59,18 @@ Each line may carry optional overrides for the baker: `"exaggeration"`, `"cfg"` 
   - the action stays "Walk the ridge again"
 - `Voice` on `ESCAPED`: instead of falling silent, it waits 1.2 s and speaks `endings.prints` or `endings.road` (priority 4). It still interrupts and forgets any line that was playing, as before. `CAUGHT` still silences her.
 
+### The trees answer (the twist)
+
+`lines.json` gains `answers`: `{"doubt": {"text": "Go, then!", "mood": "bitter", "exaggeration": 0.9}, "resolve": {"text": "I'm right behind you.", "mood": "hushed"}, "road": {"text": "Okay.", "mood": "warm"}}`. These are her own voice.
+
+- **The echo now carries words.** When the echo fires (same rule as before: *on the post* read, not in the hope stage, once per stage, at most `ECHO_MAX`), it plays that stage's answer instead of a copy of her call. If the answer's clip is missing, it falls back to the old echo of her call.
+  - **doubt:** from the chosen pine, at `CALL_SPL - Tune.ANSWER_DROP_DB` (6 dB), with the far-air dulling.
+  - **resolve:** from 1.4 m behind her at head height, opposite the way she faces (`Player.visual` basis), at `Tune.VOICE_SPL`, without the far-air dulling. It plays even if she is turned toward the trees, because "behind" follows her.
+- **Subtitles:** each answer shows in italics with a leading ellipsis (`…Go, then!`) through `Game.murmur_line`, for players who can't make it out in the wind.
+- **Event:** `event:echo` is recorded when an answer plays, exactly as the old echo was.
+- **The road answer:** on `ESCAPED` with `turned_around == false`, once `endings.road` finishes, `Tune.ANSWER_ROAD_DELAY` (1.4 s) later `answers.road` plays from 3 m behind the player at `VOICE_SPL - 3`. It doesn't play on the prints ending.
+- **After turning around:** no answers, and no echoes.
+
 ### New hooks
 
 - `Player`: `signal exhausted` (emitted where `exhaust_left = Tune.EXHAUST_LOCK` is set before `_stumble()`) and `signal landed_hard(fall_speed: float)` (emitted in `_land()` when `fall_speed >= Tune.FALL_HARD`).
@@ -66,6 +78,7 @@ Each line may carry optional overrides for the baker: `"exaggeration"`, `"cfg"` 
 - `Tune`:
   - `MEMORY_GAP := 50.0`, `SPENT_GAP := 20.0`, `FALL_GAP := 15.0`, `FALL_HARD := 7.5`
   - `COLD_AFTER := 120.0`, `COLD_GAP := 90.0`, `TURN_HOLD := 1.0`, `ENDING_DELAY := 1.2`
+  - `ANSWER_DROP_DB := 6.0`, `ANSWER_ROAD_DELAY := 1.4`
 
 ## Her performance: the voice pipeline, redone
 
@@ -134,7 +147,7 @@ After a bake, the script writes `build/voice/review.html`: every line grouped by
 ## Testing
 
 - **`tools/voice_probe.tscn`:**
-  - **Line counts:** 134 lines across the groups above; every mood is one of the 14.
+  - **Line counts:** 137 lines across the groups above, answers included; every mood is one of the 14.
   - **Ending lines:** they play on `ESCAPED`.
   - **Groups that may not repeat:** `memories` play once each and only while walking outdoors.
   - **Rate limits:** `spent` and `falls` respect their gaps.
