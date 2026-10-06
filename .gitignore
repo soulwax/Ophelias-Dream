@@ -10,5 +10,13 @@ decrypt.key
 /assets/vendor/requested_house/
 /assets/derived/requested_house/
 
+# Sketchfab forest pack: the raw diorama and its original textures live in build/vendor/sketchfab_forest/
+# (Sketchfab Standard licence: no stand-alone redistribution). Only the split meshes and the textures they use are tracked.
+/assets/vendor/sketchfab_forest/source/forest_pack.fbx
+/assets/vendor/sketchfab_forest/source/forest_pack.fbx.import
+/assets/vendor/sketchfab_forest/source/forest_pack_9.png
+/assets/vendor/sketchfab_forest/source/forest_pack_9.png.import
+/assets/vendor/sketchfab_forest/textures/
+
 # Music downloader settings hold a session cookie: keep them out of git (the licensed tracks themselves are tracked).
 assets/audio/music/*.config.json

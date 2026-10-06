@@ -5,7 +5,12 @@ extends SceneTree
 # a card bush and a grass card. Each is baked out of its place in the scene,
 # stood on its base at the origin, and given materials of its own: alpha-cut,
 # double-sided cards and opaque trunks.
+# The raw FBX is kept out of git in build/vendor/sketchfab_forest/source/ (build/ is
+# not imported by Godot). Copy it to SOURCE's folder, import, run, then delete it:
+#   Copy-Item build/vendor/sketchfab_forest/source/forest_pack.fbx assets/vendor/sketchfab_forest/source/
+#   godot-mono --headless --path . --import
 #   godot-mono --headless --path . -s tools/import_forest_pack.gd
+# .gitignore keeps the copy (and the extra forest_pack_9.png the import extracts) out of commits.
 
 const SOURCE := "res://assets/vendor/sketchfab_forest/source/forest_pack.fbx"
 const OUT := "res://assets/vendor/sketchfab_forest/meshes/"
