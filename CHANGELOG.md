@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1.9 — 2026-10-07
+
+- Ophelia has things to do before she sets out. The front door is swollen shut and takes two shoves. She can light the cold stove, and latch the living-room window, where she finds a thread of red wool caught in the frame. A new page, "the grate", lies on the kitchen table.
+- Mathilda works her camp before she decides: she feeds the fire, which flares up, and re-pegs the guy-line the wind pulled loose, which pulls the sagging tent corner taut again. Once she has done everything, she finds a photograph in her pack. She can only choose Return or Wait after all of it.
+- Sixteen new lines. Mathilda's nine are voiced. Ophelia's seven (five for the chores, two for the new page) are subtitled for now.
+- The eye in the main menu: the iris has finer, more varied fibres that react to the light, it trembles slightly, the reflection stays in one place, and it looks a little teary.
+
 ## 0.2.1.8 — 2026-10-07
 
 - The lights at the lookout were a false lead: only two lanterns on its rail, no car, no road. It's now a checkpoint instead of the ending; posts with red rags lead on to a frozen lake from her memory, where the run actually ends.

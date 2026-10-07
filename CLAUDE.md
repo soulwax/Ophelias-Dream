@@ -221,8 +221,8 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **Voice (`scripts/player/voice.gd`, `docs/VOICE.md`)**:
 - **Script:** `docs/MATHILDA_STORY.md` is the script of record. `python tools/script_to_lines.py` writes `assets/audio/voice/lines.json` from it, and `--check` fails if the two have drifted.
-- **Lines:** 152, each in one of 14 moods (plus the meeting on the ice: 41 lines in `assets/audio/voice/lake/`, Mathilda's baked with Kokoro by `tools/bake_lake.py`), in these groups:
-  - pages, deciphered, places, revisits
+- **Lines:** 159, each in one of 14 moods (plus the meeting on the ice: 41 lines in `assets/audio/voice/lake/`, Mathilda's baked with Kokoro by `tools/bake_lake.py`), in these groups:
+  - pages, deciphered, places, revisits, chores (the jammed front door, the stove, the window; `Chore` in `scripts/house/chore.gd`)
   - bored by stage (hope/doubt/resolve, plus `after` once she turns around)
   - memories while walking outdoors, calls
   - spent (`Player.exhausted`), cold, falls (`Player.landed_hard`)
