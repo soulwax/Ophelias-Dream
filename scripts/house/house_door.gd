@@ -24,6 +24,11 @@ var _swing_angle := 0.0
 var _one_sided := false
 var _handles: Array[Node3D] = []
 var _handle_tweens: Array[Tween] = []
+## Swollen shut: this many more E presses budge it without opening, each a
+## creak and a short-lived flex, before the last one bursts it open as usual.
+## 0 (the default) behaves exactly as before. Set once, right after make().
+var jam_shoves := 0
+signal jam_shoved(remaining: int)
 
 
 ## size: width, height, thickness. hinge: -1 hinges on local -X, +1 on +X.
@@ -42,6 +47,8 @@ static func make(parent: Node3D, name: String, at: Vector3, yaw: float, size: Ve
 func interact_label() -> String:
 	if not _open and blocked_label() != "":
 		return blocked_label()
+	if not _open and jam_shoves > 0:
+		return "Shove the " + label.to_lower() + " — swollen shut"
 	return ("Close the " if _open else "Open the ") + label.to_lower()
 
 
@@ -60,11 +67,31 @@ func aim_box() -> Array:
 func interact() -> bool:
 	if not _open and not _aim_open_away_from_player():
 		return false
+	if not _open and jam_shoves > 0:
+		jam_shoves -= 1
+		_press_handle()
+		_play("creak")
+		_shake_leaf()
+		jam_shoved.emit(jam_shoves)
+		if jam_shoves > 0:
+			return true
 	_open = not _open
 	_motion.request(_open)
 	_press_handle()
 	_play("handle")
 	return true
+
+
+## A shove that doesn't free it: the leaf budges toward open and springs back.
+func _shake_leaf() -> void:
+	if _leaf == null:
+		return
+	var rest := _leaf.rotation.y
+	var tween := create_tween()
+	tween.tween_property(_leaf, "rotation:y", rest + (-_hinge) * 0.045, 0.05) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_leaf, "rotation:y", rest, 0.16) \
+		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 
 
 var is_open: bool:

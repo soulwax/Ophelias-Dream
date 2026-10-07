@@ -14,8 +14,12 @@ var _mathilda_seen: Dictionary = {}
 var _pending: Array[Dictionary] = []
 var _camp := Vector3.ZERO
 var _objects: Array[Vector3] = []
-var _object_names := ["cups", "gloves", "note"]
+# The first three are examined once; "fire" and "mend" are small chores she
+# does at camp before the question of staying or going is even hers to make.
+var _object_names := ["cups", "gloves", "note", "fire", "mend"]
+var _chore_labels := {"fire": "feed the fire", "mend": "fix the guy-line"}
 var _inspected: Dictionary = {}
+var _found_photo := false
 var _caption: Label
 var _idle_left := 18.0
 var _place := ""
@@ -74,14 +78,17 @@ func _start() -> void:
 
 func _build_objects(frame: Transform3D) -> void:
 	# The camp lays her things out: cups on the crate, gloves on the stool,
-	# the note under the lantern.
+	# the note under the lantern. "fire" and "mend" are chores, not props: no
+	# place_story_prop for those, just where she has to stand to do them.
 	var camp := get_tree().get_first_node_in_group("camp") as Camp
 	if camp:
 		camp.ensure_built()
 		if camp.is_built:
-			for object_name in _object_names:
+			for object_name in ["cups", "gloves", "note"]:
 				camp.place_story_prop(object_name)
 				_objects.append(camp.spots[object_name])
+			_objects.append(camp.fire_light.global_position)
+			_objects.append(_camp)
 			return
 	for i in 3:
 		var at := Game.trail.on_ground(frame.origin + frame.basis.x * (4.7 + i * 0.8) + frame.basis.z * 1.8)
@@ -143,8 +150,9 @@ func _process(delta: float) -> void:
 	if _going_home:
 		_caption.text += ("\n%s: speak to Ophelia" % bind) if _near_ophelia() else "\nReturn to the cabin."
 	elif near >= 0:
-		_caption.text += "\n%s: examine %s" % [bind, _object_names[near]]
-	elif _inspected.size() == 3 and here.distance_to(_camp) < 6.0:
+		var task: String = _chore_labels.get(_object_names[near], "examine " + _object_names[near])
+		_caption.text += "\n%s: %s" % [bind, task]
+	elif _inspected.size() == _object_names.size() and here.distance_to(_camp) < 6.0:
 		_caption.text += "\n%s: decide whether to return" % bind
 	var place := Game.place_at(here)
 	if here.distance_to(_camp) < 9.0:
@@ -176,6 +184,17 @@ func _nearest_object(here: Vector3) -> int:
 	return -1
 
 
+## The physical half of a chore: the voice group (_group) is the spoken half.
+func _do_chore(object_name: String) -> void:
+	var camp := get_tree().get_first_node_in_group("camp") as Camp
+	if camp == null:
+		return
+	if object_name == "fire":
+		camp.stoke()
+	elif object_name == "mend":
+		camp.mend_tent_line()
+
+
 func _group(group: String) -> void:
 	if _mathilda_seen.has(group) or not _lines.has(group):
 		return
@@ -197,9 +216,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				_interrupt()
 				_meeting.begin()
 		elif near >= 0:
-			_inspected[_object_names[near]] = true
-			_group(_object_names[near])
-		elif _inspected.size() == 3 and Game.player.global_position.distance_to(_camp) < 6.0:
+			var object_name: String = _object_names[near]
+			_inspected[object_name] = true
+			_do_chore(object_name)
+			_group(object_name)
+			if _inspected.size() == _object_names.size() and not _found_photo:
+				_found_photo = true
+				_group("photograph")
+		elif _inspected.size() == _object_names.size() and Game.player.global_position.distance_to(_camp) < 6.0:
 			Game.dialogue.open("Mathilda", "You kept her cup. What do you keep now?", [
 				{"id": "return", "text": "Return to Ophelia"},
 				{"id": "wait", "text": "Wait with the light"},

@@ -25,6 +25,26 @@ func _run() -> void:
 	player.set_process(false)
 	player.set_physics_process(false)
 	_check(int(house.get_meta("layout_revision", 0)) == House.LAYOUT_REVISION, "current layout revision")
+	var front := house.doors["front"] as HouseDoor
+	_check(front.jam_shoves == 2, "the front door starts swollen shut")
+	var shoves := 0
+	while not front.is_open and shoves < 5:
+		front.interact()
+		shoves += 1
+	_check(front.is_open and shoves == 2, "it takes exactly two shoves to free it (%d)" % shoves)
+	front.interact()
+	_check(not front.is_open and front.jam_shoves == 0, "once freed it opens and closes like any other door")
+	var stove := house.find_child("StoveChore", true, false) as Chore
+	var window := house.find_child("WindowChore", true, false) as Chore
+	_check(stove != null and window != null and not stove.done and not window.done, "the stove and window chores start undone")
+	var hearth := house.find_child("HearthLight", true, false) as OmniLight3D
+	_check(hearth != null and hearth.light_energy == 0.0, "the hearth starts cold")
+	stove.interact()
+	_check(stove.done and not stove.is_in_group("interactables"), "lighting the stove uses it up")
+	var grate := house.find_child("GratePage", true, false) as FieldNote
+	_check(grate != null and grate.entry.title == "the grate" and not grate.entry.counts, "the grate's page is in the house")
+	var camp := get_tree().get_first_node_in_group("camp") as Camp
+	_check(camp != null and not camp.tent_mended, "the camp's windward guy-line starts loose too")
 	_check(player.global_position.distance_to(house.spawn_point()) < 0.2, "default spawn follows expanded bedroom")
 	_check(house.room_at(house.to_global(Vector3(-5.5, 0.9, 3.0))) == "bedroom", "expanded bedroom room volume")
 	_check(house.room_at(house.to_global(Vector3(5.5, 0.9, -3.0))) == "living", "expanded living room volume")
@@ -49,7 +69,11 @@ func _run() -> void:
 		var path: Array = passages[key]
 		player.global_position = house.to_global(path[0])
 		player.velocity = Vector3.ZERO
-		_check(door.interact(), key + " door opens from approach")
+		# The front door is swollen shut: a human shoves it more than once.
+		for attempt in (door.jam_shoves + 1):
+			_check(door.interact(), key + " door opens from approach")
+			if door.is_open:
+				break
 		for frame in 100:
 			await get_tree().physics_frame
 		var hit := KinematicCollision3D.new()

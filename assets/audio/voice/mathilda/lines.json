@@ -55,6 +55,48 @@
       "text": "I want her to come because she wants me. Not because she cannot bear an empty room."
     }
   ],
+  "fire": [
+    {
+      "mood": "resolve",
+      "text": "The fire's gone low. I didn't walk all this way to freeze for spite."
+    },
+    {
+      "mood": "warm",
+      "text": "There. That'll hold till dark, at least."
+    },
+    {
+      "mood": "bitter",
+      "text": "Funny. I can keep a fire alive out here easier than I kept anything at home."
+    }
+  ],
+  "mend": [
+    {
+      "mood": "shaken",
+      "text": "Wind's worked this knot loose. One more gust and the whole side comes down."
+    },
+    {
+      "mood": "steady",
+      "text": "There. Tight enough to hold. Everything should be this simple to fix."
+    },
+    {
+      "mood": "wry",
+      "text": "I can mend a tent. I could never mend an argument."
+    }
+  ],
+  "photograph": [
+    {
+      "mood": "shaken",
+      "text": "There's something else in here. Under the map."
+    },
+    {
+      "mood": "warm",
+      "text": "A photograph. The two of us, before either of us knew how to be unkind."
+    },
+    {
+      "mood": "breaking",
+      "text": "I didn't know I'd packed this. Or I did, and I didn't want to know I had."
+    }
+  ],
   "lantern": [
     {
       "mood": "warm",

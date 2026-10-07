@@ -8,7 +8,7 @@ Her chapter is subjective: it does not prove that there are two physical women. 
 
 ## Brief playable chapter
 
-Select MATHILDA in the main menu. Begin on the path beside the tent. Examine the cups, gloves and note with E (or the rebound interact action). Walk toward the road or back toward the cabin for location lines. After examining all three objects, use the hideout prompt to choose Return or Wait. Wait ends on the card *With the light*. Return sends her back to the cabin, where Ophelia waits at the doorstep; speaking to her opens the meeting (`docs/MATHILDA_MEETING.md`), which ends on *Walk beside me* or *On the step*. Each card returns to the main menu. Esc returns to the menu at any time. This chapter uses a first-person camera and the existing movement and winter world; it does not share Ophelia's journal progress or endings.
+Select MATHILDA in the main menu. Begin on the path beside the tent. Examine the cups, gloves and note with E (or the rebound interact action), and do two small chores first: feed the fire and mend the windward guy-line the storm worked loose. All five are required; none of them is a puzzle, just a walk to the right spot and a press of E. Once she has done all five, the pack yields one more thing she hadn't noticed — a photograph, found automatically, no extra prompt. Walk toward the road or back toward the cabin for location lines throughout. With everything done, use the hideout prompt to choose Return or Wait. Wait ends on the card *With the light*. Return sends her back to the cabin, where Ophelia waits at the doorstep; speaking to her opens the meeting (`docs/MATHILDA_MEETING.md`), which ends on *Walk beside me* or *On the step*. Each card returns to the main menu. Esc returns to the menu at any time. This chapter uses a first-person camera and the existing movement and winter world; it does not share Ophelia's journal progress or endings.
 
 ## Voice direction
 
@@ -39,6 +39,30 @@ Distinct feminine voice, warmer and more direct than Ophelia. Hurt does not eras
 - [hushed] I wrote don't turn around. I meant don't come after me just because you're afraid.
 - [shaken] No. That's not what the page says now.
 - [resolve] I want her to come because she wants me. Not because she cannot bear an empty room.
+
+### fire
+
+Feeding the fire, before she can decide anything.
+
+- [resolve] The fire's gone low. I didn't walk all this way to freeze for spite.
+- [warm] There. That'll hold till dark, at least.
+- [bitter] Funny. I can keep a fire alive out here easier than I kept anything at home.
+
+### mend
+
+The windward guy-line has worked loose. Also required.
+
+- [shaken] Wind's worked this knot loose. One more gust and the whole side comes down.
+- [steady] There. Tight enough to hold. Everything should be this simple to fix.
+- [wry] I can mend a tent. I could never mend an argument.
+
+### photograph
+
+Found in the pack, once she has done everything else there is to do at camp. Not required to continue; it plays once, automatically.
+
+- [shaken] There's something else in here. Under the map.
+- [warm] A photograph. The two of us, before either of us knew how to be unkind.
+- [breaking] I didn't know I'd packed this. Or I did, and I didn't want to know I had.
 
 ### lantern
 

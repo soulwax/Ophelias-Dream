@@ -92,7 +92,35 @@ static func build(house: House) -> void:
 			flue_height = House.CEILING+.1-bounds.end.y
 			flue_center.y = bounds.end.y+flue_height*.5
 	HouseKit.box(root,"FlueExtension",flue_center,Vector3(.14,flue_height,.14),dark)
-	house._keep_light("living",HouseKit.light(root,"HearthLight",Vector3(4.95,.58,-1.2),Color("ffba78"),.45,3.6))
+	var hearth := HouseKit.light(root,"HearthLight",Vector3(4.95,.58,-1.2),Color("ffba78"),.45,3.6)
+	house._keep_light("living",hearth)
+	# Cold until she lights it: one of her chores before she sets out.
+	var hearth_energy := hearth.light_energy
+	hearth.light_energy = 0.0
+	Chore.make(root,"StoveChore",Vector3(4.95,.75,-1.55),"Light the stove",func()->void:
+		var tween := hearth.create_tween()
+		tween.tween_property(hearth,"light_energy",hearth_energy,1.1).set_trans(Tween.TRANS_CUBIC)
+		var crackle := AudioStreamPlayer3D.new()
+		crackle.name = "HearthCrackle"
+		crackle.bus = "Effects"
+		var loop := "res://assets/audio/nature/campfire_loop.wav"
+		if ResourceLoader.exists(loop):
+			var stream := (load(loop) as AudioStreamWAV).duplicate() as AudioStreamWAV
+			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+			stream.loop_begin = 0
+			stream.loop_end = int(stream.get_length()*stream.mix_rate)
+			crackle.stream = stream
+		root.add_child(crackle)
+		crackle.position = Vector3(4.95,.3,-1.2)
+		Loudness.sound(crackle,Loudness.CAMPFIRE-10.0)
+		crackle.play()
+		if Game.voice: Game.voice.chore("stove_lit"))
+	# A window the storm has worked loose, near enough to the stove that
+	# tending one room is one trip, not two.
+	Chore.make(root,"WindowChore",Vector3(5.75,1.5,-3.2),"Latch the window",func()->void:
+		if Game.voice:
+			Game.voice.chore("window_latched")
+			Game.voice.chore("window_thread"),0.9)
 	if visual(root,"cabinet",Vector3(-3.3,0,1.1)) != null:
 		HouseKit.blocker(root,"WardrobeBody",Vector3(-3.3,.9,1.1),Vector3(1.2,1.8,.8))
 	if visual(root,"shelves",Vector3(5.9,0,.6)) != null:

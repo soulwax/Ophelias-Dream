@@ -54,10 +54,11 @@ static func all() -> Array[NoteEntry]:
 	return notes
 
 
-## Every page: the trail's, then the bed's and the intake.
+## Every page: the trail's, then the bed's, the grate's and the intake.
 static func everything() -> Array[NoteEntry]:
 	var pages := all()
 	pages.append(bedside())
+	pages.append(grate())
 	pages.append(intake())
 	return pages
 
@@ -77,6 +78,19 @@ static func bedside() -> NoteEntry:
 		0.10,
 		[[["I", "you", "we"], "page:torn page"], [["M.", "Mum", "Me"], "page:from the pack"]],
 		"I left the door unlatched so you could get back in. Or so I could."
+	)
+	entry.counts = false
+	return entry
+
+
+## On the mantel, once the stove is lit. Not required reading.
+static func grate() -> NoteEntry:
+	var entry := _make(
+		"the grate",
+		"Someone banked this grate before I woke. Not last night's fire — older. Days, maybe. A house doesn't stay warm by itself, and this one never once goes properly cold.\n\nThe wood is stacked the way {M.} always stacked it, crosswise so it catches first time.\n\nIf you're reading this by firelight, it is already going. {Build} it up anyway. Let it think one of us did.",
+		0.14,
+		[[["M.", "I", "we"], "page:by the bed"], [["Build", "Leave", "Light"], "place:living"]],
+		"I did not light this fire. I am only the one who tends it now."
 	)
 	entry.counts = false
 	return entry

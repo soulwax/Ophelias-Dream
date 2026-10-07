@@ -11,7 +11,7 @@ extends Node3D
 ## walls; the terrain is flattened over it and holed only under the house.
 
 const PLINTH := 0.4
-const LAYOUT_REVISION := 7
+const LAYOUT_REVISION := 8
 const UPSTAIRS := Rect2(-6.3, -4.9, 12.6, 9.8)
 const DOOR_WIDTH := 1.3
 const DOOR_HEIGHT := 2.3
@@ -317,6 +317,8 @@ func _add_traces(authoring: Node3D) -> void:
 	traces.add_to_group(EditableLevel.AUTHORING_GROUP)
 	authoring.add_child(traces)
 	_trace_page(traces, "NightstandPage", Vector3(-5.35, 0.68, 3.97), NoteCatalog.bedside())
+	# On the kitchen table, the end nearest the stove.
+	_trace_page(traces, "GratePage", Vector3(5.1, 0.78, -2.35), NoteCatalog.grate())
 	var desk := _morgue_desk()
 	_trace_page(traces, "Intake", desk + Vector3(0.12, 0.76, -0.08), NoteCatalog.intake())
 	var wax := HouseKit.paint(Color(0.86, 0.78, 0.62), 0.55)
@@ -549,6 +551,8 @@ func _build_ground_floor() -> void:
 	# Three centimetres at each jamb clears the rotating leaf's hinge corner.
 	var leaf := Vector3(DOOR_WIDTH - 0.06, DOOR_HEIGHT - 0.02, 0.045)
 	doors["front"] = HouseDoor.make(root, "FrontDoor", Vector3(0.0, 0.0, front), 0.0, leaf, "plank", _timber, -1.0, 100.0, "Front door")
+	# Swollen shut after the storm: the first thing in her way, not the last.
+	doors["front"].jam_shoves = 2
 	doors["bedroom"] = HouseDoor.make(root, "BedroomDoor", Vector3(-1.5, 0.0, 2.8), PI * 0.5, leaf, "plank", _timber, 1.0, 95.0, "Bedroom door")
 	doors["living"] = HouseDoor.make(root, "LivingDoor", Vector3(1.5, 0.0, 2.8), -PI * 0.5, leaf, "plank", _timber, -1.0, 95.0, "Living room door")
 	doors["backhall"] = HouseDoor.make(root, "CellarHallDoor", Vector3(0.0, 0.0, 0.6), 0.0, leaf, "plank", _timber, 1.0, 95.0, "Back hall door")

@@ -52,6 +52,8 @@ var _endings := {}
 var _answers := {}
 # The hours passing, and the lake (docs/MATHILDA_STORY.md, "Time and the lake").
 var _moments := {}
+# Small fixes before she sets out (docs/MATHILDA_STORY.md, "Chores").
+var _chores := {}
 var _calls := {"hope": [], "doubt": [], "resolve": []}
 var _misread: Array = []
 var _clips := {}
@@ -110,6 +112,8 @@ func _ready() -> void:
 	if Game.player:
 		Game.player.exhausted.connect(out_of_breath)
 		Game.player.landed_hard.connect(fell)
+	if Game.house and Game.house.doors.has("front"):
+		(Game.house.doors["front"] as HouseDoor).jam_shoved.connect(_on_front_jam)
 
 
 func speaks() -> bool:
@@ -384,6 +388,20 @@ func moment(id: String) -> void:
 		_queue.append(line)
 
 
+## One of the small fixes, said once: door_stuck, door_free, stove_lit,
+## window_latched, window_thread (docs/MATHILDA_STORY.md, "Chores").
+func chore(id: String) -> void:
+	if not _active or not _chores.has(id):
+		return
+	var line: Dictionary = _chores[id]
+	if not _say(line):
+		_queue.append(line)
+
+
+func _on_front_jam(remaining: int) -> void:
+	chore("door_stuck" if remaining > 0 else "door_free")
+
+
 func _speak_ending(ticket: int) -> void:
 	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or not _active:
 		return
@@ -605,7 +623,7 @@ func _load() -> void:
 	for pair in [["pages", _pages, "page"], ["deciphered", _deciphered, "deciphered"],
 			["places", _places, "place"], ["revisits", _revisits, "revisit"],
 			["endings", _endings, "ending"], ["answers", _answers, "answer"],
-			["moments", _moments, "moment"]]:
+			["moments", _moments, "moment"], ["chores", _chores, "chore"]]:
 		var group: Variant = data.get(pair[0], {})
 		if typeof(group) == TYPE_DICTIONARY:
 			for id in group:

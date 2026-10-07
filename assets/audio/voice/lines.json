@@ -27,6 +27,10 @@
     "intake": {
       "text": "One cup. Just one. I'm not lifting that sheet. I'm not.",
       "mood": "breaking"
+    },
+    "the grate": {
+      "text": "I didn't stack that wood. I know how I stack wood. This isn't how I stack wood.",
+      "mood": "shaken"
     }
   },
   "deciphered": {
@@ -57,6 +61,32 @@
     "intake": {
       "text": "The coat held its shape. Nobody was in it. ...Nobody was ever in it.",
       "mood": "numb"
+    },
+    "the grate": {
+      "text": "She signs her name the same as always. I just never let myself notice it before.",
+      "mood": "hushed"
+    }
+  },
+  "chores": {
+    "door_stuck": {
+      "text": "Of course it's swollen shut. Of course today is the day it finally sticks.",
+      "mood": "bitter"
+    },
+    "door_free": {
+      "text": "There. Out. Whatever else waits out there, at least the door's done arguing with me.",
+      "mood": "resolve"
+    },
+    "stove_lit": {
+      "text": "There. One less cold room in this house.",
+      "mood": "warm"
+    },
+    "window_latched": {
+      "text": "Latched. That's one less thing the storm gets to keep.",
+      "mood": "steady"
+    },
+    "window_thread": {
+      "text": "A thread. Red wool, caught in the frame. She didn't leave through the door.",
+      "mood": "shaken"
     }
   },
   "places": {

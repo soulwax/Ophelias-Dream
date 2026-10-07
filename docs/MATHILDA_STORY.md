@@ -201,6 +201,7 @@ All lines are hers. Mathilda never speaks aloud; even the voice from the trees i
 - **the handwriting changes:** [hushed] That's my handwriting. That's how I make my M's.
 - **don't turn around:** [resolve] Don't turn around. Fine. I won't. Just be at the lights.
 - **intake:** [breaking] One cup. Just one. I'm not lifting that sheet. I'm not.
+- **the grate:** [shaken] I didn't stack that wood. I know how I stack wood. This isn't how I stack wood.
 
 ### Deciphered pages
 
@@ -211,6 +212,17 @@ All lines are hers. Mathilda never speaks aloud; even the voice from the trees i
 - **the handwriting changes:** [hushed] Same hand, both pages. I'd know it anywhere. That's what scares me.
 - **don't turn around:** [resolve] The sheet is the coat. Just the coat. Say it again. ...The sheet is the coat.
 - **intake:** [numb] The coat held its shape. Nobody was in it. ...Nobody was ever in it.
+- **the grate:** [hushed] She signs her name the same as always. I just never let myself notice it before.
+
+### Chores
+
+Before she sets out: the front door is swollen shut, the stove is cold, a window has worked loose in the frame. None of it is required reading, except the door, which simply won't open until she's shoved it twice.
+
+- **door_stuck:** [bitter] Of course it's swollen shut. Of course today is the day it finally sticks.
+- **door_free:** [resolve] There. Out. Whatever else waits out there, at least the door's done arguing with me.
+- **stove_lit:** [warm] There. One less cold room in this house.
+- **window_latched:** [steady] Latched. That's one less thing the storm gets to keep.
+- **window_thread:** [shaken] A thread. Red wool, caught in the frame. She didn't leave through the door.
 
 ### First visits
 
@@ -439,4 +451,4 @@ Lines:
 - **One set of prints:** [breaking] I'm sorry I sent you out there alone. ...Come on. Let's go home.
 - **Mathilda is gone:** [breaking] Mathilda? ...Mathilda! ...I took too long. I always take too long.
 
-**Total: 152 spoken lines** (the meeting on the ice has its own 41, in docs/LAKE_MEETING.md).
+**Total: 159 spoken lines** (the meeting on the ice has its own 41, in docs/LAKE_MEETING.md).

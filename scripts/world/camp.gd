@@ -43,6 +43,14 @@ var _materials := {}
 var _sound: AudioStreamPlayer3D
 var _melt_decal: Decal
 var _melted := 0.0
+# The windward tent corner, worked loose by the storm until someone mends it.
+var _tent_sag_line: MeshInstance3D
+var _tent_sag_peg: MeshInstance3D
+var _tent_pole_top := Vector3.ZERO
+var _tent_taut_peg := Vector3.ZERO
+var tent_mended := true
+# A brief, decaying brightening when the fire is fed (Mathilda's camp chore).
+var _stoke_boost := 0.0
 
 
 func _ready() -> void:
@@ -77,7 +85,8 @@ func _process(delta: float) -> void:
 		return
 	_time += delta
 	var flicker := _noise.get_noise_1d(_time * 7.0) * 0.5 + _noise.get_noise_1d(_time * 23.0 + 40.0) * 0.25
-	fire_light.light_energy = 2.3 * (1.0 + flicker * 0.35)
+	_stoke_boost = maxf(_stoke_boost - delta / 2.4, 0.0)
+	fire_light.light_energy = 2.3 * (1.0 + flicker * 0.35) * (1.0 + _stoke_boost * 0.55)
 	fire_light.position = _at(FIRE, 0.55) + Vector3(_noise.get_noise_1d(_time * 3.0 + 9.0), 0.0, _noise.get_noise_1d(_time * 3.0 + 70.0)) * 0.05
 	if _lantern_light:
 		_lantern_light.light_energy = 0.7 * (1.0 + _noise.get_noise_1d(_time * 11.0 + 200.0) * 0.12)
@@ -86,6 +95,38 @@ func _process(delta: float) -> void:
 		_melted = minf(_melted + delta / Tune.CAMP_MELT_SECONDS, 1.0)
 		var across := lerpf(MELT_START, MELT_END, 1.0 - pow(1.0 - _melted, 2.0))
 		_melt_decal.size = Vector3(across, 1.4, across)
+
+
+## A log on the fire: a brief, visible flare that eases back to normal over a
+## couple of seconds. Called from her chapter when she feeds the fire.
+func stoke() -> void:
+	_stoke_boost = 1.0
+
+
+## A corner line the storm worked loose: slack, with the peg half pulled.
+func _sag_tent_line() -> void:
+	if _tent_sag_line == null:
+		return
+	tent_mended = false
+	var slack := _tent_pole_top.lerp(_tent_taut_peg, 0.55) + Vector3(0.0, -0.22, 0.12)
+	_aim_line(_tent_sag_line, _tent_pole_top, slack)
+	_tent_sag_peg.transform = Transform3D(Basis(Vector3.RIGHT, deg_to_rad(68.0)), _tent_taut_peg + Vector3(0.05, 0.015, 0.05))
+
+
+## Re-pegs and re-tautens the sagging corner. Called from her chapter.
+func mend_tent_line() -> void:
+	if tent_mended or _tent_sag_line == null:
+		return
+	tent_mended = true
+	var line := _tent_sag_line
+	var pole := _tent_pole_top
+	var peg := _tent_taut_peg
+	var tween := create_tween()
+	tween.tween_method(func(t: float) -> void: _aim_line(line, pole, pole.lerp(peg, t)), 0.0, 1.0, 0.4) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var peg_tween := create_tween().set_parallel(true)
+	peg_tween.tween_property(_tent_sag_peg, "position", peg + Vector3(0.0, 0.03, 0.0), 0.32)
+	peg_tween.tween_property(_tent_sag_peg, "rotation", Vector3(0.0, 0.0, 0.25), 0.32)
 
 
 ## Places one of Mathilda's things at its spot and returns it.
@@ -118,6 +159,13 @@ func place_story_prop(id: String) -> Node3D:
 
 
 # ---------------------------------------------------------------- placement
+
+## A world position for one of the route-frame offsets above (FIRE, WOODPILE,
+## TENT, ...), for anything outside this file that needs to stand there —
+## Mathilda's own chores, before she decides whether to go back.
+func world_at(p: Vector2, lift := 0.0) -> Vector3:
+	return _at(p, lift)
+
 
 func _at(p: Vector2, lift := 0.0) -> Vector3:
 	var world := _origin + _flat.x * p.x + _flat.z * p.y
@@ -685,6 +733,15 @@ func _build_tent() -> void:
 	for x in [-l, l]:
 		var top := Vector3(x, h + 0.08, 0)
 		var peg := Vector3(x + signf(x) * 1.0, 0.0, 0)
+		if x < 0.0:
+			# The windward corner: the storm has worked this one loose. A visit
+			# can mend it, which is where she starts, not where she's going.
+			_tent_pole_top = top
+			_tent_taut_peg = peg
+			_tent_sag_peg = _peg(tent, peg)
+			_tent_sag_line = _line(tent, rope, top, peg)
+			_sag_tent_line()
+			continue
 		_line(tent, rope, top, peg)
 		_peg(tent, peg)
 	for x in [-l * 0.9, 0.0, l * 0.9]:
@@ -709,19 +766,29 @@ func _triangle(parent: Node3D, material: Material, points: Array, facing: float)
 	_mesh_node(st.commit(), material, parent)
 
 
-func _line(parent: Node3D, material: Material, a: Vector3, b: Vector3) -> void:
+func _line(parent: Node3D, material: Material, a: Vector3, b: Vector3) -> MeshInstance3D:
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = 0.0035
 	cyl.bottom_radius = 0.0035
 	cyl.height = a.distance_to(b)
 	cyl.radial_segments = 5
 	var node := _mesh_node(cyl, material, parent)
+	_aim_line(node, a, b)
+	return node
+
+
+## Re-aims an existing line mesh between two LOCAL points (same space it was
+## built in), resizing its cylinder to match. Used to mend the sagging guy-line.
+func _aim_line(node: MeshInstance3D, a: Vector3, b: Vector3) -> void:
 	var dir := (b - a).normalized()
+	if dir == Vector3.ZERO:
+		return
 	var side := dir.cross(Vector3.FORWARD if absf(dir.z) < 0.9 else Vector3.RIGHT).normalized()
 	node.transform = Transform3D(Basis(side, dir, side.cross(dir)), (a + b) * 0.5)
+	(node.mesh as CylinderMesh).height = a.distance_to(b)
 
 
-func _peg(parent: Node3D, at: Vector3) -> void:
+func _peg(parent: Node3D, at: Vector3) -> MeshInstance3D:
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = 0.012
 	cyl.bottom_radius = 0.006
@@ -729,6 +796,7 @@ func _peg(parent: Node3D, at: Vector3) -> void:
 	var node := _mesh_node(cyl, _wood(), parent)
 	node.position = at + Vector3(0, 0.03, 0)
 	node.rotation.z = 0.25
+	return node
 
 
 func _box(size: Vector3) -> BoxMesh:

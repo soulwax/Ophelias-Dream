@@ -43,11 +43,13 @@ func _catalog() -> void:
 	_check(by_title["intake"].between == "Note: the coat held its shape after the sheet was lifted.", "the coat held its shape")
 	_check(by_title[NoteCatalog.LAST_TITLE].body.contains("forgive me for going."), "the last page forgives")
 	_check(by_title[NoteCatalog.LAST_TITLE].between.contains("the sheet is the coat."), "the sheet is the coat")
+	_check(by_title["the grate"].body.contains("crosswise so it catches first time"), "the grate page knows how she stacks wood")
+	_check(by_title["the grate"].between == "I did not light this fire. I am only the one who tends it now.", "the fire tends itself, it says")
 	var trail := NoteCatalog.all()
 	_check(trail.size() == 5, "five trail pages")
 	_check(trail[4].title == NoteCatalog.LAST_TITLE, "the last trail page is LAST_TITLE")
 	var every := NoteCatalog.everything()
-	_check(every.size() == 7, "seven pages in all")
+	_check(every.size() == 8, "eight pages in all")
 	var titles := {}
 	for entry in every:
 		titles[entry.title] = true
@@ -68,7 +70,7 @@ func _catalog() -> void:
 			_check(real, "%s key %s names something real" % [entry.title, key])
 	_check(NoteCatalog.find("intake") != null and NoteCatalog.find("intake").title == "intake", "find by title")
 	_check(NoteCatalog.find("nothing") == null, "find returns null for an unknown title")
-	_check(not NoteCatalog.bedside().counts and not NoteCatalog.intake().counts, "house pages do not count")
+	_check(not NoteCatalog.bedside().counts and not NoteCatalog.intake().counts and not NoteCatalog.grate().counts, "house pages do not count")
 	for entry in every:
 		_check(not entry.body.contains("Mara") and not entry.body.contains("Listener"), "%s has none of the old story" % entry.title)
 
