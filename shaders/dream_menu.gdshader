@@ -40,6 +40,10 @@ float opening_distance(vec2 uv) {
 
 float grain(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
+// Static (no TIME term): used for the iris's own fibre pattern, so it sits
+// fixed on the iris and travels with it rather than flickering per frame.
+float fibre(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
+
 void fragment() {
 	vec2 ratio = vec2(1.7778, 1.0);
 	vec2 uv = (UV - 0.5) * vec2(min(aspect / 1.7778, 1.0), min(1.7778 / aspect, 1.0)) + 0.5;
@@ -65,17 +69,37 @@ void fragment() {
 		vec2 direction = local / max(length(local), 0.00001);
 		vec2 source = vec2(direction.x, abs(direction.y)) * mapped * iris_radius;
 		vec3 iris = texture(portrait, eye_center + source / ratio).rgb;
+		// Fibre-like variation, randomised by angle and radius rather than the
+		// mirrored sample itself, so the recovered upper iris does not read as
+		// a plain reflection of the lower half. Stronger in good light, the
+		// way iris detail only really shows once the pupil has drawn in.
+		float angle_for_fibre = atan(local.y, local.x);
+		float fibre_a = fibre(vec2(angle_for_fibre * 11.0, mapped * 7.3));
+		float fibre_b = fibre(vec2(angle_for_fibre * 23.0 + 4.1, mapped * 13.7 + 1.7));
+		float fibre_reach = mix(0.35, 1.0, light_level);
+		iris *= mix(1.0 - 0.10 * fibre_reach, 1.0 + 0.08 * fibre_reach, fibre_a);
+		iris *= mix(1.0 - 0.05 * fibre_reach, 1.0 + 0.05 * fibre_reach, fibre_b);
 		iris *= mix(0.40, 1.0, smoothstep(-0.07, 0.12, local.y));
 		iris = mix(iris, vec3(0.008, 0.019, 0.027), smoothstep(0.87, 0.97, radius));
 		iris = mix(vec3(0.002, 0.009, 0.012), iris, smoothstep(pupil - aa, pupil + aa, radius));
 		vec3 globe = mix(sclera, iris, 1.0 - smoothstep(1.0 - aa, 1.0 + aa, radius));
-		// Reflections follow gaze independently of pupil contraction.
-		vec2 reflection = (local - vec2(0.075, -0.051)) / vec2(0.038, 0.023);
+		// A corneal catchlight is a reflection off the eye's own wet surface,
+		// not a mark on the iris: it stays put as the iris turns underneath
+		// it, so it is placed in eye-socket space (barely coupled to offset),
+		// never in the iris-local frame the way the iris sample itself is.
+		vec2 fixed_local = (uv - eye_center - offset * 0.12) * ratio;
+		vec2 reflection = (fixed_local - vec2(0.075, -0.051)) / vec2(0.038, 0.023);
 		reflection = vec2(reflection.x + reflection.y * 0.32, reflection.y);
 		float highlight = 1.0 - smoothstep(0.88, 1.05, length(reflection));
-		float secondary = 1.0 - smoothstep(0.004, 0.009, length(local - vec2(0.035, -0.025)));
-		globe = mix(globe, vec3(0.90, 0.96, 1.0), highlight * 0.94);
-		globe += vec3(0.35, 0.50, 0.55) * secondary;
+		float secondary = 1.0 - smoothstep(0.005, 0.011, length(fixed_local - vec2(0.035, -0.025)));
+		globe = mix(globe, vec3(0.90, 0.96, 1.0), highlight * 0.96);
+		globe += vec3(0.40, 0.56, 0.60) * secondary;
+		// A thin welling line of moisture along the lower lid margin: a slightly
+		// teary look, not a streaming one.
+		float lower_lid = clamp(smoothstep(0.10, 0.34, uv.y - eye_center.y), 0.0, 1.0);
+		float lid_margin = 1.0 - smoothstep(1.2, 8.0, edge_distance);
+		float tear_rim = lower_lid * lid_margin;
+		globe = mix(globe, vec3(0.88, 0.93, 0.99), tear_rim * 0.30);
 		color = mix(color, globe, opening);
 	}
 	color *= mix(0.82, 1.0, light_level);

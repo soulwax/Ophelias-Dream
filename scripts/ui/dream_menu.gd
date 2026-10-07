@@ -13,6 +13,9 @@ var _gaze_mobility := 1.0
 var _target_mobility := 1.0
 var _light_level := 0.45
 var _pointer_light := 0.45
+# Per-run phase for the idle micro-jitter, so each session's eye wanders its
+# own way rather than every launch ticking in lockstep.
+var _tremor_seed := 0.0
 var _panel: PanelContainer
 var _body: Label
 
@@ -21,6 +24,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = UiChrome.menu_theme()
+	_tremor_seed = randf() * 1000.0
 	_music = AudioStreamPlayer.new()
 	_music.stream = load("res://assets/audio/music/danse_macabre.ogg")
 	if _music.stream is AudioStreamOggVorbis:
@@ -160,12 +164,22 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if visible:
-		_gaze = lerpf(_gaze, _target, 1.0 - exp(-delta * 10.0))
-		_gaze_y = lerpf(_gaze_y, _target_y, 1.0 - exp(-delta * 8.0))
+		# A living eye never quite settles: a small, smooth tremor on top of
+		# the deliberate pursuit, each frequency irrational against the rest
+		# so the motion never visibly repeats.
+		var t := Time.get_ticks_msec() * 0.001 + _tremor_seed
+		var tremor_x := sin(t * 1.7) * 0.0055 + sin(t * 4.3 + 1.1) * 0.0028
+		var tremor_y := sin(t * 2.1 + 0.6) * 0.0048 + sin(t * 5.1 + 2.4) * 0.0024
+		# Quicker to pick up a new point of interest than to drift there.
+		_gaze = lerpf(_gaze, _target + tremor_x, 1.0 - exp(-delta * 13.0))
+		_gaze_y = lerpf(_gaze_y, _target_y + tremor_y, 1.0 - exp(-delta * 11.0))
 		_gaze_mobility = lerpf(_gaze_mobility, _target_mobility, 1.0 - exp(-delta * 8.0))
-		# The same soft light drives illumination and the pupil reflex.
+		# The same soft light drives illumination and the pupil reflex: it
+		# constricts quickly toward a nearer light and eases open slowly once
+		# it has passed, the way a real pupillary reflex is asymmetric.
 		var light_target := clampf(_pointer_light + 0.08 * sin(Time.get_ticks_msec() * 0.0007), 0.0, 1.0)
-		_light_level = lerpf(_light_level, light_target, 1.0 - exp(-delta * 4.0))
+		var light_rate := 7.0 if light_target > _light_level else 2.4
+		_light_level = lerpf(_light_level, light_target, 1.0 - exp(-delta * light_rate))
 		_eye.set_shader_parameter("light_level", _light_level)
 		_eye.set_shader_parameter("mobility", _gaze_mobility)
 		_eye.set_shader_parameter("gaze", _gaze)
