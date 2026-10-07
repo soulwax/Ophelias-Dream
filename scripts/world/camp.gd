@@ -131,8 +131,10 @@ func _hide_old(trail: Trail) -> void:
 		var n := str(child.name)
 		if n.begins_with("SM_Prop_Tent_01") or n.begins_with("SM_Prop_Campfire_01"):
 			(child as Node3D).visible = false
+			child.set_meta("replaced_by", "Camp")
 		elif child is OmniLight3D and (child as Node3D).global_position.distance_to(lamp) < 1.0:
 			(child as OmniLight3D).visible = false
+			child.set_meta("replaced_by", "Camp")
 		elif child is StaticBody3D:
 			var at := (child as Node3D).global_position
 			if Vector2(at.x - tent.x, at.z - tent.z).length() < 0.6:

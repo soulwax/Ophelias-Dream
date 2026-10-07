@@ -64,6 +64,12 @@ var deciphered: Dictionary = {}
 # She looked back after the last page: one set of prints (EndCard, Voice).
 var turned_around := false
 var _turn_hold := 0.0
+# The lookout checkpoint. at_checkpoint is this run's; `checkpoint` keeps what
+# she had there across a restart (reset() leaves it), until a new run clears it.
+var at_checkpoint := false
+var checkpoint: Dictionary = {}
+var _resume := false
+signal checkpoint_reached
 
 var hunt_started := false
 var _hunt_seconds := 0.0
@@ -113,8 +119,13 @@ func _process(delta: float) -> void:
 			audio_fade = move_toward(audio_fade, 1.0, minf(delta, 0.05) / Tune.INTRO_TIME)
 			if settings:
 				settings.apply_audio()
-	if not mathilda_pov and phase == Phase.PLAYING and player and trail and _at_exit():
-		escape()
+	if not mathilda_pov and phase == Phase.PLAYING and player and trail:
+		# The lights at the lookout were only lanterns: a checkpoint. The way
+		# out is the old hole in the lake ice, further on.
+		if _at_exit() and not at_checkpoint:
+			reach_checkpoint()
+		if _at_lake():
+			escape()
 	if awake():
 		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
 			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
@@ -166,6 +177,7 @@ func reset() -> void:
 	deciphered.clear()
 	turned_around = false
 	_turn_hold = 0.0
+	at_checkpoint = false
 	hunt_started = false
 	_hunt_seconds = 0.0
 	audio_fade = 0.0
@@ -271,8 +283,14 @@ func place_at(point: Vector3) -> String:
 		if room != "":
 			return room
 	if trail:
+		var lake := trail.lake_point
+		if Vector2(point.x - lake.x, point.z - lake.z).length() < Tune.LAKE_NEAR:
+			return "lake"
 		var end := trail.exit_point
-		if Vector2(point.x - end.x, point.z - end.z).length() < Tune.LIGHTS_NEAR:
+		var to_end := Vector2(point.x - end.x, point.z - end.z).length()
+		if to_end < Tune.EXIT_RADIUS:
+			return "lookout"
+		if to_end < Tune.LIGHTS_NEAR:
 			return "lights"
 	return "snow"
 
@@ -415,7 +433,68 @@ func turn_around() -> void:
 		voice.turned()
 
 
-## Dev hook (RUN_ENDING=road|prints): reach the lights, turned around or not.
+## She has reached the lookout: keep what she has so a restart can bring her
+## back here instead of to the cabin.
+func reach_checkpoint() -> void:
+	if at_checkpoint or player == null:
+		return
+	at_checkpoint = true
+	var copied_deciphered := {}
+	for title in deciphered:
+		copied_deciphered[title] = (deciphered[title] as Dictionary).duplicate()
+	checkpoint = {
+		"at": player.global_transform,
+		"journal": journal.duplicate(),
+		"read_pages": read_pages.duplicate(),
+		"visited": visited.duplicate(),
+		"heard_events": heard_events.duplicate(),
+		"deciphered": copied_deciphered,
+		"understood": understood.duplicate(),
+		"read_last_page": read_last_page,
+		"turned_around": turned_around,
+		"hunt_started": hunt_started,
+		"notes_found": notes_found,
+	}
+	mark("checkpoint: lookout")
+	checkpoint_reached.emit()
+
+
+## Restores the checkpoint into a freshly built run (main.gd calls this once the
+## level is in place): her pages, journal and places, and her at the lookout.
+func resume_checkpoint() -> bool:
+	if not _resume or checkpoint.is_empty() or player == null:
+		_resume = false
+		return false
+	_resume = false
+	journal.assign(checkpoint.journal)
+	read_pages = (checkpoint.read_pages as Dictionary).duplicate()
+	visited = (checkpoint.visited as Dictionary).duplicate()
+	heard_events = (checkpoint.heard_events as Dictionary).duplicate()
+	deciphered = {}
+	for title in checkpoint.deciphered:
+		deciphered[title] = (checkpoint.deciphered[title] as Dictionary).duplicate()
+	understood = (checkpoint.understood as Dictionary).duplicate()
+	read_last_page = checkpoint.read_last_page
+	turned_around = checkpoint.turned_around
+	hunt_started = checkpoint.hunt_started
+	notes_found = checkpoint.notes_found
+	at_checkpoint = true
+	# Pages she already carries are gone from the field.
+	if trail:
+		for note in trail.find_children("FieldNote_*", "FieldNote", false, false):
+			var page := note as FieldNote
+			if page.entry and read_pages.has(page.entry.title):
+				page.visible = false
+				page.remove_from_group("field_notes")
+	player.global_transform = checkpoint.at
+	player.velocity = Vector3.ZERO
+	player.reset_physics_interpolation()
+	journal_changed.emit()
+	mark("resumed at the lookout")
+	return true
+
+
+## Dev hook (RUN_ENDING=road|prints): reach the lake, turned around or not.
 func dev_ending(kind: String) -> void:
 	read_last_page = true
 	turned_around = kind == "prints"
@@ -470,9 +549,15 @@ func escape() -> void:
 	set_phase(Phase.ESCAPED)
 
 
-func restart() -> void:
+## Starts again. With from_checkpoint and a checkpoint kept, she wakes at the
+## lookout with what she had there; otherwise the checkpoint is forgotten and
+## she wakes in the cabin.
+func restart(from_checkpoint := false) -> void:
 	if settings:
 		settings.save()
+	_resume = from_checkpoint and not checkpoint.is_empty()
+	if not _resume:
+		checkpoint.clear()
 	reset()
 	# The graphics detail setting is read while the snowfield is built.
 	lean_graphics = _wants_lean_graphics()
@@ -490,11 +575,23 @@ func threat() -> float:
 	return maxf(closeness, dread)
 
 
-# The road: within EXIT_RADIUS of the exit, measured flat.
+# The lookout: within EXIT_RADIUS of the exit, measured flat.
 func _at_exit() -> bool:
 	var at := player.global_position
 	var end := trail.exit_point
 	return Vector2(at.x - end.x, at.z - end.z).length() <= Tune.EXIT_RADIUS
+
+
+# Out on the lake ice by the old hole, measured flat.
+func _at_lake() -> bool:
+	var at := player.global_position
+	var hole := trail.lake_hole
+	return Vector2(at.x - hole.x, at.z - hole.z).length() <= Tune.LAKE_ARRIVE
+
+
+## Whether a resumed run is waiting to be restored (main.gd skips the menu).
+func resuming() -> bool:
+	return _resume
 
 
 func knows(code: String) -> bool:

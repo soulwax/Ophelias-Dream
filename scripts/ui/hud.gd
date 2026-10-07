@@ -5,6 +5,8 @@ var _intro: Control
 var _toast: PanelContainer
 var _toast_keys: HBoxContainer
 var _toast_left := 0.0
+var _checkpoint: PanelContainer
+var _checkpoint_left := 0.0
 var journal: Journal
 
 var _warning_plate: PanelContainer
@@ -36,6 +38,7 @@ func _ready() -> void:
 	Game.phase_changed.connect(_on_phase)
 	Game.interaction_feedback.connect(_on_interaction_feedback)
 	Game.page_added.connect(_on_page_added)
+	Game.checkpoint_reached.connect(func() -> void: _checkpoint_left = Tune.JOURNAL_TOAST + 1.5)
 	_on_phase(Game.phase)
 
 
@@ -57,6 +60,9 @@ func _process(delta: float) -> void:
 	_toast_left = maxf(0.0, _toast_left - delta)
 	_toast.visible = _toast_left > 0.0 and (playing or Game.phase == Game.Phase.READING)
 	_toast.modulate.a = clampf(_toast_left / 0.4, 0.0, 1.0)
+	_checkpoint_left = maxf(0.0, _checkpoint_left - delta)
+	_checkpoint.visible = _checkpoint_left > 0.0 and playing
+	_checkpoint.modulate.a = clampf(_checkpoint_left / 0.6, 0.0, 1.0)
 	_refresh_prompt()
 	_refresh_breath()
 	if Game.phase == Game.Phase.INTRO:
@@ -90,7 +96,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("restart"):
 		if Game.phase == Game.Phase.CAUGHT or Game.phase == Game.Phase.ESCAPED or Game.phase == Game.Phase.PAUSED:
-			Game.restart()
+			# After the lookout, a catch goes back there; R in the pause menu is
+			# "Restart the run", and an ending starts a new run.
+			Game.restart(Game.phase == Game.Phase.CAUGHT)
 			get_viewport().set_input_as_handled()
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F3 and OS.is_debug_build():
 		_debug.visible = not _debug.visible
@@ -450,6 +458,18 @@ func _build_toast() -> void:
 	add_child(_toast)
 	_toast_keys = UiChrome.key_row("J", "Added to the journal")
 	_toast.add_child(_toast_keys)
+	# Reached the lookout: the Esc menu (and a catch) can bring her back here.
+	_checkpoint = PanelContainer.new()
+	_checkpoint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_checkpoint.offset_left = 28
+	_checkpoint.offset_top = -146
+	_checkpoint.offset_right = 340
+	_checkpoint.offset_bottom = -96
+	_checkpoint.add_theme_stylebox_override("panel", UiChrome.plate(14, 6))
+	_checkpoint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_checkpoint.visible = false
+	_checkpoint.add_child(UiChrome.label("Checkpoint: the lookout", 15, UiChrome.MUTED))
+	add_child(_checkpoint)
 
 
 func _on_page_added(_entry: NoteEntry) -> void:

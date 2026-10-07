@@ -10,11 +10,13 @@ Ophelia wakes in the cabin. This is her dream: the house she keeps, the words sh
 
 Last night they argued. Mathilda said she doesn't live, she just keeps house. She said at least one of them keeps anything. Mathilda picked up the pack, and she said *go, then*. That is the last thing she said to her.
 
-So she goes out after her: through the cabin, down into the cellar, across the white field to the lights at the road. She finds Mathilda's pack, then a note on a post, then a torn page by the pines, then pages whose handwriting slowly becomes her own. In the cellar a clerk's intake form describes someone brought in from the step under a sheet, in a coat buttoned to the throat, with one cup. The strap says **M. Aune**, and they are both Aunes. She doesn't lift the sheet.
+So she goes out after her: through the cabin, down into the cellar, across the white field to the lights at the lookout. From the field they look like headlights; up close they are two lanterns hung on the rail, and there is no car and no road. Posts with red rags lead on, and she follows them to the frozen lake from her memory. She finds Mathilda's pack, then a note on a post, then a torn page by the pines, then pages whose handwriting slowly becomes her own. In the cellar a clerk's intake form describes someone brought in from the step under a sheet, in a coat buttoned to the throat, with one cup. The strap says **M. Aune**, and they are both Aunes. She doesn't lift the sheet.
 
-The last page asks her not to turn around. If she does, there is one set of prints behind her, all the way back to the lit cabin. If she doesn't, the car is waiting with its door open and the seat still warm.
+The last page asks her not to turn around. Out on the lake, prints go to the old hole in the ice and come back. If she turned around, they are one set, only ever hers. If she didn't, they are two sets, close together, as if one of them was holding the other up.
 
-The game never says what the two women are to each other, or whether Mathilda is alive, dead, at the road, or something she sent out into the cold herself. It does say, over and over, that she is sorry.
+The lookout is a checkpoint: once she has reached it, the Esc menu (and a catch) brings her back there with her pages instead of to the cabin.
+
+The game never says what the two women are to each other, or whether Mathilda is alive, dead, at the lake, or something she sent out into the cold herself. It does say, over and over, that she is sorry.
 
 ## Mathilda’s optional perspective
 
@@ -36,27 +38,30 @@ The game never says any of this; it's here so every line and page can be checked
 | Her own voice from the trees | **Projection** coming home |
 | The handwriting becoming hers | Integration has started whether she likes it or not |
 | The ring drawn three times round the lookout | A **mandala**, the Self: "everything out here goes round it" |
-| The engine running since before the snow, the red lights | Life energy waiting for her. Alchemical *rubedo* |
+| The engine running since before the snow, the lights at the lookout | Rubedo promised: up close only two lanterns, a false dawn |
+| The frozen lake, the old hole in the ice | Where one held still and one pulled. The place she has to go back to, not away from |
 | Two cups, one fitted inside the other | The **union of opposites** |
 | *Don't turn around* | You can't integrate a shadow you run from. Turning around is the hard, whole ending; not turning keeps them two, and keeps her waiting |
 
-The cellar is *nigredo*, the field is *albedo*, and the lights are *rubedo*. Her lines move from projection (she's out there) through recognition (she sounds like me) to integration (whatever is behind me is mine).
+The cellar is *nigredo*, the field is *albedo*, and the lake is *rubedo*; the lights at the lookout only promise it. Her lines move from projection (she's out there) through recognition (she sounds like me) to integration (whatever is behind me is mine).
 
 ## Frame and endings
 
 **Intro card:** OPHELIA'S DREAM / *Mathilda went out into the storm.* / *You told her to.* / (Esc line).
 
-**The road** (she reaches the lights without turning around):
-> The engine is running. The driver's door is open, the seat still warm.
+**The lookout** is not an ending. The lights she walked toward were two lanterns on its rail; there is no car and no road. It is a checkpoint, and posts lead on to the lake.
+
+**The lake** (she reaches the old hole in the ice without turning around):
+> The posts end at the lake. Two sets of prints go out to the old hole in the ice, and two come back, close together, as if one of them was holding the other up.
 
 - if the last page was read: *You didn't turn around.*
-- if every page is deciphered: *Beside the cup on the dash, a second one. Still warm.*
-- Spoken over the card (pleading): **"Mathilda? Please get in. I'll drive. You can pick the music. Just... get in."** Then, from behind the car, in her own voice: **"Okay."**
+- if every page is deciphered: *By the hole, a cup in the snow. Beside it, a second one. Still warm.*
+- Spoken over the card (pleading): **"Mathilda? I've got you. I've got you. Hold still, I'm pulling."** Then, from the ice behind her, in her own voice: **"Okay."**
 
-**One set of prints** (she turned around after the last page):
-> You turned around. One set of prints, all the way back to the lit cabin. You get in on the driver's side; the seat is warm because it was always yours.
+**One set of prints** (she turned around after the last page, then reached the lake):
+> You turned around. Out on the lake, one set of prints goes to the old hole in the ice, and one set comes back. Only ever yours. The ice is singing; it always was.
 
-- if every page is deciphered: *On the dash, two cups, one fitted inside the other.*
+- if every page is deciphered: *By the hole, two cups, one fitted inside the other.*
 - Spoken over the card (breaking): **"I'm sorry I sent you out there alone. ...Come on. Let's go home."**
 
 **Caught:** unchanged.
@@ -216,6 +221,8 @@ All lines are hers. Mathilda never speaks aloud; even the voice from the trees i
 - **morgue:** [breaking] No. She wouldn't be here. She's out in the snow. She has to be.
 - **snow:** [resolve] Her prints are already filling in. I have to be faster than the snow.
 - **lights:** [breaking] Headlights. Someone's waiting. Please let it be her.
+- **lookout:** [shaken] Lanterns. Two lanterns on a rail. No car, no road. ...Follow the posts, she said. Not the prints.
+- **lake:** [hushed] The lake. The ice is singing. ...I know this place.
 
 ### Revisits
 
@@ -231,7 +238,9 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 - **landing:** [hushed] Back down here. Like something in me keeps choosing it.
 - **corridor:** [wry] Same hallway. Same hum. You'd think I'd stop being scared of a hallway.
 - **janitor:** [bitter] Clean again. Who cleans up after a thing like this? Who does that?
-- **lights:** [pleading] Still running. Still waiting. Please still be waiting.
+- **lights:** [numb] Just the lanterns. I keep wanting them to be headlights.
+- **lookout:** [wry] Back at the lanterns. They haven't moved. I keep coming back like they might have.
+- **lake:** [hushed] Still singing. It's waiting for me to walk out there.
 
 ### Idle thoughts, when she stands still
 
@@ -382,7 +391,7 @@ Mathilda never speaks. These three are the protagonist's own voice, coming back.
 
 - **First answer** (doubt stage, after *on the post* is read, the first call she makes): from a pine 25–60 m away, her own voice shouts back [bitter] **"Go, then!"** It is the last thing she said to Mathilda, thrown back by the storm.
 - **Second answer** (resolve stage, the first call she makes): not from the trees but from right behind her, close enough to touch, [hushed] **"I'm right behind you."** If she has read the last page, this is the moment the game dares her to turn around.
-- **At the road** (only if she did *not* turn around): after she begs Mathilda to get in, a beat of silence, then from somewhere behind the car, softly, [warm] **"Okay."** Maybe Mathilda got in. Maybe she finally agreed with herself.
+- **At the lake** (only if she did *not* turn around): after she tells Mathilda to hold still, a beat of silence, then from the ice behind her, softly, [warm] **"Okay."** Maybe Mathilda let herself be pulled out. Maybe she finally agreed with herself.
 
 Once she has turned around, nothing answers again.
 
@@ -407,7 +416,7 @@ Lines:
 
 ### Over the end card
 
-- **The road:** [pleading] Mathilda? Please get in. I'll drive. You can pick the music. Just... get in.
+- **The lake:** [pleading] Mathilda? I've got you. I've got you. Hold still, I'm pulling.
 - **One set of prints:** [breaking] I'm sorry I sent you out there alone. ...Come on. Let's go home.
 
-**Total: 137 spoken lines.**
+**Total: 141 spoken lines.**

@@ -361,6 +361,12 @@ func _build_sidebar() -> Control:
 	var resume := _side_button("Resume")
 	resume.pressed.connect(func() -> void: Game.toggle_pause())
 	box.add_child(resume)
+	# Once she has reached the lookout she can go back there with what she had.
+	var lookout := _side_button("Back to the lookout")
+	lookout.pressed.connect(func() -> void: Game.restart(true))
+	lookout.visible = not Game.checkpoint.is_empty()
+	Game.checkpoint_reached.connect(func() -> void: lookout.visible = true)
+	box.add_child(lookout)
 	var again := _side_button("Restart the run")
 	again.pressed.connect(func() -> void: Game.restart())
 	box.add_child(again)

@@ -2,7 +2,7 @@ extends Node
 
 # Steer the real player along the saved trail with normal movement and threats.
 # godot --headless --path . tools/traversal_probe.tscn
-const MAX_SECONDS := 210.0
+const MAX_SECONDS := 300.0
 const LOOK_AHEAD := 5.0
 
 var _main: Node3D
@@ -18,6 +18,7 @@ var _with_notes := OS.get_environment("RUN_TRAVERSAL_NOTES") == "1"
 var _notes: Array[FieldNote] = []
 var _note_index := 0
 var _reading_since := -1.0
+var _checkpoint_logged := false
 
 
 func _ready() -> void:
@@ -50,8 +51,9 @@ func _start() -> void:
 				_trail.offset_of(note.global_position) - _trail.player_start_offset])
 	Game.set_phase(Game.Phase.PLAYING)
 	Input.action_press("move_forward")
-	print("Traversal start: %.1f m saved route, %s" % [
+	print("Traversal start: %.1f m to the lookout, %.1f m to the lake, %s" % [
 		_trail.exit_offset - _trail.player_start_offset,
+		_trail.lake_offset - _trail.player_start_offset,
 		"three notes" if _with_notes else "no notes"])
 	set_physics_process(true)
 
@@ -81,7 +83,13 @@ func _physics_process(delta: float) -> void:
 			_reading_since = -1.0
 		return
 	Input.action_press("move_forward")
-	var ahead := _trail.position_at(minf(offset + LOOK_AHEAD, _trail.exit_offset))
+	# On past the lookout (a checkpoint now) to the old hole in the lake ice.
+	var ahead := _trail.position_at(minf(offset + LOOK_AHEAD, _trail.lake_offset))
+	if offset >= _trail.lake_offset - 3.0:
+		ahead = _trail.lake_hole
+	if Game.at_checkpoint and not _checkpoint_logged:
+		_checkpoint_logged = true
+		print("Checkpoint at the lookout at %.1f s, %.1f m along route" % [_elapsed, offset - _trail.player_start_offset])
 	if _with_notes and _note_index < _notes.size():
 		var note := _notes[_note_index]
 		var note_offset := _trail.offset_of(note.global_position)
@@ -119,10 +127,10 @@ func _physics_process(delta: float) -> void:
 		_last_report = report
 		print("t=%.0f progress=%.1f/%.1f stamina=%.1f phase=%d threat=%.2f" % [
 			_elapsed, offset - _trail.player_start_offset,
-			_trail.exit_offset - _trail.player_start_offset,
+			_trail.lake_offset - _trail.player_start_offset,
 			_player.stamina, Game.phase, Game.threat()])
 	if Game.phase == Game.Phase.ESCAPED:
-		_finish("escaped")
+		_finish("reached the lake" if Game.at_checkpoint else "escaped without passing the lookout")
 	elif Game.phase == Game.Phase.CAUGHT:
 		_finish("caught: %s" % Game.ending_title)
 	elif _elapsed >= MAX_SECONDS:
@@ -139,7 +147,7 @@ func _finish(result: String) -> void:
 		result, _elapsed, _max_offset - _trail.player_start_offset if _trail else 0.0,
 		_hunt_at, Game.notes_found, _player.stamina if _player else -1.0])
 	var expected_notes := 3 if _with_notes else 0
-	get_tree().quit(0 if result == "escaped" and Game.notes_found == expected_notes and _hunt_at >= 0.0 else 1)
+	get_tree().quit(0 if result == "reached the lake" and Game.notes_found == expected_notes and _hunt_at >= 0.0 else 1)
 
 
 func _interact() -> void:

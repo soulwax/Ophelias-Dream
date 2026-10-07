@@ -103,6 +103,14 @@
     "lights": {
       "text": "Headlights. Someone's waiting. Please let it be her.",
       "mood": "breaking"
+    },
+    "lookout": {
+      "text": "Lanterns. Two lanterns on a rail. No car, no road. ...Follow the posts, she said. Not the prints.",
+      "mood": "shaken"
+    },
+    "lake": {
+      "text": "The lake. The ice is singing. ...I know this place.",
+      "mood": "hushed"
     }
   },
   "revisits": {
@@ -147,8 +155,16 @@
       "mood": "bitter"
     },
     "lights": {
-      "text": "Still running. Still waiting. Please still be waiting.",
-      "mood": "pleading"
+      "text": "Just the lanterns. I keep wanting them to be headlights.",
+      "mood": "numb"
+    },
+    "lookout": {
+      "text": "Back at the lanterns. They haven't moved. I keep coming back like they might have.",
+      "mood": "wry"
+    },
+    "lake": {
+      "text": "Still singing. It's waiting for me to walk out there.",
+      "mood": "hushed"
     }
   },
   "bored": {
@@ -588,7 +604,7 @@
   ],
   "endings": {
     "road": {
-      "text": "Mathilda? Please get in. I'll drive. You can pick the music. Just... get in.",
+      "text": "Mathilda? I've got you. I've got you. Hold still, I'm pulling.",
       "mood": "pleading"
     },
     "prints": {

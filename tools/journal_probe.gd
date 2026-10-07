@@ -241,7 +241,7 @@ func _turning() -> void:
 	_check(card._title.text == "One set of prints", "turning around ends on one set of prints")
 	Game.turned_around = false
 	card._on_phase(Game.Phase.ESCAPED)
-	_check(card._title.text == "The road", "not turning around ends on the road")
+	_check(card._title.text == "The lake", "not turning around ends on the lake")
 	card.queue_free()
 	actor.queue_free()
 	Game.reset()

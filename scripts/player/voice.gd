@@ -33,7 +33,9 @@ const PLACES := {
 	"janitor": "a janitor's room in the cellar",
 	"morgue": "the room with the chambers, and a sheet",
 	"snow": "the open snowfield in the storm, Mathilda's prints filling in",
-	"lights": "the headlights at the far end of the field, the engine running",
+	"lights": "the lights at the far end of the field, which look like headlights from afar",
+	"lookout": "the lookout tower: only two lanterns on its rail, no car, no road; posts lead on",
+	"lake": "the frozen lake at the end of the posts, the old hole in the ice",
 }
 
 var _pages := {}
@@ -376,7 +378,8 @@ func _speak_ending(ticket: int) -> void:
 		_say(line)
 
 
-# At the road, after her plea: "Okay.", from behind the car, in her own voice.
+# At the lake, after her plea: "Okay.", from the ice behind her, in her own
+# voice. (The answer keeps its old key, "road".)
 func _answer_road(ticket: int) -> void:
 	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or Game.turned_around:
 		return
@@ -617,6 +620,10 @@ func _stock_place(place: String) -> String:
 			return "Mathilda's out in this. Somewhere."
 		"lights":
 			return "Lights. Someone's there."
+		"lookout":
+			return "Lanterns. Just lanterns."
+		"lake":
+			return "The lake. I know this place."
 		"stair":
 			return "Down. Of course it goes down."
 	return "She's been here. I can feel it."

@@ -8,7 +8,8 @@ Ophelia's Dream is a third-person winter horror game using Godot 4.7, Forward+ r
 - `scripts/` groups GDScript by responsibility: `player/`, `world/`, `house/`, `weather/`, `audio/`, `notes/`, and `ui/`. There are no threats in the field at the moment; candidates are in `docs/THREATS.md`.
 - `assets/characters/styloo_elf/` contains the player model, textures, baked animations, and CC0 license; her walk and jog in `feminine/` are CC BY-NC 4.0, so the game is non-commercial. `addons/quaternius_ik_rigged/` supplies the shared animation source. `shaders/` holds GPU shaders.
 - `Hud` creates `Journal` alongside the reader and menus. The HUD has no objective; `show_journal_toast` controls its journal notice. The rebindable `journal` action uses J/Tab and pad Y. `NoteCatalog` parses `{word}` smudges, unlocked through `Game.known` and solved through `Game.decipher`. `Phase.JOURNAL` locks her controls while `Game.awake()` keeps the world running.
-- `Voice` plays 137 lines in 14 moods from `docs/MATHILDA_STORY.md`, the script of record; `tools/script_to_lines.py` writes `lines.json` from it.
+- The lookout at the end of the drawn route is a checkpoint and a false lead (two lanterns, no car); posts lead on to the frozen lake (`Lake`, `scripts/world/lake.gd`), where the run ends. `Game.restart(true)` resumes from the lookout.
+- `Voice` plays 141 lines in 14 moods from `docs/MATHILDA_STORY.md`, the script of record; `tools/script_to_lines.py` writes `lines.json` from it.
   - Groups: pages, places, stages (with `after` once she turns around), memories, calls, breath, cold, falls, spoken endings.
   - Priorities with forget-on-interrupt.
   - The trees answer in Ophelia’s own voice; Mathilda never speaks in Ophelia’s chapter. The optional first-person Mathilda chapter (`scripts/player/mathilda_pov.gd`, `docs/MATHILDA_POV.md`) has 36 separate lines and clips under `assets/audio/voice/mathilda/`.

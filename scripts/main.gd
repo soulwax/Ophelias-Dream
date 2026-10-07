@@ -54,6 +54,7 @@ func _ready() -> void:
 	add_child(Weather.new())
 	add_child(Wildlife.new())
 	add_child(Camp.new())
+	add_child(Lake.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
 	if Game.mathilda_pov:
@@ -129,6 +130,13 @@ func _ready() -> void:
 		Game.weather.settle()
 	trail.adopt_markers()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	# Back to the lookout: no menu and no intro card, she is simply there again.
+	if Game.resuming() and not Game.mathilda_pov and not _capture:
+		Game.resume_checkpoint()
+		Game.begin_intro()
+		Game.set_phase(Game.Phase.PLAYING)
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
 	if _capture:
 		Game.begin_intro()
 		if OS.get_environment("RUN_TITLE") != "1":

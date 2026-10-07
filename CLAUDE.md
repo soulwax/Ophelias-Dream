@@ -58,6 +58,8 @@ godot --headless --path . --export-release "Windows Desktop" "build/windows/Ophe
 godot --headless --path . tools/traversal_probe.tscn    # steer the player along the saved trail
 godot --headless --path . tools/note_access_probe.tscn  # page reach against real walls/terrain
 godot --headless --path . tools/house_space_probe.tscn  # checks the saved editable house
+godot --headless --path . tools/checkpoint_probe.tscn   # the lookout checkpoint: keep, resume, forget
+godot --path . tools/lake_view.tscn                      # shots of the lookout, posts and lake into build/lake/
 godot --path . tools/return_evidence_probe.tscn         # renders the doorway clue (needs a window)
 
 # Crash-safe logging run (game + disk-flushing hardware monitor, logs in build/blackbox/)
@@ -114,11 +116,11 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
  - Graphics detail (Auto/Lean/Full) feeds `_wants_lean_graphics()` after `RUN_GRAPHICS`, and applies on the next restart.
 - `locks_movement()` / `locks_look()` gate player control by phase. `restart()` resets state and reloads the scene.
 - The threat interface: `closeness` (0â€“1) for the one that hunts her, `dread` and `threat_hint` for any other pressure, `threat()` = max of the two, `catch_player(title, body)` for the ending, `something_at_door` (the house knocks hard) and `shown_threat` (a raven scolds beside it). The HUD vignette, heart and warning line react to `threat()`. The UI never shows distances. `hunt_started` turns true after `Tune.HUNT_NOTES` pages or `HUNT_ROUTE_DISTANCE` metres. No threat sets these yet.
-- `Game` ends the run as `ESCAPED` when she is within `EXIT_RADIUS` of `trail.exit_point`.
+- The lookout at `trail.exit_point` is a checkpoint, not an ending: within `EXIT_RADIUS`, `Game.reach_checkpoint()` keeps her pages, journal and places in `Game.checkpoint` (it survives `reset()`). `Game.restart(true)` (the Esc menu's "Back to the lookout", or the button after a catch) rebuilds the run and `main.gd` calls `Game.resume_checkpoint()`, skipping the menu; a plain `restart()` forgets it. `Game` ends the run as `ESCAPED` when she is within `LAKE_ARRIVE` of `trail.lake_hole`, out on the frozen lake.
 
 **`Tune` (`scripts/tune.gd`)** holds all balance constants: speeds, stamina, aim and reach, the world and story-field bounds (`WORLD_*`, `FENCE_*`), the land, biome and forest values (`TERRAIN_*`, `VALLEY_*`, `CLIFF_*`, `RAVINE_*`, `SNOW_*`, `BIOME_*`, `MOUNTAIN_*`, `RING_*`, `CHUNK_*`, `FOREST_*`, `GREEN_*`, `UNDER_*`), and collision layers (`LAYER_WORLD=1`, `LAYER_ACTOR=2`). Change feel here, not in the systems.
 
-**World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground`, an empty `Fence` node (kept only so editable-level snapshots line up child for child), the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout plus headlights at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1–3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box. Specs and plans: `docs/superpowers/specs/2026-10-06-biome-world-design.md` and its plan.
+**World (`scripts/world/`)**: `Trail` owns a `Curve3D` (fixed seed 1701) and builds `Ground`, an empty `Fence` node (kept only so editable-level snapshots line up child for child), the landmarks, the `FieldNote` pickups and `Flora`. Use `trail.on_ground()` / `ground.height_at()` to place anything on the terrain. `Trail._reserve()` keeps flora away from landmarks. The exit is the lookout (a checkpoint; the run ends at the lake past it, see `Lake`) at `trail.exit_point`. `PropFactory` loads FBX files from `assets/environment/` once, hides LOD1–3 meshes, and overrides every material with a flat winter palette chosen by filename keyword (`_family()`), or with an alpha-scissor material for the foliage textures. A missing mesh falls back to a box. Specs and plans: `docs/superpowers/specs/2026-10-06-biome-world-design.md` and its plan.
 - *Ground* (`ground.gd`): one height function over `WORLD_*` (1080 m square), built in layers: warped hills; a gentle valley along the route (floor graded at most `VALLEY_GRADE`, banks rising); cliff bands on hillsides at least `CLIFF_CLEAR` from the route; one ravine over `RAVINE_FROM..TO` of the played route; ridged mountains rising away from the story; a ring of peaks at the edge plus an invisible `WorldEdge` wall; the house pad last. Route and story distances, the valley floor and the ravine weight are coarse fields (`FIELD_CELL` 6 m). Set `route`, `route_from/to` and `story_points` before it enters the tree (`Trail` does).
  - The mesh is `CHUNK_SIZE` squares with cells of 1.5/3/6 m by distance from the story; a fine chunk's edge is stitched onto a coarser neighbour's so heights and collision are continuous. Each chunk is a `MeshInstance3D` with a trimesh `StaticBody3D`. Normals come from height differences. Helpers: `height_at`, `normal_at`, `slope_at`, `route_distance`, `story_distance`, `snow_at`.
  - **Snow weight** `snow_at(x, z)` (0 green .. 1 snow) is shared by every system: always snow within `SNOW_FORCE` of the story, mostly snow within `SNOW_CORE_IN..OUT` (a few green patches past `SNOW_PATCH_CLEAR`), and beyond it a biome noise biased greener north-east and north-west, partly south-east (north is −Z), snowy on peaks above `BIOME_SNOWLINE`. It is stored in vertex `COLOR.r`.
@@ -193,7 +195,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
   - Floor-tap footsteps instead of snow, no prints or powder, and `FootLock.floor_at` reports contacts on the boards.
   - `House.doorstep()` is where something outside would wait.
 - *Assets*: from `merl`, CC0, under `assets/vendor/polyhaven/` (`provenance.json`) and `assets/derived/doors/audio/`.
-- *Dev hook*: `RUN_SPAWN=outside|bedroom|living|stair|cellar|janitor|morgue`.
+- *Dev hook*: `RUN_SPAWN=outside|bedroom|living|stair|cellar|janitor|morgue` (and `lookout|lake`, handled by `Lake`).
 - *Darkness*: `Atmosphere.shelter` (eased by `Weather` as the camera goes in or out) drops the daylight ambience to about 7%, so the rooms are only what their lamps make of them. Most lamps are deliberately unlit. Her camera light brightens and widens indoors.
 - *Haunting (`haunting.gd`)*: rooms come from `House.room_at()`. Tension rises indoors and drains outside, and events fire at intervals that shorten with it:
   - `flicker`, `creak`, `door`: a visible door drifts on its own via `HouseDoor.drift()`.
@@ -211,14 +213,14 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **Voice (`scripts/player/voice.gd`, `docs/VOICE.md`)**:
 - **Script:** `docs/MATHILDA_STORY.md` is the script of record. `python tools/script_to_lines.py` writes `assets/audio/voice/lines.json` from it, and `--check` fails if the two have drifted.
-- **Lines:** 137, each in one of 14 moods, in these groups:
+- **Lines:** 141, each in one of 14 moods, in these groups:
   - pages, deciphered, places, revisits
   - bored by stage (hope/doubt/resolve, plus `after` once she turns around)
   - memories while walking outdoors, calls
   - spent (`Player.exhausted`), cold, falls (`Player.landed_hard`)
   - turned, misread, and endings spoken over the escape card
 - **Playback:** priorities, with forget-on-interrupt.
-- **The trees answer in her own voice** (`answers`): "Go, then!" from a pine, "I'm right behind you." from behind her (`Player.facing()`), and "Okay." behind the car at the road. Mathilda never speaks.
+- **The trees answer in her own voice** (`answers`): "Go, then!" from a pine, "I'm right behind you." from behind her (`Player.facing()`), and "Okay." from the lake ice behind her at the end (its key is still `road`). Mathilda never speaks.
 - **Baking:** `tools/bake_speech.py`:
   1. `--impressions` (Qwen3-TTS VoiceDesign, `build/voice/gpu-venv`) renders one reference performance per mood. `--unify` (Chatterbox voice conversion) gives each one steady's voice, and the results go in committed `tools/voice/ref/<mood>.wav` (raw picks in `ref/raw/`). Godot ignores `tools/voice/` via `.gdignore`; `voice_lock.json` and the `requirements-*.txt` there record models, versions, seeds, the mood table and the picks (refresh them with `--lock`).
   2. The bake (Chatterbox, `build/voice/cb-venv`, `HF_HOME=build/voice/hf/cache`) clones every line from its mood's impression: 3 takes, a Whisper WER gate, the take most like the impression wins.
@@ -228,7 +230,9 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 - **No model runs in the game.** `tools/bake_voice.py` is obsolete and overwrites the script: do not run it.
 - **When Voice is inactive:** `RUN_VOICE=0`, capture and headless runs; journal event keys have fallbacks.
 
-**Turning around**: after the last page, holding glance-back for `Tune.TURN_HOLD` outdoors calls `Game.turn_around()`. That sets `Game.turned_around` and emits `turned`. The escape card then reads "One set of prints", and Voice stops calling and answering. `RUN_ENDING=road|prints` with `RUN_CAPTURE` shows either escape card.
+**Turning around**: after the last page, holding glance-back for `Tune.TURN_HOLD` outdoors calls `Game.turn_around()`. That sets `Game.turned_around` and emits `turned`. The escape card at the lake then reads "One set of prints" instead of "The lake", and Voice stops calling and answering. `RUN_ENDING=road|prints` with `RUN_CAPTURE` shows either escape card (`road` is the lake ending).
+
+**The lookout and the lake (`scripts/world/lake.gd`)**: the lights at the end of the drawn route are a false lead. `Trail._extend_to_lake()` carries the curve `Tune.LAKE_LEG` metres past the lookout (turned if needed to stay inside the peaks); the valley follows it, `Ground` gets a level pad for the lake, the leg and lake are story points, and trees are kept off the ice. `Route` in the editable level stays the drawn curve (`_drawn_curve`), so the leg is never saved and doubled. `Lake` (added after `Camp`, built deferred) hides Trail's headlight spots, hangs two Poly Haven lanterns on the lookout rail (from the field they read as headlights), plants posts with red rags every `LAKE_POST_SPACING` metres to the shore, and builds the ice (`lake_ice` shader: clear ice, wandering cracks, drifts, the refrozen hole), two sets of prints to the hole and back (decals), and dry reeds. Places `lookout` and `lake` have their own lines. Nodes Camp and Lake hide carry `replaced_by` meta, which `biome_snapshot_probe` skips. Shots: `godot --path . tools/lake_view.tscn` into `build/lake/`.
 
 **Breath**: `hold_breath` (right mouse, F, pad RT) suppresses `Breath.plume`, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp. Nothing perceives breath at the moment.
 

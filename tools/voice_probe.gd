@@ -59,7 +59,7 @@ func _all_lines() -> Array:
 
 func _lines() -> void:
 	_check(voice._pages.size() == 7 and voice._deciphered.size() == 7, "seven page and seven deciphered lines")
-	_check(voice._places.size() == 11 and voice._revisits.size() == 11, "eleven places, eleven revisits")
+	_check(voice._places.size() == 13 and voice._revisits.size() == 13, "thirteen places, thirteen revisits")
 	for stage in Voice.STAGES:
 		_check(voice._bored[stage].size() == 10, "ten idle lines for " + stage)
 		_check(voice._memories[stage].size() == 5, "five memories for " + stage)
@@ -68,7 +68,7 @@ func _lines() -> void:
 	_check(voice._misread.size() == 10 and voice._spent.size() == 8 and voice._cold.size() == 6 and voice._falls.size() == 5, "misreads, breath, cold, falls")
 	_check(not voice._turned.is_empty() and voice._endings.size() == 2 and voice._answers.size() == 3, "turning, endings, answers")
 	var every := _all_lines()
-	_check(every.size() == 137, "137 lines in all (%d)" % every.size())
+	_check(every.size() == 141, "141 lines in all (%d)" % every.size())
 	for line in every:
 		_check(Voice.MOODS.has(str(line.mood)) and str(line.text) != "", "a mood for: " + str(line.text))
 	for entry in NoteCatalog.everything():

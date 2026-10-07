@@ -20,7 +20,7 @@ extends Node3D
 #
 # Bump TERRAIN_REVISION whenever the land's shape changes, so an older
 # editable-level snapshot does not lay its saved ground over the new one.
-const TERRAIN_REVISION := 3
+const TERRAIN_REVISION := 4
 # Coarse grid (metres) for the route fields: distance to the path and to the
 # story, the valley floor's height and the ravine's weight.
 const FIELD_CELL := 6.0

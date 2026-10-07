@@ -150,7 +150,19 @@ const RETURN_CLUE_ROUTE_DISTANCE := 22.0
 const WRONG_TRACK_ROUTE_DISTANCE := 30.0
 const EVIDENCE_HOLD := 240.0
 const EXIT_MARGIN := 8.0
+# The lookout at the end of the drawn route is a checkpoint, not the way out:
+# the lights there are two lanterns on its rail. Within EXIT_RADIUS she has
+# reached it.
 const EXIT_RADIUS := 13.0
+# Past the lookout, posts lead on to the frozen lake where the run ends. The
+# path is extended LAKE_LEG metres beyond the drawn route; the lake, LAKE_RADIUS
+# across, is centred where it ends, on a level pad. She has arrived when she is
+# within LAKE_ARRIVE of the old hole in the ice.
+const LAKE_LEG := 150.0
+const LAKE_RADIUS := 24.0
+const LAKE_ARRIVE := 4.5
+const LAKE_NEAR := 45.0
+const LAKE_POST_SPACING := 13.0
 const READ_DISTANCE := 2.6
 
 # Aiming at things (Aim). The ray from the screen centre reaches AIM_RANGE

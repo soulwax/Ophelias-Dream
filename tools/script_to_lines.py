@@ -30,7 +30,8 @@ SECTIONS = {
     "Over the end card": ("endings", "keyed"),
 }
 STAGE = {"hope": "hope", "doubt": "doubt", "resolve": "resolve", "after": "after"}
-ENDING_IDS = {"the road": "road", "one set of prints": "prints"}
+# The lake ending keeps the old key "road", which the voice and its answer use.
+ENDING_IDS = {"the lake": "road", "the road": "road", "one set of prints": "prints"}
 # Per-line delivery overrides for the baker; the game ignores them.
 OVERRIDES = {
     "Go, then!": {"exaggeration": 0.9},

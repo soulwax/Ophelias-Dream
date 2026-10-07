@@ -87,7 +87,8 @@ func _fixture(kind: String) -> void:
 		var landmarks := 0
 		var landmarks_live := true
 		for node in trail.route_derived():
-			if node == trail.ground or node == trail.flora:
+			# Camp and Lake hide the stylised tent, fire and headlights they replace.
+			if node == trail.ground or node == trail.flora or node.has_meta("replaced_by"):
 				continue
 			landmarks += 1
 			landmarks_live = landmarks_live and not node.is_queued_for_deletion() and (not node is Node3D or (node as Node3D).visible)
