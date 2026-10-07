@@ -1,0 +1,43 @@
+{
+  "lines": "res://assets/audio/voice/lake/lines.json",
+  "clips": "res://assets/audio/voice/lake/",
+  "npc": "mathilda",
+  "names": {"ophelia": "Ophelia", "mathilda": "Mathilda"},
+  "start": "turned",
+  "resume": ["m21"],
+  "leave": {"say": "o18", "reply": ["m20"]},
+  "nodes": {
+    "turned": {"say": ["m01"], "choices": [
+      {"say": "o01", "goto": "lake"},
+      {"say": "o02", "reply": ["m02"], "once": true}
+    ]},
+    "lake": {"say": ["m03"], "choices": [
+      {"say": "o03", "reply": ["m04"], "goto": "held"},
+      {"say": "o04", "goto": "held"}
+    ]},
+    "held": {"say": ["m05"], "choices": [
+      {"say": "o05", "goto": "go"},
+      {"say": "o06", "reply": ["m06"], "once": true, "requires": ["intake"]},
+      {"say": "o07", "reply": ["m07"], "once": true, "requires": ["pack"]},
+      {"say": "o19", "reply": ["m22"], "once": true, "requires": ["bed"]}
+    ]},
+    "go": {"say": ["m09"], "choices": [
+      {"say": "o09", "goto": "sorry"},
+      {"say": "o10", "reply": ["m10"], "goto": "sorry"}
+    ]},
+    "sorry": {"say": ["m11"], "choices": [
+      {"say": "o11", "reply": ["m12"], "goto": "self"},
+      {"say": "o12", "reply": ["m13"], "once": true, "requires": ["handwriting"]},
+      {"say": "o08", "reply": ["m08"], "once": true, "requires": ["post"]},
+      {"say": "o13", "reply": ["m14"], "once": true, "requires": ["torn"]}
+    ]},
+    "self": {"say": ["m15"], "choices": [
+      {"say": "o14", "reply": ["m16"], "goto": "ask"},
+      {"say": "o15", "goto": "ask"}
+    ]},
+    "ask": {"say": ["m17"], "choices": [
+      {"say": "o16", "reply": ["m18"], "end": "together"},
+      {"say": "o17", "reply": ["m19"], "end": "shore"}
+    ]}
+  }
+}

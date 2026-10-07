@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1.8 — 2026-10-07
+
+- The lights at the lookout were a false lead: only two lanterns on its rail, no car, no road. It's now a checkpoint instead of the ending; posts with red rags lead on to a frozen lake from her memory, where the run actually ends.
+- Give her one day: from the afternoon she wakes into through dusk, a night in the storm and a grey dawn, back to the hour she let Mathilda go. She needs at least three pages in her journal before she'll step onto the ice; if the day runs out first, the run ends on "Mathilda is gone".
+- Add a real meeting: read every trail page, decipher the last one and never turn around, and Mathilda is waiting on the ice by the old hole for a full, voiced, branching conversation, ending "Together" or "On the shore".
+- Eleven new monologue lines about the lake, the hours passing, and sighting her, on top of the new meeting's 41 lines.
+- Cache generated terrain and woods to disk so a matching run skips straight to a cached rebuild (terrain 3.7s to 0.5s, flora 2.2s to 0.15s on this machine), add occlusion culling with house wall/ceiling/floor occluders, put the forest on its own render layer so lights can exclude it cheaply, and bake the ground shader's noise as a texture.
+
 ## 0.2.1.7 — 2026-10-07
 
 - Rebuild Mathilda's camp to look real: a weathered canvas tent with snow settled on it and guy lines pegged out, a stone-ringed campfire with a split-log tepee, glowing coals, sparks and drifting wood smoke, a woodpile with an axe, a stool, a crate table and a hurricane lantern on a stump.

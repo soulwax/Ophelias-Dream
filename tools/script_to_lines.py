@@ -18,6 +18,7 @@ SECTIONS = {
     "Deciphered pages": ("deciphered", "keyed"),
     "First visits": ("places", "keyed"),
     "Revisits": ("revisits", "keyed"),
+    "Time and the lake": ("moments", "keyed"),
     "Idle thoughts": ("bored", "staged"),
     "Memories": ("memories", "staged"),
     "Calls into the storm": ("calls", "staged"),
@@ -31,7 +32,7 @@ SECTIONS = {
 }
 STAGE = {"hope": "hope", "doubt": "doubt", "resolve": "resolve", "after": "after"}
 # The lake ending keeps the old key "road", which the voice and its answer use.
-ENDING_IDS = {"the lake": "road", "the road": "road", "one set of prints": "prints"}
+ENDING_IDS = {"the lake": "road", "the road": "road", "one set of prints": "prints", "mathilda is gone": "gone"}
 # Per-line delivery overrides for the baker; the game ignores them.
 OVERRIDES = {
     "Go, then!": {"exaggeration": 0.9},

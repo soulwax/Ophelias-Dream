@@ -8,6 +8,8 @@ varying float crystal;
 
 uniform sampler2D snow_tex : source_color, repeat_enable, filter_linear_mipmap;
 uniform sampler2D dirt_tex : repeat_enable, filter_linear_mipmap;
+// Baked periodic gradient noise: linear data, not a colour texture.
+uniform sampler2D terrain_noise : repeat_enable, filter_linear_mipmap;
 uniform sampler2D green_tex : source_color, repeat_enable, filter_linear_mipmap;
 uniform sampler2D grass_tex : source_color, repeat_enable, filter_linear_mipmap;
 uniform sampler2D mud_tex : source_color, repeat_enable, filter_linear_mipmap;
@@ -47,17 +49,8 @@ float point_in_cell(vec2 p, float radius) {
 	return 1.0 - smoothstep(radius * 0.35, radius, d);
 }
 
-vec2 gradient(vec2 p) {
-	float angle = hash21(p) * 6.2831853;
-	return vec2(cos(angle), sin(angle));
-}
-
 float gradient_noise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-	return mix(mix(dot(gradient(i), f), dot(gradient(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
-		mix(dot(gradient(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)), dot(gradient(i + vec2(1.0)), f - vec2(1.0)), u.x), u.y);
+	return texture(terrain_noise, p / 64.0).r * 2.0 - 1.0;
 }
 
 // Rotate the noise basis and warp it before every octave, including the thaw
@@ -106,70 +99,96 @@ void fragment() {
 	vec3 base = normalize(world_normal);
 	vec3 weights = pow(abs(base), vec3(4.0));
 	weights /= max(dot(weights, vec3(1.0)), 0.0001);
-	vec2 uv = world_pos.xz * uv_scale;
-	float cloth = dot(texture(snow_tex, uv).rgb, vec3(0.3, 0.59, 0.11));
-	float broad = texture(snow_tex, uv * 0.21).r;
-	float drift = field_noise(world_pos.xz * 0.31);
-	float clumps = field_noise(world_pos.xz * 1.5);
-	float grains = field_noise(world_pos.xz * 6.5);
-	float pack = clamp(0.28 + drift * 0.34 + clumps * 0.28 + grains * 0.16, 0.0, 1.0);
-	vec3 snow = mix(shade, tint, pack) * mix(0.86, 1.08, broad) * mix(0.92, 1.05, cloth);
-	float fleck = pow(hash21(floor(world_pos.xz * 32.0)), 36.0) * point_in_cell(world_pos.xz * 32.0, 0.22);
-	snow = mix(snow, vec3(0.95, 0.97, 1.0), fleck);
-
-	float biome_mix = field_noise(world_pos.xz * 0.045);
 	float thaw = 4.0 * snow_weight * (1.0 - snow_weight);
-	float edge_noise = field_noise(world_pos.xz * 0.7 + vec2(41.7, -8.1)) - 0.5;
+	float edge_noise = 0.0;
+	if (thaw > 0.0) {
+		edge_noise = field_noise(world_pos.xz * 0.7 + vec2(41.7, -8.1)) - 0.5;
+	}
 	float cover = smoothstep(0.35, 0.65, snow_weight + edge_noise * 0.65 * thaw);
 	float slope = clamp(1.0 - base.y, 0.0, 1.0);
 	float rock_mask = use_vertex_snow ? smoothstep(0.22, 0.5, slope) : 0.0;
 	cover *= 1.0 - rock_mask;
-	float speckle = texture(dirt_tex, world_pos.xz * 0.07).r;
-	vec3 floor_color = mix(vec3(0.16, 0.23, 0.10), dirt_color, biome_mix) * mix(0.72, 1.08, speckle);
-	vec3 mud = dirt_color * mix(0.60, 0.88, speckle);
-	vec3 rock = rock_color * mix(0.75, 1.12, grains);
-	if (ground_textures) {
-		floor_color = mix(texture(green_tex, world_pos.xz * ground_uv_scale).rgb,
-			texture(grass_tex, world_pos.xz * grass_uv_scale).rgb, smoothstep(0.3, 0.7, biome_mix));
-		mud = texture(mud_tex, world_pos.xz * ground_uv_scale).rgb * 0.62;
-		vec3 rock_sample = triplanar_color(grass_tex, world_pos * ground_uv_scale, weights);
-		rock = rock_color * mix(0.6, 1.35, dot(rock_sample, vec3(0.3, 0.59, 0.11)));
+
+	// These branches are coherent over whole snowfields/green hills. Do not
+	// shade an invisible earth layer under pure snow (or snow under grass).
+	float drift = 0.5;
+	float grains = 0.5;
+	vec3 snow = tint;
+	if (cover > 0.0) {
+		vec2 uv = world_pos.xz * uv_scale;
+		float cloth = dot(texture(snow_tex, uv).rgb, vec3(0.3, 0.59, 0.11));
+		float broad = texture(snow_tex, uv * 0.21).r;
+		drift = field_noise(world_pos.xz * 0.31);
+		float clumps = field_noise(world_pos.xz * 1.5);
+		grains = field_noise(world_pos.xz * 6.5);
+		float pack = clamp(0.28 + drift * 0.34 + clumps * 0.28 + grains * 0.16, 0.0, 1.0);
+		snow = mix(shade, tint, pack) * mix(0.86, 1.08, broad) * mix(0.92, 1.05, cloth);
+		float fleck = pow(hash21(floor(world_pos.xz * 32.0)), 36.0) * point_in_cell(world_pos.xz * 32.0, 0.22);
+		snow = mix(snow, vec3(0.95, 0.97, 1.0), fleck);
 	}
-	// Lush: the floor textures are olive; pull them toward living green, with
-	// darker moss gathered in patches.
-	float green_level = dot(floor_color, vec3(0.3, 0.59, 0.11));
-	vec3 lush = vec3(green_level * 0.62, green_level * 1.12 + 0.03, green_level * 0.42);
-	floor_color = mix(floor_color, lush, lushness);
-	floor_color = mix(floor_color, moss_color * mix(0.8, 1.2, speckle), smoothstep(0.55, 0.8, field_noise(world_pos.xz * 0.12 + vec2(-13.0, 5.0))) * lushness * 0.7);
-	// Rock in layers: bands that follow height, broken by noise, so cliffs and
-	// mountain flanks read as stone rather than flat planes.
-	float strata = field_noise(vec2(world_pos.y * 0.9 + field_noise(world_pos.xz * 0.05) * 3.0, dot(world_pos.xz, vec2(0.02, 0.03))));
-	rock *= mix(0.72, 1.18, strata);
-	if (ground_textures) {
+
+	float biome_mix = 0.5;
+	vec3 earth = dirt_color;
+	vec3 rock = rock_color;
+	if (cover < 1.0) {
+		biome_mix = field_noise(world_pos.xz * 0.045);
+		float speckle = texture(dirt_tex, world_pos.xz * 0.07).r;
+		vec3 floor_color = mix(vec3(0.16, 0.23, 0.10), dirt_color, biome_mix) * mix(0.72, 1.08, speckle);
+		vec3 mud = dirt_color * mix(0.60, 0.88, speckle);
+		if (ground_textures) {
+			floor_color = mix(texture(green_tex, world_pos.xz * ground_uv_scale).rgb,
+				texture(grass_tex, world_pos.xz * grass_uv_scale).rgb, smoothstep(0.3, 0.7, biome_mix));
+			if (thaw > 0.0) {
+				mud = texture(mud_tex, world_pos.xz * ground_uv_scale).rgb * 0.62;
+			}
+		}
+		float green_level = dot(floor_color, vec3(0.3, 0.59, 0.11));
+		vec3 lush = vec3(green_level * 0.62, green_level * 1.12 + 0.03, green_level * 0.42);
+		floor_color = mix(floor_color, lush, lushness);
+		floor_color = mix(floor_color, moss_color * mix(0.8, 1.2, speckle), smoothstep(0.55, 0.8, field_noise(world_pos.xz * 0.12 + vec2(-13.0, 5.0))) * lushness * 0.7);
+		earth = mix(floor_color, mud, thaw * 0.85);
 	}
-	vec3 earth = mix(floor_color, mud, thaw * 0.85);
+	if (rock_mask > 0.0) {
+		if (cover == 0.0) {
+			grains = field_noise(world_pos.xz * 6.5);
+		}
+		rock = rock_color * mix(0.75, 1.12, grains);
+		if (ground_textures) {
+			vec3 rock_sample = triplanar_color(grass_tex, world_pos * ground_uv_scale, weights);
+			rock = rock_color * mix(0.6, 1.35, dot(rock_sample, vec3(0.3, 0.59, 0.11)));
+		}
+		float strata = field_noise(vec2(world_pos.y * 0.9 + field_noise(world_pos.xz * 0.05) * 3.0, dot(world_pos.xz, vec2(0.02, 0.03))));
+		rock *= mix(0.72, 1.18, strata);
+	}
 	ALBEDO = mix(mix(earth, snow, cover), rock, rock_mask);
 
 	vec3 n = base;
-	if (!lean_graphics) {
-		// Ripples drift with the wind's own noise; only the noise's value bends
-		// them, never its slope.
-		vec2 warp = vec2(field_noise(world_pos.xz * 0.11), field_noise(world_pos.xz * 0.11 + vec2(23.0, -9.0))) * 6.0;
-		vec2 ripple = ripple_slope(world_pos.xz + warp) * mix(0.6, 1.4, drift);
-		vec3 snow_n = normalize(base + vec3(-ripple.x, 0.0, -ripple.y) * 1.6);
+	float detail = 1.0 - smoothstep(12.0, 45.0, length(VERTEX));
+	if (!lean_graphics && detail > 0.0) {
+		vec3 snow_n = base;
+		if (cover > 0.0) {
+			vec2 warp = vec2(field_noise(world_pos.xz * 0.11), field_noise(world_pos.xz * 0.11 + vec2(23.0, -9.0))) * 6.0;
+			vec2 ripple = ripple_slope(world_pos.xz + warp) * mix(0.6, 1.4, drift);
+			snow_n = normalize(base + vec3(-ripple.x, 0.0, -ripple.y) * 1.6);
+		}
 		vec3 earth_n = base;
-		if (ground_textures) {
+		if (ground_textures && cover < 1.0) {
 			vec3 floor_n = mix(texture(green_normal, world_pos.xz * ground_uv_scale).xyz,
 				texture(grass_normal, world_pos.xz * grass_uv_scale).xyz, smoothstep(0.3, 0.7, biome_mix)) * 2.0 - 1.0;
-			vec3 mud_n = texture(mud_normal, world_pos.xz * ground_uv_scale).xyz * 2.0 - 1.0;
-			vec3 detail = mix(floor_n, mud_n, thaw * 0.85);
-			earth_n = normalize(base + vec3(detail.x, 0.0, detail.y) * 0.45);
-			earth_n = normalize(mix(earth_n, triplanar_normal(grass_normal, world_pos * ground_uv_scale, weights, base), rock_mask * 0.5));
+			vec3 detail_n = floor_n;
+			if (thaw > 0.0) {
+				vec3 mud_n = texture(mud_normal, world_pos.xz * ground_uv_scale).xyz * 2.0 - 1.0;
+				detail_n = mix(floor_n, mud_n, thaw * 0.85);
+			}
+			earth_n = normalize(base + vec3(detail_n.x, 0.0, detail_n.y) * 0.45);
+			if (rock_mask > 0.0) {
+				earth_n = normalize(mix(earth_n, triplanar_normal(grass_normal, world_pos * ground_uv_scale, weights, base), rock_mask * 0.5));
+			}
 		}
-		n = normalize(mix(earth_n, snow_n, cover));
+		n = normalize(mix(base, mix(earth_n, snow_n, cover), detail));
 	}
 	NORMAL = normalize(mat3(VIEW_MATRIX) * n);
-	crystal = pow(hash21(floor(world_pos.xz * 40.0)), 16.0) * point_in_cell(world_pos.xz * 40.0, 0.18) * cover;
+	crystal = cover > 0.0 ? pow(hash21(floor(world_pos.xz * 40.0)), 16.0) * point_in_cell(world_pos.xz * 40.0, 0.18) * cover : 0.0;
 	float earth_roughness = mix(0.98, 0.48, thaw);
 	ROUGHNESS = mix(mix(earth_roughness, mix(0.82, 0.22, crystal), cover), 0.98, rock_mask);
 	SPECULAR = mix(0.16 + thaw * 0.22, 0.45, cover);

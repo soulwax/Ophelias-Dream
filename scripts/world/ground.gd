@@ -28,6 +28,9 @@ const FIELD_CELL := 6.0
 const PROFILE_STEP := 2.0
 # Steeper than this (cos 55°) is a cliff face.
 const CLIFF_FACE := 0.574
+const CACHE_REVISION := 1
+const CACHE_DIR := "user://terrain"
+const CACHE_LIMIT := 8
 
 var seed_value := 1701
 # The route the land is shaped around (in this node's space) and the played
@@ -54,6 +57,8 @@ var snow_material: ShaderMaterial
 var _terrain_material: ShaderMaterial
 # What was built, for probes.
 var build_msec := 0
+var cache_hit := false
+var cache_write_msec := 0
 var cliff_cells := 0
 var rock_count := 0
 var chunks_x := 1
@@ -90,10 +95,163 @@ func _ready() -> void:
 	var started := Time.get_ticks_msec()
 	_rng.seed = seed_value + 404
 	_configure_noise()
-	_build_fields()
-	_build_chunks()
+	var fingerprint := _cache_fingerprint()
+	var use_cache := OS.get_environment("RUN_TERRAIN_CACHE") != "off"
+	cache_hit = use_cache and _load_cache(fingerprint)
+	if not cache_hit:
+		_build_fields()
+		_build_chunks()
+		if use_cache:
+			_save_cache(fingerprint)
 	_build_edge()
 	build_msec = Time.get_ticks_msec() - started
+
+
+func _cache_fingerprint() -> String:
+	var tune_script := load("res://scripts/tune.gd") as GDScript
+	var route_points := route.get_baked_points() if route else PackedVector3Array()
+	var inputs: Array = [CACHE_REVISION, TERRAIN_REVISION, Engine.get_version_info().string,
+		ProjectSettings.get_setting("application/config/version"), seed_value, route_points,
+		route_from, route_to, story_points, pads, cuts, _stable_tuning(tune_script.get_script_constant_map())]
+	# Source changes invalidate development caches too. Exported builds also
+	# have the format/terrain/application versions and all Tune constants.
+	if FileAccess.file_exists("res://scripts/world/ground.gd"):
+		inputs.append(FileAccess.get_file_as_bytes("res://scripts/world/ground.gd"))
+	var hash := HashingContext.new()
+	hash.start(HashingContext.HASH_SHA256)
+	hash.update(var_to_bytes(inputs))
+	return hash.finish().hex_encode()
+
+
+func _stable_tuning(value: Variant) -> Variant:
+	# Script constant maps are dictionaries; their iteration order can differ
+	# between engine processes. Hash content, never dictionary storage order.
+	if value is Dictionary:
+		var keys: Array = value.keys()
+		keys.sort_custom(func(a: Variant, b: Variant) -> bool: return str(a) < str(b))
+		var ordered: Array = []
+		for key in keys:
+			ordered.append([str(key), _stable_tuning(value[key])])
+		return ["dictionary", ordered]
+	if value is Array:
+		var ordered: Array = []
+		for item in value:
+			ordered.append(_stable_tuning(item))
+		return ordered
+	return value
+
+
+func _load_cache(fingerprint: String) -> bool:
+	var path := "%s/ground_%s.res" % [CACHE_DIR, fingerprint]
+	if not FileAccess.file_exists(path):
+		return false
+	var cache := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as TerrainCache
+	if cache == null or cache.fingerprint != fingerprint or cache.chunks == null:
+		return false
+	var d := cache.data
+	if d.size() != 16 or not cache.chunks.can_instantiate():
+		return false
+	_field_size = d["field_size"]
+	_route_distance = d["route_distance"]
+	_story_distance = d["story_distance"]
+	_valley_floor = d["valley_floor"]
+	_ravine = d["ravine"]
+	_snow_distance = d["snow_distance"]
+	story_centre = d["story_centre"]
+	_pad_heights.assign(d["pad_heights"])
+	_chunk_cell = d["chunk_cell"]
+	_chunk_points = d["chunk_points"]
+	_chunk_heights.assign(d["chunk_heights"])
+	_chunk_normals.assign(d["chunk_normals"])
+	chunks_x = d["chunks_x"]
+	chunks_z = d["chunks_z"]
+	cliff_cells = d["cliff_cells"]
+	rock_count = d["rock_count"]
+	snow_material = _material()
+	_terrain_material = snow_material.duplicate() as ShaderMaterial
+	_terrain_material.set_shader_parameter("use_vertex_snow", true)
+	var chunks := cache.chunks.instantiate() as Node3D
+	for chunk in chunks.get_children():
+		(chunk as MeshInstance3D).material_override = _terrain_material
+	add_child(chunks)
+	return true
+
+
+func _save_cache(fingerprint: String) -> void:
+	var started := Time.get_ticks_msec()
+	var cache := TerrainCache.new()
+	cache.fingerprint = fingerprint
+	cache.data = {
+		"field_size": _field_size, "route_distance": _route_distance,
+		"story_distance": _story_distance, "valley_floor": _valley_floor,
+		"ravine": _ravine, "snow_distance": _snow_distance, "story_centre": story_centre,
+		"pad_heights": _pad_heights, "chunk_cell": _chunk_cell, "chunk_points": _chunk_points,
+		"chunk_heights": _chunk_heights, "chunk_normals": _chunk_normals,
+		"chunks_x": chunks_x, "chunks_z": chunks_z, "cliff_cells": cliff_cells, "rock_count": rock_count,
+	}
+	var copy := get_node("Chunks").duplicate(0)
+	_own_cache_nodes(copy, copy)
+	cache.chunks = PackedScene.new()
+	var result := cache.chunks.pack(copy)
+	copy.free()
+	if result != OK:
+		return
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(CACHE_DIR))
+	# Unique temporary names let concurrent probes finish without sharing a
+	# partially written resource. A failed cache write never blocks gameplay.
+	var path := "%s/ground_%s.res" % [CACHE_DIR, fingerprint]
+	var temporary := "%s/ground_%s_%d.tmp.res" % [CACHE_DIR, fingerprint, OS.get_process_id()]
+	if ResourceSaver.save(cache, temporary, ResourceSaver.FLAG_COMPRESS) == OK:
+		if DirAccess.rename_absolute(temporary, path) != OK:
+			DirAccess.remove_absolute(temporary)
+		else:
+			_prune_cache(path)
+	cache_write_msec = Time.get_ticks_msec() - started
+
+
+func _prune_cache(active_path: String) -> void:
+	var old: Array[Dictionary] = []
+	for file in DirAccess.get_files_at(CACHE_DIR):
+		if not file.begins_with("ground_") or not file.ends_with(".res"):
+			continue
+		var hash := file.trim_prefix("ground_").trim_suffix(".res")
+		if hash.length() != 64 or not hash.is_valid_hex_number():
+			continue
+		var path := CACHE_DIR.path_join(file)
+		if path != active_path:
+			old.append({"path": path, "time": FileAccess.get_modified_time(path)})
+	old.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["time"] > b["time"])
+	for i in range(CACHE_LIMIT - 1, old.size()):
+		DirAccess.remove_absolute(old[i]["path"])
+
+
+func _own_cache_nodes(node: Node, root: Node) -> void:
+	for child in node.get_children():
+		child.owner = root
+		_own_cache_nodes(child, root)
+
+
+## Old editable snapshots contain their own material instances. Bind the
+## new noise sampler on those too, preserving the author's other parameters.
+func bind_render_materials() -> void:
+	var materials: Array[Material] = [snow_material, _terrain_material]
+	for branch in [self, Game.house]:
+		if branch == null:
+			continue
+		for node in branch.find_children("*", "MeshInstance3D", true, false):
+			var mesh := node as MeshInstance3D
+			if mesh.material_override:
+				materials.append(mesh.material_override)
+	var seen: Dictionary = {}
+	var noise := load("res://assets/environment/terrain_noise.png") as Texture2D
+	for material in materials:
+		if not material is ShaderMaterial or seen.has(material):
+			continue
+		seen[material] = true
+		var shader_material := material as ShaderMaterial
+		if shader_material.shader and shader_material.shader.resource_path == "res://shaders/snow_ground.gdshader":
+			shader_material.set_shader_parameter("terrain_noise", noise)
+			shader_material.set_shader_parameter("lean_graphics", Game.lean_graphics)
 
 
 func height_at(x: float, z: float) -> float:
@@ -619,6 +777,11 @@ func _build_chunk(root: Node3D, cx: int, cz: int, cut_area: Rect2) -> void:
 					kept[j * cells + i] = 0
 	var indices := PackedInt32Array()
 	var faces := PackedVector3Array()
+	# Six corners per surviving cell. Fill preallocated packed arrays instead
+	# of allocating two temporary triangle Arrays for every terrain cell.
+	indices.resize(cells * cells * 6)
+	faces.resize(indices.size())
+	var written := 0
 	for j in cells:
 		for i in cells:
 			if kept[j * cells + i] == 0:
@@ -630,10 +793,21 @@ func _build_chunk(root: Node3D, cx: int, cz: int, cut_area: Rect2) -> void:
 			# Clockwise seen from above: Godot's front face. (Counter-clockwise
 			# was culled from above, so for a long time the "snow" on screen
 			# was only the sky colour behind an invisible terrain.)
-			for tri in [[i00, i11, i01], [i00, i10, i11]]:
-				for corner: int in tri:
-					indices.append(corner)
-					faces.append(vertices[corner])
+			indices[written] = i00
+			indices[written + 1] = i11
+			indices[written + 2] = i01
+			indices[written + 3] = i00
+			indices[written + 4] = i10
+			indices[written + 5] = i11
+			faces[written] = vertices[i00]
+			faces[written + 1] = vertices[i11]
+			faces[written + 2] = vertices[i01]
+			faces[written + 3] = vertices[i00]
+			faces[written + 4] = vertices[i10]
+			faces[written + 5] = vertices[i11]
+			written += 6
+	indices.resize(written)
+	faces.resize(written)
 	if cut_here:
 		_add_depth(vertices, normals, colors, indices, kept, cells, points)
 
@@ -745,6 +919,7 @@ func _material() -> ShaderMaterial:
 	if ResourceLoader.exists("res://assets/environment/Snow_01.png"):
 		material.set_shader_parameter("snow_tex", load("res://assets/environment/Snow_01.png"))
 	material.set_shader_parameter("dirt_tex", _dirt_texture())
+	material.set_shader_parameter("terrain_noise", load("res://assets/environment/terrain_noise.png"))
 	material.set_shader_parameter("snow_depth", Tune.SNOW_DEPTH)
 	material.set_shader_parameter("lean_graphics", Game.lean_graphics)
 	material.set_shader_parameter("use_vertex_snow", false)

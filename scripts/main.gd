@@ -12,6 +12,15 @@ var _bake_pid := -1
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
+		# The baked editable scene predates this sampler. Bind it for editor
+		# previews too; changing a uniform does not rebuild or save the level.
+		var editable := get_node_or_null("EditableLevel")
+		if editable:
+			var noise := load("res://assets/environment/terrain_noise.png") as Texture2D
+			for node in editable.find_children("*", "MeshInstance3D", true, false):
+				var material := (node as MeshInstance3D).material_override as ShaderMaterial
+				if material and material.shader and material.shader.resource_path == "res://shaders/snow_ground.gdshader":
+					material.set_shader_parameter("terrain_noise", noise)
 		return
 	if OS.get_environment("RUN_MATHILDA") == "1":
 		Game.mathilda_pov = true
@@ -70,6 +79,12 @@ func _ready() -> void:
 	var built_exit := trail.exit_point
 	var redrawn: bool = shift["curve"] or shift["start"]
 	var retain: Array[Node] = []
+	if use_snapshot:
+		var saved_flora := snapshot.get_node_or_null("Trail/Flora")
+		if saved_flora == null or int(saved_flora.get_meta("batch_revision", 0)) != Flora.BATCH_REVISION:
+			# Batch indices changed; preserve the newly generated children while
+			# still applying authored Flora-root placement and visibility.
+			retain.append(trail.flora.get_node("Batches"))
 	var house_changed := false
 	if redrawn:
 		retain = trail.route_derived()
@@ -126,6 +141,9 @@ func _ready() -> void:
 		snapshot.queue_free()
 	if trail.house:
 		trail.house.settle_comfort()
+		trail.house.build_occluders()
+	trail.ground.bind_render_materials()
+	get_viewport().use_occlusion_culling = true
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()

@@ -201,6 +201,15 @@ const PITCH_UP := 0.38
 # clock at early dusk and a whole day passes in DAY_MINUTES real minutes.
 const DAY_MINUTES := 40.0
 const MATHILDA_DUSK := 17.3
+# Ophelia's chapter starts its clock here; when a whole day has passed without
+# an attempt at the lake, Mathilda is gone. Her lines notice the hours (in
+# hours since the start of the clock: dusk, night, midnight, dawn, late).
+const OPHELIA_START := 14.5
+const DAY_MOMENTS := {"dusk": 2.8, "night": 5.0, "midnight": 9.5, "dawn": 16.2, "late": 21.5}
+# An attempt at the lake needs this many pages in the journal.
+const LAKE_PAGES := 3
+# Within this flat distance of Mathilda on the ice, they talk.
+const MEETING_REACH := 3.0
 # Mathilda's fire melts the snow round it back over this many seconds.
 const CAMP_MELT_SECONDS := 900.0
 
@@ -294,6 +303,10 @@ const CHUNK_MID := 260.0
 const CHUNK_CELL_NEAR := 1.5
 const CHUNK_CELL_MID := 3.0
 const CHUNK_CELL_FAR := 6.0
+# Render batches are smaller than terrain/physics chunks for tighter culling.
+const FOREST_BATCH_SIZE := 20.0
+# A separate visual layer lets local lights omit the woods from their shadows.
+const FOREST_RENDER_LAYER := 2
 # Woods. A forest mask (wavelength about 1 / FOREST_FREQ) makes woods with
 # clearings; none within FOREST_CLEAR of the route or FOREST_RESERVED of a
 # landmark, or on slopes over FOREST_SLOPE degrees. Snow woods grow on a

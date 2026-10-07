@@ -50,6 +50,9 @@ func daylight() -> float:
 
 func rebind_authoring_resources() -> void:
 	_env = environment
+	# Old snapshots store four cascades; keep authored direction and colour,
+	# but apply the current shadow budget after their properties are copied.
+	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	if _env:
 		_configure_environment_weather(_env)
 	var volume := get_node_or_null("SnowFog") as FogVolume
@@ -72,7 +75,7 @@ func _ready() -> void:
 	sun.light_energy = 1.35
 	sun.rotation_degrees = Vector3(-38, -32, 0)
 	sun.shadow_enabled = true
-	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	sun.directional_shadow_max_distance = 120.0
 	sun.shadow_bias = 0.04
 	sun.light_volumetric_fog_energy = 1.95

@@ -129,8 +129,9 @@ func _physics_process(delta: float) -> void:
 			_elapsed, offset - _trail.player_start_offset,
 			_trail.lake_offset - _trail.player_start_offset,
 			_player.stamina, Game.phase, Game.threat()])
-	if Game.phase == Game.Phase.ESCAPED:
-		_finish("reached the lake" if Game.at_checkpoint else "escaped without passing the lookout")
+	# At the hole: with three pages the run ends; with fewer she stops there.
+	if Game.phase == Game.Phase.ESCAPED or (Game.phase == Game.Phase.PLAYING and Game._at_lake()):
+		_finish("reached the lake" if Game.at_checkpoint else "reached the lake without passing the lookout")
 	elif Game.phase == Game.Phase.CAUGHT:
 		_finish("caught: %s" % Game.ending_title)
 	elif _elapsed >= MAX_SECONDS:

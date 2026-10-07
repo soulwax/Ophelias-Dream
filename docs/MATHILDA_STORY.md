@@ -16,6 +16,10 @@ The last page asks her not to turn around. Out on the lake, prints go to the old
 
 The lookout is a checkpoint: once she has reached it, the Esc menu (and a catch) brings her back there with her pages instead of to the cabin.
 
+She has one day. The afternoon she wakes into starts to move: dusk, a night in the storm, a grey dawn, and the hour she let Mathilda go comes round again. To make an attempt she must reach the lake with at least three pages in her journal; at the shore with fewer, she will not go out. If the day runs out first, the run ends on **Mathilda is gone**.
+
+And if she has read every trail page, deciphered the last one and never turned around, Mathilda is out on the ice by the old hole, waiting. They talk (docs/LAKE_MEETING.md), and the run ends **Together** or **On the shore**. Turning around after seeing her means she is not there any more.
+
 The game never says what the two women are to each other, or whether Mathilda is alive, dead, at the lake, or something she sent out into the cold herself. It does say, over and over, that she is sorry.
 
 ## Mathilda’s optional perspective
@@ -242,6 +246,18 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 - **lookout:** [wry] Back at the lanterns. They haven't moved. I keep coming back like they might have.
 - **lake:** [hushed] Still singing. It's waiting for me to walk out there.
 
+### Time and the lake
+
+The chapter runs on a day: from 14:30 to 14:30 the next day, in 40 real minutes. As the hours pass she notices, once each. At the shore with fewer than three pages she will not go out. When Mathilda is waiting on the ice, she sees her.
+
+- **dusk:** [hushed] It's getting dark. I've been out here all afternoon, and I'm still not where she is.
+- **night:** [shaken] It's night. She's out in this, in the dark. So am I. That's something.
+- **midnight:** [numb] Midnight, or near it. If she's waiting for me, she's been waiting a long time.
+- **dawn:** [breaking] It's getting light. I walked through a whole night and I still haven't found her.
+- **late:** [pleading] It's nearly the hour I let her go. If I don't go to her now, I don't think I get to.
+- **unready:** [shaken] Not yet. I can't go out there yet. I don't know enough of her to know what I'll find.
+- **sighted:** [breaking] There. By the hole. ...Mathilda? Don't move. Don't you dare move.
+
 ### Idle thoughts, when she stands still
 
 **Hope** (0–1 trail pages): Mathilda is out there, and she can be found.
@@ -264,7 +280,7 @@ Each plays once: on the first return in the doubt or resolve stage, at least 60 
 - [shaken] What if she's back at the cabin, by the lantern, writing to me?
 - [breaking] I can't remember which of us said we'd stay.
 - [breaking] I keep turning to tell her something. There's nobody to tell.
-- [hushed] The light hasn't moved. She was right. It's the same afternoon.
+- [hushed] The light's going. She always said the afternoons up here end all at once.
 - [numb] My feet stopped hurting a while ago. I'm choosing not to think about that.
 - [shaken] Sometimes I hear her footsteps right behind mine. Exactly in time. Exactly.
 - [bitter] She always got to be the brave one. I got to be the one who waited. Who decided that?
@@ -303,6 +319,7 @@ Longer thoughts, one at a time, when she is walking outdoors and has been quiet 
 - [remembering] She'd stand at the window in a storm with all the lights off. Said it was the only time the world was quiet enough to hear yourself. I always turned the lights back on.
 - [wry] Last time she got lost she came home with a stray dog and a story about a bear. There was no bear. The dog stayed eleven years.
 - [steady] She's done this before. Walked out angry, walked back in with snow in her hair, made tea like nothing happened. That's all this is. That's all.
+- [remembering] Past the lookout there's a lake. We skated it every winter. She always went further out than I would, and waved, and I never waved back.
 
 **Doubt**
 
@@ -311,6 +328,7 @@ Longer thoughts, one at a time, when she is walking outdoors and has been quiet 
 - [remembering] When I was small I had a friend nobody else could see. She did all the things I was afraid of. I don't know why I'm thinking about her now.
 - [numb] I keep doing the sums. How long without a fire. How long in wet socks. I keep getting a number I don't like, so I keep doing them again.
 - [breaking] The last thing I said to her was "go, then." Not goodbye. Not be careful. "Go, then."
+- [shaken] That winter the ice was singing. She said singing ice is safe ice. It isn't. It's the ice telling you it's thin.
 
 **Resolve**
 
@@ -319,6 +337,7 @@ Longer thoughts, one at a time, when she is walking outdoors and has been quiet 
 - [resolve] Everything I didn't do, I gave her to do. Every risk. Every door. No wonder she's out here. I sent her out here.
 - [hushed] If there's anyone under that sheet, they're wearing my coat. I know that. I've known since the cellar.
 - [pleading] Just let it be the two of us at the car, arguing about who drives. That's all. That's all I'm asking for.
+- [remembering] I had her by the collar. I remember the collar so clearly. I don't remember the face above it.
 
 ### Calls into the storm
 
@@ -418,5 +437,6 @@ Lines:
 
 - **The lake:** [pleading] Mathilda? I've got you. I've got you. Hold still, I'm pulling.
 - **One set of prints:** [breaking] I'm sorry I sent you out there alone. ...Come on. Let's go home.
+- **Mathilda is gone:** [breaking] Mathilda? ...Mathilda! ...I took too long. I always take too long.
 
-**Total: 141 spoken lines.**
+**Total: 152 spoken lines** (the meeting on the ice has its own 41, in docs/LAKE_MEETING.md).

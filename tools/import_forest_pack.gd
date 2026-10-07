@@ -71,7 +71,7 @@ func _bake(instance: MeshInstance3D, to_world: Transform3D) -> ArrayMesh:
 			bounds = AABB(at, Vector3.ZERO) if first else bounds.expand(at)
 			first = false
 	var base := Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
-	var mesh := ArrayMesh.new()
+	var mesh := ImporterMesh.new()
 	for surface in source.get_surface_count():
 		var arrays := source.surface_get_arrays(surface)
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -85,10 +85,11 @@ func _bake(instance: MeshInstance3D, to_world: Transform3D) -> ArrayMesh:
 			arrays[Mesh.ARRAY_NORMAL] = normals
 		# Tangents would need the same turn; the cards light fine without them.
 		arrays[Mesh.ARRAY_TANGENT] = null
-		mesh.add_surface_from_arrays(source.surface_get_primitive_type(surface), arrays)
 		var material := instance.get_active_material(surface)
-		mesh.surface_set_material(surface, _material(material))
-	return mesh
+		mesh.add_surface(source.surface_get_primitive_type(surface), arrays, [], {}, _material(material))
+	# ArrayMesh reconstruction otherwise discards imported distance LODs.
+	mesh.generate_lods(60.0, 60.0, [])
+	return mesh.get_mesh()
 
 
 func _material(original: Material) -> Material:

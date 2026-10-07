@@ -70,6 +70,17 @@ var at_checkpoint := false
 var checkpoint: Dictionary = {}
 var _resume := false
 signal checkpoint_reached
+# Ophelia's day: seconds of her clock so far (it runs while she is awake in the
+# world), and which hours she has already noticed.
+var day_seconds := 0.0
+var day_running := false
+var _moments_said: Dictionary = {}
+# Which ending the run reached: road (the lake), prints, gone, together, shore.
+var ending_kind := ""
+# Lake sets this while Mathilda waits on the ice: the hole is then a meeting,
+# not an ending.
+var meeting_waiting := false
+var _unready_said := false
 
 var hunt_started := false
 var _hunt_seconds := 0.0
@@ -124,8 +135,16 @@ func _process(delta: float) -> void:
 		# out is the old hole in the lake ice, further on.
 		if _at_exit() and not at_checkpoint:
 			reach_checkpoint()
-		if _at_lake():
-			escape()
+		# The hole: an attempt, if she carries enough of Mathilda to make one.
+		if _at_lake() and not meeting_waiting:
+			if journal.size() >= Tune.LAKE_PAGES:
+				ending_kind = "prints" if turned_around else "road"
+				escape()
+			elif not _unready_said and voice:
+				_unready_said = true
+				voice.moment("unready")
+	if not mathilda_pov and day_running and awake() and phase != Phase.DIALOGUE:
+		_tick_day(delta)
 	if awake():
 		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
 			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
@@ -178,6 +197,12 @@ func reset() -> void:
 	turned_around = false
 	_turn_hold = 0.0
 	at_checkpoint = false
+	day_seconds = 0.0
+	day_running = false
+	_moments_said.clear()
+	ending_kind = ""
+	meeting_waiting = false
+	_unready_said = false
 	hunt_started = false
 	_hunt_seconds = 0.0
 	audio_fade = 0.0
@@ -205,6 +230,9 @@ func set_phase(next: Phase) -> void:
 	if phase == next:
 		return
 	phase = next
+	# Her day begins the first time she is in the world.
+	if next == Phase.PLAYING and not mathilda_pov and not day_running and player:
+		start_day()
 	phase_changed.emit(phase)
 
 
@@ -433,6 +461,77 @@ func turn_around() -> void:
 		voice.turned()
 
 
+## Starts Ophelia's day clock (and the sky with it) at day_seconds in.
+func start_day() -> void:
+	if mathilda_pov or day_running:
+		return
+	day_running = true
+	var atmosphere := get_tree().get_first_node_in_group("atmosphere") as Atmosphere if is_inside_tree() else null
+	if atmosphere:
+		atmosphere.start_clock(fposmod(Tune.OPHELIA_START + day_hours(), 24.0))
+
+
+## Hours of her day so far.
+func day_hours() -> float:
+	return day_seconds / (Tune.DAY_MINUTES * 60.0) * 24.0
+
+
+func _tick_day(delta: float) -> void:
+	day_seconds += delta
+	var hours := day_hours()
+	for moment: String in Tune.DAY_MOMENTS:
+		if hours >= float(Tune.DAY_MOMENTS[moment]) and not _moments_said.has(moment):
+			_moments_said[moment] = true
+			if voice:
+				voice.moment(moment)
+	if hours >= 24.0 and phase in [Phase.PLAYING, Phase.READING, Phase.JOURNAL]:
+		mathilda_gone()
+
+
+## The day ran out before she made an attempt at the lake.
+func mathilda_gone() -> void:
+	if phase == Phase.CAUGHT or phase == Phase.ESCAPED:
+		return
+	if phase == Phase.JOURNAL or phase == Phase.READING:
+		set_phase(Phase.PLAYING)
+	ending_kind = "gone"
+	ending_title = "Mathilda is gone"
+	ending_body = "A whole day, and you never went to her. The posts are still standing; the wind has taken the rags. Out on the lake the prints have filled in. Wherever she was waiting, she has stopped."
+	if journal.size() < Tune.LAKE_PAGES:
+		ending_body += " You never read enough of her to follow."
+	mark("mathilda is gone")
+	escape()
+
+
+## Whether Mathilda waits on the ice: every trail page read, the last one
+## deciphered, and she never turned around (docs/LAKE_MEETING.md).
+func meeting_ready() -> bool:
+	if turned_around:
+		return false
+	for entry in NoteCatalog.all():
+		if not read_pages.has(entry.title):
+			return false
+		if entry.title == NoteCatalog.LAST_TITLE and not page_solved(entry):
+			return false
+	return true
+
+
+## The meeting on the ice ended; its ending names the card.
+func finish_meeting(ending: String) -> void:
+	ending_kind = ending
+	match ending:
+		"together":
+			ending_title = "Together"
+			ending_body = "You walk back across the ice side by side. The prints you leave are two sets, close together, all the way to the shore, and neither of you looks back, because nobody is behind you."
+		_:
+			ending_title = "On the shore"
+			ending_body = "You sit on the shore with the lantern lit. Out on the ice she holds very still, and for the first time it does not frighten you. When the light comes up, she is walking in."
+	mark("met mathilda: " + ending)
+	if phase == Phase.DIALOGUE:
+		set_phase(Phase.PLAYING)
+	escape()
+
+
 ## She has reached the lookout: keep what she has so a restart can bring her
 ## back here instead of to the cabin.
 func reach_checkpoint() -> void:
@@ -454,6 +553,8 @@ func reach_checkpoint() -> void:
 		"turned_around": turned_around,
 		"hunt_started": hunt_started,
 		"notes_found": notes_found,
+		"day_seconds": day_seconds,
+		"moments_said": _moments_said.duplicate(),
 	}
 	mark("checkpoint: lookout")
 	checkpoint_reached.emit()
@@ -478,6 +579,9 @@ func resume_checkpoint() -> bool:
 	turned_around = checkpoint.turned_around
 	hunt_started = checkpoint.hunt_started
 	notes_found = checkpoint.notes_found
+	# The day goes on from where she was, not from the start.
+	day_seconds = float(checkpoint.get("day_seconds", 0.0))
+	_moments_said = (checkpoint.get("moments_said", {}) as Dictionary).duplicate()
 	at_checkpoint = true
 	# Pages she already carries are gone from the field.
 	if trail:
@@ -494,11 +598,18 @@ func resume_checkpoint() -> bool:
 	return true
 
 
-## Dev hook (RUN_ENDING=road|prints): reach the lake, turned around or not.
+## Dev hook (RUN_ENDING=road|prints|gone|together|shore): that ending's card.
 func dev_ending(kind: String) -> void:
 	read_last_page = true
 	turned_around = kind == "prints"
-	escape()
+	match kind:
+		"gone":
+			mathilda_gone()
+		"together", "shore":
+			finish_meeting(kind)
+		_:
+			ending_kind = kind
+			escape()
 
 
 func dev_journal(title: String) -> void:

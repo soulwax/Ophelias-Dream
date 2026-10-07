@@ -10,7 +10,7 @@ extends Node
 const LINES := "res://assets/audio/voice/lines.json"
 const CLIPS := "res://assets/audio/voice/"
 # Only a higher number cuts off a playing line (a misread may cut a misread).
-const PRIORITY := {"ending": 4, "page": 3, "deciphered": 3, "turned": 3, "place": 2, "revisit": 2,
+const PRIORITY := {"ending": 4, "page": 3, "deciphered": 3, "turned": 3, "moment": 3, "place": 2, "revisit": 2,
 	"spent": 2, "fall": 2, "bored": 1, "memory": 1, "call": 1, "misread": 1, "cold": 1}
 const STAGES := ["hope", "doubt", "resolve"]
 # After she turns around her idle thoughts come from this stage, and she stops calling.
@@ -50,6 +50,8 @@ var _falls: Array = []
 var _turned := {}
 var _endings := {}
 var _answers := {}
+# The hours passing, and the lake (docs/MATHILDA_STORY.md, "Time and the lake").
+var _moments := {}
 var _calls := {"hope": [], "doubt": [], "resolve": []}
 var _misread: Array = []
 var _clips := {}
@@ -149,7 +151,7 @@ func _build_speaker() -> void:
 
 
 func _on_phase(next: int) -> void:
-	if next in [Game.Phase.BOOT, Game.Phase.CAUGHT, Game.Phase.ESCAPED]:
+	if next in [Game.Phase.BOOT, Game.Phase.CAUGHT, Game.Phase.ESCAPED, Game.Phase.DIALOGUE]:
 		_interrupt()
 		_cancel_echo()
 		_ending_ticket += 1
@@ -174,7 +176,8 @@ func _finished() -> void:
 	if not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = 0.0
 	if not _current.is_empty() and str(_current.get("kind", "")) == "ending" \
-			and str(_current.get("id", "")) == "road" and not Game.turned_around and is_inside_tree():
+			and str(_current.get("id", "")) == "road" and not Game.turned_around \
+		and Game.ending_kind in ["", "road"] and is_inside_tree():
 		get_tree().create_timer(Tune.ANSWER_ROAD_DELAY).timeout.connect(_answer_road.bind(_ending_ticket))
 	_current = {}
 
@@ -198,7 +201,8 @@ func _process(delta: float) -> void:
 		_finished()
 	if Game.awake():
 		_clock += delta
-		if not _queue.is_empty() and not _busy() and _since >= Tune.VOICE_GAP * 0.5:
+		if not _queue.is_empty() and not _busy() and _since >= Tune.VOICE_GAP * 0.5 \
+				and Game.phase != Game.Phase.DIALOGUE:
 			_say(_queue.pop_front())
 	if Game.phase != Game.Phase.PLAYING:
 		_still = 0.0
@@ -370,10 +374,22 @@ func _cold_tick(outdoors: bool) -> void:
 		_cold_next = _clock + Tune.COLD_GAP
 
 
+## A moment she notices once: an hour of her day, the lake too soon, Mathilda
+## on the ice. Waits its turn if she is speaking something as important.
+func moment(id: String) -> void:
+	if not _active or not _moments.has(id):
+		return
+	var line: Dictionary = _moments[id]
+	if not _say(line):
+		_queue.append(line)
+
+
 func _speak_ending(ticket: int) -> void:
 	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or not _active:
 		return
-	var line: Dictionary = _endings.get("prints" if Game.turned_around else "road", {})
+	# The meeting's endings were spoken on the ice; the others have a line here.
+	var kind := Game.ending_kind if Game.ending_kind != "" else ("prints" if Game.turned_around else "road")
+	var line: Dictionary = _endings.get(kind, {})
 	if not line.is_empty():
 		_say(line)
 
@@ -381,7 +397,8 @@ func _speak_ending(ticket: int) -> void:
 # At the lake, after her plea: "Okay.", from the ice behind her, in her own
 # voice. (The answer keeps its old key, "road".)
 func _answer_road(ticket: int) -> void:
-	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or Game.turned_around:
+	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or Game.turned_around \
+			or Game.ending_kind not in ["", "road"]:
 		return
 	var line: Dictionary = _answers.get("road", {})
 	if line.is_empty():
@@ -587,7 +604,8 @@ func _load() -> void:
 	var data := Voice.read_lines()
 	for pair in [["pages", _pages, "page"], ["deciphered", _deciphered, "deciphered"],
 			["places", _places, "place"], ["revisits", _revisits, "revisit"],
-			["endings", _endings, "ending"], ["answers", _answers, "answer"]]:
+			["endings", _endings, "ending"], ["answers", _answers, "answer"],
+			["moments", _moments, "moment"]]:
 		var group: Variant = data.get(pair[0], {})
 		if typeof(group) == TYPE_DICTIONARY:
 			for id in group:

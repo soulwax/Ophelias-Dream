@@ -344,6 +344,9 @@ func _build_fire() -> void:
 	fire_light.omni_range = 10.0
 	fire_light.omni_attenuation = 1.3
 	fire_light.shadow_enabled = true
+	# Camp props and the player still cast fire shadows. A whole forest batch
+	# must not be submitted to all six faces of this small light's shadow map.
+	fire_light.shadow_caster_mask = 0xFFFFF & ~Tune.FOREST_RENDER_LAYER
 	fire_light.shadow_bias = 0.05
 	# A fire lights the snow softly; full specular turns its glints into sparks.
 	fire_light.light_specular = 0.15

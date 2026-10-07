@@ -137,7 +137,9 @@ func _process(delta: float) -> void:
 		if fade <= 0.0:
 			_quads[i].visible = false
 			continue
-		_set_fade(_quads[i], fade)
+		# During the hold the shader already has fade=1; only send changes.
+		if _ages[i] >= _holds[i]:
+			_set_fade(_quads[i], fade)
 
 
 # Once she has left a stretch behind her, one mark in it is not her stride.

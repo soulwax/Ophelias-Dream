@@ -167,6 +167,36 @@
       "mood": "hushed"
     }
   },
+  "moments": {
+    "dusk": {
+      "text": "It's getting dark. I've been out here all afternoon, and I'm still not where she is.",
+      "mood": "hushed"
+    },
+    "night": {
+      "text": "It's night. She's out in this, in the dark. So am I. That's something.",
+      "mood": "shaken"
+    },
+    "midnight": {
+      "text": "Midnight, or near it. If she's waiting for me, she's been waiting a long time.",
+      "mood": "numb"
+    },
+    "dawn": {
+      "text": "It's getting light. I walked through a whole night and I still haven't found her.",
+      "mood": "breaking"
+    },
+    "late": {
+      "text": "It's nearly the hour I let her go. If I don't go to her now, I don't think I get to.",
+      "mood": "pleading"
+    },
+    "unready": {
+      "text": "Not yet. I can't go out there yet. I don't know enough of her to know what I'll find.",
+      "mood": "shaken"
+    },
+    "sighted": {
+      "text": "There. By the hole. ...Mathilda? Don't move. Don't you dare move.",
+      "mood": "breaking"
+    }
+  },
   "bored": {
     "hope": [
       {
@@ -232,7 +262,7 @@
         "mood": "breaking"
       },
       {
-        "text": "The light hasn't moved. She was right. It's the same afternoon.",
+        "text": "The light's going. She always said the afternoons up here end all at once.",
         "mood": "hushed"
       },
       {
@@ -342,6 +372,10 @@
       {
         "text": "She's done this before. Walked out angry, walked back in with snow in her hair, made tea like nothing happened. That's all this is. That's all.",
         "mood": "steady"
+      },
+      {
+        "text": "Past the lookout there's a lake. We skated it every winter. She always went further out than I would, and waved, and I never waved back.",
+        "mood": "remembering"
       }
     ],
     "doubt": [
@@ -364,6 +398,10 @@
       {
         "text": "The last thing I said to her was \"go, then.\" Not goodbye. Not be careful. \"Go, then.\"",
         "mood": "breaking"
+      },
+      {
+        "text": "That winter the ice was singing. She said singing ice is safe ice. It isn't. It's the ice telling you it's thin.",
+        "mood": "shaken"
       }
     ],
     "resolve": [
@@ -386,6 +424,10 @@
       {
         "text": "Just let it be the two of us at the car, arguing about who drives. That's all. That's all I'm asking for.",
         "mood": "pleading"
+      },
+      {
+        "text": "I had her by the collar. I remember the collar so clearly. I don't remember the face above it.",
+        "mood": "remembering"
       }
     ]
   },
@@ -609,6 +651,10 @@
     },
     "prints": {
       "text": "I'm sorry I sent you out there alone. ...Come on. Let's go home.",
+      "mood": "breaking"
+    },
+    "gone": {
+      "text": "Mathilda? ...Mathilda! ...I took too long. I always take too long.",
       "mood": "breaking"
     }
   }

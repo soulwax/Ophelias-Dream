@@ -17,7 +17,17 @@ extends Node3D
 const GRASS := "res://assets/vendor/sketchfab_forest/meshes/grass_card.res"
 const WOOD := "res://assets/vendor/requested_camp/leartes/T_Wooden_B.png"
 
+const MEETING := "res://assets/dialogue/lake.json"
+# Pages she has read, as the meeting's flags (assets/dialogue/lake.json).
+const PAGE_FLAGS := {"from the pack": "pack", "on the post": "post", "torn page": "torn",
+	"the handwriting changes": "handwriting", "intake": "intake", "by the bed": "bed"}
+
 var is_built := false
+var mathilda: OpheliaNpc
+var meeting: Conversation
+var _sighted := false
+# She has to walk away before coming back opens the conversation again.
+var _away := true
 var _lanterns: Array[OmniLight3D] = []
 var _noise := FastNoiseLite.new()
 var _time := 0.0
@@ -37,6 +47,64 @@ func _process(delta: float) -> void:
 	_time += delta
 	for index in _lanterns.size():
 		_lanterns[index].light_energy = 3.0 * (1.0 + _noise.get_noise_1d(_time * 9.0 + index * 50.0) * 0.14)
+	_watch_meeting()
+
+
+# ---------------------------------------------------------------- the meeting
+
+## Mathilda waits on the ice when Game.meeting_ready(): placed as Ophelia nears
+## the lake, gone again if she turns around, and talked to by walking up to her.
+func _watch_meeting() -> void:
+	var trail := Game.trail
+	if Game.mathilda_pov or Game.player == null or trail == null:
+		return
+	var here := Game.player.global_position
+	var to_lake := Vector2(here.x - trail.lake_point.x, here.z - trail.lake_point.z).length()
+	if mathilda == null:
+		if to_lake < Tune.LAKE_NEAR + 40.0 and Game.phase == Game.Phase.PLAYING and Game.meeting_ready():
+			_place_mathilda(trail)
+		return
+	if not mathilda.visible:
+		return
+	if Game.turned_around and not meeting.active:
+		# She looked back. There is only one of them out here now.
+		_withdraw()
+		return
+	if not _sighted and to_lake < Tune.LAKE_NEAR and Game.voice:
+		_sighted = true
+		Game.voice.moment("sighted")
+	var to_her := Vector2(here.x - mathilda.global_position.x, here.z - mathilda.global_position.z).length()
+	if to_her > Tune.MEETING_REACH + 3.0:
+		_away = true
+	elif to_her <= Tune.MEETING_REACH and _away and Game.phase == Game.Phase.PLAYING and meeting.finished == "":
+		_away = false
+		meeting.begin()
+
+
+func _place_mathilda(trail: Trail) -> void:
+	var shore := trail.position_at(trail.lake_offset - Tune.LAKE_RADIUS)
+	var toward_shore := Vector3(shore.x - trail.lake_hole.x, 0.0, shore.z - trail.lake_hole.z).normalized()
+	mathilda = OpheliaNpc.new()
+	mathilda.name = "Mathilda"
+	add_child(mathilda)
+	mathilda.settle(trail.lake_hole + toward_shore * 1.4)
+	mathilda.rotation.y = atan2(-toward_shore.x, -toward_shore.z) + PI
+	meeting = Conversation.make(MEETING, mathilda)
+	add_child(meeting)
+	for title: String in PAGE_FLAGS:
+		if Game.read_pages.has(title):
+			meeting.flags[PAGE_FLAGS[title]] = true
+	meeting.ended.connect(Game.finish_meeting)
+	Game.meeting_waiting = true
+	Game.mark("mathilda waits on the ice")
+
+
+func _withdraw() -> void:
+	mathilda.visible = false
+	for body in mathilda.find_children("*", "StaticBody3D", true, false):
+		(body as StaticBody3D).collision_layer = 0
+	Game.meeting_waiting = false
+	Game.mark("mathilda gone from the ice")
 
 
 func _build() -> void:

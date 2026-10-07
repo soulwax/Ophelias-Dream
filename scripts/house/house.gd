@@ -394,6 +394,33 @@ func settle_comfort() -> void:
 	HouseIdentity.retune(self)
 
 
+## Built after authored properties are applied. Only the opaque structural
+## boxes occlude: their actual window, door and stair openings stay open.
+func build_occluders() -> void:
+	if has_node("RenderOccluders"):
+		return
+	var root := Node3D.new()
+	root.name = "RenderOccluders"
+	add_child(root)
+	for group_name in ["GroundFloor", "Cellar"]:
+		var branch := get_node_or_null(group_name)
+		if branch == null:
+			continue
+		for node in branch.find_children("*", "MeshInstance3D", true, false):
+			var mesh := node as MeshInstance3D
+			var label := String(mesh.name)
+			if not mesh.mesh is BoxMesh or not mesh.is_visible_in_tree() or "_face" in label:
+				continue
+			if not ("Wall" in label or label.begins_with("Ceiling_") or label.begins_with("Floor_")):
+				continue
+			var box := BoxOccluder3D.new()
+			box.size = (mesh.mesh as BoxMesh).size - Vector3.ONE * 0.01
+			var occluder := OccluderInstance3D.new()
+			occluder.occluder = box
+			root.add_child(occluder)
+			occluder.global_transform = mesh.global_transform
+
+
 func _retune(parent: Node, lamp_name: String, color: Color, energy: float, reach: float, attenuation: float) -> void:
 	var lamp := parent.get_node_or_null(lamp_name) as OmniLight3D
 	if lamp == null:

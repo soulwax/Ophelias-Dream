@@ -10,7 +10,7 @@ extends Node3D
 # grass in the clearings. Nothing grows in the route's corridor, on landmarks
 # or on steep ground. Steep cliffs near the route are dressed with rock faces.
 #
-# Everything is drawn as MultiMeshes, one per mesh part per CHUNK_SIZE square,
+# Everything is drawn as MultiMeshes, one per mesh part per FOREST_BATCH_SIZE square,
 # each with a draw distance. Trunks collide through PhysicsServer3D, one static
 # body per chunk, so thousands of trees are not thousands of nodes.
 #
@@ -28,6 +28,9 @@ const BOULDERS: Array[String] = ["SM_Env_Rock_01.fbx", "SM_Env_Rock_02.fbx", "SM
 const CLIFF_ROCK := "SM_Env_Rock_Cliff_02.fbx"
 # Spatial hash cell for spacing and nearest-tree queries (metres).
 const HASH := 8.0
+const BATCH_REVISION := 1
+const CACHE_REVISION := 1
+const CACHE_DIR := "user://flora"
 
 # Every tree: trunk base in world space, and its kind ("snow", "snow_bare",
 # "snow_great", "snow_giant", "green", "green_card").
@@ -43,6 +46,7 @@ var undergrowth_planned := 0
 var undergrowth_count := 0
 var rock_count := 0
 var build_msec := 0
+var cache_hit := false
 
 var _rng := RandomNumberGenerator.new()
 var _woods := FastNoiseLite.new()
@@ -66,6 +70,7 @@ var _shapes: Dictionary = {}
 
 func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: int = 1701) -> void:
 	var started := Time.get_ticks_msec()
+	set_meta("batch_revision", BATCH_REVISION)
 	_ground = ground
 	_curve = curve
 	_reserved = reserved
@@ -75,13 +80,87 @@ func grow(ground: Ground, curve: Curve3D, reserved: Array[Vector3], seed_value: 
 	_woods.frequency = Tune.FOREST_FREQ
 	_woods.fractal_type = FastNoiseLite.FRACTAL_FBM
 	_woods.fractal_octaves = 3
-	_plant_giants()
-	_plant_woods()
-	_plant_clearings()
-	_dress_cliffs()
+	var fingerprint := _cache_fingerprint(seed_value)
+	var use_cache := OS.get_environment("RUN_TERRAIN_CACHE") != "off"
+	cache_hit = use_cache and _load_placements(fingerprint)
+	if not cache_hit:
+		_plant_giants()
+		_plant_woods()
+		_plant_clearings()
+		_dress_cliffs()
+		if use_cache:
+			_save_placements(fingerprint)
 	_draw_batches()
 	_build_trunks()
 	build_msec = Time.get_ticks_msec() - started
+
+
+func _cache_fingerprint(seed_value: int) -> String:
+	var inputs: Array = [CACHE_REVISION, BATCH_REVISION, _ground._cache_fingerprint(),
+		seed_value, _curve.get_baked_points(), _reserved, Game.lean_graphics]
+	if FileAccess.file_exists("res://scripts/world/flora.gd"):
+		inputs.append(FileAccess.get_file_as_bytes("res://scripts/world/flora.gd"))
+	var hash := HashingContext.new()
+	hash.start(HashingContext.HASH_SHA256)
+	hash.update(var_to_bytes(inputs))
+	return hash.finish().hex_encode()
+
+
+func _load_placements(fingerprint: String) -> bool:
+	var path := "%s/forest_%s.res" % [CACHE_DIR, fingerprint]
+	if not FileAccess.file_exists(path):
+		return false
+	var cache := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as FloraCache
+	if cache == null or cache.fingerprint != fingerprint or cache.data.size() != 16:
+		return false
+	var d := cache.data
+	trees = d["trees"]
+	tree_kinds.assign(d["kinds"])
+	_tree_cells = d["tree_cells"]
+	_batches = d["batches"]
+	_batch_under = d["batch_under"]
+	_trunks = d["trunks"]
+	giant_count = d["giants"]
+	great_count = d["great"]
+	ordinary_planned = d["ordinary_planned"]
+	ordinary_kept = d["ordinary_kept"]
+	undergrowth_planned = d["under_planned"]
+	undergrowth_count = d["under_kept"]
+	rock_count = d["rocks"]
+	_rng.state = d["rng_state"]
+	return true
+
+
+func _save_placements(fingerprint: String) -> void:
+	var cache := FloraCache.new()
+	cache.fingerprint = fingerprint
+	cache.data = {
+		"trees": trees, "kinds": tree_kinds, "tree_cells": _tree_cells,
+		"batches": _batches, "batch_under": _batch_under, "trunks": _trunks,
+		"giants": giant_count, "great": great_count, "ordinary_planned": ordinary_planned,
+		"ordinary_kept": ordinary_kept, "under_planned": undergrowth_planned,
+		"under_kept": undergrowth_count, "rocks": rock_count, "rng_state": _rng.state,
+		"batch_revision": BATCH_REVISION, "cache_revision": CACHE_REVISION,
+	}
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(CACHE_DIR))
+	var path := "%s/forest_%s.res" % [CACHE_DIR, fingerprint]
+	var temporary := "%s/forest_%s_%d.tmp.res" % [CACHE_DIR, fingerprint, OS.get_process_id()]
+	if ResourceSaver.save(cache, temporary, ResourceSaver.FLAG_COMPRESS) != OK:
+		return
+	if DirAccess.rename_absolute(temporary, path) != OK:
+		DirAccess.remove_absolute(temporary)
+		return
+	var old: Array[Dictionary] = []
+	for file in DirAccess.get_files_at(CACHE_DIR):
+		var hash := file.trim_prefix("forest_").trim_suffix(".res")
+		if not file.begins_with("forest_") or not file.ends_with(".res") or hash.length() != 64 or not hash.is_valid_hex_number():
+			continue
+		var cached_path := CACHE_DIR.path_join(file)
+		if cached_path != path:
+			old.append({"path": cached_path, "time": FileAccess.get_modified_time(cached_path)})
+	old.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["time"] > b["time"])
+	for i in range(7, old.size()):
+		DirAccess.remove_absolute(old[i]["path"])
 
 
 ## Where the trees stand (trunk base, world space): what the wind thrashes,
@@ -188,7 +267,8 @@ func _chunk_of(x: float, z: float) -> int:
 
 
 func _add(model: String, at: Vector3, yaw: float, scale: float, under: bool) -> void:
-	var key := "%s|%d" % [model, _chunk_of(at.x, at.z)]
+	var cell := Vector2i(int(floor(at.x / Tune.FOREST_BATCH_SIZE)), int(floor(at.z / Tune.FOREST_BATCH_SIZE)))
+	var key := "%s|%d,%d" % [model, cell.x, cell.y]
 	if not _batches.has(key):
 		_batches[key] = []
 		_batch_under[key] = under
@@ -446,6 +526,7 @@ func _draw_batches() -> void:
 				multimesh.set_instance_transform(i, (transforms[i] as Transform3D) * (part[1] as Transform3D))
 			var instance := MultiMeshInstance3D.new()
 			instance.multimesh = multimesh
+			instance.layers = Tune.FOREST_RENDER_LAYER
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if part[2] and not under else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			if under:
 				instance.visibility_range_end = Tune.UNDER_DRAW_LEAN if lean else Tune.UNDER_DRAW

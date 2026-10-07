@@ -29,6 +29,9 @@ func _on_phase(next: Game.Phase) -> void:
 				# Her chapter's endings name themselves (MathildaPov.ENDINGS).
 				_show(Game.ending_title, Game.ending_body, "Return to the menu")
 				_hint.text = ""
+			elif Game.ending_title != "":
+				# Mathilda is gone, or the meeting on the ice: named by Game.
+				_show(Game.ending_title, Game.ending_body, "Walk the ridge again")
 			elif Game.turned_around:
 				var prints := "You turned around. Out on the lake, one set of prints goes to the old hole in the ice, and one set comes back. Only ever yours. The ice is singing; it always was."
 				if Game.all_deciphered():
