@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1.11 — 2026-10-08
+
+0.2.1.10 was tagged but never built: its export had no solution file and no .NET templates, so the C# in it could not run. This release is the same game, exported properly.
+
+- The game now ships as a zip: the executable and the `data_OpheliasDream_windows_x86_64` folder beside it, which holds the C# side. Keep them together.
+
 ## 0.2.1.10 — 2026-10-08
 
 - Whoever you play, the other one is out there on her own afternoon. Mathilda walks the trail, warms herself at her fire, stands at the posts; Ophelia comes out onto the porch and gets halfway down the path to the tent before she turns back. They notice you, look away, crouch to fix a boot, and leave no prints.
