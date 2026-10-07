@@ -95,6 +95,10 @@
     {
       "mood": "breaking",
       "text": "I didn't know I'd packed this. Or I did, and I didn't want to know I had."
+    },
+    {
+      "mood": "hushed",
+      "text": "Funny. I don't remember who held the camera."
     }
   ],
   "lantern": [
@@ -185,6 +189,122 @@
     {
       "mood": "resolve",
       "text": "I can go back without taking back everything I said."
+    },
+    {
+      "mood": "wry",
+      "text": "My scarf's coming apart. I keep finding red wool on everything."
+    }
+  ],
+  "passing": [
+    {
+      "id": "m_name",
+      "mood": "hushed",
+      "text": "Ophelia."
+    },
+    {
+      "id": "m_hi",
+      "mood": "warm",
+      "text": "Hi."
+    },
+    {
+      "id": "m_watching",
+      "mood": "shaken",
+      "text": "You've been watching it."
+    },
+    {
+      "id": "m_how",
+      "mood": "shaken",
+      "text": "Then how..."
+    },
+    {
+      "id": "m_mine",
+      "mood": "wry",
+      "text": "That's my line."
+    },
+    {
+      "id": "m_im",
+      "mood": "breaking",
+      "text": "I'm..."
+    },
+    {
+      "id": "m_after",
+      "mood": "hushed",
+      "text": "No prints. Not hers, not anyone's."
+    },
+    {
+      "id": "m_after2",
+      "mood": "shaken",
+      "text": "She was right here. The snow doesn't believe it."
+    },
+    {
+      "id": "m_half1",
+      "mood": "hushed",
+      "text": "I..."
+    },
+    {
+      "id": "m_half2",
+      "mood": "shaken",
+      "text": "Do you want..."
+    },
+    {
+      "id": "m_half3",
+      "mood": "pleading",
+      "text": "Wait."
+    },
+    {
+      "id": "w_up",
+      "mood": "hushed",
+      "text": "You're up."
+    },
+    {
+      "id": "w_does",
+      "mood": "numb",
+      "text": "It does that."
+    },
+    {
+      "id": "w_stove_lit",
+      "mood": "hushed",
+      "text": "You lit the stove."
+    },
+    {
+      "id": "w_stove_cold",
+      "mood": "hushed",
+      "text": "You didn't light the stove."
+    },
+    {
+      "id": "w_thread",
+      "mood": "shaken",
+      "text": "You found my thread."
+    },
+    {
+      "id": "w_cold",
+      "mood": "hushed",
+      "text": "It's cold. You should go back in."
+    },
+    {
+      "id": "w_go",
+      "mood": "bitter",
+      "text": "Go, then."
+    },
+    {
+      "id": "w_know",
+      "mood": "hushed",
+      "text": "I know."
+    },
+    {
+      "id": "w_didnt",
+      "mood": "breaking",
+      "text": "I didn't..."
+    },
+    {
+      "id": "w_first",
+      "mood": "wry",
+      "text": "You first."
+    },
+    {
+      "id": "w_hm",
+      "mood": "hushed",
+      "text": "Hm?"
     }
   ],
   "cold": [

@@ -12,6 +12,10 @@ def parse():
     for line in text.splitlines():
         if line.startswith("### "):
             current = line[4:]; groups[current] = []
+        keyed = re.match(r"^- \*\*([a-z0-9_]+):\*\* \[([a-z]+)\] (.+)$", line)
+        if keyed:
+            groups[current].append(dict(id=keyed[1], mood=keyed[2], text=keyed[3]))
+            continue
         match = re.match(r"^- \[([a-z]+)\] (.+)$", line)
         if match:
             groups[current].append(dict(mood=match[1], text=match[2]))

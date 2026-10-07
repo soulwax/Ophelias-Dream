@@ -63,6 +63,7 @@ func _run() -> void:
 		"living": [Vector3(0.15, 0.08, 2.8), Vector3(2.7, 0.0, 0.0)],
 		"backhall": [Vector3(0.0, 0.08, 1.95), Vector3(0.0, 0.0, -2.7)],
 		"front": [Vector3(0.0, 0.08, 3.55), Vector3(0.0, 0.0, 2.0)],
+		"janitor": [Vector3(-5.5, House.CELLAR_FLOOR + 0.08, House.JANITOR_DOOR_Z), Vector3(-1.6, 0.0, 0.0)],
 	}
 	for key in passages:
 		var door := house.doors[key] as HouseDoor

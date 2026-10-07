@@ -21,7 +21,8 @@
     ]},
     "door": {"say": ["07"], "choices": [
       {"say": "08", "goto": "why"},
-      {"say": "a07", "reply": ["a08"], "once": true, "requires": ["note"]}
+      {"say": "a07", "reply": ["a08"], "once": true, "requires": ["note"]},
+      {"say": "a16", "reply": ["a17"], "once": true, "requires": ["passed"]}
     ]},
     "why": {"say": ["09"], "choices": [
       {"say": "10", "goto": "ask"}

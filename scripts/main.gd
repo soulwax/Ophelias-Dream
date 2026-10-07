@@ -70,6 +70,8 @@ func _ready() -> void:
 		add_child(preload("res://scripts/player/mathilda_pov.gd").new())
 	else:
 		add_child(Voice.new())
+	# The other one, out on her own afternoon (after the voices, so it hears input first).
+	add_child(Encounters.new())
 	add_child(DialogueBubble.new())
 	var hud := Hud.new()
 	add_child(hud)

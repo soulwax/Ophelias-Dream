@@ -141,6 +141,8 @@ func _process(delta: float) -> void:
 	_caption.visible = Game.phase == Game.Phase.PLAYING
 	if Game.phase != Game.Phase.PLAYING:
 		return
+	if hushed:
+		return
 	if not _pending.is_empty() and not _busy() and _since > 1.2:
 		_say(_pending.pop_front())
 	var here := Game.player.global_position
@@ -175,6 +177,17 @@ func _process(delta: float) -> void:
 				_mathilda_seen["idle/%d" % i] = true
 				_pending.append(Voice._line(idle[i].text, idle[i].mood, "place", "idle/%d" % i))
 				break
+
+
+## Her line in a passing (docs/MATHILDA_POV.md, passing), by id.
+func encounter(id: String) -> float:
+	for entry in _lines.get("passing", []):
+		if str(entry.get("id", "")) == id:
+			var line := Voice._line(entry.text, entry.mood, "encounter", id)
+			if not _say(line, true):
+				Game.murmur_line(str(line.text))
+			return Game.murmur_left
+	return 0.0
 
 
 func _nearest_object(here: Vector3) -> int:
@@ -266,6 +279,8 @@ func _return_home(say := true) -> void:
 	add_child(_meeting)
 	for object_name in _inspected:
 		_meeting.flags[object_name] = true
+	if Game.passings > 0:
+		_meeting.flags["passed"] = true
 	_meeting.line_started.connect(_on_meeting_line)
 	_meeting.ended.connect(_on_meeting_end)
 

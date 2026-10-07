@@ -11,14 +11,14 @@ const LINES := "res://assets/audio/voice/lines.json"
 const CLIPS := "res://assets/audio/voice/"
 # Only a higher number cuts off a playing line (a misread may cut a misread).
 const PRIORITY := {"ending": 4, "page": 3, "deciphered": 3, "turned": 3, "moment": 3, "place": 2, "revisit": 2,
-	"spent": 2, "fall": 2, "bored": 1, "memory": 1, "call": 1, "misread": 1, "cold": 1}
+	"spent": 2, "fall": 2, "encounter": 4, "bored": 1, "memory": 1, "call": 1, "misread": 1, "cold": 1}
 const STAGES := ["hope", "doubt", "resolve"]
 # After she turns around her idle thoughts come from this stage, and she stops calling.
 const AFTER := "after"
 const MOODS := ["steady", "warm", "hushed", "shaken", "breaking", "resolve", "calling",
 	"numb", "bitter", "pleading", "wry", "remembering", "panicked", "spent"]
 # These may play again; every other line plays once per run.
-const REPEATS := ["call", "misread", "spent", "fall"]
+const REPEATS := ["call", "misread", "spent", "fall", "encounter"]
 const FALLBACK_PAGE := "She wrote this for me. I have to keep going."
 
 # Where each place is, for the drafter (tools/bake_voice.py) and the probes.
@@ -54,6 +54,10 @@ var _answers := {}
 var _moments := {}
 # Small fixes before she sets out (docs/MATHILDA_STORY.md, "Chores").
 var _chores := {}
+# When she and the other one pass each other ("Passing"): picked by id by Encounters.
+var _encounters := {}
+# While the two of them are standing there, nothing else in her head gets said.
+var hushed := false
 var _calls := {"hope": [], "doubt": [], "resolve": []}
 var _misread: Array = []
 var _clips := {}
@@ -205,10 +209,10 @@ func _process(delta: float) -> void:
 		_finished()
 	if Game.awake():
 		_clock += delta
-		if not _queue.is_empty() and not _busy() and _since >= Tune.VOICE_GAP * 0.5 \
+		if not _queue.is_empty() and not _busy() and not hushed and _since >= Tune.VOICE_GAP * 0.5 \
 				and Game.phase != Game.Phase.DIALOGUE:
 			_say(_queue.pop_front())
-	if Game.phase != Game.Phase.PLAYING:
+	if Game.phase != Game.Phase.PLAYING or hushed:
 		_still = 0.0
 		return
 	_tick_outdoors(delta)
@@ -386,6 +390,22 @@ func moment(id: String) -> void:
 	var line: Dictionary = _moments[id]
 	if not _say(line):
 		_queue.append(line)
+
+
+## A line of hers in a passing, said now over anything less important.
+## Returns how long it holds the subtitle. Without a voice it is only the subtitle.
+func encounter(id: String) -> float:
+	if _encounters.is_empty():
+		var group: Variant = Voice.read_lines().get("encounters", {})
+		if typeof(group) == TYPE_DICTIONARY:
+			for key in group:
+				_encounters[key] = Voice._parse(group[key], "encounter", str(key))
+	if not _encounters.has(id):
+		return 0.0
+	var line: Dictionary = _encounters[id]
+	if not _active or not _say(line, true):
+		Game.murmur_line(str(line.text))
+	return Game.murmur_left
 
 
 ## One of the small fixes, said once: door_stuck, door_free, stove_lit,
@@ -623,7 +643,8 @@ func _load() -> void:
 	for pair in [["pages", _pages, "page"], ["deciphered", _deciphered, "deciphered"],
 			["places", _places, "place"], ["revisits", _revisits, "revisit"],
 			["endings", _endings, "ending"], ["answers", _answers, "answer"],
-			["moments", _moments, "moment"], ["chores", _chores, "chore"]]:
+			["moments", _moments, "moment"], ["chores", _chores, "chore"],
+			["encounters", _encounters, "encounter"]]:
 		var group: Variant = data.get(pair[0], {})
 		if typeof(group) == TYPE_DICTIONARY:
 			for id in group:

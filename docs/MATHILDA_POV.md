@@ -8,7 +8,7 @@ Her chapter is subjective: it does not prove that there are two physical women. 
 
 ## Brief playable chapter
 
-Select MATHILDA in the main menu. Begin on the path beside the tent. Examine the cups, gloves and note with E (or the rebound interact action), and do two small chores first: feed the fire and mend the windward guy-line the storm worked loose. All five are required; none of them is a puzzle, just a walk to the right spot and a press of E. Once she has done all five, the pack yields one more thing she hadn't noticed — a photograph, found automatically, no extra prompt. Walk toward the road or back toward the cabin for location lines throughout. With everything done, use the hideout prompt to choose Return or Wait. Wait ends on the card *With the light*. Return sends her back to the cabin, where Ophelia waits at the doorstep; speaking to her opens the meeting (`docs/MATHILDA_MEETING.md`), which ends on *Walk beside me* or *On the step*. Each card returns to the main menu. Esc returns to the menu at any time. This chapter uses a first-person camera and the existing movement and winter world; it does not share Ophelia's journal progress or endings.
+Select MATHILDA in the main menu. Begin on the path beside the tent. Examine the cups, gloves and note with E (or the rebound interact action), and do two small chores first: feed the fire and mend the windward guy-line the storm worked loose. All five are required; none of them is a puzzle, just a walk to the right spot and a press of E. Once she has done all five, the pack yields one more thing she hadn't noticed — a photograph, found automatically, no extra prompt. Walk toward the road or back toward the cabin for location lines throughout. Ophelia is out there too, on her own afternoon: on the porch, at the woodpile, sometimes halfway down the path toward the tent before she turns back. If their paths happen to cross (rarely, at most three times) the two of them stop, start a sentence, and do not finish it (see *When they pass each other* in docs/MATHILDA_STORY.md). With everything done, use the hideout prompt to choose Return or Wait. Wait ends on the card *With the light*. Return sends her back to the cabin, where Ophelia waits at the doorstep; speaking to her opens the meeting (`docs/MATHILDA_MEETING.md`), which ends on *Walk beside me* or *On the step*. Each card returns to the main menu. Esc returns to the menu at any time. This chapter uses a first-person camera and the existing movement and winter world; it does not share Ophelia's journal progress or endings.
 
 ## Voice direction
 
@@ -63,6 +63,7 @@ Found in the pack, once she has done everything else there is to do at camp. Not
 - [shaken] There's something else in here. Under the map.
 - [warm] A photograph. The two of us, before either of us knew how to be unkind.
 - [breaking] I didn't know I'd packed this. Or I did, and I didn't want to know I had.
+- [hushed] Funny. I don't remember who held the camera.
 
 ### lantern
 
@@ -98,6 +99,34 @@ Found in the pack, once she has done everything else there is to do at camp. Not
 - [pleading] Don't call me back just to put me away again.
 - [warm] Two chairs. Two cups. She remembers in objects before she remembers in words.
 - [resolve] I can go back without taking back everything I said.
+- [wry] My scarf's coming apart. I keep finding red wool on everything.
+
+### passing
+
+When she and Ophelia cross paths (docs/MATHILDA_STORY.md, *When they pass each other*). The `m_` lines are hers when she is played; the `w_` lines are hers when Ophelia is played and she is the one met on the trail. Keyed, so `Encounters` can pick them by id; nothing plays this group as a whole.
+
+- **m_name:** [hushed] Ophelia.
+- **m_hi:** [warm] Hi.
+- **m_watching:** [shaken] You've been watching it.
+- **m_how:** [shaken] Then how...
+- **m_mine:** [wry] That's my line.
+- **m_im:** [breaking] I'm...
+- **m_after:** [hushed] No prints. Not hers, not anyone's.
+- **m_after2:** [shaken] She was right here. The snow doesn't believe it.
+- **m_half1:** [hushed] I...
+- **m_half2:** [shaken] Do you want...
+- **m_half3:** [pleading] Wait.
+- **w_up:** [hushed] You're up.
+- **w_does:** [numb] It does that.
+- **w_stove_lit:** [hushed] You lit the stove.
+- **w_stove_cold:** [hushed] You didn't light the stove.
+- **w_thread:** [shaken] You found my thread.
+- **w_cold:** [hushed] It's cold. You should go back in.
+- **w_go:** [bitter] Go, then.
+- **w_know:** [hushed] I know.
+- **w_didnt:** [breaking] I didn't...
+- **w_first:** [wry] You first.
+- **w_hm:** [hushed] Hm?
 
 ### cold
 

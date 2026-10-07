@@ -11,7 +11,7 @@ extends Node3D
 ## walls; the terrain is flattened over it and holed only under the house.
 
 const PLINTH := 0.4
-const LAYOUT_REVISION := 8
+const LAYOUT_REVISION := 9
 const UPSTAIRS := Rect2(-6.3, -4.9, 12.6, 9.8)
 const DOOR_WIDTH := 1.3
 const DOOR_HEIGHT := 2.3
@@ -319,6 +319,8 @@ func _add_traces(authoring: Node3D) -> void:
 	_trace_page(traces, "NightstandPage", Vector3(-5.35, 0.68, 3.97), NoteCatalog.bedside())
 	# On the kitchen table, the end nearest the stove.
 	_trace_page(traces, "GratePage", Vector3(5.1, 0.78, -2.35), NoteCatalog.grate())
+	# Face down on the boot bench by the front door.
+	_trace_page(traces, "PhotographPage", Vector3(-1.16, 0.46, 3.72), NoteCatalog.photograph())
 	var desk := _morgue_desk()
 	_trace_page(traces, "Intake", desk + Vector3(0.12, 0.76, -0.08), NoteCatalog.intake())
 	var wax := HouseKit.paint(Color(0.86, 0.78, 0.62), 0.55)
@@ -695,7 +697,10 @@ func _build_cellar() -> void:
 		HouseKit.slab(root, "CellarFloor", rect, CELLAR_FLOOR - 0.2, CELLAR_FLOOR, _concrete)
 	for rect in [LANDING, CORRIDOR, JANITOR, MORGUE]:
 		HouseKit.slab(root, "CellarCeiling", rect, CELLAR_CEILING, SLAB_TOP, _limewash)
-	doors["janitor"] = HouseDoor.make(root, "JanitorDoor", Vector3(-6.2, CELLAR_FLOOR, JANITOR_DOOR_Z), PI * 0.5, Vector3(0.9, 2.03, 0.045), "plank", HouseKit.paint(Color("3d4a52"), 0.75), 1.0, 95.0, "Janitor's door")
+	# On the room face of the masonry, opening into the room: hung on the wall's
+	# centre line, the leaf ran into the reveal at 65 degrees and left no way through.
+	doors["janitor"] = HouseDoor.make(root, "JanitorDoor", Vector3(-6.2 - MASONRY * 0.5 - 0.03, CELLAR_FLOOR, JANITOR_DOOR_Z), PI * 0.5, Vector3(0.9, 2.03, 0.045), "plank", HouseKit.paint(Color("3d4a52"), 0.75), -1.0, 95.0, "Janitor's door")
+	doors["janitor"].opens_one_way()
 	doors["morgue"] = HouseDoor.make(root, "MorgueDoor", Vector3(-4.6, CELLAR_FLOOR, MORGUE_DOOR_Z), -PI * 0.5, Vector3(1.18, 2.13, 0.05), "steel", null, -1.0, 100.0, "Mortuary door")
 	_janitor_room(root)
 	morgue = Morgue.new()
@@ -721,18 +726,19 @@ func _janitor_room(root: Node3D) -> void:
 	HouseKit.box(root, "SlopSinkBasin", sink_at + Vector3(0.0, 0.66, 0.0), Vector3(0.6, 0.1, 0.4), HouseKit.paint(Color("6f7276"), 0.25, 0.6))
 	HouseKit.box(root, "SlopTap", sink_at + Vector3(0.0, 1.0, -0.2), Vector3(0.03, 0.22, 0.03), steel)
 	HouseKit.box(root, "Duckboard", sink_at + Vector3(0.0, 0.02, -0.55), Vector3(0.8, 0.04, 0.5), _timber)
-	var shelf_x := room.end.x - 0.32
+	# Steel shelving along the south wall, clear of the door's swing.
+	var shelf := Vector3(room.end.x - 0.95, floor_y, room.position.y + 0.27)
 	for tier in 4:
-		HouseKit.box(root, "Shelf_%d" % tier, Vector3(shelf_x, floor_y + 0.3 + tier * 0.45, room.get_center().y - 0.2), Vector3(0.45, 0.025, 1.6), steel)
+		HouseKit.box(root, "Shelf_%d" % tier, shelf + Vector3(0.0, 0.3 + tier * 0.45, 0.0), Vector3(1.6, 0.025, 0.45), steel)
 	for corner in [-0.78, 0.78]:
 		for post in [-0.2, 0.2]:
-			HouseKit.box(root, "ShelfPost", Vector3(shelf_x + post, floor_y + 0.9, room.get_center().y - 0.2 + corner), Vector3(0.03, 1.8, 0.03), steel)
-	HouseKit.blocker(root, "ShelfBody", Vector3(shelf_x, floor_y + 0.9, room.get_center().y - 0.2), Vector3(0.45, 1.8, 1.6))
-	HouseKit.prop(root, "bleach_bottle", Vector3(shelf_x, floor_y + 0.765, room.get_center().y - 0.6))
-	HouseKit.prop(root, "bleach_bottle", Vector3(shelf_x - 0.05, floor_y + 0.765, room.get_center().y - 0.45), 40.0)
-	HouseKit.prop(root, "wicker_basket_01", Vector3(shelf_x, floor_y + 1.215, room.get_center().y + 0.2), 0.0, 0.8)
+			HouseKit.box(root, "ShelfPost", shelf + Vector3(corner, 0.9, post), Vector3(0.03, 1.8, 0.03), steel)
+	HouseKit.blocker(root, "ShelfBody", shelf + Vector3(0.0, 0.9, 0.0), Vector3(1.6, 1.8, 0.45))
+	HouseKit.prop(root, "bleach_bottle", shelf + Vector3(-0.4, 0.765, 0.0))
+	HouseKit.prop(root, "bleach_bottle", shelf + Vector3(-0.25, 0.765, 0.05), 40.0)
+	HouseKit.prop(root, "wicker_basket_01", shelf + Vector3(0.3, 1.215, 0.0), 0.0, 0.8)
 	HouseKit.prop(root, "metal_trash_can", Vector3(room.position.x + 0.45, floor_y, room.position.y + 0.45))
-	HouseKit.prop(root, "trashbag", Vector3(room.position.x + 1.1, floor_y, room.position.y + 0.4), 30.0)
+	HouseKit.prop(root, "trashbag", Vector3(room.position.x + 0.5, floor_y, room.position.y + 1.05), 30.0)
 	HouseKit.prop(root, "WetFloorSign_01", Vector3(room.get_center().x, floor_y, room.position.y + 0.8), -20.0)
 	# A galvanised mop bucket with the mop leaning in it.
 	var bucket := Vector3(room.get_center().x - 0.4, floor_y, room.get_center().y + 0.5)

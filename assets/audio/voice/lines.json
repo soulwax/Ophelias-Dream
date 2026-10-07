@@ -31,6 +31,10 @@
     "the grate": {
       "text": "I didn't stack that wood. I know how I stack wood. This isn't how I stack wood.",
       "mood": "shaken"
+    },
+    "the photograph": {
+      "text": "There's only me on the ice. I'm squinting at someone who isn't in the picture.",
+      "mood": "shaken"
     }
   },
   "deciphered": {
@@ -65,6 +69,10 @@
     "the grate": {
       "text": "She signs her name the same as always. I just never let myself notice it before.",
       "mood": "hushed"
+    },
+    "the photograph": {
+      "text": "One of us held the camera. In all these years I never once asked which.",
+      "mood": "hushed"
     }
   },
   "chores": {
@@ -87,6 +95,92 @@
     "window_thread": {
       "text": "A thread. Red wool, caught in the frame. She didn't leave through the door.",
       "mood": "shaken"
+    }
+  },
+  "encounters": {
+    "o_name": {
+      "text": "Mathilda?",
+      "mood": "hushed"
+    },
+    "o_door": {
+      "text": "I... yes. The door was stuck.",
+      "mood": "shaken"
+    },
+    "o_how": {
+      "text": "How do you know that?",
+      "mood": "shaken"
+    },
+    "o_come": {
+      "text": "Come back with me.",
+      "mood": "pleading"
+    },
+    "o_said": {
+      "text": "That's what I said.",
+      "mood": "numb"
+    },
+    "o_didnt": {
+      "text": "I didn't...",
+      "mood": "breaking"
+    },
+    "o_after": {
+      "text": "Nothing. Not even prints.",
+      "mood": "hushed"
+    },
+    "o_after2": {
+      "text": "She stood right here. The snow didn't even notice.",
+      "mood": "shaken"
+    },
+    "o_half1": {
+      "text": "I...",
+      "mood": "hushed"
+    },
+    "o_half2": {
+      "text": "Are you...",
+      "mood": "shaken"
+    },
+    "o_half3": {
+      "text": "Wait.",
+      "mood": "pleading"
+    },
+    "n_oh": {
+      "text": "Oh. ...Hi.",
+      "mood": "shaken"
+    },
+    "n_wood": {
+      "text": "I was just... the wood. For the stove.",
+      "mood": "hushed"
+    },
+    "n_fire_on": {
+      "text": "Your fire's going.",
+      "mood": "hushed"
+    },
+    "n_fire_low": {
+      "text": "Your fire's low.",
+      "mood": "hushed"
+    },
+    "n_no": {
+      "text": "No.",
+      "mood": "numb"
+    },
+    "n_dont": {
+      "text": "Don't turn around.",
+      "mood": "hushed"
+    },
+    "n_isit": {
+      "text": "Is it?",
+      "mood": "wry"
+    },
+    "n_didnt": {
+      "text": "I didn't...",
+      "mood": "breaking"
+    },
+    "n_sorry": {
+      "text": "Sorry. You go.",
+      "mood": "hushed"
+    },
+    "n_hm": {
+      "text": "Hm?",
+      "mood": "hushed"
     }
   },
   "places": {

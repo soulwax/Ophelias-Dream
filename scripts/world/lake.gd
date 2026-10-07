@@ -94,6 +94,8 @@ func _place_mathilda(trail: Trail) -> void:
 	for title: String in PAGE_FLAGS:
 		if Game.read_pages.has(title):
 			meeting.flags[PAGE_FLAGS[title]] = true
+	if Game.passings > 0:
+		meeting.flags["passed"] = true
 	meeting.ended.connect(Game.finish_meeting)
 	Game.meeting_waiting = true
 	Game.mark("mathilda waits on the ice")

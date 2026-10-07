@@ -59,6 +59,7 @@ static func everything() -> Array[NoteEntry]:
 	var pages := all()
 	pages.append(bedside())
 	pages.append(grate())
+	pages.append(photograph())
 	pages.append(intake())
 	return pages
 
@@ -91,6 +92,22 @@ static func grate() -> NoteEntry:
 		0.14,
 		[[["M.", "I", "we"], "page:by the bed"], [["Build", "Leave", "Light"], "place:living"]],
 		"I did not light this fire. I am only the one who tends it now."
+	)
+	entry.counts = false
+	return entry
+
+## On the boot bench in the hall. Mathilda has the same photograph, with both of them in it.
+static func photograph() -> NoteEntry:
+	var entry := _make(
+		"the photograph",
+		"The winter the ice sang. Two of us on the lake, the old hole behind us, both squinting into the sun.
+
+On the back, in pencil: {M.} and me.
+
+Hold it to the window and there is only one of us on the ice, and she is looking at whoever held the {camera}.",
+		0.16,
+		[[["M.", "Me", "nobody"], "page:from the pack"], [["camera", "lantern", "door"], "place:lake"]],
+		"Neither of us remembers taking it. Both of us remember being in it."
 	)
 	entry.counts = false
 	return entry

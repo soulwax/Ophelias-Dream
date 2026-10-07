@@ -386,6 +386,30 @@
     "overlap": 0.0
   },
   {
+    "id": "a16",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Not all night. I saw you on the path. Halfway.",
+    "reaction": "topic at 07 if they passed each other before she decided, once; she saw her stop",
+    "pause": 0.7,
+    "answers": "07",
+    "quote": "I watched the door all night.",
+    "intensity": 0.5,
+    "overlap": 0.0
+  },
+  {
+    "id": "a17",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "Halfway is as far as I ever get.",
+    "reaction": "the truth, small; hands back to the door so 08 still lands",
+    "pause": 0.8,
+    "answers": "a16",
+    "quote": "Halfway.",
+    "intensity": 0.55,
+    "overlap": 0.0
+  },
+  {
     "id": "a09",
     "speaker": "mathilda",
     "mood": "hushed",

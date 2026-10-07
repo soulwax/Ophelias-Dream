@@ -26,6 +26,14 @@ The game never says what the two women are to each other, or whether Mathilda is
 
 The short companion chapter is documented in [Mathilda: the other side of the afternoon](MATHILDA_POV.md). She waits at the tent with two cups, the gloves and a note. Her distinct voice belongs to that chapter; in Ophelia’s chapter, the trees still answer only in Ophelia’s voice. Her decision is human—return or wait—and does not settle the original story’s ambiguity.
 
+## When they pass each other
+
+Whoever is played, the other one is out there too, walking her own afternoon. Ophelia sees Mathilda on the trail, by the tent, at the posts; Mathilda sees Ophelia on the porch, or halfway down the path toward the tent, stopping, going back. Neither is following the other. Their paths cross by chance, rarely, and at most three times.
+
+When they do, it goes wrong in the ordinary way. Both stop too far apart. Both start a sentence. One of them talks about the door, or the wood, because that is easier. The second time, the other knows something she could not know (the stove, the thread, the fire, the guy-line). The third time, she says the player's own words back: *Go, then.* or *Don't turn around.* Both try to apologise at once, both stop, and *you first* gets no answer. Then she walks off, not fast, and looks back once.
+
+Nothing is settled by it. She leaves no prints where she stood. Pressing to speak only gets out half a word. The meetings at the lake and at the door remember it (*I saw you. You didn't say anything.* / *Neither did you.*), and that is all.
+
 ## The layer underneath (never named in the game)
 
 The game never says any of this; it's here so every line and page can be checked against it.
@@ -146,6 +154,18 @@ The cellar is *nigredo*, the field is *albedo*, and the lake is *rubedo*; the li
 
 *Between the lines:* Note: the coat held its shape after the sheet was lifted.
 
+### The photograph (in the hall, on the boot bench)
+
+> The winter the ice sang. Two of us on the lake, the old hole behind us, both squinting into the sun.
+>
+> On the back, in pencil: {M.} and me.
+>
+> Hold it to the window and there is only one of us on the ice, and she is looking at whoever held the {camera}.
+
+*Between the lines:* Neither of us remembers taking it. Both of us remember being in it.
+
+Mathilda finds the same photograph in her pack, with both of them in it.
+
 ### Smudge readings (unchanged)
 
 | Page | Smudge | Readings, intended first | Key |
@@ -164,6 +184,8 @@ The cellar is *nigredo*, the field is *albedo*, and the lake is *rubedo*; the li
 | Don't turn around | `{behind}` | behind / beside / ahead of | On the post read |
 | Intake | `{M—}` | M— / Mathilda / nobody | From the pack read |
 | Intake | `{out searching}` | out searching / notified / none | By the bed read |
+| The photograph | `{M.}` | M. / Me / nobody | From the pack read |
+| The photograph | `{camera}` | camera / lantern / door | The lake visited |
 
 The page *titles* stay as they are. `LAST_TITLE` stays `"don't turn around"`, and the voice lines are keyed by title.
 
@@ -202,6 +224,7 @@ All lines are hers. Mathilda never speaks aloud; even the voice from the trees i
 - **don't turn around:** [resolve] Don't turn around. Fine. I won't. Just be at the lights.
 - **intake:** [breaking] One cup. Just one. I'm not lifting that sheet. I'm not.
 - **the grate:** [shaken] I didn't stack that wood. I know how I stack wood. This isn't how I stack wood.
+- **the photograph:** [shaken] There's only me on the ice. I'm squinting at someone who isn't in the picture.
 
 ### Deciphered pages
 
@@ -213,6 +236,7 @@ All lines are hers. Mathilda never speaks aloud; even the voice from the trees i
 - **don't turn around:** [resolve] The sheet is the coat. Just the coat. Say it again. ...The sheet is the coat.
 - **intake:** [numb] The coat held its shape. Nobody was in it. ...Nobody was ever in it.
 - **the grate:** [hushed] She signs her name the same as always. I just never let myself notice it before.
+- **the photograph:** [hushed] One of us held the camera. In all these years I never once asked which.
 
 ### Chores
 
@@ -223,6 +247,32 @@ Before she sets out: the front door is swollen shut, the stove is cold, a window
 - **stove_lit:** [warm] There. One less cold room in this house.
 - **window_latched:** [steady] Latched. That's one less thing the storm gets to keep.
 - **window_thread:** [shaken] A thread. Red wool, caught in the frame. She didn't leave through the door.
+
+### Passing
+
+When she and Mathilda cross paths (see *When they pass each other*). The `o_` lines are hers when she is played; the `n_` lines are hers when Mathilda is played and she is the one met on the path. Never resolved, never the whole sentence.
+
+- **o_name:** [hushed] Mathilda?
+- **o_door:** [shaken] I... yes. The door was stuck.
+- **o_how:** [shaken] How do you know that?
+- **o_come:** [pleading] Come back with me.
+- **o_said:** [numb] That's what I said.
+- **o_didnt:** [breaking] I didn't...
+- **o_after:** [hushed] Nothing. Not even prints.
+- **o_after2:** [shaken] She stood right here. The snow didn't even notice.
+- **o_half1:** [hushed] I...
+- **o_half2:** [shaken] Are you...
+- **o_half3:** [pleading] Wait.
+- **n_oh:** [shaken] Oh. ...Hi.
+- **n_wood:** [hushed] I was just... the wood. For the stove.
+- **n_fire_on:** [hushed] Your fire's going.
+- **n_fire_low:** [hushed] Your fire's low.
+- **n_no:** [numb] No.
+- **n_dont:** [hushed] Don't turn around.
+- **n_isit:** [wry] Is it?
+- **n_didnt:** [breaking] I didn't...
+- **n_sorry:** [hushed] Sorry. You go.
+- **n_hm:** [hushed] Hm?
 
 ### First visits
 

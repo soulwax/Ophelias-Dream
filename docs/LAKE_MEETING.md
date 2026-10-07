@@ -29,7 +29,8 @@ the run ends on **Mathilda is gone**.
 The spine runs: *you didn't turn around* → the lake and who went through → *go,
 then* → sorry → what Mathilda is → the ask. Side topics open with what Ophelia
 has read (`requires` flags: `pack`, `post`, `torn`, `handwriting`, `intake`,
-`bed`). Two endings, chosen in the last exchange: **Together** (she asks
+`bed`), and `passed` if the two of them passed each other on the way (docs/MATHILDA_STORY.md,
+*When they pass each other*). Two endings, chosen in the last exchange: **Together** (she asks
 properly, and they walk back side by side) and **On the shore** (she lets
 Mathilda stay out there, and keeps the lantern lit).
 
@@ -82,6 +83,8 @@ show as subtitles.
 | m21 | mathilda | hushed | Still here. Still holding still. |
 | o19 | ophelia | warm | You left the door open for me. The page by the bed. |
 | m22 | mathilda | wry | For one of us. I never could decide which one needed rescuing. |
+| o20 | ophelia | hushed | I saw you on the trail. You didn't say anything. |
+| m23 | mathilda | wry | Neither did you. |
 
 ## Endings
 

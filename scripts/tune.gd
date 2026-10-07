@@ -376,3 +376,20 @@ const ENDING_DELAY := 1.2
 const ANSWER_ROAD_DELAY := 1.4
 # The trees' answer is this much quieter (dB) than her call.
 const ANSWER_DROP_DB := 6.0
+
+# Passings: the one not being played wanders her own afternoon (Wanderer, in C#),
+# and now and then the two of them cross paths (Encounters). Rare and unfinished.
+const PASS_FIRST := Vector2(80.0, 150.0)
+const PASS_FIRST_MATHILDA := Vector2(20.0, 45.0)
+const PASS_EVERY := Vector2(60.0, 140.0)
+const PASS_AFTER := Vector2(240.0, 420.0)
+const PASS_CHANCE := 0.6
+const PASS_STAY := Vector2(60.0, 140.0)
+const PASS_ENTER := Vector2(28.0, 95.0)
+const PASS_RANGE := 9.0
+const PASS_BREAK := 16.0
+const PASS_MAX := 3
+const PASS_WALK := Vector2(0.85, 1.2)
+const PASS_STEP := 0.62
+const PASS_PERSONAL := 1.7
+const PASS_SPEAK := 3.6

@@ -285,5 +285,19 @@
     "mood": "wry",
     "text": "For one of us. I never could decide which one needed rescuing.",
     "pause": 0.4
+  },
+  {
+    "id": "o20",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "I saw you on the trail. You didn't say anything.",
+    "pause": 0.6
+  },
+  {
+    "id": "m23",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "Neither did you.",
+    "pause": 0.4
   }
 ]

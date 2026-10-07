@@ -46,6 +46,10 @@ var shown_threat: Node3D
 # A line from the house, spoken under the breath, gone in a few seconds.
 var murmur := ""
 var murmur_left := 0.0
+# Who is speaking the murmur when it is not the one being played (a passing).
+var murmur_speaker := ""
+# How many times this run she and the other one have passed each other.
+var passings := 0
 # Records she has read (NoteEntry.record_of), by code.
 var understood: Dictionary = {}
 var ending_title := ""
@@ -184,6 +188,8 @@ func reset() -> void:
 	shown_threat = null
 	murmur = ""
 	murmur_left = 0.0
+	murmur_speaker = ""
+	passings = 0
 	understood.clear()
 	ending_title = ""
 	ending_body = ""
@@ -275,8 +281,9 @@ func reading_last_page() -> bool:
 	return active_note.entry.title == NoteCatalog.LAST_TITLE
 
 
-func murmur_line(line: String) -> void:
+func murmur_line(line: String, speaker := "") -> void:
 	murmur = line
+	murmur_speaker = speaker
 	murmur_left = clampf(2.6 + line.length() * 0.04, 3.2, 7.5)
 
 

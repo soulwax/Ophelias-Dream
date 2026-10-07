@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1.10 — 2026-10-08
+
+- Whoever you play, the other one is out there on her own afternoon. Mathilda walks the trail, warms herself at her fire, stands at the posts; Ophelia comes out onto the porch and gets halfway down the path to the tent before she turns back. They notice you, look away, crouch to fix a boot, and leave no prints.
+- Now and then (rarely, three times at most) the two of you pass each other, and it goes wrong in the ordinary way. The first time it's small talk about the door or the wood. The second time she knows something she couldn't know. The third time she says your own words back. Both start to apologise at once, and nobody finishes. Pressing to speak gets half a word out. The meetings at the lake and at the door remember it.
+- A new page in the hall, "the photograph": the winter the ice sang, two of you on the lake, and only one of you in it. Mathilda finds the same photograph in her pack, with both of them in it, and doesn't remember who held the camera.
+- The eye in the main menu now has a cornea: a small, curved reflection of the cabin window with the lantern lit sits over the pupil, with snow going past it, and now and then someone standing in it. It moves at its own depth, between the iris and the catchlight.
+- The main menu doesn't take sides any more: OPHELIA and MATHILDA sit side by side, and it opens on either one at random.
+- Fixed the janitor's door in the cellar, which jammed against its own wall and never opened far enough to get through.
+- Performance-critical code is now written in C#, starting with how she walks, sees and is seen.
+
 ## 0.2.1.9 — 2026-10-07
 
 - Ophelia has things to do before she sets out. The front door is swollen shut and takes two shoves. She can light the cold stove, and latch the living-room window, where she finds a thread of red wool caught in the frame. A new page, "the grate", lies on the kitchen table.

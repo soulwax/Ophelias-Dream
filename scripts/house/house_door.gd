@@ -44,6 +44,11 @@ static func make(parent: Node3D, name: String, at: Vector3, yaw: float, size: Ve
 	return door
 
 
+## Hung on the face of a thick wall: it only ever swings the way it was built to.
+func opens_one_way() -> void:
+	_one_sided = true
+
+
 func interact_label() -> String:
 	if not _open and blocked_label() != "":
 		return blocked_label()

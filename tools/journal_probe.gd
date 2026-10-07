@@ -49,7 +49,7 @@ func _catalog() -> void:
 	_check(trail.size() == 5, "five trail pages")
 	_check(trail[4].title == NoteCatalog.LAST_TITLE, "the last trail page is LAST_TITLE")
 	var every := NoteCatalog.everything()
-	_check(every.size() == 8, "eight pages in all")
+	_check(every.size() == 9, "nine pages in all")
 	var titles := {}
 	for entry in every:
 		titles[entry.title] = true
@@ -70,7 +70,7 @@ func _catalog() -> void:
 			_check(real, "%s key %s names something real" % [entry.title, key])
 	_check(NoteCatalog.find("intake") != null and NoteCatalog.find("intake").title == "intake", "find by title")
 	_check(NoteCatalog.find("nothing") == null, "find returns null for an unknown title")
-	_check(not NoteCatalog.bedside().counts and not NoteCatalog.intake().counts and not NoteCatalog.grate().counts, "house pages do not count")
+	_check(not NoteCatalog.bedside().counts and not NoteCatalog.intake().counts and not NoteCatalog.grate().counts and not NoteCatalog.photograph().counts, "house pages do not count")
 	for entry in every:
 		_check(not entry.body.contains("Mara") and not entry.body.contains("Listener"), "%s has none of the old story" % entry.title)
 

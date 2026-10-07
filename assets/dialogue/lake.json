@@ -19,7 +19,8 @@
       {"say": "o05", "goto": "go"},
       {"say": "o06", "reply": ["m06"], "once": true, "requires": ["intake"]},
       {"say": "o07", "reply": ["m07"], "once": true, "requires": ["pack"]},
-      {"say": "o19", "reply": ["m22"], "once": true, "requires": ["bed"]}
+      {"say": "o19", "reply": ["m22"], "once": true, "requires": ["bed"]},
+      {"say": "o20", "reply": ["m23"], "once": true, "requires": ["passed"]}
     ]},
     "go": {"say": ["m09"], "choices": [
       {"say": "o09", "goto": "sorry"},

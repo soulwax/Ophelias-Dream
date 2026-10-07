@@ -44,6 +44,57 @@ float grain(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453)
 // fixed on the iris and travels with it rather than flickering per frame.
 float fibre(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
 
+float box(vec2 p, vec2 half_size, float soft) {
+	vec2 d = abs(p) - half_size;
+	return 1.0 - smoothstep(-soft, soft, max(d.x, d.y));
+}
+
+// The cornea is a curved mirror in front of the iris: what the eye is looking at
+// sits on it, small and bulged, the cabin window with the lantern burning, snow
+// going past, and sometimes someone standing in it. It lives at its own depth,
+// moving less than the iris and more than the catchlight, and shows mostly over
+// the dark pupil and iris, the way a reflection does on a real eye.
+vec3 cornea_reflection(vec3 globe, vec2 uv, vec2 offset, vec2 ratio) {
+	vec2 q = (uv - eye_center - offset * 0.38) * ratio / (iris_radius * 1.1);
+	float r2 = dot(q, q);
+	if (r2 > 1.0) {
+		return globe;
+	}
+	// Convex mirror: the world is squeezed toward the rim.
+	vec2 s = q * (1.0 + 1.25 * r2);
+	// The storm behind the window: dark sky, a pale snowfield under the horizon.
+	vec3 scene = mix(vec3(0.05, 0.07, 0.10), vec3(0.30, 0.34, 0.40), smoothstep(0.30, 0.75, s.y + s.x * 0.10)) * 0.8;
+	// The window: two panes over two, a warm room behind it, the lantern low on the left.
+	vec2 w = (s - vec2(0.10, -0.06)) * mat2(vec2(0.97, 0.24), vec2(-0.24, 0.97));
+	float frame = box(w, vec2(0.20, 0.25), 0.025);
+	float bars = max(1.0 - smoothstep(0.008, 0.022, abs(w.x)), 1.0 - smoothstep(0.008, 0.022, abs(w.y + 0.02)));
+	float flicker = 0.86 + 0.08 * sin(TIME * 7.3) * sin(TIME * 2.9 + 1.3) + 0.06 * sin(TIME * 13.1);
+	vec3 room = mix(vec3(0.95, 0.62, 0.32), vec3(0.55, 0.30, 0.16), smoothstep(-0.30, 0.30, w.y));
+	room += vec3(1.0, 0.78, 0.45) * (1.0 - smoothstep(0.0, 0.16, length(w - vec2(-0.10, 0.11)))) * flicker;
+	// Someone stands in it for a while, then is not there.
+	float there = smoothstep(0.55, 0.85, sin(TIME * 0.17 + 1.9));
+	float head = 1.0 - smoothstep(0.032, 0.048, length(w - vec2(0.07, -0.07)));
+	float shoulders = box(w - vec2(0.07, 0.10), vec2(0.065, 0.11), 0.03);
+	room = mix(room, room * 0.18, max(head, shoulders) * there);
+	scene = mix(scene, room * flicker, frame * (1.0 - bars * 0.85));
+	// Snow crossing between the eye and the window, slanting with the wind.
+	float flakes = 0.0;
+	for (int layer = 0; layer < 2; layer++) {
+		float scale = 8.0 + float(layer) * 5.0;
+		vec2 drift = vec2(TIME * (0.05 + float(layer) * 0.03), -TIME * (0.11 + float(layer) * 0.06));
+		vec2 cell = (s + drift) * scale;
+		vec2 id = floor(cell);
+		vec2 spot = vec2(fibre(id), fibre(id + 7.1)) * 0.7 + 0.15;
+		float lit = step(0.86, fibre(id + 3.3));
+		flakes += lit * (1.0 - smoothstep(0.04, 0.12, length(fract(cell) - spot))) * (0.6 + 0.4 * float(layer));
+	}
+	scene += vec3(0.85, 0.88, 0.92) * flakes * 0.55;
+	// Reflections read over the dark, wash out over the white, brighten at the rim.
+	float dark = 1.0 - smoothstep(0.05, 0.55, dot(globe, vec3(0.30, 0.59, 0.11)));
+	float strength = mix(0.10, 0.42, dark) * mix(0.7, 1.15, r2) * (1.0 - smoothstep(0.80, 1.0, r2)) * mix(0.75, 1.1, light_level);
+	return 1.0 - (1.0 - globe) * (1.0 - clamp(scene, 0.0, 1.0) * strength);
+}
+
 void fragment() {
 	vec2 ratio = vec2(1.7778, 1.0);
 	vec2 uv = (UV - 0.5) * vec2(min(aspect / 1.7778, 1.0), min(1.7778 / aspect, 1.0)) + 0.5;
@@ -83,6 +134,7 @@ void fragment() {
 		iris = mix(iris, vec3(0.008, 0.019, 0.027), smoothstep(0.87, 0.97, radius));
 		iris = mix(vec3(0.002, 0.009, 0.012), iris, smoothstep(pupil - aa, pupil + aa, radius));
 		vec3 globe = mix(sclera, iris, 1.0 - smoothstep(1.0 - aa, 1.0 + aa, radius));
+		globe = cornea_reflection(globe, uv, offset, ratio);
 		// A corneal catchlight is a reflection off the eye's own wet surface,
 		// not a mark on the iris: it stays put as the iris turns underneath
 		// it, so it is placed in eye-socket space (barely coupled to offset),

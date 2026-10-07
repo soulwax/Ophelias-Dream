@@ -220,7 +220,7 @@ func _process(delta: float) -> void:
 	if not _active:
 		_topics.hide()
 		_hint.hide()
-		_speaker.text = "MATHILDA" if Game.mathilda_pov else "OPHELIA"
+		_speaker.text = Game.murmur_speaker.to_upper() if Game.murmur_speaker != "" else ("MATHILDA" if Game.mathilda_pov else "OPHELIA")
 		if _last_line != Game.murmur:
 			_last_line = Game.murmur
 			_line.text = _last_line

@@ -279,6 +279,22 @@ Intensity: 0.50
 
 > I read it in your voice. Then in mine. So I stopped reading, and watched the door.
 
+### a16 | mathilda | hushed | 0.70
+
+Action / reaction: topic at 07 if they passed each other before she decided, once; she saw her stop.
+Answers: 07 "I watched the door all night."
+Intensity: 0.50
+
+> Not all night. I saw you on the path. Halfway.
+
+### a17 | ophelia | hushed | 0.80
+
+Action / reaction: the truth, small; hands back to the door so 08 still lands.
+Answers: a16 "Halfway."
+Intensity: 0.55
+
+> Halfway is as far as I ever get.
+
 ### a09 | mathilda | hushed | 0.70
 
 Action / reaction: topic at 13, once; she is allowed not to know yet.

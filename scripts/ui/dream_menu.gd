@@ -1,6 +1,6 @@
 extends Control
 
-const STORY := "Ophelia keeps the house. Mathilda goes out into the storm.\nLast night, you told her to go.\n\nNow her pack is in the snow, her words are on the pages,\nand the trees answer in your voice.\n\nLeave the lantern burning. Find her.\nDecide what you can bear to bring home."
+const STORY := "Ophelia keeps the house. Mathilda keeps a fire past the pines.\nLast night one of them said go, and the other went.\n\nSince then they have been walking the same afternoon,\nand now and then they almost meet.\n\nChoose whose afternoon it is.\nNeither of them is sure the other is real."
 
 var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
@@ -81,7 +81,7 @@ func _ready() -> void:
 	rule.offset_top = 248
 	rule.offset_bottom = 250
 	add_child(rule)
-	for caption in ["BEGIN", "MATHILDA", "THE DREAM", "CREDITS", "QUIT"]:
+	for caption in ["OPHELIA", "MATHILDA", "THE DREAM", "CREDITS", "QUIT"]:
 		var button := Button.new()
 		button.text = caption
 		for letter in range(caption.length() - 1, 0, -1):
@@ -141,7 +141,8 @@ func _ready() -> void:
 			_music.stop()
 	)
 	visible = Game.phase == Game.Phase.BOOT
-	_buttons[0].grab_focus.call_deferred()
+	# Neither of them comes first: the menu opens on one name or the other.
+	_buttons[randi() % 2].grab_focus.call_deferred()
 
 
 func _aim_at(point: Vector2) -> void:
@@ -192,7 +193,7 @@ func _choose(caption: String) -> void:
 		"MATHILDA":
 			Game.mathilda_pov = true
 			get_tree().reload_current_scene()
-		"BEGIN":
+		"OPHELIA":
 			Game.mathilda_pov = false
 			var fade := create_tween()
 			fade.tween_property(_music, "volume_db", -60.0, 0.65)
