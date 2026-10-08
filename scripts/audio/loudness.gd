@@ -22,6 +22,8 @@ const FARTHEST := 420.0
 const SNOW_STEP := 57.0
 const WOOD_STEP := 61.0
 const STONE_STEP := 64.0
+# A boot in moss and grass: softer than snow's crunch.
+const GRASS_STEP := 54.0
 const STRIDE_FORCE := 7.0
 const FLOOR_CREAK := 52.0
 # Out on the field: one caw carries far; a whole pine thrashing in a gust;
@@ -33,6 +35,8 @@ const TREE_RUSTLE := 70.0
 const SNOW_FLUMP := 66.0
 const TREE_CREAK := 63.0
 const BRANCH_SNAP := 92.0
+# A small wood fire at Mathilda's camp: the hiss of the bed and its crackles.
+const CAMPFIRE := 60.0
 # The storm as it reaches her ears, not at 1 m from anything: from a light
 # wind to a blizzard, with gusts on top. The cabin walls take WALLS of it,
 # the cellar a good deal more; wind whistles in at the windows.

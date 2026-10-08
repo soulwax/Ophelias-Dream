@@ -1,6 +1,9 @@
 @tool
 extends Node3D
 
+const BOW_PICKUP := preload("res://scripts/world/bow_pickup.gd")
+const ARROW_SUPPLY := preload("res://scripts/world/arrow_supply.gd")
+
 ## -1 rolls a new seed whenever the editable level is rebuilt.
 @export var world_seed: int = -1
 @export_tool_button("Randomize / rebuild editable level") var rebuild_level_action := _regenerate_editor_level
@@ -12,7 +15,18 @@ var _bake_pid := -1
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
+		# The baked editable scene predates this sampler. Bind it for editor
+		# previews too; changing a uniform does not rebuild or save the level.
+		var editable := get_node_or_null("EditableLevel")
+		if editable:
+			var noise := load("res://assets/environment/terrain_noise.png") as Texture2D
+			for node in editable.find_children("*", "MeshInstance3D", true, false):
+				var material := (node as MeshInstance3D).material_override as ShaderMaterial
+				if material and material.shader and material.shader.resource_path == "res://shaders/snow_ground.gdshader":
+					material.set_shader_parameter("terrain_noise", noise)
 		return
+	if OS.get_environment("RUN_MATHILDA") == "1":
+		Game.mathilda_pov = true
 	_capture = OS.get_environment("RUN_CAPTURE") == "1"
 	var repacking := OS.get_cmdline_user_args().has("--repack-editor-level")
 	var baking := repacking or OS.get_cmdline_user_args().has("--bake-editor-level")
@@ -51,17 +65,34 @@ func _ready() -> void:
 	Game.mark("build weather")
 	add_child(Weather.new())
 	add_child(Wildlife.new())
+	add_child(Camp.new())
+	add_child(Lake.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
-	add_child(Voice.new())
+	if Game.mathilda_pov and not Game.dream_mode:
+		add_child(preload("res://scripts/player/mathilda_pov.gd").new())
+	elif not Game.dream_mode:
+		add_child(Voice.new())
+	# The other one, out on her own afternoon (after the voices, so it hears input first).
+	if not Game.dream_mode:
+		add_child(Encounters.new())
+		add_child(DialogueBubble.new())
 	var hud := Hud.new()
 	add_child(hud)
+	if Game.dream_mode:
+		add_child(preload("res://scripts/world/dream_experience.gd").new())
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player]
 	var built_house := trail.house.transform
 	var built_exit := trail.exit_point
 	var redrawn: bool = shift["curve"] or shift["start"]
 	var retain: Array[Node] = []
+	if use_snapshot:
+		var saved_flora := snapshot.get_node_or_null("Trail/Flora")
+		if saved_flora == null or int(saved_flora.get_meta("batch_revision", 0)) != Flora.BATCH_REVISION:
+			# Batch indices changed; preserve the newly generated children while
+			# still applying authored Flora-root placement and visibility.
+			retain.append(trail.flora.get_node("Batches"))
 	var house_changed := false
 	if redrawn:
 		retain = trail.route_derived()
@@ -72,6 +103,20 @@ func _ready() -> void:
 		if saved_house and int(saved_house.get_meta("layout_revision", 0)) != House.LAYOUT_REVISION:
 			retain.append(trail.house)
 			house_changed = true
+	# A snapshot of older land: keep the ground, woods, landmarks and fence as
+	# generated now. The house keeps its edits and is set back onto its pad.
+	var terrain_changed := false
+	if use_snapshot:
+		var saved_ground := snapshot.get_node_or_null("Trail/Ground")
+		if saved_ground == null or int(saved_ground.get_meta("terrain_revision", 0)) != Ground.TERRAIN_REVISION:
+			terrain_changed = true
+			var keep: Array[Node] = trail.route_derived()
+			var fence := trail.get_node_or_null("Fence")
+			if fence:
+				keep.append(fence)
+			for node in keep:
+				if not retain.has(node):
+					retain.append(node)
 	# An old bake stored a page as a trail child in the slot Threats uses.
 	# Hold that branch aside until the snapshot contains the slot, so the
 	# page is not painted onto it.
@@ -80,6 +125,8 @@ func _ready() -> void:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
 		_settle_route(trail, shift, built_house, built_exit)
+		if terrain_changed:
+			trail.settle_house()
 		if trail.house:
 			trail.house.settle_comfort()
 		player.apply_authored_spawn(house_changed)
@@ -95,23 +142,80 @@ func _ready() -> void:
 		EditableLevel.apply(snapshot, editable_nodes, retain)
 		_restore_parked(trail, parked)
 		_settle_route(trail, shift, built_house, built_exit)
+		if terrain_changed:
+			trail.settle_house()
 		player.apply_authored_spawn(house_changed)
 		atmosphere.rebind_authoring_resources()
 		snapshot.queue_free()
 	if trail.house:
 		trail.house.settle_comfort()
+		trail.house.build_occluders()
+	trail.ground.bind_render_materials()
+	get_viewport().use_occlusion_culling = true
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()
-	Game.begin_intro()
-	if _capture:
+	var bow_pickup := BOW_PICKUP.new()
+	var bow_at := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET)
+	var bow_ahead := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET + 1.0)
+	var bow_side := (bow_ahead - bow_at).cross(Vector3.UP).normalized()
+	bow_pickup.position = trail.on_ground(bow_at + bow_side * 1.1) + Vector3.UP * 1.15
+	add_child(bow_pickup)
+	for index in Tune.ARROW_PICKUP_OFFSETS.size():
+		var offset: float = Tune.ARROW_PICKUP_OFFSETS[index]
+		var at := trail.position_at(trail.player_start_offset + offset)
+		var ahead := trail.position_at(trail.player_start_offset + offset + 1.0)
+		var side := (ahead - at).cross(Vector3.UP).normalized()
+		var supply := ARROW_SUPPLY.new()
+		supply.supply_id = "trail_arrows_%d" % index
+		supply.quantity = Tune.ARROW_PICKUP_QUANTITIES[index]
+		supply.position = trail.on_ground(at + side * (1.2 if index % 2 == 0 else -1.2)) + Vector3.UP * 0.38
+		add_child(supply)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	# Back to the lookout: no menu and no intro card, she is simply there again.
+	if Game.resuming() and not Game.mathilda_pov and not _capture:
+		Game.resume_checkpoint()
+		Game.begin_intro()
 		Game.set_phase(Game.Phase.PLAYING)
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
+	# Dev hook (Story Studio): RUN_PLAY=1 skips the menu and the intro card.
+	if OS.get_environment("RUN_PLAY") == "1" and not Game.mathilda_pov and not _capture:
+		Game.begin_intro()
+		Game.set_phase(Game.Phase.PLAYING)
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
+	if _capture:
+		Game.begin_intro()
+		if OS.get_environment("RUN_TITLE") != "1":
+			Game.set_phase(Game.Phase.PLAYING)
+		else:
+			Game.set_phase(Game.Phase.BOOT)
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		# Dev hook: RUN_MENU=<page> opens the Esc menu on that page for the shot.
 		var page := OS.get_environment("RUN_MENU")
 		if page != "":
 			process_mode = Node.PROCESS_MODE_ALWAYS
 			Game.toggle_pause.call_deferred()
 			hud.menu.open_page.call_deferred(page)
+		# Dev hook: RUN_JOURNAL=<title> opens the journal, half deciphered, on that page.
+		var journal_page := OS.get_environment("RUN_JOURNAL")
+		if journal_page != "":
+			Game.dev_journal.call_deferred(journal_page)
+		# Dev hook: RUN_ENDING=road|prints shows that escape card.
+		var ending_kind := OS.get_environment("RUN_ENDING")
+		if ending_kind != "":
+			Game.dev_ending.call_deferred(ending_kind)
+	if Game.character_selected and not _capture:
+		Game.character_selected = false
+		if Game.dream_mode:
+			return
+		var reflection := preload("res://scripts/ui/dream_reflection.gd").new()
+		reflection.set("memory", Game.dream_memory)
+		reflection.set("mathilda", Game.mathilda_pov)
+		add_child(reflection)
+		if not Game.mathilda_pov:
+			Game.begin_intro()
 
 
 func _process(_delta: float) -> void:

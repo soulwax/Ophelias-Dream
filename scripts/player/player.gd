@@ -1,11 +1,20 @@
 class_name Player
 extends CharacterBody3D
 
+# Every footfall she sounds, takeoffs and landings included; probes count them.
+signal stepped(left: bool)
+# The sprint ran her out of breath; a landing came down hard (Voice).
+signal exhausted
+signal landed_hard(fall_speed: float)
+
 const BOOM_LENGTH := 3.35
 const BOOM_STEPS := 16
 const BOOM_CLEARANCE := 0.35
 const INDOOR_BOOM := 1.75
 const INDOOR_SHOULDER := 0.36
+# How long after a leap lands it still counts as one (the pose blends out and
+# the rig's own plant of the lead foot is ignored).
+const LEAP_SETTLE_MSEC := 250
 
 var trail: Trail
 
@@ -30,6 +39,8 @@ var stride: Stride
 var kicks: SnowKick
 var foot_lock: FootLock
 var grace: Grace
+var leap_layer: Leap
+var bow_hoist: BowHoist
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -43,6 +54,13 @@ var _jumped := false
 var _air_time := 0.0
 var _fall_speed := 0.0
 var _air_weight := 0.0
+# A jump at a jog or faster is a leap: leap 0..1 sets how flat and carried it
+# is, off the foot she last planted and onto the other one.
+var leaping := false
+var leap := 0.0
+var leap_lead_left := true
+var _leap_airtime := 0.5
+var _landed_msec := 0
 # Sliding out of a sprint.
 var sliding := false
 var _slide_time := 0.0
@@ -63,17 +81,16 @@ var _boom := BOOM_LENGTH
 var _shoulder := 0.0
 var _glow := 0.0
 var _trail_offset := Vector3.ZERO
+var _rise_lag := 0.0
 # Dev hook: RUN_AUTOPILOT=walk, jog, or sprint holds forward (sprint sprints),
-# so RUN_CAPTURE can photograph her mid-stride; glance sprints looking back.
+# so RUN_CAPTURE can photograph her mid-stride; glance sprints looking back;
+# jump, slide and leap sprint and do that every few seconds (leap only once
+# she is near full speed).
 var _autopilot := OS.get_environment("RUN_AUTOPILOT")
 var breath: Breath
 # 0 calm .. 1 gasping. Climbs with sprinting and spent stamina, peaks just
 # after a long sprint ends, and only slowly settles.
 var strain := 0.0
-# Space: no steam while held, but it drains her breath, and letting go (or
-# running out) comes out as a gasp.
-var holding_breath := false
-var _held_for := 0.0
 var _facing := 0.0
 var _lean := Vector2.ZERO
 var _sway := 0.0
@@ -83,6 +100,8 @@ var _outlined_meshes: Array[MeshInstance3D] = []
 var _outline_material: ShaderMaterial
 # Read / open pressed just before she can: kept a moment and tried again.
 var _interact_buffer := 0.0
+var _collection_source: Node
+var _combat_aim_weight := 0.0
 # 0 looking ahead .. 1 looking back over her right shoulder.
 var glance := 0.0
 var _look_ramp := 0.0
@@ -119,6 +138,12 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("draw_bow") and toggle_bow():
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("shoot_arrow") and _shoot_arrow():
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("interact"):
 		if Game.phase == Game.Phase.READING:
 			Game.close_reading()
@@ -129,23 +154,29 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			else:
 				_interact_buffer = Tune.INTERACT_BUFFER
-	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
+	if event is InputEventMouseButton and event.pressed and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM]:
 		# A click uses only what is under the reticle, never a guess around it.
 		var click := (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
-		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and aim.direct and _try_interact():
-			get_viewport().set_input_as_handled()
-			return
+		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			if Input.is_action_pressed("aim_bow") and _shoot_arrow():
+				get_viewport().set_input_as_handled()
+				return
+			if aim.direct and _try_interact():
+				get_viewport().set_input_as_handled()
+				return
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	# Look goes straight to the camera every frame. screen_relative is in real
 	# pixels, so the window size or stretch never changes the sensitivity.
 	if event is InputEventMouseMotion and not Game.locks_look() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var turn := (event as InputEventMouseMotion).screen_relative * Tune.MOUSE_SENS * Game.settings.mouse_sensitivity
-		_yaw -= turn.x
+		_yaw -= -turn.x if Game.settings.invert_x else turn.x
 		_pitch = clampf(_pitch + (turn.y if Game.settings.invert_y else -turn.y), Tune.PITCH_DOWN, Tune.PITCH_UP)
 
 
 # Whatever the aim has outlined: the page, door or switch she sees picked.
 func _try_interact() -> bool:
+	if bow_hoist and bow_hoist.Busy:
+		return false
 	var thing := aim.target
 	if thing == null or not is_instance_valid(thing):
 		return false
@@ -157,6 +188,8 @@ func _try_interact() -> bool:
 	var feedback := ""
 	if not accepted and thing is HouseDoor:
 		feedback = (thing as HouseDoor).blocked_label()
+	elif not accepted and thing.has_method("blocked_label"):
+		feedback = str(thing.call("blocked_label"))
 	Game.interaction_feedback.emit(feedback, accepted)
 	return true
 
@@ -167,6 +200,8 @@ func _physics_process(delta: float) -> void:
 	# The body faces the camera so the keys move her relative to the view;
 	# her model turns on its own (_carry).
 	rotation.y = _yaw
+	if bow_hoist and Game.phase == Game.Phase.PLAYING:
+		bow_hoist.Advance(delta)
 	if _interact_buffer > 0.0:
 		_interact_buffer -= delta
 		if Game.phase == Game.Phase.PLAYING and _try_interact():
@@ -185,6 +220,8 @@ func _physics_process(delta: float) -> void:
 			stride.update(_ground_speed())
 		if grace:
 			grace.speed = _ground_speed()
+			if bow_hoist and bow_hoist.Busy:
+				grace.poise = 0.0
 		_breathe(delta, false)
 		_carry(delta, false)
 		return
@@ -201,6 +238,14 @@ func _physics_process(delta: float) -> void:
 		if _autopilot == "slide" and _autopilot_clock > 2.2:
 			_autopilot_clock = 0.0
 			slide_pressed = true
+		if _autopilot == "leap" and _autopilot_clock > 2.4 and _ground_speed() > Tune.SPRINT_SPEED * 0.9:
+			_autopilot_clock = 0.0
+			jump_pressed = true
+	var hoisting: bool = bow_hoist != null and bow_hoist.Busy
+	if hoisting:
+		jump_pressed = false
+		slide_pressed = false
+		_jump_buffer = 0.0
 	var wish := Vector3(input.x, 0.0, input.y)
 	if wish.length() > 1.0:
 		wish = wish.normalized()
@@ -211,7 +256,7 @@ func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
-	var slow := Input.is_action_pressed("walk_slow") and _autopilot == ""
+	var slow := hoisting or (Input.is_action_pressed("walk_slow") and _autopilot == "")
 	var wants_sprint := moving and not slow and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
 	# Once spent she must get some breath back before she can sprint again,
 	# so holding Shift through exhaustion cannot stutter into a stumble loop.
@@ -220,16 +265,19 @@ func _physics_process(delta: float) -> void:
 		_kick_off()
 	_sprinting = sprinting
 	var speed := Tune.WALK_SLOW_SPEED if slow else Tune.WALK_SPEED
-	if _autopilot == "jog":
+	if _autopilot == "jog" and not hoisting:
 		speed = 2.6
 	if sprinting:
 		speed = Tune.SPRINT_SPEED
+		if bow_hoist and bow_hoist.IsDrawn:
+			speed *= Tune.BOW_COMBAT_SPEED
 		stamina = maxf(stamina - delta, 0.0)
 		if stamina <= 0.0:
 			exhaust_left = Tune.EXHAUST_LOCK
 			_sprinting = false
 			_stumble()
-	elif exhaust_left <= 0.0 and not holding_breath and not sliding:
+			exhausted.emit()
+	elif exhaust_left <= 0.0 and not sliding:
 		stamina = minf(stamina + delta * Tune.STAMINA_REGEN, Tune.STAMINA_MAX)
 	if on_floor:
 		speed *= _slope_factor(wish)
@@ -302,8 +350,13 @@ func _jump() -> void:
 	var from_slide := sliding
 	if sliding:
 		_end_slide()
-	# Out of a slide she carries the speed and springs a little higher.
-	velocity.y = Tune.JUMP_VELOCITY * (1.1 if from_slide else 1.0)
+	var speed := _ground_speed()
+	# From a jog or faster it is one long stride: lower, carried further, off
+	# the foot she last planted and onto the other. Out of a slide she keeps
+	# the slide's speed and springs a little higher, as before.
+	leaping = not from_slide and speed >= Tune.LEAP_FROM
+	leap = clampf((speed - Tune.LEAP_FROM) / (Tune.SPRINT_SPEED - Tune.LEAP_FROM), 0.0, 1.0) if leaping else 0.0
+	velocity.y = Tune.JUMP_VELOCITY * (1.1 if from_slide else lerpf(1.0, Tune.LEAP_LIFT, leap))
 	_coyote = 0.0
 	_jump_buffer = 0.0
 	_airborne = true
@@ -312,7 +365,16 @@ func _jump() -> void:
 	stamina = maxf(stamina - Tune.JUMP_STAMINA, 0.0)
 	strain = maxf(strain, 0.4)
 	_jolt -= 0.03
-	_both_feet(0.6)
+	if not leaping:
+		_both_feet(0.6)
+		return
+	var carried := minf(speed * (1.0 + Tune.LEAP_CARRY * leap), maxf(speed, Tune.LEAP_MAX_SPEED))
+	_glide = Vector3(_glide.x, 0.0, _glide.z) / speed * carried
+	leap_lead_left = not _left_foot
+	_leap_airtime = Leap.airtime(velocity.y)
+	_footfall(_left_foot, _foot_spot(_left_foot), _ground_speed())
+	if breath:
+		breath.gasp(0.0)
 
 
 # Leaving and meeting the ground. Small bumps that drop her off the floor
@@ -321,6 +383,8 @@ func _track_air(delta: float) -> void:
 	if is_on_floor():
 		if _airborne and (_jumped or _air_time > 0.15):
 			_land(_fall_speed)
+		elif leaping and Time.get_ticks_msec() - _landed_msec > LEAP_SETTLE_MSEC:
+			leaping = false
 		_airborne = false
 		_jumped = false
 		_air_time = 0.0
@@ -333,10 +397,33 @@ func _track_air(delta: float) -> void:
 
 # The harder she comes down, the deeper the absorb, the bigger the jolt and
 # spray, and the more speed it costs.
+## The way her body faces (yaw); forward is Basis(Vector3.UP, facing()) * Vector3.FORWARD.
+func facing() -> float:
+	return _facing
+
+
+## Eases the view toward a point, for a conversation that turns her to the
+## one speaking while look is locked (Conversation).
+func look_toward(point: Vector3, delta: float, rate := 3.0) -> void:
+	var from := camera.global_position if camera else global_position + Vector3.UP * 1.5
+	var to := point - from
+	if Vector2(to.x, to.z).length() < 0.05:
+		return
+	var weight := 1.0 - exp(-delta * rate)
+	_yaw = lerp_angle(_yaw, atan2(-to.x, -to.z), weight)
+	_pitch = lerpf(_pitch, clampf(atan2(to.y, Vector2(to.x, to.z).length()), Tune.PITCH_DOWN, Tune.PITCH_UP), weight)
+
+
 func _land(fall_speed: float) -> void:
+	if fall_speed >= Tune.FALL_HARD:
+		landed_hard.emit(fall_speed)
 	# An ordinary jump lands at about 5.5 m/s and should feel light; only a
 	# real drop comes down hard.
 	var power := clampf((fall_speed - 6.0) / 6.0, 0.0, 1.0)
+	_landed_msec = Time.get_ticks_msec()
+	if leaping:
+		_land_leap(power)
+		return
 	if stride:
 		stride.land(power)
 	_jolt -= lerpf(0.03, 0.13, power)
@@ -346,17 +433,41 @@ func _land(fall_speed: float) -> void:
 	_both_feet(maxf(power, 0.45))
 
 
+# A leap comes down on the lead foot alone and runs on: only a real drop
+# costs speed, and half what a hop's landing would.
+func _land_leap(power: float) -> void:
+	if stride:
+		stride.leap_land(leap_lead_left)
+	if leap_layer:
+		leap_layer.dip(power, leap_lead_left)
+	_glide *= lerpf(1.0, 0.85, power)
+	_since_plant = 0.0
+	_last_plant_msec = _landed_msec
+	_footfall(leap_lead_left, _foot_spot(leap_lead_left), _ground_speed())
+	_jolt -= lerpf(0.02, 0.1, power)
+	_roll_kick += (1.0 if leap_lead_left else -1.0) * lerpf(0.008, 0.02, power)
+	Game.rumble(0.08 + 0.3 * power, 0.5 * power, 0.08 + 0.12 * power)
+
+
+# Beside her, where a boot meets the ground for steps the rig does not plant.
+func _foot_spot(left: bool) -> Vector3:
+	var forward := Vector3(_glide.x, 0.0, _glide.z)
+	forward = forward.normalized() if forward.length() > 0.1 else -global_transform.basis.z
+	var side := Vector3(forward.z, 0.0, -forward.x)
+	return global_position + side * (0.12 if left else -0.12)
+
+
 # Both boots at once: takeoff and landing.
 func _both_feet(power: float) -> void:
 	var forward := Vector3(_glide.x, 0.0, _glide.z)
 	forward = forward.normalized() if forward.length() > 0.1 else -global_transform.basis.z
-	var side := Vector3(forward.z, 0.0, -forward.x)
 	for left in [true, false]:
-		var at := global_position + side * (0.12 if left else -0.12)
+		var at := _foot_spot(left)
+		stepped.emit(left)
 		var surface := _surface_at(at)
 		if Game.soundscape:
 			Game.soundscape.play_step(at, surface, power)
-		if surface != "snow":
+		if not _leaves_prints(at, surface):
 			continue
 		var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else at.y
 		if kicks:
@@ -375,7 +486,21 @@ func _surface_at(at: Vector3) -> String:
 	var body: Object = hit.get("collider")
 	if body and body.has_meta("surface"):
 		return str(body.get_meta("surface"))
-	return "wood" if indoors() else "snow"
+	if indoors():
+		return "wood"
+	# Outdoors the snow weight decides: green land is grass, the thaw band
+	# between is wet, thin snow.
+	var snow := trail.ground.snow_at(at.x, at.z) if trail and trail.ground else 1.0
+	if snow < 0.35:
+		return "grass"
+	return "thaw" if snow < 0.65 else "snow"
+
+
+# Prints and powder only where it is really snow.
+func _leaves_prints(at: Vector3, surface: String) -> bool:
+	if surface != "snow" and surface != "thaw":
+		return false
+	return trail == null or trail.ground == null or trail.ground.snow_at(at.x, at.z) > 0.6
 
 
 func _start_slide() -> void:
@@ -435,7 +560,8 @@ func _steer(wish: Vector3, top: float, sprinting: bool, on_floor: bool, delta: f
 	var asked := wish.length() > 0.05
 	if not on_floor:
 		if not asked:
-			_glide = flat.move_toward(Vector3.ZERO, Tune.AIR_DRAG * delta)
+			var drag := Tune.AIR_DRAG * (1.0 - leap * Tune.LEAP_DRAG_CUT) if leaping else Tune.AIR_DRAG
+			_glide = flat.move_toward(Vector3.ZERO, drag * delta)
 			return
 		var aim := wish.normalized() * maxf(top, current)
 		_glide = flat.move_toward(aim, Tune.AIR_ACCEL * delta)
@@ -512,7 +638,7 @@ func _door_assist(motion: Vector3) -> Vector3:
 # Hold to sprint, or with the toggle setting tap once and she keeps running
 # until she stops, is spent, or it is tapped again.
 func _sprint_wanted(moving: bool) -> bool:
-	if _autopilot in ["sprint", "jump", "slide", "glance"]:
+	if _autopilot in ["sprint", "jump", "slide", "glance", "leap"]:
 		return true
 	if not Game.settings.sprint_toggle:
 		_sprint_latch = false
@@ -563,6 +689,10 @@ func _on_planted(left: bool, at: Vector3) -> void:
 	var speed := _ground_speed()
 	if speed < 0.5 or not is_on_floor() or Game.locks_movement():
 		return
+	# Just down from a leap, the rig's own plant of the lead foot is the
+	# landing she already made.
+	if leaping and left == leap_lead_left and Time.get_ticks_msec() - _landed_msec < 150:
+		return
 	var now := Time.get_ticks_msec()
 	if _last_plant_msec > 0:
 		_step_time = clampf(float(now - _last_plant_msec) / 1000.0, 0.18, 1.0)
@@ -573,6 +703,7 @@ func _on_planted(left: bool, at: Vector3) -> void:
 
 func _footfall(left: bool, at: Vector3, speed: float) -> void:
 	_left_foot = left
+	stepped.emit(left)
 	var heavy := speed > 4.0
 	var power := clampf(speed / Tune.SPRINT_SPEED, 0.2, 1.0)
 	var surface := _surface_at(at)
@@ -580,8 +711,8 @@ func _footfall(left: bool, at: Vector3, speed: float) -> void:
 		Game.soundscape.play_step(at, surface, clampf((speed - 1.0) / (Tune.SPRINT_SPEED - 1.0), 0.0, 1.0))
 	_jolt -= lerpf(0.004, 0.026, power * power)
 	_roll_kick += (1.0 if left else -1.0) * lerpf(0.001, 0.01, power)
-	# Boards and stone take no prints and throw no powder.
-	if surface != "snow":
+	# Boards, stone and grass take no prints and throw no powder.
+	if not _leaves_prints(at, surface):
 		return
 	var forward := Vector3(_glide.x, 0.0, _glide.z).normalized()
 	var ground_y := trail.ground.height_at(at.x, at.z) if trail and trail.ground else global_position.y
@@ -637,7 +768,7 @@ func _stick_look(delta: float) -> void:
 	_look_ramp = move_toward(_look_ramp, 1.0 if full else 0.0, delta * (1.0 / Tune.STICK_RAMP_TIME if full else 6.0))
 	var rate := pow(amount, Tune.STICK_LOOK_CURVE) * (1.0 + Tune.STICK_RAMP_BOOST * _look_ramp) * Game.settings.stick_sensitivity
 	var direction := stick / stick.length()
-	_yaw -= direction.x * Tune.STICK_YAW_RATE * rate * delta
+	_yaw -= direction.x * Tune.STICK_YAW_RATE * rate * delta * (-1.0 if Game.settings.invert_x else 1.0)
 	var tilt := direction.y * Tune.STICK_PITCH_RATE * rate * delta
 	_pitch = clampf(_pitch + (tilt if Game.settings.invert_y else -tilt), Tune.PITCH_DOWN, Tune.PITCH_UP)
 
@@ -646,7 +777,7 @@ func _apply_look() -> void:
 	# Glancing back swings the view round over her right shoulder; the body
 	# keeps _yaw, so she runs on the way she was going.
 	var turn := Basis(Vector3.UP, _yaw + PI * smoothstep(0.0, 1.0, glance))
-	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake, 0.0)
+	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake - _rise_lag, 0.0)
 	var body := get_global_transform_interpolated().origin
 	# The trail behind her momentum stays behind her, whichever way she looks.
 	var trail_behind := Basis(Vector3.UP, _yaw) * _trail_offset
@@ -689,6 +820,9 @@ func _settle_spawn() -> void:
 # The ground mesh is one-sided, so a camera that slips under a slope sees
 # straight through it. Walk the boom outward and stop before it goes under.
 func _fit_boom_to_ground() -> void:
+	if Game.mathilda_pov:
+		spring_arm.spring_length = 0.0
+		return
 	if trail == null or trail.ground == null:
 		return
 	var pivot := spring_arm.global_position
@@ -732,34 +866,51 @@ func _animate(delta: float, moving: bool, sprinting: bool) -> void:
 	var air_target := 1.0 if _airborne and (_jumped or _air_time > 0.12) else 0.0
 	_air_weight = move_toward(_air_weight, air_target, delta * (12.0 if air_target > 0.0 else 9.0))
 	_slide_weight = move_toward(_slide_weight, 1.0 if sliding else 0.0, delta * 8.0)
+	var flight := _leap_progress()
 	if stride:
 		stride.update(_ground_speed())
-		stride.posture(_air_weight, velocity.y / Tune.JUMP_VELOCITY, _slide_weight)
+		stride.posture(0.0 if leaping else _air_weight, velocity.y / Tune.JUMP_VELOCITY, _slide_weight)
+		stride.leap_pose(_air_weight if leaping else 0.0, flight, leap_lead_left, leap)
+	if leap_layer:
+		leap_layer.amount = _air_weight * lerpf(Tune.LEAP_LINE_JOG, 1.0, leap) if leaping else 0.0
+		leap_layer.progress = flight
+		leap_layer.lead_left = leap_lead_left
 	if grace:
 		grace.speed = _ground_speed()
 		grace.poise = (1.0 - _air_weight) * (1.0 - _slide_weight) * (0.0 if exhaust_left > 0.0 else 1.0)
+		if bow_hoist and bow_hoist.Busy:
+			grace.poise = 0.0
 	# A slight side-to-side carry in time with her steps.
 	_sway = 0.0 if not moving else sin(_stride_phase) * (0.012 if sprinting else 0.02)
+	if bow_hoist:
+		var aiming: bool = bow_hoist.IsDrawn and Input.is_action_pressed("aim_bow")
+		_combat_aim_weight = move_toward(_combat_aim_weight, 1.0 if aiming else 0.0, delta * 7.0)
+		bow_hoist.AimWeight = _combat_aim_weight
+		bow_hoist.RunWeight = move_toward(bow_hoist.RunWeight, 1.0 if bow_hoist.IsDrawn and sprinting else 0.0, delta * 5.5)
+		bow_hoist.HasArrowForAim = Game.arrow_count > 0
+
+
+# 0..1 through a leap's flight: by time at first, then by the ground coming
+# up, so off a ledge she holds her reach. Down again, it is the landing.
+func _leap_progress() -> float:
+	if not leaping:
+		return 0.0
+	if not _airborne:
+		return 1.0
+	var reaching := _air_time / maxf(_leap_airtime, 0.1) >= Tune.LEAP_REACH_HOLD
+	return Leap.flight_progress(_air_time, _leap_airtime, _drop_below() if reaching else 3.0)
+
+
+# Metres of air under her boots, up to 3.
+func _drop_below() -> float:
+	var from := global_position + Vector3.UP * 0.1
+	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 3.1, Tune.LAYER_WORLD)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return 3.0 if hit.is_empty() else maxf(global_position.y - (hit.position as Vector3).y, 0.0)
 
 
 func _breathe(delta: float, sprinting: bool) -> void:
-	var awake := Game.phase == Game.Phase.PLAYING or Game.phase == Game.Phase.READING
-	var hold := awake and exhaust_left <= 0.0 and stamina > 0.0 and Input.is_action_pressed("hold_breath")
-	if hold:
-		_held_for += delta
-		stamina = maxf(stamina - Tune.HOLD_DRAIN * delta, 0.0)
-		if stamina <= 0.0:
-			exhaust_left = Tune.EXHAUST_LOCK
-			hold = false
-	if holding_breath and not hold:
-		if breath:
-			breath.gasp(clampf(_held_for / 6.0, 0.25, 1.0))
-		# What she held comes due as panting.
-		strain = maxf(strain, clampf(0.35 + _held_for * 0.09, 0.0, 1.0))
-		_held_for = 0.0
-	holding_breath = hold
-	if breath:
-		breath.held = hold
 	var spent := 1.0 - stamina / Tune.STAMINA_MAX
 	var target := spent * 0.55
 	if sprinting:
@@ -902,12 +1053,13 @@ func _move_camera(delta: float) -> void:
 	if spring_arm == null or camera == null:
 		return
 	var pace := clampf((_ground_speed() - Tune.WALK_SPEED) / (Tune.SPRINT_SPEED - Tune.WALK_SPEED), 0.0, 1.0)
-	var widen := (9.0 * pace + 5.0 * _slide_weight) if Game.settings.speed_fov else 0.0
+	var leap_air := _air_weight * leap if leaping else 0.0
+	var widen := (9.0 * pace + 5.0 * _slide_weight + Tune.LEAP_FOV * leap_air) if Game.settings.speed_fov else 0.0
 	camera.fov = lerpf(camera.fov, Game.settings.fov + widen, 1.0 - exp(-delta * 4.0))
 	# Indoors the camera comes in over her shoulder: rooms are a few metres
 	# across, and a long boom would only be crushed against the walls.
 	var inside := indoors()
-	var outdoors_boom := BOOM_LENGTH * Game.settings.camera_distance + 0.5 * pace
+	var outdoors_boom := BOOM_LENGTH * Game.settings.camera_distance + 0.5 * pace + Tune.LEAP_BOOM * leap_air * Game.settings.camera_shake
 	_boom = lerpf(_boom, minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom, 1.0 - exp(-delta * 3.0))
 	_shoulder = lerpf(_shoulder, INDOOR_SHOULDER if inside else 0.0, 1.0 - exp(-delta * 3.0))
 	# Pressed into her by a wall anyway, it looks past her instead of
@@ -918,6 +1070,9 @@ func _move_camera(delta: float) -> void:
 	_roll_kick = lerpf(_roll_kick, 0.0, 1.0 - exp(-delta * 8.0))
 	var lag := Basis(Vector3.UP, _yaw).inverse() * Vector3(-_glide.x, 0.0, -_glide.z) * 0.04
 	_trail_offset = _trail_offset.lerp(lag.limit_length(0.32), 1.0 - exp(-delta * 3.0))
+	# On a leap the camera trails her rise and fall by a hair.
+	var rise := clampf(velocity.y * 0.012, -0.05, 0.05) * leap_air * Game.settings.camera_shake
+	_rise_lag = lerpf(_rise_lag, rise, 1.0 - exp(-delta * 6.0))
 
 
 func _flicker_lantern(delta: float) -> void:
@@ -1025,6 +1180,7 @@ func _build_model() -> void:
 	rig_root.add_child(animation_player)
 	animation_player.root_node = NodePath("..")
 	animation_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
+	animation_player.add_animation_library("feminine", load("res://assets/characters/styloo_elf/feminine/elf_feminine.res") as AnimationLibrary)
 	stride = Stride.build(animation_player, rig_root)
 	var mouth := BoneAttachment3D.new()
 	mouth.name = "Mouth"
@@ -1043,3 +1199,120 @@ func _build_model() -> void:
 		return trail.ground.height_at(point.x, point.z)
 	foot_lock.planted.connect(_on_planted)
 	grace = Grace.fit(skeleton)
+	grace.authored_walk = true
+	leap_layer = Leap.fit(skeleton)
+	bow_hoist = BowHoist.new()
+	bow_hoist.name = "BowHoist"
+	skeleton.add_child(bow_hoist)
+	bow_hoist.Configure(Tune.BOW_HOIST_SECONDS, Tune.BOW_BACK_POSITION, Tune.BOW_BACK_ROLL)
+	bow_hoist.ConfigureDrawing(Tune.BOW_DRAW_SECONDS, Tune.BOW_HAND_POSITION, Tune.BOW_HAND_ROLL)
+	bow_hoist.connect("Hoisted", _on_bow_hoisted)
+	bow_hoist.connect("Drawn", _on_bow_drawn)
+	bow_hoist.connect("ArrowReleased", _on_arrow_released)
+	bow_hoist.connect("CollectionFinished", _on_collection_finished)
+	if Game.has_bow:
+		restore_bow()
+
+
+func take_bow(bow: Node3D) -> bool:
+	if bow_hoist == null or bow_hoist.Busy or bow_hoist.HasBow or Game.has_bow:
+		return false
+	if not is_on_floor() or _ground_speed() > 0.25 or sliding or _airborne:
+		return false
+	var toward := bow.global_position - global_position
+	toward.y = 0.0
+	if toward.length() > Tune.BOW_PICKUP_REACH:
+		return false
+	# Face the discovered grip before the reach; the camera remains free.
+	_facing = atan2(-toward.x, -toward.z)
+	visual.rotation = Vector3(0.0, _facing - _yaw, 0.0)
+	_glide = Vector3.ZERO
+	return bow_hoist.Begin(bow)
+
+
+func _on_bow_hoisted() -> void:
+	Game.has_bow = true
+	var key := Game.settings.key_label("draw_bow")
+	Game.interaction_feedback.emit("The bow rests across your back. %s to draw." % key, true)
+
+
+func toggle_bow() -> bool:
+	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or not bow_hoist.HasBow or bow_hoist.Busy:
+		return false
+	if not is_on_floor() or _airborne or sliding or _ground_speed() > Tune.WALK_SPEED + 0.1:
+		return false
+	return bow_hoist.Stow() if bow_hoist.IsDrawn else bow_hoist.Draw()
+
+
+func _on_bow_drawn() -> void:
+	var put_away := Game.settings.key_label("draw_bow")
+	var aim_key := Game.settings.key_label("aim_bow")
+	var fire_key := Game.settings.key_label("shoot_arrow")
+	Game.interaction_feedback.emit("%s aim, %s loose; %s to put away." % [aim_key, fire_key, put_away], true)
+
+
+func restore_bow() -> void:
+	if bow_hoist == null or bow_hoist.HasBow:
+		return
+	var bow := (load(Tune.BOW_MODEL) as PackedScene).instantiate() as Node3D
+	add_child(bow)
+	bow_hoist.Restore(bow)
+
+
+func _shoot_arrow() -> bool:
+	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or not bow_hoist.IsDrawn:
+		return false
+	if not Input.is_action_pressed("aim_bow"):
+		return false
+	if Game.arrow_count <= 0:
+		Game.interaction_feedback.emit("No arrows. Find more along the trail.", false)
+		return true
+	return bow_hoist.Shoot()
+
+
+func _on_arrow_released() -> void:
+	if Game.arrow_count <= 0 or camera == null:
+		return
+	Game.arrow_count -= 1
+	var projectile := (load("res://scripts/world/arrow_projectile.gd") as Script).new() as Node3D
+	var world := get_tree().current_scene
+	if world == null:
+		world = get_tree().root
+	world.add_child(projectile)
+	var forward := -camera.global_basis.z
+	var from: Vector3 = bow_hoist.ArrowLaunchPosition + Vector3.UP * 0.025 + (-global_transform.basis.z * 0.18)
+	var target := camera.global_position + forward * Tune.AIM_RANGE * 1.8
+	var query := PhysicsRayQueryParameters3D.create(camera.global_position, target, Tune.LAYER_WORLD)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		target = hit.position
+	var direction: Vector3 = (target - from).normalized()
+	projectile.global_position = from
+	projectile.set("velocity", direction * Tune.ARROW_SPEED + Vector3.UP * 0.8 + velocity * 0.18)
+	projectile.set("shooter", get_rid())
+	Game.interaction_feedback.emit("Arrow loosed. %d remain." % Game.arrow_count, true)
+
+
+func collect_arrows(source: Node, source_visual: Node3D) -> bool:
+	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or bow_hoist.Busy or not is_instance_valid(source):
+		return false
+	if Game.arrow_count >= Tune.ARROW_CAPACITY or not bow_hoist.BeginCollection():
+		return false
+	_collection_source = source
+	var arrow := (load(Tune.ARROW_MODEL) as PackedScene).instantiate() as Node3D
+	get_tree().current_scene.add_child(arrow)
+	arrow.global_position = source_visual.global_position
+	arrow.scale = Vector3.ONE * Tune.PLAYER_MODEL_SCALE
+	var hand := global_position + (-global_transform.basis.z * 0.18) + Vector3.UP * 1.25
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(arrow, "global_position", hand, 0.56)
+	tween.tween_callback(arrow.queue_free)
+	return true
+
+
+func _on_collection_finished() -> void:
+	if _collection_source and is_instance_valid(_collection_source):
+		_collection_source.call("complete_collection")
+	_collection_source = null

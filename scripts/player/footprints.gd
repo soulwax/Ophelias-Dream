@@ -126,7 +126,7 @@ func _lay(at: Vector3, yaw: float, heavy: bool, flip: bool, mark: Mark, remember
 
 
 func _process(delta: float) -> void:
-	if Game.phase != Game.Phase.PLAYING and Game.phase != Game.Phase.READING:
+	if not Game.awake():
 		return
 	_lie_once()
 	for i in POOL:
@@ -137,7 +137,9 @@ func _process(delta: float) -> void:
 		if fade <= 0.0:
 			_quads[i].visible = false
 			continue
-		_set_fade(_quads[i], fade)
+		# During the hold the shader already has fade=1; only send changes.
+		if _ages[i] >= _holds[i]:
+			_set_fade(_quads[i], fade)
 
 
 # Once she has left a stretch behind her, one mark in it is not her stride.

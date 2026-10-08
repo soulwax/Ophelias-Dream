@@ -51,6 +51,11 @@ EVENTS = [
 	("steps/creak", "creak_fs_506665", 0, 1, dict(rise=8, gap=0.5, length=1.2, span=30, highpass=80)),
 	("steps/creak", "creak_fs_264306", 0, 5, dict(rise=8, gap=0.6, length=1.2, span=24, highpass=80)),
 	("steps/creak", "creak_bsb_0518", None, 4, dict(rise=8, gap=0.6, length=1.2, span=24, highpass=80)),
+	("steps/grass", "grass_fs_521587", 0, 6, dict(rise=10, gap=0.3, length=0.5, span=26, highpass=150)),
+	("steps/grass", "grass_fs_331167", 0, 5, dict(rise=10, gap=0.3, length=0.5, span=26, highpass=150)),
+	("steps/grass", "grass_fs_505833", 0, 5, dict(rise=10, gap=0.3, length=0.5, span=26, highpass=150)),
+	("steps/grass", "grass_fs_206030", 0, 4, dict(rise=10, gap=0.3, length=0.5, span=26, highpass=150)),
+	("steps/grass", "grass_fs_389625", 0, 4, dict(rise=10, gap=0.3, length=0.5, span=26, highpass=150)),
 	("nature/flump", "snowfall_fs_116136", 0, 8, dict(rise=10, gap=0.8, length=1.6, span=24, highpass=60)),
 	("nature/tree_creak", "treecreak_fs_95264", 0, 5, dict(rise=8, gap=0.8, length=2.5, span=24, highpass=80)),
 	("nature/crow", "crow_fs_334231", 0, 6, dict(rise=12, gap=0.3, length=1.4, span=24, highpass=300)),
@@ -302,7 +307,7 @@ def main() -> int:
 	make_beds(info, record)
 	make_above(record)
 	manifest = {
-		"note": "Recorded sounds for Run Away. All sources are CC0 1.0 (public domain); "
+		"note": "Recorded sounds for Ophelia's Dream. All sources are CC0 1.0 (public domain); "
 			"credit is not required but is kept here. Regenerate with tools/fetch_sounds.py "
 			"then tools/make_soundscape.py.",
 		"files": dict(sorted(record.items())),

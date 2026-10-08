@@ -1,19 +1,17 @@
 class_name NoteReader
 extends Control
 
-const _GLYPHS := "abcdefghijklmnopqrstuvwxyz.,'"
 
 var _title: Label
 var _count: Label
-var _body: Label
+var _body: RichTextLabel
 var _scroll: ScrollContainer
 var _panel: PanelContainer
 var _entry_tween: Tween
 var _danger: Label
 var _close_keys: HBoxContainer
-var _breath_keys: HBoxContainer
 var _entry: NoteEntry
-var _stable: String = ""
+var _journal_keys: HBoxContainer
 var _accum: float = 0.0
 
 
@@ -29,18 +27,16 @@ func _process(delta: float) -> void:
 	if not visible or _entry == null:
 		return
 	_danger.visible = Game.closeness > 0.4
-	if _stable.length() >= _entry.body.length():
+	if _body.visible_characters < 0:
 		return
+	var total := _body.get_total_character_count()
 	_accum += delta
 	var step := 1.0 / Tune.TYPE_CPS
-	while _accum >= step and _stable.length() < _entry.body.length():
+	while _accum >= step and _body.visible_characters < total:
 		_accum -= step
-		var next := _entry.body[_stable.length()]
-		var corrupt := _entry.corruption > 0.0 and next != " " and next != "\n"
-		if corrupt and randf() < _entry.corruption:
-			next = _GLYPHS[randi() % _GLYPHS.length()]
-		_stable += next
-	_body.text = _stable
+		_body.visible_characters += 1
+	if _body.visible_characters >= total:
+		_body.visible_characters = -1
 	var bar := _scroll.get_v_scroll_bar()
 	if bar:
 		_scroll.scroll_vertical = int(bar.max_value)
@@ -62,23 +58,31 @@ func _open() -> void:
 	var page := Game.active_note
 	if page == null or page.entry == null:
 		return
-	_entry = page.entry
-	_stable = ""
+	show_entry(page.entry)
+
+
+func show_entry(entry: NoteEntry) -> void:
+	_entry = entry
 	_accum = 0.0
 	var notes := NoteCatalog.all()
-	var index := 1
+	_count.text = "Found in the house"
 	for i in notes.size():
 		if notes[i].title == _entry.title:
-			index = i + 1
+			_count.text = "Note %d of %d" % [i + 1, notes.size()]
 			break
-	_count.text = "Note %d of %d" % [index, notes.size()]
 	if _entry.record_of != "":
 		_count.text = "Containment record"
 	_title.text = _entry.title
-	_body.text = ""
+	var text := UiChrome.smudge_text(_entry)
+	if Game.page_solved(_entry) and _entry.between != "":
+		text += "
+
+[color=#%s]%s[/color]" % [Color(UiChrome.PAPER_INK, 0.55).to_html(true), _entry.between]
+	_body.text = text
+	_body.visible_characters = 0
 	_scroll.scroll_vertical = 0
 	UiChrome.set_key(_close_keys, Game.settings.key_label("interact"))
-	UiChrome.set_key(_breath_keys, Game.settings.key_label("hold_breath"))
+	UiChrome.set_key(_journal_keys, Game.settings.key_label("journal"))
 	visible = true
 	if _entry_tween and _entry_tween.is_running():
 		_entry_tween.kill()
@@ -124,11 +128,8 @@ func _build() -> void:
 	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	box.add_child(_scroll)
 
-	_body = UiChrome.label("", 20, UiChrome.PAPER_INK)
-	_body.add_theme_constant_override("line_spacing", 6)
-	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_body = UiChrome.page_label(20)
 	_body.custom_minimum_size = Vector2(700, 0)
-	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(_body)
 
 	var footer := HBoxContainer.new()
@@ -137,8 +138,8 @@ func _build() -> void:
 	box.add_child(footer)
 	_close_keys = UiChrome.key_row("E", "Close the page", true)
 	footer.add_child(_close_keys)
-	_breath_keys = UiChrome.key_row("RMB", "Hold breath", true)
-	footer.add_child(_breath_keys)
+	_journal_keys = UiChrome.key_row("J", "Journal", true)
+	footer.add_child(_journal_keys)
 	var close := UiChrome.paper_button("Close")
 	# Keys pressed while she reads must never press the button.
 	close.focus_mode = Control.FOCUS_NONE

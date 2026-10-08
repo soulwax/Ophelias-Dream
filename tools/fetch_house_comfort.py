@@ -12,7 +12,7 @@ ASSETS = ("ArmChair_01", "round_wooden_table_02", "throw_pillows_01")
 
 
 def get(url: str) -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": "RunAway-asset-fetch/1.0"})
+    request = urllib.request.Request(url, headers={"User-Agent": "OpheliasDream-asset-fetch/1.0"})
     with urllib.request.urlopen(request, timeout=90) as response:
         return response.read()
 

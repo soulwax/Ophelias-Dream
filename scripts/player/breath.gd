@@ -11,8 +11,6 @@ const CALM_RATE := 0.24
 const GASP_RATE := 1.45
 
 var strain := 0.0
-# Holding her breath: no steam at all until she lets go.
-var held := false
 # How much visible breath hangs in the air right now, 0..~1.4. This is what
 # the Listener perceives.
 var plume := 0.0
@@ -82,11 +80,8 @@ func _ready() -> void:
 
 
 ## How full her lungs are, 0 emptied .. 1 full. The in-breath is the longer,
-## easing rise. The out-breath drops sooner and a little faster, and she
-## stays full while she holds it.
+## easing rise. The out-breath drops sooner and a little faster.
 func fullness() -> float:
-	if held:
-		return 1.0
 	if _burst_left > 0.0:
 		return 0.12
 	if _phase < 0.58:
@@ -94,7 +89,7 @@ func fullness() -> float:
 	return 1.0 - smoothstep(0.58, 0.92, _phase)
 
 
-# The breath she was holding comes out at once: a big, fast cloud.
+# A hard breath out at once: a big, fast cloud.
 func gasp(power: float) -> void:
 	_burst_left = lerpf(0.35, 0.8, clampf(power, 0.0, 1.0))
 	_phase = 0.5
@@ -108,7 +103,7 @@ func _process(delta: float) -> void:
 		_burst_left -= delta
 		out = clampf(_burst_left / 0.35, 0.0, 1.0)
 		push = 1.6
-	elif not held:
+	else:
 		var rate := lerpf(CALM_RATE, GASP_RATE, pow(effort, 0.8))
 		_phase = fposmod(_phase + rate * delta, 1.0)
 		# Steam is the front of the out-breath. It thins as the lungs empty

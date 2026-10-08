@@ -1,43 +1,106 @@
 class_name Voice
 extends Node
 
-# Her lines were written once by the local model and saved in
-# assets/audio/voice/lines.json. Playing does not call the model. Regenerate
-# that file with tools/bake_voice.py while the server at 127.0.0.1:8765 is up.
-# tools/bake_speech.py reads the reviewed text into CPU-generated wav clips.
+# She speaks pre-baked lines with subtitles (docs/VOICE.md). The text, with a
+# mood per line, is in assets/audio/voice/lines.json; tools/bake_speech.py
+# turns each line into a clip named by the SHA-256 of "text|mood". Playing
+# never runs a model. A line cut off by a more important one is forgotten, as
+# if it had never started, and plays whole at its next chance. The trees answer in her own voice (answers); Mathilda never speaks.
 
 const LINES := "res://assets/audio/voice/lines.json"
 const CLIPS := "res://assets/audio/voice/"
+# Only a higher number cuts off a playing line (a misread may cut a misread).
+const PRIORITY := {"ending": 4, "page": 3, "deciphered": 3, "turned": 3, "moment": 3, "place": 2, "revisit": 2,
+	"spent": 2, "fall": 2, "encounter": 4, "bored": 1, "memory": 1, "call": 1, "misread": 1, "cold": 1}
+const STAGES := ["hope", "doubt", "resolve"]
+# After she turns around her idle thoughts come from this stage, and she stops calling.
+const AFTER := "after"
+const MOODS := ["steady", "warm", "hushed", "shaken", "breaking", "resolve", "calling",
+	"numb", "bitter", "pleading", "wry", "remembering", "panicked", "spent"]
+# These may play again; every other line plays once per run.
+const REPEATS := ["call", "misread", "spent", "fall", "encounter"]
+const FALLBACK_PAGE := "She wrote this for me. I have to keep going."
 
+# Where each place is, for the drafter (tools/bake_voice.py) and the probes.
 const PLACES := {
-	"bedroom": "the bedroom, and the wool that was already warm",
-	"hall": "the front hall, and the door to the snow",
-	"living": "the living room, with the candle burned down",
+	"bedroom": "the bedroom she woke in, the lantern lit, Mathilda's side of the bed",
+	"hall": "the front hall, the door to the storm",
+	"living": "the living room, two chairs pulled out, a candle burned down",
 	"backhall": "the back hall, and the stairs going down",
 	"stair": "the stairs down under the house",
-	"landing": "the bottom of the stairs",
-	"corridor": "a cellar corridor",
+	"landing": "the bottom of the stairs, no wind",
+	"corridor": "a long cellar corridor",
 	"janitor": "a janitor's room in the cellar",
 	"morgue": "the room with the chambers, and a sheet",
-	"snow": "the snow outside, after the wool and the lantern",
-	"lights": "the lights at the far end of the field, already on",
+	"snow": "the open snowfield in the storm, Mathilda's prints filling in",
+	"lights": "the lights at the far end of the field, which look like headlights from afar",
+	"lookout": "the lookout tower: only two lanterns on its rail, no car, no road; posts lead on",
+	"lake": "the frozen lake at the end of the posts, the old hole in the ice",
 }
 
 var _pages := {}
+var _deciphered := {}
 var _places := {}
-var _bored: Array[String] = []
+var _revisits := {}
+var _bored := {"hope": [], "doubt": [], "resolve": [], "after": []}
+var _memories := {"hope": [], "doubt": [], "resolve": []}
+var _spent: Array = []
+var _cold: Array = []
+var _falls: Array = []
+var _turned := {}
+var _endings := {}
+var _answers := {}
+# The hours passing, and the lake (docs/MATHILDA_STORY.md, "Time and the lake").
+var _moments := {}
+# Small fixes before she sets out (docs/MATHILDA_STORY.md, "Chores").
+var _chores := {}
+# When she and the other one pass each other ("Passing"): picked by id by Encounters.
+var _encounters := {}
+# While the two of them are standing there, nothing else in her head gets said.
+var hushed := false
+var _calls := {"hope": [], "doubt": [], "resolve": []}
+var _misread: Array = []
 var _clips := {}
-var _bored_at := 0
-var _place_dwell := 0.0
-var _last_place := ""
-var _still := 0.0
-var _since := 99.0
-var _seen := {}
-var _heard_pages := {}
-var _spoken_once := {}
+
 var _active := false
 var _speaker: AudioStreamPlayer3D
-var _spoken_line := ""
+# The line playing now, and important lines waiting to be heard whole.
+var _current := {}
+var _queue: Array = []
+# Every line that has been heard (or is being heard), by clip key.
+var _spoken := {}
+var _heard_pages := {}
+var _said_deciphered := {}
+var _seen := {}
+var _first_seen := {}
+var _revisited := {}
+var _bored_at := {"hope": 0, "doubt": 0, "resolve": 0, "after": 0}
+var _memory_at := {"hope": 0, "doubt": 0, "resolve": 0}
+var _cold_at := 0
+var _cold_next := 0.0
+var _outdoor_time := 0.0
+var _spent_at := -99.0
+var _fall_at := -99.0
+var _ending_ticket := 0
+# The answer from right behind her moves with her while it plays.
+var _answer_close := false
+# The probe's witness that _process cut an echo short.
+var _echo_stopped_early := false
+var _call_at := {"hope": 0, "doubt": 0, "resolve": 0}
+var _call_left := -1.0
+var _echoed := {}
+var _echoes := 0
+var _echo: AudioStreamPlayer3D
+var _pending_echo_stage := ""
+var _echo_ticket := 0
+
+var _misread_at := -99.0
+var _clock := 0.0
+var _place_dwell := 0.0
+var _last_place := ""
+var _returning := false
+var _still := 0.0
+var _since := 99.0
 
 
 func _ready() -> void:
@@ -50,6 +113,33 @@ func _ready() -> void:
 	_load()
 	_build_speaker()
 	Game.phase_changed.connect(_on_phase)
+	if Game.player:
+		Game.player.exhausted.connect(out_of_breath)
+		Game.player.landed_hard.connect(fell)
+	if Game.house and Game.house.doors.has("front"):
+		(Game.house.doors["front"] as HouseDoor).jam_shoved.connect(_on_front_jam)
+
+
+func speaks() -> bool:
+	return _active
+
+
+static func clip_key(text: String, mood: String) -> String:
+	return (text + "|" + mood).sha256_text()
+
+
+static func stage_for(found: int, last: bool) -> String:
+	if last or found >= 4:
+		return "resolve"
+	if found >= 2:
+		return "doubt"
+	return "hope"
+
+
+func stage() -> String:
+	if Game.turned_around:
+		return AFTER
+	return Voice.stage_for(Game.notes_found, Game.read_last_page)
 
 
 func _build_speaker() -> void:
@@ -62,114 +152,373 @@ func _build_speaker() -> void:
 	else:
 		add_child(_speaker)
 	_speaker.finished.connect(_finished)
+	_echo = Loudness.voice(Tune.CALL_SPL - Tune.ECHO_DROP_DB, "Dread", true)
+	_echo.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	add_child(_echo)
+	_echo.finished.connect(func() -> void: _answer_close = false)
 
 
 func _on_phase(next: int) -> void:
-	if next in [Game.Phase.BOOT, Game.Phase.CAUGHT, Game.Phase.ESCAPED]:
-		_speaker.stop()
-		_finished()
+	if next in [Game.Phase.BOOT, Game.Phase.CAUGHT, Game.Phase.ESCAPED, Game.Phase.DIALOGUE]:
+		_interrupt()
+		_cancel_echo()
+		_ending_ticket += 1
+	if next != Game.Phase.PLAYING and _echo:
+		_echo.stop()
+	if next == Game.Phase.ESCAPED and is_inside_tree():
+		get_tree().create_timer(Tune.ENDING_DELAY).timeout.connect(_speak_ending.bind(_ending_ticket))
+
+
+func _cancel_echo() -> void:
+	_pending_echo_stage = ""
+	_echo_ticket += 1
+	if _echo:
+		_echo.stop()
 
 
 func _finished() -> void:
-	if Game.murmur == _spoken_line:
+	if not _current.is_empty() and str(_current.get("kind", "")) == "call":
+		Game.heard("call")
+		if _wants_echo(str(_current.stage)):
+			_schedule_echo(_current)
+	if not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = 0.0
-	_spoken_line = ""
+	if not _current.is_empty() and str(_current.get("kind", "")) == "ending" \
+			and str(_current.get("id", "")) == "road" and not Game.turned_around \
+		and Game.ending_kind in ["", "road"] and is_inside_tree():
+		get_tree().create_timer(Tune.ANSWER_ROAD_DELAY).timeout.connect(_answer_road.bind(_ending_ticket))
+	_current = {}
 
 
 func _process(delta: float) -> void:
 	if not _active or Game.player == null:
 		return
+	# Over the escape card only the road answer plays on _echo; let it finish.
+	if _echo and _echo.playing and Game.phase != Game.Phase.ESCAPED \
+			and (Game.phase != Game.Phase.PLAYING or Game.indoors(Game.player.global_position + Vector3.UP * 0.9)):
+		_echo.stop()
+		_echo_stopped_early = true
+		_answer_close = false
+	if _answer_close and _echo:
+		_echo.global_position = _behind(1.4)
 	_since += delta
-	if _speaker.playing and Game.murmur == _spoken_line:
+	if _speaker.playing and not _current.is_empty() and Game.murmur == str(_current.text):
 		Game.murmur_left = maxf(Game.murmur_left, 0.2)
-	if Game.phase != Game.Phase.PLAYING:
+	# A line without a clip lasts as long as its subtitle.
+	if not _current.is_empty() and not _speaker.playing and Game.murmur_left <= 0.0:
+		_finished()
+	if Game.awake():
+		_clock += delta
+		if not _queue.is_empty() and not _busy() and not hushed and _since >= Tune.VOICE_GAP * 0.5 \
+				and Game.phase != Game.Phase.DIALOGUE:
+			_say(_queue.pop_front())
+	if Game.phase != Game.Phase.PLAYING or hushed:
 		_still = 0.0
 		return
+	_tick_outdoors(delta)
 	_notice(delta)
+
+
+func _tick_outdoors(delta: float) -> void:
+	var outdoors := not Game.indoors(Game.player.global_position + Vector3.UP * 0.9)
+	_call_tick(delta, outdoors)
+	_outdoor_time = _outdoor_time + delta if outdoors else 0.0
+	_memory_tick(outdoors, Vector2(Game.player.velocity.x, Game.player.velocity.z).length())
+	_cold_tick(outdoors)
+
+
+func _call_tick(delta: float, outdoors: bool) -> void:
+	var now := stage()
+	if Game.turned_around or not outdoors or (_calls.get(now, []) as Array).is_empty():
+		return
+	if _call_left < 0.0:
+		_call_left = randf_range(Tune.CALL_FIRST.x, Tune.CALL_FIRST.y)
+		return
+	_call_left -= delta
+	if _call_left > 0.0:
+		return
+	var lines: Array = _calls[now]
+	var line: Dictionary = lines[int(_call_at[now]) % lines.size()]
+	if not _say(line):
+		return
+	_call_left = randf_range(Tune.CALL_EVERY.x, Tune.CALL_EVERY.y)
+
+
+func _wants_echo(now: String) -> bool:
+	return not Game.turned_around and Game.read_pages.has("on the post") and now != "hope" and not _echoed.has(now) and _pending_echo_stage == "" and _echoes < Tune.ECHO_MAX
+
+
+func _schedule_echo(line: Dictionary) -> void:
+	var now := str(line.stage)
+	var answer: Dictionary = _answers.get(now, {})
+	var spoken := _clip(answer) if not answer.is_empty() else null
+	# The second answer comes from right behind her, not from the trees.
+	var close := spoken != null and now == "resolve"
+	var stream := spoken if spoken else _clip(line)
+	if stream == null:
+		return
+	if spoken == null:
+		answer = {}
+	var at := Vector3.ZERO
+	if not close:
+		if Game.trail == null or Game.trail.flora == null:
+			return
+		at = Voice.echo_from(Game.player.global_position, Game.trail.flora.tree_positions())
+		if at == Vector3.INF:
+			return
+	_pending_echo_stage = now
+	_echo_ticket += 1
+	get_tree().create_timer(randf_range(1.6, 2.4), false).timeout.connect(
+		_play_echo.bind(stream, at, _echo_ticket, now, answer, close))
+
+
+# Her own voice, back from the trees or from right behind her. Never Mathilda's.
+func _play_echo(stream: AudioStream, at: Vector3, ticket: int, echo_stage: String, answer := {}, close := false) -> void:
+	if ticket != _echo_ticket:
+		return
+	_pending_echo_stage = ""
+	if Game.phase != Game.Phase.PLAYING or Game.turned_around or Game.indoors(Game.player.global_position + Vector3.UP * 0.9):
+		return
+	_echoed[echo_stage] = true
+	_echoes += 1
+	_echo.stream = stream
+	_echo.global_position = _behind(1.4) if close else at
+	_answer_close = close
+	if answer.is_empty():
+		Loudness.place(_echo, Tune.CALL_SPL - Tune.ECHO_DROP_DB, true)
+	elif close:
+		Loudness.place(_echo, Tune.VOICE_SPL, false)
+	else:
+		Loudness.place(_echo, Tune.CALL_SPL - Tune.ANSWER_DROP_DB, true)
+	_echo.play()
+	if not answer.is_empty():
+		Game.murmur_line("…" + str(answer.text))
+		Game.murmur_left = stream.get_length() + 0.6
+	Game.heard("echo")
+
+
+func _behind(distance: float) -> Vector3:
+	var back := Basis(Vector3.UP, Game.player.facing()) * Vector3(0.0, 0.0, distance)
+	return Game.player.global_position + back + Vector3.UP * 1.55
+
+
+static func echo_from(player_at: Vector3, trees: PackedVector3Array) -> Vector3:
+	var best := Vector3.INF
+	var nearest := INF
+	for tree in trees:
+		var flat := Vector2(tree.x - player_at.x, tree.z - player_at.z).length()
+		if flat >= 25.0 and flat <= 60.0 and flat < nearest:
+			nearest = flat
+			best = tree + Vector3.UP * 3.0
+	return best
 
 
 func heard_page(entry: NoteEntry, repeat := false) -> void:
 	if not _active or entry == null:
 		return
-	var title := entry.title
-	if _heard_pages.has(title) and not repeat:
+	if _heard_pages.has(entry.title) and not repeat:
 		return
-	var line := str(_pages.get(title, ""))
-	if line == "":
-		line = "They wrote it down so I would have to answer."
-	if _say(line, true, repeat):
-		_heard_pages[title] = true
+	var line: Dictionary = _pages.get(entry.title, _line(FALLBACK_PAGE, "steady", "page", entry.title))
+	if not _say(line, repeat):
+		_enqueue(line)
 
 
-func say(line: String, interrupt := false, repeat := false) -> bool:
-	return _say(line, interrupt, repeat)
+## Every smudge on the page is solved (Game.decipher).
+func deciphered(entry: NoteEntry) -> void:
+	if not _active or entry == null or _said_deciphered.has(entry.title):
+		return
+	var line: Dictionary = _deciphered.get(entry.title, {})
+	if line.is_empty():
+		return
+	if not _say(line):
+		_enqueue(line)
+
+
+## A wrong reading in the journal.
+func misread() -> void:
+	if not _active or _misread.is_empty() or _clock - _misread_at < Tune.MISREAD_GAP:
+		return
+	_say(_misread[randi() % _misread.size()])
+
+
+## She turned around (Game.turn_around): she says so, and nothing answers again.
+func turned() -> void:
+	_cancel_echo()
+	if _active and not _turned.is_empty() and not _say(_turned):
+		_enqueue(_turned)
+
+
+## The sprint ran her out of breath (Player.exhausted).
+func out_of_breath() -> void:
+	if not _active or _spent.is_empty() or _clock - _spent_at < Tune.SPENT_GAP or Game.phase != Game.Phase.PLAYING:
+		return
+	_say(_spent[randi() % _spent.size()])
+
+
+## A hard landing (Player.landed_hard).
+func fell(_fall_speed: float) -> void:
+	if not _active or _falls.is_empty() or _clock - _fall_at < Tune.FALL_GAP or Game.phase != Game.Phase.PLAYING:
+		return
+	_say(_falls[randi() % _falls.size()])
+
+
+func _memory_tick(outdoors: bool, speed: float) -> void:
+	var now := stage()
+	if not outdoors or speed < 1.0 or _busy() or _since < Tune.MEMORY_GAP or not _memories.has(now):
+		return
+	var lines: Array = _memories[now]
+	var index := int(_memory_at[now])
+	if index < lines.size():
+		_say(lines[index])
+
+
+func _cold_tick(outdoors: bool) -> void:
+	if not outdoors or _outdoor_time < Tune.COLD_AFTER or _clock < _cold_next or _busy() or _cold_at >= _cold.size():
+		return
+	var weather := Game.weather
+	if weather == null or (weather.whiteout <= 0.5 and weather.gust <= 0.6):
+		return
+	if _say(_cold[_cold_at]):
+		_cold_next = _clock + Tune.COLD_GAP
+
+
+## A moment she notices once: an hour of her day, the lake too soon, Mathilda
+## on the ice. Waits its turn if she is speaking something as important.
+func moment(id: String) -> void:
+	if not _active or not _moments.has(id):
+		return
+	var line: Dictionary = _moments[id]
+	if not _say(line):
+		_queue.append(line)
+
+
+## A line of hers in a passing, said now over anything less important.
+## Returns how long it holds the subtitle. Without a voice it is only the subtitle.
+func encounter(id: String) -> float:
+	if _encounters.is_empty():
+		var group: Variant = Voice.read_lines().get("encounters", {})
+		if typeof(group) == TYPE_DICTIONARY:
+			for key in group:
+				_encounters[key] = Voice._parse(group[key], "encounter", str(key))
+	if not _encounters.has(id):
+		return 0.0
+	var line: Dictionary = _encounters[id]
+	if not _active or not _say(line, true):
+		Game.murmur_line(str(line.text))
+	return Game.murmur_left
+
+
+## One of the small fixes, said once: door_stuck, door_free, stove_lit,
+## window_latched, window_thread (docs/MATHILDA_STORY.md, "Chores").
+func chore(id: String) -> void:
+	if not _active or not _chores.has(id):
+		return
+	var line: Dictionary = _chores[id]
+	if not _say(line):
+		_queue.append(line)
+
+
+func _on_front_jam(remaining: int) -> void:
+	chore("door_stuck" if remaining > 0 else "door_free")
+
+
+func _speak_ending(ticket: int) -> void:
+	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or not _active:
+		return
+	# The meeting's endings were spoken on the ice; the others have a line here.
+	var kind := Game.ending_kind if Game.ending_kind != "" else ("prints" if Game.turned_around else "road")
+	var line: Dictionary = _endings.get(kind, {})
+	if not line.is_empty():
+		_say(line)
+
+
+# At the lake, after her plea: "Okay.", from the ice behind her, in her own
+# voice. (The answer keeps its old key, "road".)
+func _answer_road(ticket: int) -> void:
+	if ticket != _ending_ticket or Game.phase != Game.Phase.ESCAPED or Game.turned_around \
+			or Game.ending_kind not in ["", "road"]:
+		return
+	var line: Dictionary = _answers.get("road", {})
+	if line.is_empty():
+		return
+	var stream := _clip(line)
+	if stream:
+		_answer_close = false
+		_echo_stopped_early = false
+		_echo.stream = stream
+		_echo.global_position = _behind(3.0)
+		Loudness.place(_echo, Tune.VOICE_SPL - 3.0, false)
+		_echo.play()
+	Game.murmur_line("…" + str(line.text))
+	if stream:
+		Game.murmur_left = stream.get_length() + 0.6
 
 
 func _notice(delta: float) -> void:
-	var room := ""
-	if Game.house:
-		room = Game.house.room_at(Game.player.global_position + Vector3(0.0, 0.9, 0.0))
-	var place := room
-	if place == "":
-		if Game.trail:
-			var at := Game.player.global_position
-			var end := Game.trail.exit_point
-			if Vector2(at.x - end.x, at.z - end.z).length() < 40.0 and not _seen.has("lights"):
-				place = "lights"
-		if place == "":
-			place = "snow"
+	var place := Game.place_at(Game.player.global_position)
 	if place != _last_place:
+		_returning = _seen.has(place)
 		_last_place = place
 		_place_dwell = 0.0
 	else:
 		_place_dwell += delta
-	if place != "" and not _seen.has(place):
+	var free := _since >= 2.2 and not _busy()
+	if _busy() and int(PRIORITY.get(str(_current.get("kind", "")), 1)) < PRIORITY.place:
+		free = true
+	if not _seen.has(place):
 		var wait := 1.2 if place == "bedroom" else 0.45
-		if _place_dwell >= wait and _since >= 2.2 and not _speaker.playing and Game.murmur_left <= 0.0:
-			_say_place(place)
+		if _place_dwell >= wait and free:
+			_say(_places.get(place, _line(_stock_place(place), "steady", "place", place)))
+		return
+	if _returning and _place_dwell >= 0.45 and free and _wants_revisit(place):
+		if _say(_revisits[place]):
+			_returning = false
 		return
 	var speed := Vector2(Game.player.velocity.x, Game.player.velocity.z).length()
 	if speed > 0.35:
 		_still = 0.0
 		return
 	_still += delta
-	if _still < Tune.BORED_AFTER or _since < Tune.VOICE_GAP or _speaker.playing or Game.murmur_left > 0.4:
+	if _still < Tune.BORED_AFTER or _since < Tune.VOICE_GAP or _busy() or Game.murmur_left > 0.4:
 		return
 	_still = 0.0
-	var bored_line := _next_bored()
-	if bored_line != "":
-		_say(bored_line)
+	var lines: Array = _bored[stage()]
+	var index := int(_bored_at[stage()])
+	if index < lines.size():
+		_say(lines[index])
 
 
-func _say_place(place: String, repeat := false) -> void:
-	if _seen.has(place) and not repeat:
-		return
-	var line := str(_places.get(place, ""))
-	if line == "":
-		line = _stock_place(place)
-	if _say(line, false, repeat):
-		_seen[place] = true
+func _wants_revisit(place: String) -> bool:
+	return _revisits.has(place) and not _revisited.has(place) and stage() != "hope" \
+		and _clock - float(_first_seen.get(place, _clock)) >= Tune.REVISIT_AFTER
 
 
-func _say(line: String, interrupt := false, repeat := false) -> bool:
-	if line == "":
+func _busy() -> bool:
+	return not _current.is_empty()
+
+
+func _say(line: Dictionary, repeat := false) -> bool:
+	var text := str(line.get("text", ""))
+	if text == "" or _speaker == null:
 		return false
-	if _spoken_once.has(line) and not repeat:
+	var kind := str(line.get("kind", "bored"))
+	var once := not REPEATS.has(kind)
+	if once and _spoken.has(_key(line)) and not repeat:
 		return false
-	if _speaker.playing and not interrupt:
-		return false
-	_speaker.stop()
-	_spoken_once[line] = true
-	Game.murmur_line(line)
+	if _busy():
+		var playing := str(_current.get("kind", "bored"))
+		var both_misread := kind == "misread" and playing == "misread"
+		if int(PRIORITY.get(kind, 1)) <= int(PRIORITY.get(playing, 1)) and not both_misread:
+			return false
+		_interrupt()
+	_spoken[_key(line)] = true
+	_mark(line)
+	_current = line
 	_since = 0.0
-	_spoken_line = line
-	var stream: AudioStream = _clips.get(line)
-	if stream == null:
-		var path := CLIPS + line.sha256_text() + ".wav"
-		if ResourceLoader.exists(path):
-			stream = load(path) as AudioStream
-			if stream:
-				_clips[line] = stream
+	Game.murmur_line(text)
+	Loudness.place(_speaker, Tune.CALL_SPL if kind == "call" else Tune.VOICE_SPL)
+	_speaker.stop()
+	var stream := _clip(line)
 	if stream:
 		_speaker.stream = stream
 		Game.murmur_left = stream.get_length()
@@ -177,53 +526,161 @@ func _say(line: String, interrupt := false, repeat := false) -> bool:
 	return true
 
 
-func _next_bored() -> String:
-	while _bored_at < _bored.size():
-		var line := _bored[_bored_at]
-		_bored_at += 1
-		if not _spoken_once.has(line):
-			return line
-	return ""
+# Cut the playing line off and forget it, as if it never started.
+func _interrupt() -> void:
+	if _current.is_empty():
+		return
+	var line := _current
+	_current = {}
+	_speaker.stop()
+	if Game.murmur == str(line.text):
+		Game.murmur = ""
+		Game.murmur_left = 0.0
+	_forget(line)
+
+
+func _mark(line: Dictionary) -> void:
+	var id := str(line.get("id", ""))
+	match str(line.kind):
+		"page":
+			_heard_pages[id] = true
+		"deciphered":
+			_said_deciphered[id] = true
+		"place":
+			_seen[id] = true
+			if not _first_seen.has(id):
+				_first_seen[id] = _clock
+		"revisit":
+			_revisited[id] = true
+		"bored":
+			_bored_at[line.stage] = maxi(int(_bored_at[line.stage]), int(line.index) + 1)
+		"call":
+			_call_at[line.stage] = int(line.index) + 1
+		"misread":
+			_misread_at = _clock
+		"memory":
+			_memory_at[line.stage] = maxi(int(_memory_at[line.stage]), int(line.index) + 1)
+		"cold":
+			_cold_at = maxi(_cold_at, int(line.index) + 1)
+		"spent":
+			_spent_at = _clock
+		"fall":
+			_fall_at = _clock
+
+
+func _forget(line: Dictionary) -> void:
+	_spoken.erase(_key(line))
+	var id := str(line.get("id", ""))
+	match str(line.kind):
+		"page":
+			_heard_pages.erase(id)
+			_queue.push_front(line)
+		"deciphered":
+			_said_deciphered.erase(id)
+			_queue.push_front(line)
+		"place":
+			_seen.erase(id)
+			_first_seen.erase(id)
+		"revisit":
+			_revisited.erase(id)
+		"bored":
+			_bored_at[line.stage] = mini(int(_bored_at[line.stage]), int(line.index))
+		"call":
+			_call_at[line.stage] = int(line.index)
+			_call_left = 0.0
+		"memory":
+			_memory_at[line.stage] = mini(int(_memory_at[line.stage]), int(line.index))
+		"cold":
+			_cold_at = mini(_cold_at, int(line.index))
+
+
+func _enqueue(line: Dictionary) -> void:
+	for waiting in _queue:
+		if _key(waiting) == _key(line):
+			return
+	_queue.push_back(line)
+
+
+func _key(line: Dictionary) -> String:
+	return Voice.clip_key(str(line.get("text", "")), str(line.get("mood", "steady")))
+
+
+func _clip(line: Dictionary) -> AudioStream:
+	var key := _key(line)
+	if _clips.has(key):
+		return _clips[key]
+	var path := CLIPS + key + ".wav"
+	var stream: AudioStream = load(path) as AudioStream if ResourceLoader.exists(path) else null
+	if stream:
+		_clips[key] = stream
+	return stream
+
+
+static func _line(text: String, mood: String, kind: String, id: String, stage := "", index := 0) -> Dictionary:
+	return {"text": text, "mood": mood, "kind": kind, "id": id, "stage": stage, "index": index}
+
+
+static func _parse(item: Variant, kind: String, id: String, stage := "", index := 0) -> Dictionary:
+	if typeof(item) == TYPE_DICTIONARY:
+		var data := item as Dictionary
+		return _line(str(data.get("text", "")).strip_edges(), str(data.get("mood", "steady")), kind, id, stage, index)
+	return _line(str(item).strip_edges(), "steady", kind, id, stage, index)
+
+
+static func read_lines() -> Dictionary:
+	if not FileAccess.file_exists(LINES):
+		push_warning("Voice: no saved lines at " + LINES)
+		return {}
+	var file := FileAccess.open(LINES, FileAccess.READ)
+	if file == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	return parsed as Dictionary if typeof(parsed) == TYPE_DICTIONARY else {}
 
 
 func _load() -> void:
-	if not FileAccess.file_exists(LINES):
-		push_warning("Voice: no saved lines at " + LINES)
-		return
-	var file := FileAccess.open(LINES, FileAccess.READ)
-	if file == null:
-		return
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY:
-		return
-	var data := parsed as Dictionary
-	if typeof(data.get("pages")) == TYPE_DICTIONARY:
-		_pages = data["pages"]
-	if typeof(data.get("places")) == TYPE_DICTIONARY:
-		_places = data["places"]
-	var bored: Variant = data.get("bored", [])
-	if typeof(bored) == TYPE_ARRAY:
-		for item in bored:
-			var line := str(item).strip_edges()
-			if line != "":
-				_bored.append(line)
-	for line in _pages.values() + _places.values() + _bored:
-		var text := str(line)
-		var path := CLIPS + text.sha256_text() + ".wav"
-		if ResourceLoader.exists(path):
-			var stream := load(path) as AudioStream
-			if stream:
-				_clips[text] = stream
+	var data := Voice.read_lines()
+	for pair in [["pages", _pages, "page"], ["deciphered", _deciphered, "deciphered"],
+			["places", _places, "place"], ["revisits", _revisits, "revisit"],
+			["endings", _endings, "ending"], ["answers", _answers, "answer"],
+			["moments", _moments, "moment"], ["chores", _chores, "chore"],
+			["encounters", _encounters, "encounter"]]:
+		var group: Variant = data.get(pair[0], {})
+		if typeof(group) == TYPE_DICTIONARY:
+			for id in group:
+				(pair[1] as Dictionary)[id] = Voice._parse(group[id], pair[2], str(id))
+	for pair in [["bored", _bored, "bored"], ["memories", _memories, "memory"], ["calls", _calls, "call"]]:
+		var group: Variant = data.get(pair[0], {})
+		# The old format kept one flat list of idle lines.
+		if typeof(group) == TYPE_ARRAY:
+			group = {"hope": group}
+		if typeof(group) != TYPE_DICTIONARY:
+			continue
+		for stage in (pair[1] as Dictionary).keys():
+			var list: Array = (group as Dictionary).get(stage, [])
+			for index in list.size():
+				((pair[1] as Dictionary)[stage] as Array).append(Voice._parse(list[index], pair[2], "%s/%d" % [stage, index], stage, index))
+	for pair in [["misread", _misread, "misread"], ["spent", _spent, "spent"], ["cold", _cold, "cold"], ["falls", _falls, "fall"]]:
+		var list: Variant = data.get(pair[0], [])
+		if typeof(list) == TYPE_ARRAY:
+			for index in (list as Array).size():
+				(pair[1] as Array).append(Voice._parse(list[index], pair[2], str(index), "", index))
+	if typeof(data.get("turned")) == TYPE_DICTIONARY:
+		_turned = Voice._parse(data["turned"], "turned", "turned")
 
 
 func _stock_place(place: String) -> String:
 	match place:
 		"morgue":
-			return "Of course there is a room for a body. Of course I came down."
+			return "Not here. She can't be down here."
 		"snow":
-			return "The snow does not care that I left the wool."
+			return "Mathilda's out in this. Somewhere."
 		"lights":
-			return "The lights were already on. They can keep waiting."
+			return "Lights. Someone's there."
+		"lookout":
+			return "Lanterns. Just lanterns."
+		"lake":
+			return "The lake. I know this place."
 		"stair":
-			return "Down is a decision. I am already on it."
-	return "I knew this would be here. I came anyway."
+			return "Down. Of course it goes down."
+	return "She's been here. I can feel it."

@@ -12,6 +12,9 @@ const SURFACES := {
 	"snow": Loudness.SNOW_STEP,
 	"wood": Loudness.WOOD_STEP,
 	"stone": Loudness.STONE_STEP,
+	"grass": Loudness.GRASS_STEP,
+	# Wet, thinning snow: the snow set, about 4 dB softer.
+	"thaw": Loudness.SNOW_STEP - 4.0,
 }
 # Old boards answer a step with a creak now and then.
 const CREAK_CHANCE := 0.12
@@ -35,7 +38,7 @@ func _ready() -> void:
 	_slide_hiss = _loop("storm_hiss.wav", -20.0, "Effects")
 	_slide_hiss.stop()
 	_sting = _flat("sting.wav", -2.0, "Dread")
-	for surface in ["snow", "wood", "stone", "creak"]:
+	for surface in ["snow", "wood", "stone", "creak", "grass"]:
 		_sets[surface] = _load_set(surface)
 	for _i in 8:
 		var voice := Loudness.voice(Loudness.SNOW_STEP, "Effects")
@@ -90,7 +93,8 @@ func _build_rooms() -> void:
 ## from a slow walk to a sprint stride or a landing.
 func play_step(at: Vector3, surface: String, force: float) -> void:
 	var level: float = SURFACES.get(surface, Loudness.SNOW_STEP)
-	var clip := _pick(surface if _sets.has(surface) else "snow")
+	# Thaw, and grass until its recordings exist, use the snow set.
+	var clip := _pick(surface if not (_sets.get(surface, []) as Array).is_empty() else "snow")
 	if clip == null:
 		return
 	force = clampf(force, 0.0, 1.0)

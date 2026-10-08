@@ -1,0 +1,672 @@
+{
+  "source_root": "C:\\Users\\soulwax\\Downloads\\requested_assets_and_more",
+  "local_use_only": true,
+  "note": "Owner supplied downloads. Preserve included licenses; unspecified archives have no verified redistribution permission. Selected files stay ignored.",
+  "archives": [
+    {
+      "archive": "bathroom-furniture-set-game-ready.zip",
+      "sha256": "51d17a79394b163823d6727ebb1ba0c87074250790307665f8a70f29db939170",
+      "models": [
+        "source/SM_Bathroom_Props_01.fbx"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "bathroom",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/bathroom/source/SM_Bathroom_Props_01.fbx",
+          "sha256": "d25f34c3d6133e0d9e7c900d65308550d4e0ff46b15ae9301ca6a542ec1c6c0e",
+          "bytes": 379692
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_2_Base_color.tga.png",
+          "sha256": "5da7892ba1b0c7b6699a98b9c2803d30bc43c9154d8ce2ad33bfe9d8c1744bd7",
+          "bytes": 4938060
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_2_Normal_OpenGL.tga.png",
+          "sha256": "99a4620d3c54fe156c2ddba230c8bb87930d42dfe1347164e117509217f8fb69",
+          "bytes": 4415128
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/internal_ground_ao_texture.jpeg",
+          "sha256": "b38e04403596b09736995ac1906afee6cab94a74ee6dc81580c2ab0cfa7c4029",
+          "bytes": 18485
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_1_Metallic.tga.png",
+          "sha256": "2ba61b5fb95b37af006f1432b43a14dd037f6d82525efcbf22e65b6a70a40cf5",
+          "bytes": 743516
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_2_Opacity.tga.png",
+          "sha256": "a380014181dc2f217a96abb1ea197b904fab34cb26886225d84181bbddb0a759",
+          "bytes": 2623255
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_1_Roughness.tga.png",
+          "sha256": "776c9bb1d5000e66d97f9613b905cfc0421109df38c31b544ddec7d369aad5c1",
+          "bytes": 4227961
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Новый_проект.tuxpi.png",
+          "sha256": "964524de114134c07b0a0ecfacd2de2809c1332404c59a7225bc8e9e67e24f60",
+          "bytes": 37800
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_2_Roughness.tga.png",
+          "sha256": "a81f26e60ab34576917bae66be907df6203800bcecfe9de6a04b05d29c95959d",
+          "bytes": 3198978
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_1_Mixed_AO.tga.png",
+          "sha256": "25464837bc65c4169b91908ebd99e313405fb14c1aa7b3e4951c6de88fc68800",
+          "bytes": 2332759
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_1_Base_color.tga.png",
+          "sha256": "4071b7c93b1720a540328441c47f9335e5b97df5f86dbcaa798a3e211b685761",
+          "bytes": 6793297
+        },
+        {
+          "path": "assets/vendor/requested_house/bathroom/textures/Material_1_Normal_OpenGL.tga.png",
+          "sha256": "a2ac6c6dbe61270280e67e7d9b090717bd3f5ad7b8368f081326c7151c7a6c44",
+          "bytes": 5847110
+        }
+      ]
+    },
+    {
+      "archive": "caged_hanging_light_2k.gltf.zip",
+      "sha256": "1dac5af49b43760ce1c3f4c621aadb32b7b0e0e3d1c18504d4538a9f0435c152",
+      "models": [
+        "caged_hanging_light_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "pendant",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/pendant/caged_hanging_light_2k.gltf",
+          "sha256": "66b8d89bef8c41aeadd31ee0cba609a33612c001506bba997b011c67420cff20",
+          "bytes": 3098
+        },
+        {
+          "path": "assets/vendor/requested_house/pendant/textures/caged_hanging_light_emissive_2k.jpg",
+          "sha256": "0f25838f744a8f9a57d1070a04c60dd720d047104708075c17992d8d2199cba2",
+          "bytes": 215883
+        },
+        {
+          "path": "assets/vendor/requested_house/pendant/textures/caged_hanging_light_nor_gl_2k.jpg",
+          "sha256": "18fbce7b2dc01118c937c7c5ff88c31b044077cdb84421eaf05e89222761df0d",
+          "bytes": 2654221
+        },
+        {
+          "path": "assets/vendor/requested_house/pendant/textures/caged_hanging_light_diff_2k.jpg",
+          "sha256": "bfa7533e804b38086bc125343bf40403f3f808a6f0861718408793ad3ecb05fd",
+          "bytes": 2099065
+        },
+        {
+          "path": "assets/vendor/requested_house/pendant/textures/caged_hanging_light_arm_2k.jpg",
+          "sha256": "9aa26b03e132c7ebb29c724ed83e7fb76d448e189d112e1d4517f69134151199",
+          "bytes": 3331285
+        },
+        {
+          "path": "assets/vendor/requested_house/pendant/caged_hanging_light.bin",
+          "sha256": "061a05a47a794fdcb43d032e512291369b5b9cd4db3c4d4975c23431b0c6a0c6",
+          "bytes": 711056
+        }
+      ]
+    },
+    {
+      "archive": "chairs-and-window-set-game-ready.zip",
+      "sha256": "9ded90154a24c92bd9cd44d8f01dfc64b705252b41db485df758710feec46578",
+      "models": [
+        "source/Collection.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "curtain.zip",
+      "sha256": "688aecd25f8d091bfd961f4738e0d59c26f62e197551239fa8e55b1985a963c8",
+      "models": [
+        "scene.gltf"
+      ],
+      "licenses": {
+        "license.txt": "Model Information:\n* title:\tCurtain\n* source:\thttps://sketchfab.com/3d-models/curtain-cb07918102ca40f9b0a4cc6eb20a8aa1\n* author:\tlizhou ding (https://sketchfab.com/vancchino)\n\nModel License:\n* license type:\tCC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)\n* requirements:\tAuthor must be credited. Commercial use is allowed.\n\nIf you use this 3D model in your project be sure to copy paste this credit wherever you share it:\nThis work is based on \"Curtain\" (https://sketchfab.com/3d-models/curtain-cb07918102ca40f9b0a4cc6eb20a8aa1) by lizhou ding (https://sketchfab.com/vancchino) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)"
+      },
+      "selected": true,
+      "role": "curtain",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/curtain/license.txt",
+          "sha256": "e0bff2a2f12cf790d448ed8257ee0448f30af9359e1dccf4d133a85b5d6f3801",
+          "bytes": 656
+        },
+        {
+          "path": "assets/vendor/requested_house/curtain/scene.bin",
+          "sha256": "6ede463664bcc9882140e4dbc2a63b28a9a067cf600059fb790de653bd316765",
+          "bytes": 286800
+        },
+        {
+          "path": "assets/vendor/requested_house/curtain/scene.gltf",
+          "sha256": "699493bad85ec1b9043e51cef84522e0b2d3c0c985963f46921b67259fbfdd4e",
+          "bytes": 6500
+        },
+        {
+          "path": "assets/vendor/requested_house/curtain/textures/defaultPolygonShader_1001_baseColor.jpeg",
+          "sha256": "ee8731c9cc52dac3cfb141800970d393f26ff2f477bac0f175444fd3fd431598",
+          "bytes": 1635410
+        },
+        {
+          "path": "assets/vendor/requested_house/curtain/textures/defaultPolygonShader_1001_metallicRoughness.png",
+          "sha256": "c33db719569229bcb3f23152649b063c434bb8ed37ec92670ff3bb670ac801e6",
+          "bytes": 2244645
+        },
+        {
+          "path": "assets/vendor/requested_house/curtain/textures/defaultPolygonShader_1001_normal.png",
+          "sha256": "cfeee0e3dab95ea7d1d31b7ba703f5048892c3f7dd8befb32ba24b86cabf9839",
+          "bytes": 5099008
+        }
+      ]
+    },
+    {
+      "archive": "dauntless-flex-burn-wood-stove.zip",
+      "sha256": "ada8454edac5aec541ee4060a3ddc9e08563504026bc3e4cb506fe3d3c9d401c",
+      "models": [
+        "source/Dauntless FlexBurn Wood Stove.fbx"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "stove",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/stove/source/Dauntless FlexBurn Wood Stove.fbx",
+          "sha256": "5ac201b00cb5cf97321ec3aea6774c976cc449719d3b2f192d37bd8f411b63bb",
+          "bytes": 13796480
+        },
+        {
+          "path": "assets/vendor/requested_house/stove/textures/noisito.jpeg",
+          "sha256": "dc9a46ac3d32bda0d6c5deae030394ac9a22279222dd76bbe34ff8787ea09895",
+          "bytes": 7670245
+        },
+        {
+          "path": "assets/vendor/requested_house/stove/textures/Mat_diffuse.png",
+          "sha256": "71a019726a653a2a73337b02b2f039d724ec9b2dfa4373373b7179ddb0f2af5a",
+          "bytes": 52926
+        },
+        {
+          "path": "assets/vendor/requested_house/stove/textures/Material 001_diffuse.png",
+          "sha256": "4f02903308d589dc281d0efc881f4c871130de73218a6c0a2bc7c119b8117653",
+          "bytes": 544615
+        }
+      ]
+    },
+    {
+      "archive": "gas-stove.zip",
+      "sha256": "62ef8f576d51ce3711b65f6b4eb171fad59bd43e4ee22ecd93eb7e72a1208ec0",
+      "models": [
+        "source/gas_stove_main.fbx"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "cooker",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/cooker/source/gas_stove_main.fbx",
+          "sha256": "239389e01c39475bec6c3fbbb754965b0930cd728dafa7fd06d0796c8a7cd938",
+          "bytes": 213868
+        },
+        {
+          "path": "assets/vendor/requested_house/cooker/textures/gas_stove_Roughness.png",
+          "sha256": "b8ab3a2b82e5226557596f8a2b2bb8c7572a5fbb64dd1debadaf4706f36ec306",
+          "bytes": 1150979
+        },
+        {
+          "path": "assets/vendor/requested_house/cooker/textures/gas_stove_Metallic.png",
+          "sha256": "e2c2fd77630b7eca1f78264599971c276c5eb30311cb6bdee232fa2173342a7e",
+          "bytes": 799168
+        },
+        {
+          "path": "assets/vendor/requested_house/cooker/textures/gas_stove_Normal.png",
+          "sha256": "d0b81496d5d1a6646bbe3d36662bc645b5c3a0835d60eb87859ea520d99ad824",
+          "bytes": 1785578
+        },
+        {
+          "path": "assets/vendor/requested_house/cooker/textures/gas_stove_BaseColor.png",
+          "sha256": "6bf38c9010303d79235f33e8b6c4f56aac566d19a6a02175a88fff5b369fd1bc",
+          "bytes": 1971315
+        }
+      ]
+    },
+    {
+      "archive": "girls-frontline-2-exilium-dormitory.zip",
+      "sha256": "f6303d55591cb6cf56414552c8d237203536056e6f1d7f00030106bb1738915b",
+      "models": [],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "grass_medium_01_4k.gltf.zip",
+      "sha256": "5300d833d5fa7792474595ec9ee6ac6a654db81bd88242b3dd0eca0bcd9bff7a",
+      "models": [
+        "grass_medium_01_4k.gltf"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "henrik-wool-rug-160x230cm-mustard-and-grey.zip",
+      "sha256": "5ed422235a9cda8bb2e6621e91df90832ad0bbd62e39849e4e24c6aaf9d0aa43",
+      "models": [
+        "source/Wool Rug 160 x 230m.fbx"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "rug",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/rug/source/Wool Rug 160 x 230m.fbx",
+          "sha256": "5610db711257f5905b9c9a093172a19d490699ddff944b496e24ffeb4c29706e",
+          "bytes": 79312
+        },
+        {
+          "path": "assets/vendor/requested_house/rug/textures/Henrik_Hand_Tufted_Wool_Rug_Mustard_and_Gr.jpg",
+          "sha256": "00d857facf18c5358a6514583e12aa95fcdbf2f940f95666f34fcabf8df2c704",
+          "bytes": 3089536
+        },
+        {
+          "path": "assets/vendor/requested_house/rug/textures/Henrik_Hand_Tufted_Wool_Rug_Mustard_and_Gr.jpg",
+          "sha256": "5d32e8d273cadeac7b74cbd6addf519272be6ea84d37f67c9437b466eef6c9f4",
+          "bytes": 1742123
+        },
+        {
+          "path": "assets/vendor/requested_house/rug/textures/Rug_Shadow.jpg",
+          "sha256": "3268db8194296bf1b8046d775e649c24f4b8a42ca737c1f1bcdb68bff3589fee",
+          "bytes": 32747
+        }
+      ]
+    },
+    {
+      "archive": "ikea_cabinet.zip",
+      "sha256": "992eb24b412679f21c69c10d7840c4b85ff4410ab05a19b1c431c488bbc3eba7",
+      "models": [
+        "scene.gltf"
+      ],
+      "licenses": {
+        "license.txt": "Model Information:\n* title:\tIkea Cabinet\n* source:\thttps://sketchfab.com/3d-models/ikea-cabinet-6a3a2a19a048465a90fe97e2556b2996\n* author:\tder_typ (https://sketchfab.com/der_typ)\n\nModel License:\n* license type:\tCC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)\n* requirements:\tAuthor must be credited. Commercial use is allowed.\n\nIf you use this 3D model in your project be sure to copy paste this credit wherever you share it:\nThis work is based on \"Ikea Cabinet\" (https://sketchfab.com/3d-models/ikea-cabinet-6a3a2a19a048465a90fe97e2556b2996) by der_typ (https://sketchfab.com/der_typ) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)"
+      },
+      "selected": true,
+      "role": "cabinet",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/cabinet/license.txt",
+          "sha256": "61e44865815e52b6d00e6414827be42d89d3b9955c6f45953bd2600d27b1b856",
+          "bytes": 664
+        },
+        {
+          "path": "assets/vendor/requested_house/cabinet/scene.bin",
+          "sha256": "d33325ccc481cc087f7d9d9505d95f3510fbf922458bb39fd5e8341c6acbba85",
+          "bytes": 135724
+        },
+        {
+          "path": "assets/vendor/requested_house/cabinet/scene.gltf",
+          "sha256": "02f04ef9d7f13a130296c3b5278fd1b7ad20fde1edc3c2dba9729be659112e0b",
+          "bytes": 14310
+        },
+        {
+          "path": "assets/vendor/requested_house/cabinet/textures/Tiles05_6K_baseColor.jpeg",
+          "sha256": "931a435aaced02da8764ca2ab2bcf0956381cbf6f9306d927641ec0dc9c3f506",
+          "bytes": 16114159
+        },
+        {
+          "path": "assets/vendor/requested_house/cabinet/textures/WoodQuarteredChiffon001_2K_baseColor.jpeg",
+          "sha256": "9198d3b8c534bb023de4cde95796811612071c33068d8c9df0bbaa80c23f3f8a",
+          "bytes": 3305313
+        }
+      ]
+    },
+    {
+      "archive": "interior-7.zip",
+      "sha256": "df066d197156f86c813b55a7ad56a2886597dd4e0e357c664ccaf624dc76d838",
+      "models": [
+        "source/кино на скетч.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "landscape-forest-mountains.zip",
+      "sha256": "a13a285266c2a809f0133e729c578937a71da612b4c4f6e465a5ed6f91270b62",
+      "models": [
+        "source/пейзаж ск.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "loft-13-living-room-interior.zip",
+      "sha256": "7b5b1fedb585fd20600b53043ce28f9c609f77f79a245ecac492ea1838c3baad",
+      "models": [
+        "source/лофт12 на свкетч.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "loft-16-interior.zip",
+      "sha256": "b28ea6acb7d822bb2c9f8d8fb6388f292a842267c0b796d37cdf647cc8a58d17",
+      "models": [
+        "source/скетч.fbx"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "loft_room",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/loft_room/source/скетч.fbx",
+          "sha256": "523bda995bf71d1ef4d6794c1d640edcd1a1ee15f524d884029eee0e90a3c49d",
+          "bytes": 7549020
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/94ff41670e963da976958e970902d95c.jpeg",
+          "sha256": "0eb91f354dfae9279e07bc10b81440c1c206ecb47be796b99f76e9580390fe97",
+          "bytes": 56681
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/Без названия200_20260917195029.png",
+          "sha256": "e0d4abefb86e77e124015e27674dc5335feded277b1d8223a0db6203c62b7e98",
+          "bytes": 870093
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/6dc5bbeb7cce6b24369a031765114060.jpeg",
+          "sha256": "04aa2b38792d3955966c0f560084fb95cf8b6b5c937689fae2687a7ef2073af8",
+          "bytes": 131276
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/Без названия201_20260917202717.png",
+          "sha256": "61257d27ba0db7f68135a2349e3aab4a2301d5e92d84c8f53d0ac7b5bf603da6",
+          "bytes": 1155575
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/fee707025e35e6ad367333e0d99fbc86.jpeg",
+          "sha256": "4434d3729dfa9a218239ac3960bb2df763ff6ec4edd8ee017b57c1e5953d859f",
+          "bytes": 25177
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/21ffad966d143e3bb508cf093fd5d633-no-bg-preview (carve.photos.png",
+          "sha256": "2246f598de242d03e09b9a4f66e22167fbb983274f5c706a5ec45eb6c5baf736",
+          "bytes": 122675
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/a0a6d134fcd9571fbe00dc8cce7b76bb.jpeg",
+          "sha256": "8804adfab5ae6f8509b4ffa8730c62f47c058ac8c0677487714e0fcdd8429ce0",
+          "bytes": 227223
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/NormalMap (2).png",
+          "sha256": "87ff6c90ce0aa4edd349cecc863feded1d5bbae2f6be50d1b6721aa62b1b0ddc",
+          "bytes": 583643
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/NormalMap (1).png",
+          "sha256": "78c9a69d9b6c01439e1b785adb3a468718190a21b563a141370d5d5ad343e613",
+          "bytes": 2269883
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/9d4e3da9ff384e00e2cf2f289d63a9a0-no-bg-preview (carve.photos.png",
+          "sha256": "a68b3eacb8727707b6efeef1c5d9d468134be15fdc9152b566399bb4dece2e7b",
+          "bytes": 401795
+        },
+        {
+          "path": "assets/vendor/requested_house/loft_room/textures/ed576c08eae5678fbd385460207c1586.jpeg",
+          "sha256": "d0aad11b61c9b2c9ede136a0e181c728e40bf3d75986df81d4ce0d02c9ff5839",
+          "bytes": 75053
+        }
+      ]
+    },
+    {
+      "archive": "loft-18-mini-office-venvironment.zip",
+      "sha256": "f8c4412b997bef5b3fb7ab7e9e08ea91f89ae194e9b61b1104c7d07361eb6921",
+      "models": [
+        "source/17 лофт SAVE с окружением.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "minecraft-mystery-industrial-props-pack.zip",
+      "sha256": "5569f1651b10a25ec41a3013c9631ccdaddf803df51c9283889a5cc6e22879f0",
+      "models": [
+        "source/LuckyBlock3DStuff.gltf"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "mita_ashley_-_anime_girl_-_3d_stylized_tpose.zip",
+      "sha256": "827a2116c854e74ae77c1e8506b63961afd0824038aeb5f1cbdb398a01f6cf2a",
+      "models": [
+        "scene.gltf"
+      ],
+      "licenses": {
+        "license.txt": "Model Information:\n* title:\tMita Ashley - Anime girl - 3d stylized tpose\n* source:\thttps://sketchfab.com/3d-models/mita-ashley-anime-girl-3d-stylized-tpose-f4855b2c5ccf4ec1b82f1df5db27367b\n* author:\tlawlietrecluze (https://sketchfab.com/lawlietrecluze)\n\nModel License:\n* license type:\tCC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)\n* requirements:\tAuthor must be credited. Commercial use is allowed.\n\nIf you use this 3D model in your project be sure to copy paste this credit wherever you share it:\nThis work is based on \"Mita Ashley - Anime girl - 3d stylized tpose\" (https://sketchfab.com/3d-models/mita-ashley-anime-girl-3d-stylized-tpose-f4855b2c5ccf4ec1b82f1df5db27367b) by lawlietrecluze (https://sketchfab.com/lawlietrecluze) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)"
+      },
+      "selected": false
+    },
+    {
+      "archive": "painted_wooden_cabinet_2k.gltf.zip",
+      "sha256": "316d3eea90cf7718834b37086f57be73cfdcf296250fae5a3152564b54c8203a",
+      "models": [
+        "painted_wooden_cabinet_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "painted_wooden_nightstand_2k.gltf.zip",
+      "sha256": "c79d6cc5d0d06637e96b606b9e75a6f4a1785a082b413ffb5d3f522f0151e891",
+      "models": [
+        "painted_wooden_nightstand_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "paintings-and-posters-collection-game-ready.zip",
+      "sha256": "0e8d291c1d2815574abe341669aab641bd6dc71766cf08dc48698de0489087ed",
+      "models": [
+        "source/SM_Paperworks_01.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "paloma-large-wool-rug.zip",
+      "sha256": "60f3294c9bfa0df703411b0d7eb399210764c4f744b30466044eaaa8914b1db0",
+      "models": [
+        "source/Paloma Large Wool Rug.fbx"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "bed_rug",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/bed_rug/source/Paloma Large Wool Rug.fbx",
+          "sha256": "d7f61e01370549c95565f003f3e085d4a8c35b0eb4bd267d2fc0cde9ca570182",
+          "bytes": 153632
+        },
+        {
+          "path": "assets/vendor/requested_house/bed_rug/textures/Paloma_Large_Wool_Rug_diffuse.jpg",
+          "sha256": "39a07ecf07400097ee9c9d0d40b1d44c2c488879099a94b70d88faac1ebde606",
+          "bytes": 2250377
+        },
+        {
+          "path": "assets/vendor/requested_house/bed_rug/textures/Paloma_Large_Wool_Rug_bump.jpg",
+          "sha256": "62588eb337ad73c80e0cfc40155d659ee74ebbef324873d6620f0d8c21742ee5",
+          "bytes": 4124645
+        },
+        {
+          "path": "assets/vendor/requested_house/bed_rug/textures/Paloma_Large_Wool_Rug_shadow.jpg",
+          "sha256": "5dccf20abf5a557da5f06f3433c00b0f341b9e6d976dd43f04b013f1891d92e9",
+          "bytes": 115868
+        }
+      ]
+    },
+    {
+      "archive": "side_table_01_2k.gltf.zip",
+      "sha256": "5156efb2ca78744bf4f8d41d9b6d04297a76139622911d06ab65427035c766a2",
+      "models": [
+        "side_table_01_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "side_table",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/side_table/side_table_01_2k.gltf",
+          "sha256": "9ba10e46bb29f1739fc8cd22063a72bb321b30f0551a81db0eeda1da14b8c580",
+          "bytes": 2700
+        },
+        {
+          "path": "assets/vendor/requested_house/side_table/side_table_01.bin",
+          "sha256": "b1f2a0519fc61cded1fdeac8169ac5b077836052671cd39a35cb56576c9aa11e",
+          "bytes": 117784
+        },
+        {
+          "path": "assets/vendor/requested_house/side_table/textures/side_table_01_nor_gl_2k.jpg",
+          "sha256": "bc368d03f7b16194560919669e6e671c627d91c98068a562395469f950203b2b",
+          "bytes": 236052
+        },
+        {
+          "path": "assets/vendor/requested_house/side_table/textures/side_table_01_arm_2k.jpg",
+          "sha256": "135641036b9b436467f757510112362ddd7bf82b79bc6750345fde4be2d4bf81",
+          "bytes": 494152
+        },
+        {
+          "path": "assets/vendor/requested_house/side_table/textures/side_table_01_diff_2k.jpg",
+          "sha256": "a7db54db8c6a08629136d7422cf8029912b75cad56fb26173bd20c77027a4e1a",
+          "bytes": 703996
+        }
+      ]
+    },
+    {
+      "archive": "stylized_japanese_classroom_storage.zip",
+      "sha256": "b9b1792b36cc989727580c310aabbe13cbd4d49441a6a9471b416a2f4e128fb1",
+      "models": [
+        "scene.gltf"
+      ],
+      "licenses": {
+        "license.txt": "Model Information:\n* title:\tStylized Japanese Classroom Storage\n* source:\thttps://sketchfab.com/3d-models/stylized-japanese-classroom-storage-863b981b96ca4b73bfdaa17b79572ffd\n* author:\tsuzuart (https://sketchfab.com/suzuart)\n\nModel License:\n* license type:\tCC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)\n* requirements:\tAuthor must be credited. Commercial use is allowed.\n\nIf you use this 3D model in your project be sure to copy paste this credit wherever you share it:\nThis work is based on \"Stylized Japanese Classroom Storage\" (https://sketchfab.com/3d-models/stylized-japanese-classroom-storage-863b981b96ca4b73bfdaa17b79572ffd) by suzuart (https://sketchfab.com/suzuart) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)"
+      },
+      "selected": false
+    },
+    {
+      "archive": "the-interior-14-is-spacious.zip",
+      "sha256": "6b12a529c345a8dbb3495294b81910f61de726e6b61f69680854c9d3e28e22da",
+      "models": [
+        "source/гост14 скетч.fbx"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "wooden_bookshelf_worn_2k.gltf.zip",
+      "sha256": "096257947cbd69bcd1599fbea0909f3451ee3f154951c700093a838b35fc544a",
+      "models": [
+        "wooden_bookshelf_worn_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": false
+    },
+    {
+      "archive": "wooden_display_shelves_01_2k.gltf.zip",
+      "sha256": "83d8c59bb2afb9bf063053177fb219243dbeb4bb3936be93e04eb84f82631946",
+      "models": [
+        "wooden_display_shelves_01_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "shelves",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/shelves/wooden_display_shelves_01_2k.gltf",
+          "sha256": "b3a7633c2c341ee459d7235549671696b5466513ee1d26bfcc6fc0b05cb97b4d",
+          "bytes": 6795
+        },
+        {
+          "path": "assets/vendor/requested_house/shelves/textures/wooden_display_shelves_01_diff_2k.jpg",
+          "sha256": "532b4fc7e9147cc35287cbc4796e789c3973f916b53019ff0fa10c068f96e056",
+          "bytes": 474742
+        },
+        {
+          "path": "assets/vendor/requested_house/shelves/wooden_display_shelves_01.bin",
+          "sha256": "e6c000a780626e618c1f1c0c1ec2ec29e1452e7824055ba53b40963d857edfbe",
+          "bytes": 105988
+        },
+        {
+          "path": "assets/vendor/requested_house/shelves/textures/wooden_display_shelves_01_arm_2k.jpg",
+          "sha256": "f2240882e5c67fac0a79843628633857375852f171c13bc02603c93686b6933f",
+          "bytes": 569358
+        },
+        {
+          "path": "assets/vendor/requested_house/shelves/textures/wooden_display_shelves_01_nor_gl_2k.jpg",
+          "sha256": "266eaa323e91dcf42e8c30bf9850da39fead76f589f1ff52c5a2f9a3b546e504",
+          "bytes": 253878
+        }
+      ]
+    },
+    {
+      "archive": "wooden_lantern_01_2k.gltf.zip",
+      "sha256": "df1d2b3a5b60c6ebdeb9bfdf66aed60a06005d9654261b0f2cde67ddd9e6610a",
+      "models": [
+        "wooden_lantern_01_2k.gltf"
+      ],
+      "licenses": {},
+      "selected": true,
+      "role": "wood_lantern",
+      "files": [
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/wooden_lantern_01_2k.gltf",
+          "sha256": "6f92eae1fa0286ab2efa7a9ac39966fc7ae8ca71e27fdb01260c07bf9055656f",
+          "bytes": 9540
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/textures/wooden_lantern_01_glass_arm_2k.jpg",
+          "sha256": "be21ec21910483063763eb67ac5d64e9648297887c6ce65234f9f48afb1bb62c",
+          "bytes": 2150139
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/textures/wooden_lantern_01_diff_2k.jpg",
+          "sha256": "52273b03dda90f3e703e2a524817cf7c46b726e7a2011c84e1c02cb94ef8f777",
+          "bytes": 2755465
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/textures/wooden_lantern_01_nor_gl_2k.jpg",
+          "sha256": "375040c774f89483879b5790923c843749d30955be219109243bc031fa96cf65",
+          "bytes": 3047934
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/textures/wooden_lantern_01_arm_2k.jpg",
+          "sha256": "91f36a21a9322d40aeb13b75d0d3e015f8c44b842b528369562c2dc1f7ddef68",
+          "bytes": 3113676
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/textures/wooden_lantern_01_glass_nor_gl_2k.jpg",
+          "sha256": "6940dcd22bc21d0410838e432e4f66430bdb90a79576a61d2385850fab928efa",
+          "bytes": 1029036
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/textures/wooden_lantern_01_glass_diff_2k.jpg",
+          "sha256": "989446236405daa5251dca8126d68bbadb8d9aa17abf1dd3731e0abcccddd94a",
+          "bytes": 1620643
+        },
+        {
+          "path": "assets/vendor/requested_house/wood_lantern/wooden_lantern_01.bin",
+          "sha256": "65c6b1a776c66d4170dab3657f0809b1a8a88219507589d6c9aad70ffbe687a3",
+          "bytes": 268136
+        }
+      ]
+    }
+  ]
+}

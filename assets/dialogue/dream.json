@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "opening": "WASD to walk · mouse to look\nThe snow remembers a shape. Follow it.",
+  "beats": [
+    {
+      "id": "tree_line",
+      "text": "It is waiting where the trees begin."
+    },
+    {
+      "id": "footsteps",
+      "text": "You hear your own steps arriving ahead of you."
+    },
+    {
+      "id": "lantern",
+      "text": "The lantern catches a hand, then loses it."
+    },
+    {
+      "id": "empty_path",
+      "text": "The path ends where the snow has no tracks."
+    }
+  ],
+  "arrival": "The trees are empty. The house light still waits behind you.",
+  "question": "Before you wake, what do you ask her?",
+  "branches": [
+    {
+      "id": "name",
+      "label": "Who are you?",
+      "response": "The figure leans toward you. The answer follows you into waking.\nPress E to wake.",
+      "ophelia": "The name from the dream returns as Ophelia wakes: Mathilda.",
+      "mathilda": "Mathilda wakes with a name on her lips: Ophelia."
+    },
+    {
+      "id": "waiting",
+      "label": "Why were you waiting?",
+      "response": "The figure looks past you, toward the house.\nPress E to wake.",
+      "ophelia": "Ophelia wakes with the feeling that someone is waiting for her.",
+      "mathilda": "Mathilda remembers waiting in the snow, unsure who she was waiting for."
+    },
+    {
+      "id": "remember",
+      "label": "Do I know you?",
+      "response": "The figure almost answers. The snow moves between you.\nPress E to wake.",
+      "ophelia": "Ophelia wakes certain she has met that woman before.",
+      "mathilda": "A face half-remembered follows Mathilda into the afternoon."
+    },
+    {
+      "id": "silence",
+      "label": "Say nothing.",
+      "response": "The figure waits. You let the silence answer.\nPress E to wake.",
+      "ophelia": "Ophelia keeps the dream to herself, but its shape stays with her.",
+      "mathilda": "Mathilda keeps the dream to herself, but its shape stays with her."
+    }
+  ]
+}
