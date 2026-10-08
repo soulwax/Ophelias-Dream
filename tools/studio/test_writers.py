@@ -39,6 +39,38 @@ def main():
         elif len(rows_before) != len(rows_after) or len(touched) != expected or "Probe text." not in changed:
             failures.append(f"{line.uid}: touched rows {touched}")
         checked += 1
+
+    doorway = next((line for line in lines if line.chapter == "doorway" and line.meta.get("answers") not in ("none", "any")), None)
+    if doorway:
+        path = writers.doc_path(doorway)
+        original = docs.setdefault(path, writers.read(path))
+        meta = doorway.meta
+        choreography = {
+            "speaker": doorway.speaker, "mood": doorway.mood,
+            "reaction": meta["reaction"], "answers": meta["answers"], "quote": meta["quote"],
+            "intensity": meta["intensity"], "pause": meta["pause"], "overlap": 0.2, "break": True,
+        }
+        problem = writers.check_dialogue(doorway, choreography, lines)
+        if problem:
+            failures.append(f"{doorway.uid}: test fixture rejected: {problem}")
+        else:
+            try:
+                changed = writers.rewrite_dialogue(original, doorway, choreography)
+                back = writers.rewrite_dialogue(changed, doorway, {
+                    "speaker": doorway.speaker, "mood": doorway.mood,
+                    "reaction": meta["reaction"], "answers": meta["answers"], "quote": meta["quote"],
+                    "intensity": meta["intensity"], "pause": meta["pause"],
+                    "overlap": meta.get("overlap", 0), "break": meta.get("break", False),
+                })
+                if back != original:
+                    failures.append(f"{doorway.uid}: choreography did not round-trip")
+                elif "Break: yes" not in changed or "Overlap: 0.20" not in changed:
+                    failures.append(f"{doorway.uid}: optional choreography fields were not added")
+            except writers.EditError as error:
+                failures.append(f"{doorway.uid}: choreography rewrite failed: {error}")
+        invalid = {**choreography, "quote": "not in the answered line"}
+        if not writers.check_dialogue(doorway, invalid, lines):
+            failures.append(f"{doorway.uid}: accepted a quote missing from its answer")
     for failure in failures:
         print("FAIL", failure)
     print(f"writers: {checked} lines round-trip, {skipped} not editable here, {len(failures)} failures")

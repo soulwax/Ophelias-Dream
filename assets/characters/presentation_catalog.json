@@ -7,6 +7,27 @@
     "yaw_degrees": 0.0
   },
   {
+    "name": "Anime Mage",
+    "scene": "res://assets/characters/styloo_elf/presentation/mage.glb",
+    "description": "A slender anime-style mage with a compatible Styloo skeleton. Previews the project's feminine locomotion and shared character motions.",
+    "scale": 0.8,
+    "yaw_degrees": 0.0
+  },
+  {
+    "name": "Anime Nain",
+    "scene": "res://assets/characters/styloo_elf/presentation/nain.glb",
+    "description": "A distinct anime-style adventurer with a compatible Styloo skeleton. Previews the project's feminine locomotion and shared character motions.",
+    "scale": 0.8,
+    "yaw_degrees": 0.0
+  },
+  {
+    "name": "Anime Knight",
+    "scene": "res://assets/characters/styloo_elf/presentation/knight.glb",
+    "description": "A lean anime-style knight with a compatible Styloo skeleton. Previews the project's feminine locomotion and shared character motions.",
+    "scale": 0.8,
+    "yaw_degrees": 0.0
+  },
+  {
     "name": "Mathilda — Snowlight",
     "scene": "res://assets/characters/variants/snowlight.tscn",
     "description": "Silver hair, glacier-blue eyes, blue cloth and silver-toned ornament.",

@@ -9,6 +9,22 @@ const el = (tag, props = {}, ...kids) => {
 const CHAPTER_NAMES = { ophelia: "Ophelia's afternoon", mathilda: "Mathilda's camp", lake: "On the ice", doorway: "At the door" };
 const MOOD_HUE = { steady: 200, warm: 30, hushed: 260, shaken: 50, breaking: 0, resolve: 140, calling: 190,
 	numb: 220, bitter: 15, pleading: 300, wry: 90, remembering: 330, panicked: 60, spent: 170 };
+const MOOD_DIRECTIONS = {
+	steady: "Speak plainly and evenly, with quiet attention and natural breath.",
+	warm: "Let a little warmth and tenderness through, as if comforting someone you trust.",
+	hushed: "Speak close and barely above a whisper, careful not to be overheard.",
+	shaken: "Try to stay composed, but let a small tremor and uneven breath betray the shock.",
+	breaking: "Let the words catch and fracture; grief is overtaking the effort to stay composed.",
+	resolve: "Speak with low, deliberate conviction; fear remains, but the decision is made.",
+	calling: "Call urgently into the distance, carrying over wind without becoming theatrical.",
+	numb: "Keep the voice distant and drained, as if feeling has gone quiet for the moment.",
+	bitter: "Give the words a restrained edge of hurt and resentment, held under control.",
+	pleading: "Ask with vulnerable urgency; let the voice soften on the words that matter most.",
+	wry: "Allow one dry, fleeting trace of humor, then return to guarded seriousness.",
+	remembering: "Speak gently and inwardly, as if handling a memory that could easily break.",
+	panicked: "Let breath shorten and pace quicken with fear, keeping every word intelligible.",
+	spent: "Speak with the last of your strength, slow and breath-thin, without melodrama.",
+};
 
 const state = { lines: [], summary: {}, actions: [], filter: { chapter: "", group: "", status: "", speaker: "", owed: "", q: "" },
 	selected: null, takes: {}, playing: null, voicesLoaded: false };
@@ -23,6 +39,7 @@ async function load() {
 	const data = await api("/api/state");
 	Object.assign(state, { lines: data.lines, summary: data.summary, actions: data.actions, orphans: data.orphans });
 	state.review = await api("/api/review");
+	state.models = await api("/api/models");
 	const moods = $("#lab-mood");
 	if (!moods.children.length) for (const mood of data.moods) moods.append(el("option", { value: mood, textContent: mood }));
 	refreshUndo();
@@ -30,6 +47,7 @@ async function load() {
 	renderNav();
 	renderRows();
 	renderActions();
+	renderModels();
 }
 
 function renderSummary() {
@@ -67,6 +85,7 @@ function renderNav() {
 	const open = (state.review || []).filter((i) => !i.decision).length;
 	nav.append(navLink("Review new clips", open || "", open > 0, !$("#review-view").hidden, () => showView("review")));
 	nav.append(navLink("Bake & check", "", false, !$("#bake-view").hidden, () => showView("bake")));
+	nav.append(navLink("Voice models", (state.models?.models || []).length, false, !$("#models-view").hidden, () => showView("models")));
 	for (const chapter of Object.keys(CHAPTER_NAMES)) {
 		const inChapter = lines.filter((l) => l.chapter === chapter);
 		if (!inChapter.length) continue;
@@ -176,6 +195,9 @@ async function select(line) {
 	$("#lab-meta").textContent = `${line.speaker} · ${line.mood} · ${line.clip}${line.owed_to ? ` · owed to ${line.owed_to}` : ""}`;
 	$("#lab-text").value = line.text;
 	$("#lab-mood").value = line.mood;
+	state.autoDirective = MOOD_DIRECTIONS[line.mood] || MOOD_DIRECTIONS.steady;
+	$("#qwen-instruction").value = state.autoDirective;
+	fillDialogue(line);
 	$("#lab-edit").hidden = true;
 	const [bakeable, why] = bakePlan(line);
 	$("#lab-bake").disabled = !bakeable;
@@ -186,12 +208,33 @@ async function select(line) {
 	else current.append(el("span", { className: "muted", textContent: "No clip yet: the game shows this line as a subtitle." }));
 	if (line.meta && line.meta.reaction) current.append(el("div", { className: "muted", textContent: `Action / reaction: ${line.meta.reaction}` }));
 	if (!state.voicesLoaded) await loadVoices();
+	if (state.models) configureModelControls();
 	$("#lab-voice").value = line.speaker === "mathilda" ? "af_bella" : "af_sarah";
 	const speed = line.speaker === "mathilda" ? 0.94 : 0.92;
 	$("#lab-speed").value = speed;
 	$("#lab-speed-out").textContent = speed.toFixed(2);
 	renderTakes();
 	renderRows();
+}
+
+function fillDialogue(line) {
+	const box = $("#lab-dialogue");
+	box.hidden = line.chapter !== "doorway";
+	if (box.hidden) return;
+	const meta = line.meta || {};
+	$("#dialogue-speaker").value = line.speaker;
+	$("#dialogue-reaction").value = meta.reaction || "";
+	$("#dialogue-quote").value = meta.quote || "";
+	$("#dialogue-intensity").value = meta.intensity ?? 0;
+	$("#dialogue-pause").value = meta.pause ?? 0;
+	$("#dialogue-overlap").value = meta.overlap ?? 0;
+	$("#dialogue-break").checked = Boolean(meta.break);
+	const answers = $("#dialogue-answers");
+	answers.replaceChildren(el("option", { value: "none", textContent: "No answer" }), el("option", { value: "any", textContent: "Anything" }));
+	for (const other of state.lines.filter((item) => item.chapter === "doorway" && item.uid !== line.uid)) {
+		answers.append(el("option", { value: other.uid.split("/").at(-1), textContent: `${other.uid.split("/").at(-1)} · ${other.text.slice(0, 42)}` }));
+	}
+	answers.value = meta.answers || "none";
 }
 
 async function loadVoices() {
@@ -208,7 +251,27 @@ function renderTakes() {
 	const list = $("#lab-takes");
 	list.replaceChildren();
 	for (const take of state.takes[state.selected.uid] || []) {
-		list.append(el("li", {}, playButton(take.path, `take · ${take.text}`), el("span", { textContent: `${take.voice} · ${take.speed.toFixed(2)} — “${take.text.slice(0, 60)}”` })));
+		const row = el("li", {}, playButton(take.path, `take · ${take.text}`), el("span", { textContent: `${take.voice}${take.speed == null ? "" : ` · ${take.speed.toFixed(2)}`} — “${take.text.slice(0, 60)}”` }));
+		if (take.model_id && !take.converted) {
+			const convert = el("button", { className: "ghost", textContent: "Match Ophelia", disabled: !state.models?.can_unify,
+				title: state.models?.can_unify ? "Convert this take to Ophelia's approved steady voice" : "Needs the Chatterbox CUDA runtime, NVIDIA GPU, and steady reference" });
+			convert.onclick = async () => {
+				convert.disabled = true;
+				$("#lab-status").textContent = "Converting to Ophelia's voice with Chatterbox…";
+				const result = await api("/api/model_unify", { path: take.path });
+				if (!result.ok) {
+					$("#lab-status").textContent = result.error || "Identity conversion failed";
+					convert.disabled = !state.models?.can_unify;
+					return;
+				}
+				(state.takes[state.selected.uid] ||= []).unshift({ path: result.path, voice: "Ophelia identity · Chatterbox VC", text: take.text, converted: true });
+				$("#lab-status").textContent = result.cached ? "Played from the scratch cache." : "Converted take is in scratch; it has not changed any game clips.";
+				renderTakes();
+				toggle(result.path, `Ophelia voice · ${take.text}`);
+			};
+			row.append(convert);
+		}
+		list.append(row);
 	}
 	if (!list.children.length) list.append(el("li", { className: "muted", textContent: "None yet. Kokoro renders on this machine in a few seconds; the first one also wakes the model." }));
 }
@@ -221,14 +284,18 @@ async function tryReading() {
 	const speed = parseFloat($("#lab-speed").value);
 	$("#lab-status").textContent = "Rendering…";
 	$("#lab-try").disabled = true;
-	const result = await api("/api/try", { text, voice, speed });
+	const engine = $("#lab-engine").value;
+	const qwen = engine !== "kokoro";
+	const result = await api(qwen ? "/api/model_try" : "/api/try", qwen
+		? { id: engine, text, instruction: engine === "qwen-custom-voice-small" ? "" : $("#qwen-instruction").value.trim(), speaker: $("#qwen-speaker").value }
+		: { text, voice, speed });
 	$("#lab-try").disabled = false;
 	if (!result.ok) {
-		$("#lab-status").textContent = result.error || "Kokoro failed";
+		$("#lab-status").textContent = result.error || "Preview failed";
 		return;
 	}
 	$("#lab-status").textContent = result.cached ? "Played from the scratch cache." : `Rendered ${result.seconds}s.`;
-	(state.takes[line.uid] ||= []).unshift({ path: result.path, voice, speed, text });
+	(state.takes[line.uid] ||= []).unshift({ path: result.path, voice: qwen ? result.model : voice, speed: qwen ? null : speed, text, model_id: qwen ? engine : "" });
 	renderTakes();
 	toggle(result.path, `take · ${text}`);
 }
@@ -242,7 +309,20 @@ function schedulePreview() {
 }
 
 function draft() {
-	return { uid: state.selected.uid, text: $("#lab-text").value.trim(), mood: $("#lab-mood").value };
+	const draft = { uid: state.selected.uid, text: $("#lab-text").value.trim(), mood: $("#lab-mood").value };
+	if (state.selected.chapter === "doorway") {
+		draft.dialogue = {
+			speaker: $("#dialogue-speaker").value,
+			reaction: $("#dialogue-reaction").value,
+			answers: $("#dialogue-answers").value,
+			quote: $("#dialogue-quote").value,
+			intensity: parseFloat($("#dialogue-intensity").value),
+			pause: parseFloat($("#dialogue-pause").value),
+			overlap: parseFloat($("#dialogue-overlap").value),
+			break: $("#dialogue-break").checked,
+		};
+	}
+	return draft;
 }
 
 async function preview() {
@@ -250,7 +330,13 @@ async function preview() {
 	if (!line) return;
 	const edit = draft();
 	const panel = $("#lab-edit");
-	if (edit.text === line.text && edit.mood === line.mood) {
+	const originalDialogue = line.chapter === "doorway" ? {
+		speaker: line.speaker, reaction: line.meta?.reaction || "", answers: line.meta?.answers || "none",
+		quote: line.meta?.quote || "", intensity: line.meta?.intensity ?? 0, pause: line.meta?.pause ?? 0,
+		overlap: line.meta?.overlap ?? 0, break: Boolean(line.meta?.break),
+	} : null;
+	if (edit.text === line.text && edit.mood === line.mood &&
+		(!edit.dialogue || JSON.stringify(edit.dialogue) === JSON.stringify(originalDialogue))) {
 		panel.hidden = true;
 		return;
 	}
@@ -340,8 +426,9 @@ async function refreshUndo() {
 // ---------------------------------------------------------------- views
 
 function showView(name) {
-	for (const view of ["lines", "review", "bake"]) $(`#${view}-view`).hidden = view !== name;
+	for (const view of ["lines", "review", "bake", "models"]) $(`#${view}-view`).hidden = view !== name;
 	if (name === "review") renderReview();
+	if (name === "models") renderModels();
 	renderNav();
 }
 
@@ -443,31 +530,96 @@ async function pollJobs() {
 	let busy = true;
 	while (busy) {
 		const jobs = await api("/api/jobs");
+		jobsBusy = jobs.some((j) => j.state === "running" || j.state === "queued");
 		renderJobs(jobs);
-		busy = jobs.some((j) => j.state === "running" || j.state === "queued");
+		state.models = await api("/api/models");
+		renderModels();
+		busy = jobsBusy;
 		if (!busy) break;
 		await new Promise((r) => setTimeout(r, 900));
 	}
 	polling = false;
+	jobsBusy = false;
 	if (state.selected) await reloadKeeping(state.selected.uid);
 	else await load();
 }
 
 function renderJobs(jobs) {
-	const box = $("#jobs");
-	const open = new Set([...box.querySelectorAll("details[open]")].map((d) => d.dataset.id));
-	box.replaceChildren();
-	for (const job of jobs) {
-		const pre = el("pre", { textContent: job.log.join("\n") });
-		const details = el("details", { className: "job", open: job.state === "running" || open.has(String(job.id)) },
-			el("summary", {}, el("span", { className: `state ${job.state}`, textContent: job.state }), el("b", { textContent: job.label }),
-				el("span", { className: "muted", textContent: job.code === null ? "" : `exit ${job.code}` })), pre);
-		details.dataset.id = job.id;
-		box.append(details);
-		pre.scrollTop = pre.scrollHeight;
+	for (const box of [$("#jobs"), $("#model-jobs")]) {
+		if (!box) continue;
+		const open = new Set([...box.querySelectorAll("details[open]")].map((d) => d.dataset.id));
+		box.replaceChildren();
+		for (const job of jobs) {
+			const pre = el("pre", { textContent: job.log.join("\n") });
+			const details = el("details", { className: "job", open: job.state === "running" || open.has(String(job.id)) },
+				el("summary", {}, el("span", { className: `state ${job.state}`, textContent: job.state }), el("b", { textContent: job.label }),
+					el("span", { className: "muted", textContent: job.code === null ? "" : `exit ${job.code}` })), pre);
+			details.dataset.id = job.id;
+			box.append(details);
+		}
+		if (!jobs.length) box.append(el("p", { className: "muted", textContent: "Nothing has run yet." }));
 	}
-	if (!jobs.length) box.append(el("p", { className: "muted", textContent: "Nothing has run yet." }));
 }
+
+function configureModelControls() {
+	const select = $("#lab-engine");
+	const selected = select.value || "kokoro";
+	select.replaceChildren(el("option", { value: "kokoro", textContent: "Kokoro · quick baseline" }));
+	for (const model of state.models.models || []) {
+		select.append(el("option", { value: model.id, textContent: model.downloaded ? model.name : `${model.name} · download first` }));
+	}
+	select.value = [...select.options].some((option) => option.value === selected) ? selected : "kokoro";
+	const engine = state.models.models.find((item) => item.id === select.value);
+	const qwen = Boolean(engine);
+	$("#qwen-instruction-wrap").hidden = !qwen || engine.id === "qwen-custom-voice-small";
+	$("#qwen-speaker-wrap").hidden = !qwen || engine.id === "qwen-voice-design";
+	$("#lab-speed").closest("label").hidden = qwen;
+	$("#engine-help").textContent = engine?.id === "qwen-custom-voice-small"
+		? "0.6B CustomVoice compares built-in timbres; emotional instructions are unavailable in this model."
+		: qwen ? "Qwen previews are scratch takes. VoiceDesign creates an instructed voice; CustomVoice keeps a built-in timbre while varying delivery."
+			: "Kokoro is a local baseline. Qwen experimental takes are saved only in scratch and do not alter the game's voice locks.";
+}
+
+function renderModels() {
+	if (!state.models) return;
+	$("#model-runtime").textContent = state.models.runtime_ready
+		? "Qwen inference is ready on this machine (CUDA runtime detected)."
+		: `Downloads are available${state.models.downloader_ready ? "" : " once uv is installed"}; Qwen inference needs an NVIDIA GPU and build/voice/gpu-venv. ${state.models.chatterbox_ready ? "Chatterbox conversion runtime is installed." : "Chatterbox identity conversion runtime is not installed here."}`;
+	const box = $("#model-cards");
+	box.replaceChildren();
+	for (const item of state.models.models || []) {
+		const status = item.downloaded ? (state.models.runtime_ready ? "Ready to preview" : "Weights ready · GPU runtime needed") : `Download · ${item.size}`;
+		const button = el("button", { className: item.downloaded ? "" : "primary", textContent: item.downloaded ? "Use in voice lab" : "Download model",
+			disabled: item.downloaded ? !state.models.runtime_ready : !state.models.downloader_ready || jobsBusy });
+		button.onclick = async () => {
+			if (item.downloaded) {
+				$("#lab-engine").value = item.id;
+				configureModelControls();
+				if (state.selected) showView("lines");
+				else toast("Choose a story line, then open the voice lab to preview this model.");
+				return;
+			}
+			const result = await api("/api/models/download", { id: item.id });
+			if (result.error) return toast(result.error, false);
+			toast(`Downloading ${item.name}. Progress and any Hugging Face access issue will appear in Jobs.`);
+			pollJobs();
+		};
+		const use = el("button", { className: "ghost", textContent: "Select for lab" });
+		use.onclick = () => {
+			$("#lab-engine").value = item.id;
+			configureModelControls();
+			if (state.selected) showView("lines"); else toast("Choose a story line, then open the voice lab.");
+		};
+		box.append(el("article", { className: "model-card" },
+			el("div", { className: "kind", textContent: `${item.license} · ${item.size}` }),
+			el("h3", {}, el("a", { href: item.url, target: "_blank", rel: "noreferrer", textContent: item.name })),
+			el("p", { textContent: item.role }),
+			el("div", { className: `model-status ${item.downloaded ? "ready" : ""}`, textContent: status }),
+			el("div", { className: "row" }, button, use)));
+	}
+}
+
+let jobsBusy = false;
 
 // ---------------------------------------------------------------- wiring
 
@@ -483,10 +635,27 @@ for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "s
 }
 $("#lab-close").onclick = () => { $("#lab").hidden = true; state.selected = null; renderRows(); };
 $("#lab-try").onclick = tryReading;
+$("#lab-engine").onchange = configureModelControls;
 $("#lab-speed").oninput = (e) => { $("#lab-speed-out").textContent = parseFloat(e.target.value).toFixed(2); };
 $("#check-all").onclick = () => runAction("validate");
 $("#lab-text").addEventListener("input", schedulePreview);
-$("#lab-mood").addEventListener("change", schedulePreview);
+$("#lab-mood").addEventListener("change", () => {
+	if (!state.autoDirective || $("#qwen-instruction").value === state.autoDirective) {
+		state.autoDirective = MOOD_DIRECTIONS[$("#lab-mood").value] || MOOD_DIRECTIONS.steady;
+		$("#qwen-instruction").value = state.autoDirective;
+	}
+	schedulePreview();
+});
+for (const id of ["dialogue-speaker", "dialogue-answers", "dialogue-reaction", "dialogue-quote", "dialogue-intensity", "dialogue-pause", "dialogue-overlap", "dialogue-break"]) {
+	$("#" + id).addEventListener("input", schedulePreview);
+	$("#" + id).addEventListener("change", schedulePreview);
+}
+$("#dialogue-speaker").addEventListener("change", (event) => {
+	const mathilda = event.target.value === "mathilda";
+	$("#lab-voice").value = mathilda ? "af_bella" : "af_sarah";
+	$("#lab-speed").value = mathilda ? "0.94" : "0.92";
+	$("#lab-speed-out").textContent = parseFloat($("#lab-speed").value).toFixed(2);
+});
 $("#lab-save").onclick = save;
 $("#lab-reset").onclick = () => { if (state.selected) select(state.selected); };
 $("#undo").onclick = undo;

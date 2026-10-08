@@ -54,6 +54,20 @@
       <h2>Jobs</h2>
       <div id="jobs" class="jobs"></div>
     </section>
+    <section id="models-view" hidden>
+      <h2>Voice model constellation</h2>
+      <p class="muted">Explore distinct performance layers, then compare them in the voice lab. Downloads stay in the ignored build/voice/hf folder.</p>
+      <div class="constellation" aria-label="Voice model workflow">
+        <div class="flow-node"><b>Script line</b><small>text + mood</small></div><span class="flow-edge">→</span>
+        <div class="flow-node"><b>Qwen3-TTS</b><small>voice design / expressive take</small></div><span class="flow-edge">→</span>
+        <div class="flow-node"><b>Chatterbox VC</b><small>unify to character identity</small></div><span class="flow-edge">→</span>
+        <div class="flow-node"><b>Whisper + ECAPA</b><small>transcript + voice checks</small></div>
+      </div>
+      <p id="model-runtime" class="runtime muted"></p>
+      <div id="model-cards" class="model-cards"></div>
+      <h2>Recent model and bake jobs</h2>
+      <div id="model-jobs" class="jobs"></div>
+    </section>
   </main>
   <aside id="lab" class="lab" hidden>
     <div class="lab-head">
@@ -72,6 +86,31 @@
       <label>Mood <select id="lab-mood"></select></label>
       <label>Voice <select id="lab-voice"></select></label>
     </div>
+    <fieldset class="model-controls">
+      <legend>Preview engine</legend>
+      <label>Model <select id="lab-engine"><option value="kokoro">Kokoro · quick baseline</option></select></label>
+      <label id="qwen-instruction-wrap" hidden>Performance / voice direction
+        <textarea id="qwen-instruction" rows="3" placeholder="A restrained, breath-thin reading; grief held close, with a slight tremor on the last word."></textarea>
+      </label>
+      <label id="qwen-speaker-wrap" hidden>Built-in voice <select id="qwen-speaker"><option>Serena</option><option>Vivian</option><option>Sohee</option><option>Ryan</option><option>Aiden</option><option>Dylan</option><option>Eric</option><option>Uncle_Fu</option><option>Ono_Anna</option></select></label>
+      <small id="engine-help" class="muted">Kokoro is a local baseline. Qwen experimental takes are saved only in scratch and do not alter the game's voice locks.</small>
+    </fieldset>
+    <fieldset id="lab-dialogue" hidden>
+      <legend>Doorway choreography</legend>
+      <div class="row">
+        <label>Speaker <select id="dialogue-speaker"><option value="ophelia">Ophelia</option><option value="mathilda">Mathilda</option></select></label>
+        <label>Answers <select id="dialogue-answers"></select></label>
+      </div>
+      <label>Action / reaction <input id="dialogue-reaction" type="text" maxlength="180"></label>
+      <label>Quoted words <input id="dialogue-quote" type="text" maxlength="180"></label>
+      <div class="row">
+        <label>Intensity <input id="dialogue-intensity" type="number" min="0" max="1" step="0.05"></label>
+        <label>Pause (s) <input id="dialogue-pause" type="number" min="0" max="5" step="0.05"></label>
+        <label>Overlap (s) <input id="dialogue-overlap" type="number" min="0" max="3" step="0.05"></label>
+      </div>
+      <label class="check"><input id="dialogue-break" type="checkbox"> Mark an intentional intensity break</label>
+      <small class="muted">Answers quotes are checked against the chosen line. The doorway script check validates the whole exchange before you keep the save.</small>
+    </fieldset>
     <label>Speed <input id="lab-speed" type="range" min="0.6" max="1.3" step="0.02" value="0.94"><output id="lab-speed-out">0.94</output></label>
     <button id="lab-try" class="primary">Try this reading <kbd>T</kbd></button>
     <div id="lab-status" class="muted"></div>

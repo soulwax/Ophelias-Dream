@@ -12,6 +12,7 @@ import hashlib
 import json
 import mimetypes
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -22,7 +23,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from studio import model, review, writers  # noqa: E402
+from studio import model, models, review, writers  # noqa: E402
 
 ROOT = model.ROOT
 STATIC = Path(__file__).resolve().parent / "static"
@@ -169,6 +170,71 @@ class Lab:
         return self.voices
 
 
+class QwenLab:
+    """Warm Qwen worker for experimental, natural-language-directed readings."""
+
+    def __init__(self):
+        self.process, self.lock = None, threading.Lock()
+
+    def _ensure(self):
+        if self.process and self.process.poll() is None:
+            return
+        if not models.runtime_ready():
+            raise RuntimeError("Qwen previews need an NVIDIA GPU and build/voice/gpu-venv; downloads can still be prepared here.")
+        self.process = subprocess.Popen(
+            [str(models.QWEN_PYTHON), str(Path(__file__).with_name("qwen_worker.py"))],
+            cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, encoding="utf-8")
+        ready = json.loads(self.process.stdout.readline() or "{}")
+        if not ready.get("ready"):
+            raise RuntimeError("Qwen worker could not initialize CUDA")
+
+    def render(self, model_id, text, instruction, speaker):
+        entry = models.CATALOG.get(model_id)
+        if entry is None:
+            raise ValueError("unknown curated model")
+        if not models.is_downloaded(entry):
+            raise RuntimeError(f"Download {entry['name']} before trying it.")
+        if entry["mode"] == "custom-small" and instruction:
+            raise ValueError("the 0.6B CustomVoice model does not support instruction control")
+        digest = hashlib.sha256(f"{model_id}|{text}|{instruction}|{speaker}".encode("utf-8")).hexdigest()[:24]
+        out = SCRATCH / f"qwen-{digest}.wav"
+        with self.lock:
+            self._ensure()
+            self.process.stdin.write(json.dumps({"model_path": str(entry["path"]), "mode": entry["mode"],
+                "text": text, "instruction": instruction, "speaker": speaker, "out": str(out)}) + "\n")
+            self.process.stdin.flush()
+            answer = json.loads(self.process.stdout.readline() or '{"ok":false,"error":"Qwen worker stopped"}')
+        if answer.get("ok"):
+            answer.update(path=out.relative_to(ROOT).as_posix(), model=entry["name"])
+        return answer
+
+    def unify(self, relative_path):
+        source = (ROOT / relative_path).resolve()
+        if SCRATCH.resolve() not in source.parents or source.suffix.lower() != ".wav" or not source.is_file():
+            raise ValueError("choose an existing WAV preview from the studio scratch folder")
+        anchor = ROOT / "tools/voice/ref/steady.wav"
+        if not anchor.is_file():
+            raise RuntimeError("the approved Ophelia steady reference is not installed")
+        if not models.view()["can_unify"]:
+            raise RuntimeError("identity conversion needs the Chatterbox CUDA runtime and an NVIDIA GPU")
+        out = SCRATCH / f"{source.stem}-ophelia.wav"
+        if out.exists():
+            return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": True}
+        worker = Path(__file__).with_name("chatterbox_vc_worker.py")
+        request = json.dumps({"source": str(source), "anchor": str(anchor), "out": str(out)})
+        try:
+            result = subprocess.run([str(CB_VENV), str(worker)], cwd=ROOT, input=request + "\n",
+                capture_output=True, text=True, encoding="utf-8", timeout=900)
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError("Chatterbox identity conversion timed out") from error
+        lines = result.stdout.splitlines()
+        answer = json.loads(lines[-1]) if lines else {}
+        if result.returncode != 0 or not answer.get("ok"):
+            raise RuntimeError(answer.get("error") or result.stderr[-1200:] or "Chatterbox conversion failed")
+        return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": False}
+
+
 CHECKS = {
     "ophelia": ["tools/script_to_lines.py", "--check"],
     "mathilda": ["tools/bake_mathilda.py", "--check"],
@@ -189,13 +255,30 @@ class Editor:
     def __init__(self):
         self.history, self.lock = [], threading.Lock()
 
-    def edit(self, uid, text, mood, dry_run):
+    def edit(self, uid, text, mood, dry_run, dialogue=None):
         lines = model.load()
         line = next((l for l in lines if l.uid == uid), None)
         if line is None:
             return 404, {"error": "no such line"}
         text, mood = text.strip(), mood.strip()
-        if text == line.text and mood == line.mood:
+        if line.chapter == "doorway":
+            dialogue = dialogue if isinstance(dialogue, dict) else {
+                "speaker": line.speaker, "reaction": line.meta.get("reaction", ""),
+                "answers": line.meta.get("answers", ""), "quote": line.meta.get("quote", ""),
+                "intensity": line.meta.get("intensity"), "pause": line.meta.get("pause", 0),
+                "overlap": line.meta.get("overlap", 0), "break": line.meta.get("break", False),
+                "mood": mood,
+            }
+            dialogue["mood"] = mood
+            problem = writers.check_dialogue(line, dialogue, lines)
+            if problem:
+                return 400, {"error": problem}
+        else:
+            dialogue = None
+        if text == line.text and mood == line.mood and (dialogue is None or all(
+                dialogue.get(key) == line.meta.get(key, default) for key, default in (
+                    ("speaker", line.speaker), ("reaction", ""), ("answers", ""), ("quote", ""),
+                    ("intensity", None), ("pause", 0), ("overlap", 0), ("break", False)))):
             return 200, {"ok": True, "unchanged": True}
         problem = writers.check(line, text, mood, lines)
         if problem:
@@ -204,6 +287,8 @@ class Editor:
         before = writers.read(path)
         try:
             after = writers.rewrite(before, line, text, mood)
+            if dialogue is not None:
+                after = writers.rewrite_dialogue(after, line, dialogue)
         except writers.EditError as error:
             return 409, {"error": str(error)}
         warnings = []
@@ -221,8 +306,9 @@ class Editor:
             return 409, {"error": "a job is running; save when it has finished"}
         with self.lock:
             writers.write(path, after)
+            label = f"{uid}: {line.text[:40]} -> {text[:40]}" if text != line.text else f"{uid}: choreography"
             self.history.append({"uid": uid, "chapter": line.chapter, "path": str(path), "before": before,
-                                 "label": f"{uid}: {line.text[:40]} -> {text[:40]}", "at": time.time()})
+                                 "label": label, "at": time.time()})
             wrote, log = _tool(writers.TABLE_WRITERS[line.chapter])
             checked, check_log = _tool(CHECKS[line.chapter])
         result.update(table_ok=wrote, check_ok=checked, log=f"{log}\n{check_log}".strip())
@@ -297,7 +383,7 @@ def play(line):
     return 200, {"ok": True, "where": where, "hooks": hooks}
 
 
-JOBS, LAB, EDITOR = Jobs(), Lab(), Editor()
+JOBS, LAB, QWEN_LAB, EDITOR = Jobs(), Lab(), QwenLab(), Editor()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -343,6 +429,8 @@ class Handler(BaseHTTPRequestHandler):
                 "actions": [{k: v for k, v in a.items() if k != "commands"} | {"commands": [" ".join(c) for c in a["commands"]]}
                             for a in _actions().values()],
             })
+        if url.path == "/api/models":
+            return self._send(200, models.view())
         if url.path == "/api/jobs":
             return self._send(200, JOBS.view())
         if url.path == "/api/review":
@@ -363,6 +451,31 @@ class Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             return self._send(400, {"error": "bad json"})
         url = urlparse(self.path)
+        if url.path == "/api/models/download":
+            if JOBS.busy():
+                return self._send(409, {"error": "another studio job is running; try again when it finishes"})
+            try:
+                action = models.download_action(str(body.get("id", "")))
+            except ValueError as error:
+                return self._send(400, {"error": str(error)})
+            except RuntimeError as error:
+                return self._send(503, {"error": str(error)})
+            return self._send(200, {"job": JOBS.submit(action)})
+        if url.path == "/api/model_try":
+            text = str(body.get("text", "")).strip()[:600]
+            if not text:
+                return self._send(400, {"error": "no text"})
+            try:
+                result = QWEN_LAB.render(str(body.get("id", "")), text,
+                    str(body.get("instruction", ""))[:500], str(body.get("speaker", "Serena")))
+                return self._send(200, result)
+            except (RuntimeError, ValueError, OSError) as error:
+                return self._send(503, {"ok": False, "error": str(error)})
+        if url.path == "/api/model_unify":
+            try:
+                return self._send(200, QWEN_LAB.unify(str(body.get("path", ""))))
+            except (RuntimeError, ValueError, OSError) as error:
+                return self._send(503, {"ok": False, "error": str(error)})
         if url.path == "/api/run":
             action = _actions().get(str(body.get("action", "")))
             if not action:
@@ -372,7 +485,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"job": JOBS.submit(action)})
         if url.path == "/api/edit":
             status, answer = EDITOR.edit(str(body.get("uid", "")), str(body.get("text", "")),
-                                         str(body.get("mood", "")), bool(body.get("dry_run", True)))
+                                         str(body.get("mood", "")), bool(body.get("dry_run", True)), body.get("dialogue"))
             return self._send(status, answer)
         if url.path in ("/api/bake_line", "/api/play"):
             line = next((l for l in model.load() if l.uid == str(body.get("uid", ""))), None)

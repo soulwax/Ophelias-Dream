@@ -68,6 +68,8 @@ build/voice/gpu-venv/Scripts/hf.exe download mobiuslabsgmbh/faster-whisper-large
 build/voice/gpu-venv/Scripts/hf.exe download speechbrain/spkrec-ecapa-voxceleb --local-dir build/voice/hf/ecapa-model
 ```
 
+Story Studio's **Voice models** view can also queue downloads for the three curated Qwen3-TTS Hugging Face repositories (VoiceDesign 1.7B, CustomVoice 1.7B, CustomVoice 0.6B). It stores them under `build/voice/hf/` and exposes them as scratch-preview engines once their files are present. This is a download convenience, not environment setup: inference still requires the `gpu-venv` above and an NVIDIA GPU. VoiceDesign accepts natural-language voice/performance direction; 1.7B CustomVoice accepts direction while using its built-in speaker timbres; 0.6B CustomVoice does not accept instruction control. All three are Apache-2.0. See the [VoiceDesign](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign), [CustomVoice 1.7B](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), and [CustomVoice 0.6B](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice) model cards for current details.
+
 The run itself:
 
 ```powershell
