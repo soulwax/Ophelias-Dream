@@ -35,17 +35,35 @@ func _ready() -> void:
 	assert(menu._buttons.size() == 6, "the main menu should offer three modes, settings, credits, and quit")
 	assert((menu._buttons[0] as Button).text.ends_with("DREAM"), "the dream must be the first mode")
 	assert((menu._buttons[3] as Button).text.ends_with("SETTINGS"), "settings should be part of the title menu")
+	var first_cell := (menu._buttons[0] as Button).get_parent() as VBoxContainer
+	assert((first_cell.get_child(0) as Label).text == "夢へ入る", "each title action should have its Japanese translation above it")
+	(menu._buttons[0] as Button).grab_focus()
+	assert((menu._buttons[0] as Button).text.begins_with("[ "), "the selected title action should be bracketed")
 	menu._choose("SETTINGS")
 	assert(menu._settings_terminal.is_title_settings_open(), "settings should open the terminal without leaving the title phase")
+	assert(menu._settings_terminal._crt.z_index < menu._settings_terminal._frame.z_index,
+		"the CRT glass should render behind readable settings controls")
+	assert(menu._settings_terminal._frame.mouse_filter == Control.MOUSE_FILTER_PASS,
+		"the settings frame should pass mouse input to its controls")
 	await get_tree().create_timer(0.7).timeout
 	assert(is_equal_approx(menu._settings_terminal._frame.scale.y, 1.0), "the terminal should open in ordered stages")
+	var invert_y: Button = menu._settings_terminal._fields["invert_y"].focus
+	var original_invert_y: bool = Game.settings.invert_y
+	invert_y.pressed.emit()
+	assert(Game.settings.invert_y != original_invert_y, "title settings should apply a changed value")
+	invert_y.pressed.emit()
+	assert(Game.settings.invert_y == original_invert_y, "title settings should let the user restore a changed value")
+	menu._settings_terminal._title_dirty = false
 	var close_started := Time.get_ticks_msec()
-	menu._settings_terminal.close_title_settings()
+	var close_event := InputEventAction.new()
+	close_event.action = "pause"
+	close_event.pressed = true
+	menu._settings_terminal._input(close_event)
 	await get_tree().create_timer(0.35).timeout
 	assert(Time.get_ticks_msec() - close_started < 1000, "the terminal should deconstruct in under a second")
 	assert(not menu._settings_terminal.visible, "the terminal should return to the main menu")
 	menu._stop_music()
-	menu.queue_free()
+	menu.free()
 	Game.dream_mode = true
 	Game.dream_memory = story["branches"][0]["id"]
 	experience._show_standalone_waking()

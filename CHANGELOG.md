@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4.0 — 2026-10-08
+
+- Give each title choice a clear action and Japanese translation, with brackets marking the selected door.
+- Make title settings respond to the mouse, keep the CRT glass behind the controls, and let Escape or controller Back close the terminal quickly.
+
 ## 0.2.3.0 — 2026-10-08
 
 - The dream moved out of the pause between lives. It has its own door now; answers follow you back through it.

@@ -1,6 +1,13 @@
 extends Control
 
-const MENU_ENTRIES := ["DREAM", "OPHELIA", "MATHILDA", "SETTINGS", "CREDITS", "QUIT"]
+const MENU_ENTRIES := [
+	{"id": "DREAM", "label": "ENTER DREAM", "japanese": "夢へ入る"},
+	{"id": "OPHELIA", "label": "OPHELIA'S STORY", "japanese": "オフィーリアの物語"},
+	{"id": "MATHILDA", "label": "MATHILDA'S STORY", "japanese": "マチルダの物語"},
+	{"id": "SETTINGS", "label": "SETTINGS", "japanese": "設定"},
+	{"id": "CREDITS", "label": "CREDITS", "japanese": "クレジット"},
+	{"id": "QUIT", "label": "EXIT", "japanese": "終了"},
+]
 
 var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
@@ -83,9 +90,9 @@ func _ready() -> void:
 	row.anchor_right = 0.875
 	row.offset_left = 0
 	row.offset_right = 0
-	row.offset_top = 258
-	row.offset_bottom = 302
-	row.add_theme_constant_override("separation", 12)
+	row.offset_top = 240
+	row.offset_bottom = 322
+	row.add_theme_constant_override("separation", 10)
 	add_child(row)
 	var rule := ColorRect.new()
 	rule.color = Color("b5352e")
@@ -95,30 +102,46 @@ func _ready() -> void:
 	rule.anchor_right = 0.875
 	rule.offset_left = 0
 	rule.offset_right = 0
-	rule.offset_top = 248
-	rule.offset_bottom = 250
+	rule.offset_top = 264
+	rule.offset_bottom = 266
 	add_child(rule)
 	var button_theme := UiChrome.term_theme()
+	var japanese_font := SystemFont.new()
+	japanese_font.font_names = PackedStringArray(["Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", "MS Gothic", "sans-serif"])
 	for index in MENU_ENTRIES.size():
-		var caption: String = MENU_ENTRIES[index]
+		var entry: Dictionary = MENU_ENTRIES[index]
+		var action: String = entry["id"]
+		var cell := VBoxContainer.new()
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cell.add_theme_constant_override("separation", 5)
+		row.add_child(cell)
+		var translation := UiChrome.term_label(entry["japanese"], 14, UiChrome.BONE)
+		translation.add_theme_font_override("font", japanese_font)
+		translation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		translation.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		translation.custom_minimum_size.y = 22
+		cell.add_child(translation)
 		var button := Button.new()
 		button.theme = button_theme
 		button.theme_type_variation = "TermAction"
-		button.text = "%02d  /  %s" % [index + 1, caption]
+		button.set_meta("plain_label", "%02d  /  %s" % [index + 1, entry["label"]])
+		button.text = button.get_meta("plain_label")
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.custom_minimum_size.y = 38
-		button.add_theme_font_size_override("font_size", 12)
+		button.custom_minimum_size.y = 42
+		button.add_theme_font_size_override("font_size", 11)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(button)
+		cell.add_child(button)
 		_buttons.append(button)
-		if caption == "SETTINGS":
+		if action == "SETTINGS":
 			_settings_button = button
 		button.mouse_entered.connect(button.grab_focus)
 		button.focus_entered.connect(func() -> void:
-			_target_mobility = 0.55 if caption == "QUIT" else 1.0
+			_set_menu_selection(button, true)
+			_target_mobility = 0.55 if action == "QUIT" else 1.0
 			_aim_at(button.get_global_rect().get_center())
 		)
-		button.pressed.connect(_choose.bind(caption))
+		button.focus_exited.connect(func() -> void: _set_menu_selection(button, button.is_hovered()))
+		button.pressed.connect(_choose.bind(action))
 	for i in _buttons.size():
 		_buttons[i].focus_neighbor_left = _buttons[i].get_path_to(_buttons[posmod(i - 1, _buttons.size())])
 		_buttons[i].focus_neighbor_right = _buttons[i].get_path_to(_buttons[(i + 1) % _buttons.size()])
@@ -175,6 +198,11 @@ func _aim_at(point: Vector2) -> void:
 	var relative := point / size.max(Vector2.ONE) - Vector2(0.424, 0.454)
 	_target = clampf(0.5 + relative.x, 0.08, 0.92)
 	_target_y = clampf(0.5 + relative.y, 0.12, 0.88)
+
+
+func _set_menu_selection(button: Button, selected: bool) -> void:
+	var label: String = button.get_meta("plain_label", "")
+	button.text = "[ %s ]" % label if selected else label
 
 
 func _build_snow() -> void:

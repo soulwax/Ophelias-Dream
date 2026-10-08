@@ -72,6 +72,7 @@ var _title_hidden: Array[Control] = []
 var _open_tween: Tween
 var _title_mode := false
 var _title_dirty := false
+var _title_closing := false
 # The binding being listened for, [action, slot], or empty.
 var _capture: Array = []
 # The open page's fields by id: {key, focus, panel, mark, caption, note, default}.
@@ -138,6 +139,7 @@ func _on_settings_changed() -> void:
 func open_title_settings() -> void:
 	_title_mode = true
 	_title_dirty = false
+	_title_closing = false
 	_capture = []
 	_status.text = ""
 	_disarm()
@@ -153,6 +155,7 @@ func open_title_settings() -> void:
 	_frame.scale = Vector2(1.0, 0.015)
 	_frame.modulate.a = 1.0
 	visible = true
+	_fit()
 	_play_title_open()
 	_focus_tab.call_deferred()
 
@@ -162,8 +165,9 @@ func is_title_settings_open() -> bool:
 
 
 func close_title_settings() -> void:
-	if not _title_mode or not visible:
+	if not _title_mode or not visible or _title_closing:
 		return
+	_title_closing = true
 	_capture = []
 	_disarm()
 	if _title_dirty:
@@ -184,6 +188,7 @@ func _finish_title_close(save_changes := false) -> void:
 	if save_changes and _title_dirty:
 		Game.settings.save()
 	_title_mode = false
+	_title_closing = false
 	_title_dirty = false
 	visible = false
 	_frame.scale = Vector2.ONE
@@ -219,6 +224,10 @@ func _input(event: InputEvent) -> void:
 	if not _capture.is_empty():
 		_listen(event)
 		return
+	if _title_mode and event.is_action_pressed("pause"):
+		close_title_settings()
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key := event as InputEventKey
 		match key.physical_keycode if key.physical_keycode != KEY_NONE else key.keycode:
@@ -240,9 +249,10 @@ func _input(event: InputEvent) -> void:
 			JOY_BUTTON_Y:
 				_reset_active()
 			JOY_BUTTON_B:
-				if event.is_action("pause"):
-					return
-				Game.toggle_pause()
+				if _title_mode:
+					close_title_settings()
+				else:
+					Game.toggle_pause()
 			_:
 				return
 		get_viewport().set_input_as_handled()
@@ -698,7 +708,9 @@ func _build() -> void:
 	_scrim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_scrim)
 	_frame = Control.new()
-	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# This node wraps every settings control, so it must pass mouse input
+	# through to its children instead of making the whole panel click-through.
+	_frame.mouse_filter = Control.MOUSE_FILTER_PASS
 	add_child(_frame)
 	var face := Panel.new()
 	face.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -732,6 +744,9 @@ func _build() -> void:
 	_crt = ColorRect.new()
 	_crt.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_crt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Keep the terminal text and controls above the screen-texture pass. The
+	# glass still filters the title behind it, without replacing the panel.
+	_crt.z_index = -1
 	var glass := ShaderMaterial.new()
 	glass.shader = load("res://shaders/menu_crt.gdshader") as Shader
 	_crt.material = glass
@@ -742,7 +757,7 @@ func _build() -> void:
 func _fit() -> void:
 	if _frame == null:
 		return
-	_frame.size = Vector2(minf(FRAME_MAX.x, size.x - 48.0), minf(FRAME_MAX.y, size.y - 40.0)).floor()
+	_frame.size = Vector2(minf(FRAME_MAX.x, maxf(size.x - 48.0, 320.0)), minf(FRAME_MAX.y, maxf(size.y - 40.0, 320.0))).floor()
 	_frame.position = ((size - _frame.size) * 0.5).floor()
 	_frame.pivot_offset = _frame.size * 0.5
 
@@ -769,7 +784,7 @@ func _play_title_open() -> void:
 	var glass := _crt.material as ShaderMaterial
 	glass.set_shader_parameter("strength", 0.0)
 	_open_tween = create_tween()
-	_open_tween.tween_property(_scrim, "color", Color(0.02, 0.012, 0.015, 0.34), 0.12)
+	_open_tween.tween_property(_scrim, "color", Color(0.02, 0.012, 0.015, 0.24), 0.12)
 	_open_tween.tween_property(_frame, "scale:y", 1.02, 0.25).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	_open_tween.parallel().tween_property(_crt.material, "shader_parameter/strength", 0.22, 0.25)
 	_open_tween.tween_interval(0.055)
