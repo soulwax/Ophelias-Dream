@@ -138,7 +138,6 @@ const STAMINA_MAX := 4.6
 const STAMINA_REGEN := 1.35
 const EXHAUST_LOCK := 0.85
 const SPRINT_RESUME := 1.6
-const HOLD_DRAIN := 0.6
 const GRAVITY := 20.0
 
 # The danger begins after this many pages, or this far (m) beyond the start.

@@ -147,7 +147,7 @@ func _controls_page() -> void:
 	for pair in Settings.ACTIONS:
 		_binding(pair[0], pair[1])
 	_fixed("This menu", "Esc")
-	_section("Gamepad", "Left stick moves; pushed part-way she walks slowly. Right stick looks. LT sprint, RT hold breath, A jump, B slide, X read or open, LB walk slowly, R3 glance back, Start this menu.")
+	_section("Gamepad", "Left stick moves; pushed part-way she walks slowly. Right stick looks. LT sprint, A jump, B slide, X read or open, LB walk slowly, R3 glance back, Start this menu.")
 
 
 func _camera_page() -> void:

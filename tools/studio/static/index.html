@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Studio</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark">◐</span> Story Studio <small>Ophelia's Dream</small></div>
+  <div id="summary" class="summary"></div>
+  <div id="mini" class="mini" hidden>
+    <button id="mini-toggle" class="play" title="Play / pause (Space)">▶</button>
+    <span id="mini-label" class="mini-label"></span>
+  </div>
+  <button id="undo" class="ghost" hidden title="Put the last saved edit back">Undo edit</button>
+  <button id="check-all" class="ghost" title="Runs every script's --check">Check everything</button>
+</header>
+<div class="shell">
+  <nav id="nav" class="nav"></nav>
+  <main class="main">
+    <section id="lines-view">
+      <div class="filters">
+        <input id="search" type="search" placeholder="Search text, id, mood…" autocomplete="off">
+        <div id="status-filter" class="segmented">
+          <button data-status="" class="on">All</button>
+          <button data-status="final">Final</button>
+          <button data-status="draft">Draft</button>
+          <button data-status="missing">Missing</button>
+        </div>
+        <div id="speaker-filter" class="segmented">
+          <button data-speaker="" class="on">Both</button>
+          <button data-speaker="ophelia">Ophelia</button>
+          <button data-speaker="mathilda">Mathilda</button>
+        </div>
+        <span id="count" class="muted"></span>
+      </div>
+      <table class="lines">
+        <thead><tr><th></th><th>Line</th><th>Mood</th><th>Text</th><th>Source</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+    <section id="review-view" hidden>
+      <h2>Review new clips</h2>
+      <p class="muted">Clips made since the last commit, next to what they replace. <kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Space</kbd> play · <kbd>A</kbd> accept · <kbd>R</kbd> reject (archived, never deleted).</p>
+      <label class="muted"><input id="review-all" type="checkbox"> show accepted</label>
+      <div id="review" class="review"></div>
+    </section>
+    <section id="bake-view" hidden>
+      <h2>Bake &amp; check</h2>
+      <p class="muted">Each button runs the command beside it, one job at a time. Desktop jobs need the CUDA venvs and stay greyed out on this machine.</p>
+      <div id="actions" class="actions"></div>
+      <h2>Jobs</h2>
+      <div id="jobs" class="jobs"></div>
+    </section>
+  </main>
+  <aside id="lab" class="lab" hidden>
+    <div class="lab-head">
+      <div><div id="lab-uid" class="uid"></div><div id="lab-meta" class="muted"></div></div>
+      <button id="lab-close" class="ghost" title="Close (Esc)">✕</button>
+    </div>
+    <div id="lab-current" class="current"></div>
+    <div class="row lab-actions">
+      <button id="lab-bake" title="">Bake this line</button>
+      <button id="lab-game" title="Launch the game where this line is heard">Hear it in the game</button>
+    </div>
+    <div id="lab-why" class="muted why"></div>
+    <label>Text <small class="muted">(try it freely; nothing is written until you save)</small>
+      <textarea id="lab-text" rows="4"></textarea></label>
+    <div class="row">
+      <label>Mood <select id="lab-mood"></select></label>
+      <label>Voice <select id="lab-voice"></select></label>
+    </div>
+    <label>Speed <input id="lab-speed" type="range" min="0.6" max="1.3" step="0.02" value="0.94"><output id="lab-speed-out">0.94</output></label>
+    <button id="lab-try" class="primary">Try this reading <kbd>T</kbd></button>
+    <div id="lab-status" class="muted"></div>
+    <div id="lab-edit" class="edit" hidden>
+      <div id="lab-warnings"></div>
+      <pre id="lab-diff" class="diff"></pre>
+      <div class="row"><button id="lab-save" class="save">Save to script</button><button id="lab-reset" class="ghost">Put it back</button></div>
+    </div>
+    <h3>Takes</h3>
+    <ol id="lab-takes" class="takes"></ol>
+  </aside>
+</div>
+<audio id="player"></audio>
+<script src="/static/app.js"></script>
+</body>
+</html>

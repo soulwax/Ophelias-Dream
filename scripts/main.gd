@@ -157,6 +157,12 @@ func _ready() -> void:
 		Game.set_phase(Game.Phase.PLAYING)
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
+	# Dev hook (Story Studio): RUN_PLAY=1 skips the menu and the intro card.
+	if OS.get_environment("RUN_PLAY") == "1" and not Game.mathilda_pov and not _capture:
+		Game.begin_intro()
+		Game.set_phase(Game.Phase.PLAYING)
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
 	if _capture:
 		Game.begin_intro()
 		if OS.get_environment("RUN_TITLE") != "1":

@@ -117,12 +117,9 @@ func _refresh_breath() -> void:
 	var ratio := clampf(Game.player.stamina / Tune.STAMINA_MAX, 0.0, 1.0)
 	_breath_fill.anchor_right = ratio
 	var spent := Game.player.exhaust_left > 0.0
-	var short := ratio < 0.995 or spent or Game.player.holding_breath
+	var short := ratio < 0.995 or spent
 	_breath.visible = Game.phase == Game.Phase.PLAYING and (Game.settings.breath_meter == 0 or short)
-	if Game.player.holding_breath:
-		_breath_fill.color = Color(0.62, 0.78, 0.95)
-		_breath_label.text = "Holding breath"
-	elif spent:
+	if spent:
 		_breath_fill.color = Color(0.86, 0.32, 0.24)
 		_breath_label.text = "Catching breath"
 	elif ratio < 0.28:

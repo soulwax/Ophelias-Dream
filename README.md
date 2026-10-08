@@ -29,7 +29,6 @@ godot --path .
 | Space | Jump; leap while running |
 | Ctrl or C | Slide while sprinting |
 | E / pad X | Read or interact |
-| F, right mouse, or pad RT | Hold breath |
 | Q or middle mouse | Look behind |
 | J, Tab, or pad Y | Open the journal |
 | Esc | Pause and open settings |

@@ -110,8 +110,6 @@ func _ready() -> void:
 	_bind("jump", KEY_SPACE)
 	_bind("slide", KEY_CTRL)
 	_bind("slide", KEY_C)
-	_bind_mouse("hold_breath", MOUSE_BUTTON_RIGHT)
-	_bind("hold_breath", KEY_F)
 	_bind("walk_slow", KEY_ALT)
 	_bind("glance_back", KEY_Q)
 	_bind("journal", KEY_J)
@@ -767,11 +765,11 @@ func _bind_pad() -> void:
 			["move_forward", JOY_AXIS_LEFT_Y, -1.0], ["move_back", JOY_AXIS_LEFT_Y, 1.0],
 			["look_left", JOY_AXIS_RIGHT_X, -1.0], ["look_right", JOY_AXIS_RIGHT_X, 1.0],
 			["look_up", JOY_AXIS_RIGHT_Y, -1.0], ["look_down", JOY_AXIS_RIGHT_Y, 1.0],
-			["sprint", JOY_AXIS_TRIGGER_LEFT, 1.0], ["hold_breath", JOY_AXIS_TRIGGER_RIGHT, 1.0]]:
+			["sprint", JOY_AXIS_TRIGGER_LEFT, 1.0]]:
 		_bind_axis(axis[0], axis[1], axis[2])
 	for button in [["jump", JOY_BUTTON_A], ["slide", JOY_BUTTON_B], ["interact", JOY_BUTTON_X],
 			["sprint", JOY_BUTTON_LEFT_STICK], ["glance_back", JOY_BUTTON_RIGHT_STICK],
-			["walk_slow", JOY_BUTTON_LEFT_SHOULDER], ["hold_breath", JOY_BUTTON_RIGHT_SHOULDER],
+			["walk_slow", JOY_BUTTON_LEFT_SHOULDER],
 			["journal", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK]]:
 		if not InputMap.has_action(button[0]):
 			InputMap.add_action(button[0])

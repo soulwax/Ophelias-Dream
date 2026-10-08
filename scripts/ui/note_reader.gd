@@ -10,7 +10,6 @@ var _panel: PanelContainer
 var _entry_tween: Tween
 var _danger: Label
 var _close_keys: HBoxContainer
-var _breath_keys: HBoxContainer
 var _entry: NoteEntry
 var _journal_keys: HBoxContainer
 var _accum: float = 0.0
@@ -83,7 +82,6 @@ func show_entry(entry: NoteEntry) -> void:
 	_body.visible_characters = 0
 	_scroll.scroll_vertical = 0
 	UiChrome.set_key(_close_keys, Game.settings.key_label("interact"))
-	UiChrome.set_key(_breath_keys, Game.settings.key_label("hold_breath"))
 	UiChrome.set_key(_journal_keys, Game.settings.key_label("journal"))
 	visible = true
 	if _entry_tween and _entry_tween.is_running():
@@ -140,8 +138,6 @@ func _build() -> void:
 	box.add_child(footer)
 	_close_keys = UiChrome.key_row("E", "Close the page", true)
 	footer.add_child(_close_keys)
-	_breath_keys = UiChrome.key_row("RMB", "Hold breath", true)
-	footer.add_child(_breath_keys)
 	_journal_keys = UiChrome.key_row("J", "Journal", true)
 	footer.add_child(_journal_keys)
 	var close := UiChrome.paper_button("Close")

@@ -24,6 +24,7 @@ def parse():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--write", action="store_true", help="only rewrite lines.json")
     args = parser.parse_args()
     data = parse()
     target = OUT / "lines.json"
@@ -31,9 +32,12 @@ def main():
         assert json.loads(target.read_text(encoding="utf-8")) == data
         print("Mathilda script matches lines.json")
         return
-    import soundfile as sf
     OUT.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(data, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    if args.write:
+        print("Mathilda lines.json written")
+        return
+    import soundfile as sf
     speak = bake_speech.bake_kokoro(SimpleNamespace(voice="af_bella", speed=0.94))
     for group, entries in data.items():
         for entry in entries:

@@ -32,6 +32,8 @@ godot --path . -e               # Open the editor
 godot --headless --path . --import # Import assets/register new classes
 godot --headless --path . tools/journal_probe.tscn # Journal rules and UI
 godot --headless --path . tools/voice_probe.tscn # Voice rules; PROBE_CLIPS=1 checks clips
+python tools/voice_status.py                       # every line: final, draft, missing, owed
+python tools/studio/server.py                      # Story Studio in the browser (docs/STORY_STUDIO.md)
 python tools/bake_meeting.py --check               # meeting script coherent, lines/timing current
 godot --headless --path . tools/meeting_probe.tscn # Mathilda meets Ophelia at the door (docs/DIALOGUE.md)
 godot --headless --path . -s tools/probe.gd # Inspect meshes/animations

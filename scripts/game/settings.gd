@@ -17,7 +17,6 @@ const ACTIONS := [
 	["sprint", "Sprint"],
 	["jump", "Jump"],
 	["slide", "Slide (while sprinting)"],
-	["hold_breath", "Hold breath"],
 	["walk_slow", "Walk slowly (hold)"],
 	["glance_back", "Glance back (hold)"],
 	["interact", "Read / open / use"],

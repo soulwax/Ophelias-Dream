@@ -24,6 +24,12 @@ godot --headless --path . --import
 $env:RUN_CAPTURE = "1"; $env:RUN_SHOT = "$PWD\shot.png"; godot --path .
 # (RUN_SHOT defaults to user://run_shot.png; clear both env vars afterwards)
 
+# Story Studio (docs/STORY_STUDIO.md): every line's clip state, a browser workbench to listen,
+# try Kokoro readings and run the checks and bakes (stdlib server on 127.0.0.1:4317)
+python tools/voice_status.py [--json] [--owed kokoro|desktop:chatterbox]
+python tools/studio/server.py [--port 4317] [--no-browser]
+python tools/studio/test_writers.py   # its script writer round-trips every line byte for byte
+
 # Journal and voice rules (PROBE_CLIPS=1 also checks baked clips)
 godot --headless --path . tools/journal_probe.tscn
 godot --headless --path . tools/voice_probe.tscn
@@ -164,11 +170,11 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
   - Slides get a speed boost, snow friction, gravity along the slope and limited steering, and you can jump out of one.
   - `Stride` adds layers on top of locomotion: an air pose (Jump_Start, sought by vertical velocity), a slide pose (Crouch_Idle), and a landing one-shot (Jump_Land).
   - `FootLock.suspended` suppresses ground contact in the air and during a slide.
-  - Hold breath is on right mouse button or F (defaults; all keys can be rebound in the Esc menu). Sprint can be set to toggle.
+  - All keys can be rebound in the Esc menu. Sprint can be set to toggle.
   - Alt (held) walks slowly at `WALK_SLOW_SPEED`. Q or the middle mouse button (held) glances back: the camera swings over her right shoulder while she keeps running the way she was going, and `Grace` turns her chest and head with it.
   - Gamepad (bound in `Game._bind_pad`, kept by `Settings._set_events` when keys are rebound): left stick moves with a radial dead zone and a curve, so a part push walks slowly; right stick looks with a ramp when held fully. `Game.rumble()` shakes the pad on landings, stumbles, hard knocks and the catch.
   - Assists: from standing the first tick moves her at once (`START_BURST`); read/open is buffered for `INTERACT_BUFFER`; indoors she slips past the edge of a door frame (`DOOR_ASSIST`); a held jump floats at its apex (`APEX_HANG`); the camera arm pulls in at once and lets back out at `ARM_EXTEND`.
-- Dev hooks: `RUN_AUTOPILOT=walk|jog|sprint|jump|slide|glance|leap` (leap jumps every few seconds once she is near full speed) and `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot).
+- Dev hooks: `RUN_AUTOPILOT=walk|jog|sprint|jump|slide|glance|leap` (leap jumps every few seconds once she is near full speed), `RUN_SHOT_FRAME=<n>` (when `RUN_CAPTURE` takes its shot), and `RUN_PLAY=1` (Ophelia's chapter starts playing at once, no menu or intro; Story Studio's *Hear it in the game* uses it with `RUN_SPAWN`/`RUN_WANDER`).
 - Momentum is in `Player._steer`, which moves speed and heading separately (`Tune.STRIDE_*`, `TURN_*`). At a walk she pivots almost at once; at a sprint she sweeps round at `TURN_RATE_SPRINT`, and hard key turns dip her speed briefly. A reversal at speed plants and brakes first. Letting go skids about 0.5 s, and in the air she keeps her takeoff speed (`AIR_ACCEL`, `AIR_DRAG`). `_slope_factor` slows her uphill.
 - Physics interpolation is on (`physics/common/physics_interpolation`).
  - The camera rig (`spring_arm`) is `top_level`, not interpolated, and placed every frame in `Player._process` from `get_global_transform_interpolated()` and the mouse. Look reads `screen_relative`, so window size never changes sensitivity.
@@ -236,6 +242,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
   3. It writes `build/voice/review.html` for listening.
 - **Clip names:** SHA-256 of `text|mood`.
 - **Nothing is deleted:** `--scrap` and replaced or stale clips move to `build/voice/archive/`.
+- **Studio:** `tools/studio/` (plan and status in `docs/STORY_STUDIO.md`) reads every chapter's lines (`model.py`), shows what's final, draft, missing or owed, auditions lines with Kokoro, and runs the checks and bakes. `/#line=<uid>` opens a line in it.
 - **No model runs in the game.** `tools/bake_voice.py` is obsolete and overwrites the script: do not run it.
 - **When Voice is inactive:** `RUN_VOICE=0`, capture and headless runs; journal event keys have fallbacks.
 
@@ -243,7 +250,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **The lookout and the lake (`scripts/world/lake.gd`)**: the lights at the end of the drawn route are a false lead. `Trail._extend_to_lake()` carries the curve `Tune.LAKE_LEG` metres past the lookout (turned if needed to stay inside the peaks); the valley follows it, `Ground` gets a level pad for the lake, the leg and lake are story points, and trees are kept off the ice. `Route` in the editable level stays the drawn curve (`_drawn_curve`), so the leg is never saved and doubled. `Lake` (added after `Camp`, built deferred) hides Trail's headlight spots, hangs two Poly Haven lanterns on the lookout rail (from the field they read as headlights), plants posts with red rags every `LAKE_POST_SPACING` metres to the shore, and builds the ice (`lake_ice` shader: clear ice, wandering cracks, drifts, the refrozen hole), two sets of prints to the hole and back (decals), and dry reeds. Places `lookout` and `lake` have their own lines. Nodes Camp and Lake hide carry `replaced_by` meta, which `biome_snapshot_probe` skips. Shots: `godot --path . tools/lake_view.tscn` into `build/lake/`.
 
-**Breath**: `hold_breath` (right mouse, F, pad RT) suppresses `Breath.plume`, drains stamina at `Tune.HOLD_DRAIN`, and ends in a gasp. Nothing perceives breath at the moment.
+**Breath**: `Breath` shows her frosted breath; its rhythm follows `Player.strain`, and `gasp()` puffs a big cloud (the running leap uses it). There is no hold-breath action. Nothing perceives breath at the moment.
 
 **Player model**: `scripts/player/player.gd` instantiates `assets/characters/styloo_elf/elf.glb` at 0.8 scale, with its original materials. The bundled bow and arrows were removed from the GLB by `tools/prepare_elf.py`. `elf_animations.res` contains eight movement clips retargeted from the hunter's shared animation library by `tools/retarget_elf.gd`; her walk and jog come from `feminine/elf_feminine.res`. `Breath` is attached to `DEF-spine.006` at the mouth; `FootLock` watches `DEF-foot.L/R` for contacts. The skeleton (216 bones) has hair, dress, eyelid, brow, jaw, eye, finger and twist bones, but nothing drives them yet, and the elf has no leg IK; `docs/MOVEMENT.md` plans both.
 - `Grace` (`grace.gd`, a SkeletonModifier3D after `FootLock`) layers her carriage over the clips: in the walk, an arm counter-swing read from the thighs, soft elbows, and shoulders turning against the hips with the head held level; a lifted chest; and, after `Tune.TIPTOE_AFTER` seconds standing, a recurring rise onto her toes. Tuning is in `Tune.GRACE_*` / `TIPTOE_*`.

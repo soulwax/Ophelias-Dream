@@ -90,10 +90,6 @@ var breath: Breath
 # 0 calm .. 1 gasping. Climbs with sprinting and spent stamina, peaks just
 # after a long sprint ends, and only slowly settles.
 var strain := 0.0
-# Space: no steam while held, but it drains her breath, and letting go (or
-# running out) comes out as a gasp.
-var holding_breath := false
-var _held_for := 0.0
 var _facing := 0.0
 var _lean := Vector2.ZERO
 var _sway := 0.0
@@ -253,7 +249,7 @@ func _physics_process(delta: float) -> void:
 			_sprinting = false
 			_stumble()
 			exhausted.emit()
-	elif exhaust_left <= 0.0 and not holding_breath and not sliding:
+	elif exhaust_left <= 0.0 and not sliding:
 		stamina = minf(stamina + delta * Tune.STAMINA_REGEN, Tune.STAMINA_MAX)
 	if on_floor:
 		speed *= _slope_factor(wish)
@@ -349,7 +345,7 @@ func _jump() -> void:
 	leap_lead_left = not _left_foot
 	_leap_airtime = Leap.airtime(velocity.y)
 	_footfall(_left_foot, _foot_spot(_left_foot), _ground_speed())
-	if breath and not holding_breath:
+	if breath:
 		breath.gasp(0.0)
 
 
@@ -879,23 +875,6 @@ func _drop_below() -> float:
 
 
 func _breathe(delta: float, sprinting: bool) -> void:
-	var awake := Game.phase == Game.Phase.PLAYING or Game.phase == Game.Phase.READING
-	var hold := awake and exhaust_left <= 0.0 and stamina > 0.0 and Input.is_action_pressed("hold_breath")
-	if hold:
-		_held_for += delta
-		stamina = maxf(stamina - Tune.HOLD_DRAIN * delta, 0.0)
-		if stamina <= 0.0:
-			exhaust_left = Tune.EXHAUST_LOCK
-			hold = false
-	if holding_breath and not hold:
-		if breath:
-			breath.gasp(clampf(_held_for / 6.0, 0.25, 1.0))
-		# What she held comes due as panting.
-		strain = maxf(strain, clampf(0.35 + _held_for * 0.09, 0.0, 1.0))
-		_held_for = 0.0
-	holding_breath = hold
-	if breath:
-		breath.held = hold
 	var spent := 1.0 - stamina / Tune.STAMINA_MAX
 	var target := spent * 0.55
 	if sprinting:

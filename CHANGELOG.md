@@ -2,6 +2,11 @@
 
 ## 0.2.1.11 — 2026-10-08
 
+**Revised build, same version.** The zip on the 0.2.1.11 release was rebuilt later the same day with:
+
+- Holding your breath removed: it did nothing, and right mouse, F and the right trigger are free again.
+- For writing the game, not playing it: Story Studio (`python tools/studio/server.py`, docs/STORY_STUDIO.md), a browser workbench for every spoken line. It shows which lines are final, drafts, missing or waiting for the desktop; tries readings with Kokoro; edits a line's words or mood straight into its script, with undo; bakes a single line; reviews new clips against what they replace; and launches the game at a line's scene (`RUN_PLAY=1`).
+
 0.2.1.10 was tagged but never built: its export had no solution file and no .NET templates, so the C# in it could not run. This release is the same game, exported properly.
 
 - The game now ships as a zip: the executable and the `data_OpheliasDream_windows_x86_64` folder beside it, which holds the C# side. Keep them together.
