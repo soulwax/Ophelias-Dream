@@ -28,6 +28,118 @@
     "yaw_degrees": 0.0
   },
   {
+    "name": "Low-poly Female A",
+    "scene": "res://assets/characters/kenney_female/character-female-a.glb",
+    "description": "Kenney Mini Characters model A with its own rig and 32 embedded motions.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Low-poly Female B",
+    "scene": "res://assets/characters/kenney_female/character-female-b.glb",
+    "description": "Kenney Mini Characters model B with its own rig and 32 embedded motions.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Low-poly Female C",
+    "scene": "res://assets/characters/kenney_female/character-female-c.glb",
+    "description": "Kenney Mini Characters model C with its own rig and 32 embedded motions.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Low-poly Female D",
+    "scene": "res://assets/characters/kenney_female/character-female-d.glb",
+    "description": "Kenney Mini Characters model D with its own rig and 32 embedded motions.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Low-poly Female E",
+    "scene": "res://assets/characters/kenney_female/character-female-e.glb",
+    "description": "Kenney Mini Characters model E with its own rig and 32 embedded motions.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Low-poly Female F",
+    "scene": "res://assets/characters/kenney_female/character-female-f.glb",
+    "description": "Kenney Mini Characters model F with its own rig and 32 embedded motions.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Neutral Woman",
+    "scene": "res://assets/characters/quaternius_animated_women/woman.glb",
+    "description": "Quaternius's neutral human model with a 31-joint rig and 11 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman Casual",
+    "scene": "res://assets/characters/quaternius_animated_women/woman_casual.glb",
+    "description": "A casual, understated human model with a 31-joint rig and 11 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman in Dress",
+    "scene": "res://assets/characters/quaternius_animated_women/woman_in_dress.glb",
+    "description": "A simply dressed human model with a 31-joint rig and 11 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman in Tank Top",
+    "scene": "res://assets/characters/quaternius_animated_women/woman_in_tank_top.glb",
+    "description": "A neutral athletic look with a 31-joint rig and 11 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman Adventurer",
+    "scene": "res://assets/characters/quaternius_modular_women/adventurer.glb",
+    "description": "Quaternius humanoid character with a 62-joint rig and 24 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman in a Hood",
+    "scene": "res://assets/characters/quaternius_modular_women/hooded_adventurer.glb",
+    "description": "Quaternius hooded human character with a 62-joint rig and 24 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Animated Woman A",
+    "scene": "res://assets/characters/quaternius_modular_women/animated_woman_a.glb",
+    "description": "Quaternius neutral female character with a 62-joint rig and 24 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Animated Woman B",
+    "scene": "res://assets/characters/quaternius_modular_women/animated_woman_b.glb",
+    "description": "Quaternius neutral female character with a 62-joint rig and 24 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman Worker",
+    "scene": "res://assets/characters/quaternius_modular_women/worker.glb",
+    "description": "Quaternius worker character with a 62-joint rig and 24 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
+    "name": "Woman in a Suit",
+    "scene": "res://assets/characters/quaternius_modular_women/suit.glb",
+    "description": "Quaternius professional outfit with a 62-joint rig and 24 embedded animations.",
+    "scale": 0.8,
+    "embedded_animations": true
+  },
+  {
     "name": "Mathilda — Snowlight",
     "scene": "res://assets/characters/variants/snowlight.tscn",
     "description": "Silver hair, glacier-blue eyes, blue cloth and silver-toned ornament.",

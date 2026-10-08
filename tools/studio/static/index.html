@@ -18,26 +18,26 @@
   <button id="check-all" class="ghost" title="Runs every script's --check">Check everything</button>
 </header>
 <div class="shell">
-  <nav id="nav" class="nav"></nav>
+  <nav id="nav" class="nav" aria-label="Story Studio navigation"></nav>
   <main class="main">
     <section id="lines-view">
       <div class="filters">
-        <input id="search" type="search" placeholder="Search text, id, mood…" autocomplete="off">
+        <input id="search" type="search" aria-label="Search story lines" placeholder="Search text, id, mood…" autocomplete="off">
         <div id="status-filter" class="segmented">
-          <button data-status="" class="on">All</button>
-          <button data-status="final">Final</button>
-          <button data-status="draft">Draft</button>
-          <button data-status="missing">Missing</button>
+          <button data-status="" class="on" aria-pressed="true">All</button>
+          <button data-status="final" aria-pressed="false">Final</button>
+          <button data-status="draft" aria-pressed="false">Draft</button>
+          <button data-status="missing" aria-pressed="false">Missing</button>
         </div>
         <div id="speaker-filter" class="segmented">
-          <button data-speaker="" class="on">Both</button>
-          <button data-speaker="ophelia">Ophelia</button>
-          <button data-speaker="mathilda">Mathilda</button>
+          <button data-speaker="" class="on" aria-pressed="true">Both</button>
+          <button data-speaker="ophelia" aria-pressed="false">Ophelia</button>
+          <button data-speaker="mathilda" aria-pressed="false">Mathilda</button>
         </div>
         <span id="count" class="muted"></span>
       </div>
-      <table class="lines">
-        <thead><tr><th></th><th>Line</th><th>Mood</th><th>Text</th><th>Source</th><th></th></tr></thead>
+      <table class="lines" aria-label="Story lines">
+        <thead><tr><th scope="col">Status</th><th scope="col">Line</th><th scope="col">Mood</th><th scope="col">Text</th><th scope="col">Source</th><th scope="col">Audio</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </section>
@@ -55,7 +55,7 @@
       <div id="jobs" class="jobs"></div>
     </section>
     <section id="models-view" hidden>
-      <h2>Voice model constellation</h2>
+      <h1>Voice models</h1>
       <p class="muted">Explore distinct performance layers, then compare them in the voice lab. Downloads stay in the ignored build/voice/hf folder.</p>
       <div class="constellation" aria-label="Voice model workflow">
         <div class="flow-node"><b>Script line</b><small>text + mood</small></div><span class="flow-edge">→</span>
@@ -63,8 +63,51 @@
         <div class="flow-node"><b>Chatterbox VC</b><small>unify to character identity</small></div><span class="flow-edge">→</span>
         <div class="flow-node"><b>Whisper + ECAPA</b><small>transcript + voice checks</small></div>
       </div>
-      <p id="model-runtime" class="runtime muted"></p>
+      <p id="model-runtime" class="runtime muted" role="status"></p>
       <div id="model-cards" class="model-cards"></div>
+      <section class="conversation-workbench">
+        <h2>Conversation audition</h2>
+        <p class="muted">Select real script lines or add experimental turns. Each utterance is generated separately, with the scene and preceding text passed into its acting direction; audio itself is not carried between turns. The script is never edited.</p>
+        <div class="chain-step"><span>01</span><b>Set up the chain</b></div>
+        <div class="row chain-presets">
+          <label>Saved local chain <select id="conversation-preset"><option value="">New chain</option></select></label>
+          <label>Save as <input id="conversation-name" type="text" maxlength="48" placeholder="e.g. Doorway · held-back grief"></label>
+          <button id="conversation-save" class="ghost">Save chain</button>
+          <button id="conversation-delete" class="ghost" disabled>Delete</button>
+        </div>
+        <div class="row chain-options">
+          <label>Context model <select id="conversation-model"><option value="">Download an instruction model first</option></select></label>
+          <label>Variants <select id="conversation-variants"><option value="1">1 take</option><option value="2" selected>2 takes</option><option value="3">3 takes</option></select></label>
+          <label>Variation temperature <input id="conversation-temperature" type="range" min="0.55" max="1.2" step="0.05" value="0.85"><output id="conversation-temperature-out">0.85</output></label>
+          <label>Seed <input id="conversation-seed" type="number" min="1" max="2147483000" value="31871"></label>
+          <button id="conversation-new-seed" class="ghost">New variation</button>
+        </div>
+        <label class="chain-context-label">Scene and relationship context
+          <textarea id="conversation-context" rows="3" maxlength="900" placeholder="Where are they, what happened just before this exchange, and what is each afraid to say?"></textarea>
+        </label>
+        <div class="row chain-profiles">
+          <label>Ophelia's voice profile
+            <textarea id="conversation-ophelia" rows="3" maxlength="400">Low, intimate feminine voice, clear consonants, restrained breath; fear appears as a slight catch rather than a raised voice.</textarea>
+          </label>
+          <label>Mathilda's voice profile
+            <textarea id="conversation-mathilda" rows="3" maxlength="400">Soft but steady feminine voice, a little warmer and more open; fatigue sits underneath her calm.</textarea>
+          </label>
+        </div>
+        <div class="chain-step"><span>02</span><b>Build the exchange</b></div>
+        <div class="chain-picker">
+          <label>Find a line to add
+            <input id="conversation-search" type="search" placeholder="Search script lines…">
+            <select id="conversation-source" size="5"></select>
+          </label>
+          <div class="row"><button id="conversation-add" class="primary">Add selected line</button><button id="conversation-add-free" class="ghost">Add blank turn</button></div>
+        </div>
+        <h3>Turn order <small class="muted">2–8 turns · move with the arrows</small></h3>
+        <ol id="conversation-turns" class="conversation-turns"></ol>
+        <div class="chain-step"><span>03</span><b>Render and compare</b></div>
+        <button id="conversation-run" class="primary" disabled>Render conversation variants</button>
+        <p id="conversation-status" class="muted" role="status" aria-live="polite"></p>
+        <div id="conversation-results" class="conversation-results"></div>
+      </section>
       <h2>Recent model and bake jobs</h2>
       <div id="model-jobs" class="jobs"></div>
     </section>
@@ -93,6 +136,7 @@
         <textarea id="qwen-instruction" rows="3" placeholder="A restrained, breath-thin reading; grief held close, with a slight tremor on the last word."></textarea>
       </label>
       <label id="qwen-speaker-wrap" hidden>Built-in voice <select id="qwen-speaker"><option>Serena</option><option>Vivian</option><option>Sohee</option><option>Ryan</option><option>Aiden</option><option>Dylan</option><option>Eric</option><option>Uncle_Fu</option><option>Ono_Anna</option></select></label>
+      <div id="qwen-variation-row" class="row" hidden><label>Sampling seed <input id="qwen-seed" type="number" min="1" max="2147483000" value="8137"></label><button id="qwen-new-seed" class="ghost">New variation</button><label>Variation temperature <input id="qwen-temperature" type="range" min="0.55" max="1.2" step="0.05" value="0.85"><output id="qwen-temperature-out">0.85</output></label></div>
       <small id="engine-help" class="muted">Kokoro is a local baseline. Qwen experimental takes are saved only in scratch and do not alter the game's voice locks.</small>
     </fieldset>
     <fieldset id="lab-dialogue" hidden>

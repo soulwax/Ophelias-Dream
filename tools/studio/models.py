@@ -74,7 +74,8 @@ def view():
     for entry in CATALOG.values():
         downloaded = is_downloaded(entry)
         rows.append({key: value for key, value in entry.items() if key not in ("path", "mode")}
-                    | {"downloaded": downloaded, "can_try": downloaded and ready})
+                    | {"downloaded": downloaded, "can_try": downloaded and ready,
+                       "contextual": entry["mode"] != "custom-small"})
     return {"models": rows, "runtime_ready": ready,
             "runtime_path": "build/voice/gpu-venv" if ready else "",
             "downloader_ready": bool(shutil.which("uv")),

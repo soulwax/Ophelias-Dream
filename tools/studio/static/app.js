@@ -27,7 +27,7 @@ const MOOD_DIRECTIONS = {
 };
 
 const state = { lines: [], summary: {}, actions: [], filter: { chapter: "", group: "", status: "", speaker: "", owed: "", q: "" },
-	selected: null, takes: {}, playing: null, voicesLoaded: false };
+	selected: null, takes: {}, playing: null, voicesLoaded: false, conversationTurns: [], conversationResults: [] };
 const player = $("#player");
 
 async function api(path, body) {
@@ -66,6 +66,7 @@ function renderSummary() {
 function navLink(label, count, warn, active, onclick) {
 	const link = el("a", { className: active ? "on" : "", onclick }, el("span", { textContent: label }),
 		el("span", { className: warn ? "n warn" : "n", textContent: count }));
+	if (active) link.setAttribute("aria-current", "page");
 	return link;
 }
 
@@ -251,7 +252,8 @@ function renderTakes() {
 	const list = $("#lab-takes");
 	list.replaceChildren();
 	for (const take of state.takes[state.selected.uid] || []) {
-		const row = el("li", {}, playButton(take.path, `take · ${take.text}`), el("span", { textContent: `${take.voice}${take.speed == null ? "" : ` · ${take.speed.toFixed(2)}`} — “${take.text.slice(0, 60)}”` }));
+		const variation = take.seed == null ? "" : ` · seed ${take.seed} · temp ${take.temperature.toFixed(2)}`;
+		const row = el("li", {}, playButton(take.path, `take · ${take.text}`), el("span", { textContent: `${take.voice}${take.speed == null ? "" : ` · ${take.speed.toFixed(2)}`}${variation} — “${take.text.slice(0, 60)}”` }));
 		if (take.model_id && !take.converted) {
 			const convert = el("button", { className: "ghost", textContent: "Match Ophelia", disabled: !state.models?.can_unify,
 				title: state.models?.can_unify ? "Convert this take to Ophelia's approved steady voice" : "Needs the Chatterbox CUDA runtime, NVIDIA GPU, and steady reference" });
@@ -287,7 +289,9 @@ async function tryReading() {
 	const engine = $("#lab-engine").value;
 	const qwen = engine !== "kokoro";
 	const result = await api(qwen ? "/api/model_try" : "/api/try", qwen
-		? { id: engine, text, instruction: engine === "qwen-custom-voice-small" ? "" : $("#qwen-instruction").value.trim(), speaker: $("#qwen-speaker").value }
+		? { id: engine, text, instruction: engine === "qwen-custom-voice-small" ? "" : $("#qwen-instruction").value.trim(),
+			speaker: $("#qwen-speaker").value, seed: parseInt($("#qwen-seed").value, 10) || 1,
+			temperature: parseFloat($("#qwen-temperature").value) }
 		: { text, voice, speed });
 	$("#lab-try").disabled = false;
 	if (!result.ok) {
@@ -295,7 +299,8 @@ async function tryReading() {
 		return;
 	}
 	$("#lab-status").textContent = result.cached ? "Played from the scratch cache." : `Rendered ${result.seconds}s.`;
-	(state.takes[line.uid] ||= []).unshift({ path: result.path, voice: qwen ? result.model : voice, speed: qwen ? null : speed, text, model_id: qwen ? engine : "" });
+	(state.takes[line.uid] ||= []).unshift({ path: result.path, voice: qwen ? result.model : voice, speed: qwen ? null : speed,
+		seed: qwen ? result.seed : null, temperature: qwen ? result.temperature : null, text, model_id: qwen ? engine : "" });
 	renderTakes();
 	toggle(result.path, `take · ${text}`);
 }
@@ -573,6 +578,7 @@ function configureModelControls() {
 	const qwen = Boolean(engine);
 	$("#qwen-instruction-wrap").hidden = !qwen || engine.id === "qwen-custom-voice-small";
 	$("#qwen-speaker-wrap").hidden = !qwen || engine.id === "qwen-voice-design";
+	$("#qwen-variation-row").hidden = !qwen;
 	$("#lab-speed").closest("label").hidden = qwen;
 	$("#engine-help").textContent = engine?.id === "qwen-custom-voice-small"
 		? "0.6B CustomVoice compares built-in timbres; emotional instructions are unavailable in this model."
@@ -617,6 +623,216 @@ function renderModels() {
 			el("div", { className: `model-status ${item.downloaded ? "ready" : ""}`, textContent: status }),
 			el("div", { className: "row" }, button, use)));
 	}
+	renderConversationControls();
+}
+
+const QWEN_SPEAKERS = ["Serena", "Vivian", "Sohee", "Ryan", "Aiden", "Dylan", "Eric", "Uncle_Fu", "Ono_Anna"];
+const CHAIN_STORAGE_KEY = "story-studio:voice-chains:v1";
+
+function savedChains() {
+	try {
+		const value = JSON.parse(localStorage.getItem(CHAIN_STORAGE_KEY) || "{}");
+		return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+	} catch (_) { return {}; }
+}
+
+function renderConversationControls() {
+	const modelSelect = $("#conversation-model");
+	const previous = modelSelect.value;
+	modelSelect.replaceChildren();
+	const capable = (state.models?.models || []).filter((item) => item.downloaded && item.contextual);
+	if (!capable.length) modelSelect.append(el("option", { value: "", textContent: "Download Qwen VoiceDesign or CustomVoice 1.7B first" }));
+	for (const item of capable) modelSelect.append(el("option", { value: item.id, textContent: item.name }));
+	modelSelect.value = capable.some((item) => item.id === previous) ? previous : (capable[0]?.id || "");
+	$("#conversation-run").disabled = !state.models?.runtime_ready || !modelSelect.value || state.conversationTurns.length < 2 || state.conversationTurns.length > 8;
+	const selected = capable.find((item) => item.id === modelSelect.value);
+	for (const label of document.querySelectorAll(".turn-voice-label")) label.hidden = selected?.id === "qwen-voice-design";
+	renderConversationPresets();
+	renderConversationSource();
+	renderConversationTurns();
+}
+
+function renderConversationSource() {
+	const select = $("#conversation-source");
+	const query = $("#conversation-search").value.trim().toLowerCase();
+	const lines = state.lines.filter((line) => !query || `${line.uid} ${line.speaker} ${line.mood} ${line.text}`.toLowerCase().includes(query));
+	const previous = select.value;
+	select.replaceChildren();
+	for (const line of lines) {
+		const shortText = line.text.length > 86 ? `${line.text.slice(0, 83)}…` : line.text;
+		select.append(el("option", { value: line.uid, textContent: `${line.speaker} · ${line.chapter} · ${line.mood} — ${shortText}` }));
+	}
+	if (lines.some((line) => line.uid === previous)) select.value = previous;
+}
+
+function addConversationTurn(line = null) {
+	if (state.conversationTurns.length >= 8) return toast("A contextual audition is limited to eight turns.", false);
+	const speaker = line?.speaker === "mathilda" ? "mathilda" : (state.conversationTurns.at(-1)?.speaker === "ophelia" ? "mathilda" : "ophelia");
+	const mood = line?.mood || "steady";
+	state.conversationTurns.push({ uid: line?.uid || "draft-turn", speaker, mood, text: line?.text || "", voice: speaker === "mathilda" ? "Vivian" : "Serena",
+		direction: MOOD_DIRECTIONS[mood] || MOOD_DIRECTIONS.steady });
+	markConversationDirty();
+	renderConversationTurns();
+}
+
+function markConversationDirty() {
+	state.conversationDirty = true;
+	if ($("#conversation-results").children.length) {
+		$("#conversation-status").textContent = "Chain changed since these takes. Render again to compare the current settings.";
+	}
+}
+
+function renderConversationTurns() {
+	const list = $("#conversation-turns");
+	if (!list) return;
+	list.replaceChildren();
+	const isDesign = $("#conversation-model")?.value === "qwen-voice-design";
+	state.conversationTurns.forEach((turn, index) => {
+		const speaker = el("select", { className: "turn-speaker" });
+		for (const key of ["ophelia", "mathilda"]) speaker.append(el("option", { value: key, textContent: key === "ophelia" ? "Ophelia" : "Mathilda" }));
+		speaker.value = turn.speaker;
+		speaker.onchange = () => { turn.speaker = speaker.value; turn.voice = turn.speaker === "mathilda" ? "Vivian" : "Serena"; markConversationDirty(); renderConversationTurns(); };
+		const voice = el("select", { className: "turn-voice" });
+		for (const name of QWEN_SPEAKERS) voice.append(el("option", { value: name, textContent: name }));
+		voice.value = turn.voice;
+		voice.hidden = isDesign;
+		voice.onchange = () => { turn.voice = voice.value; };
+		const mood = el("select", { className: "turn-mood" });
+		for (const name of Object.keys(MOOD_DIRECTIONS)) mood.append(el("option", { value: name, textContent: name }));
+		mood.value = turn.mood;
+		mood.onchange = () => {
+			const old = MOOD_DIRECTIONS[turn.mood];
+			turn.mood = mood.value;
+			if (turn.direction === old) turn.direction = MOOD_DIRECTIONS[turn.mood];
+			markConversationDirty();
+			renderConversationTurns();
+		};
+		const direction = el("textarea", { value: turn.direction, rows: 2, maxLength: 320 });
+		direction.oninput = () => { turn.direction = direction.value; };
+		const text = el("textarea", { className: "turn-text", value: turn.text, rows: 2, maxLength: 600,
+			placeholder: "Type an experimental reply; this does not change the script." });
+		text.oninput = () => { turn.text = text.value; updateConversationRunButton(); };
+		const move = (delta) => {
+			const at = index + delta;
+			if (at < 0 || at >= state.conversationTurns.length) return;
+			[state.conversationTurns[index], state.conversationTurns[at]] = [state.conversationTurns[at], state.conversationTurns[index]];
+			markConversationDirty();
+			renderConversationTurns();
+		};
+		const remove = el("button", { className: "ghost", textContent: "Remove", title: "Remove turn" });
+		remove.onclick = () => { state.conversationTurns.splice(index, 1); markConversationDirty(); renderConversationTurns(); };
+		const up = el("button", { className: "ghost", textContent: "↑", title: "Move turn earlier", "aria-label": "Move turn earlier", disabled: index === 0, onclick: () => move(-1) });
+		const down = el("button", { className: "ghost", textContent: "↓", title: "Move turn later", "aria-label": "Move turn later", disabled: index === state.conversationTurns.length - 1, onclick: () => move(1) });
+		const copy = el("span", { className: "turn-copy", textContent: `${index + 1}. ${turn.uid === "draft-turn" ? "Experimental line" : turn.uid}` });
+		const voiceLabel = el("label", { className: "turn-voice-label" }, "Timbre", voice);
+		voiceLabel.hidden = isDesign;
+		const metadata = el("div", { className: "turn-meta" }, el("label", {}, "Character", speaker), el("label", {}, "Mood", mood),
+			voiceLabel, el("label", { className: "direction" }, "Acting direction", direction));
+		list.append(el("li", { className: "conversation-turn" },
+			el("div", { className: "conversation-turn-head" }, copy, up, down, remove), text, metadata));
+	});
+	updateConversationRunButton();
+}
+
+function updateConversationRunButton() {
+	$("#conversation-run").disabled = !state.models?.runtime_ready || !$("#conversation-model").value ||
+		state.conversationTurns.length < 2 || state.conversationTurns.length > 8 || state.conversationTurns.some((turn) => !turn.text.trim());
+}
+
+function renderConversationPresets(selected = $("#conversation-preset").value) {
+	const select = $("#conversation-preset");
+	if (!select) return;
+	select.replaceChildren(el("option", { value: "", textContent: "New chain" }));
+	for (const name of Object.keys(savedChains()).sort((a, b) => a.localeCompare(b))) select.append(el("option", { value: name, textContent: name }));
+	select.value = [...select.options].some((option) => option.value === selected) ? selected : "";
+	$("#conversation-delete").disabled = !select.value;
+}
+
+function saveConversationPreset() {
+	const name = $("#conversation-name").value.trim();
+	if (!name) return toast("Give this conversation chain a name first.", false);
+	if (state.conversationTurns.length < 2) return toast("Add at least two turns before saving a chain.", false);
+	const all = savedChains();
+	all[name] = { model: $("#conversation-model").value, context: $("#conversation-context").value,
+		profiles: { ophelia: $("#conversation-ophelia").value, mathilda: $("#conversation-mathilda").value },
+		variants: $("#conversation-variants").value, temperature: $("#conversation-temperature").value,
+		turns: state.conversationTurns };
+	try { localStorage.setItem(CHAIN_STORAGE_KEY, JSON.stringify(all)); }
+	catch (_) { return toast("This browser could not save the chain. Check its local storage settings.", false); }
+	renderConversationPresets(name);
+	toast(`Saved “${name}” in this browser. The story scripts are unchanged.`);
+}
+
+function loadConversationPreset(name) {
+	if (!name) return;
+	const chain = savedChains()[name];
+	if (!chain) return;
+	$("#conversation-model").value = chain.model || $("#conversation-model").value;
+	$("#conversation-context").value = chain.context || "";
+	$("#conversation-ophelia").value = chain.profiles?.ophelia || "";
+	$("#conversation-mathilda").value = chain.profiles?.mathilda || "";
+	$("#conversation-variants").value = chain.variants || "2";
+	$("#conversation-temperature").value = chain.temperature || "0.85";
+	$("#conversation-temperature-out").textContent = parseFloat($("#conversation-temperature").value).toFixed(2);
+	state.conversationTurns = Array.isArray(chain.turns) ? chain.turns.slice(0, 8) : [];
+	markConversationDirty();
+	renderConversationControls();
+	renderConversationTurns();
+	$("#conversation-name").value = name;
+}
+
+function deleteConversationPreset() {
+	const name = $("#conversation-preset").value;
+	if (!name) return;
+	const all = savedChains();
+	delete all[name];
+	try { localStorage.setItem(CHAIN_STORAGE_KEY, JSON.stringify(all)); }
+	catch (_) { return toast("This browser could not update saved chains.", false); }
+	$("#conversation-name").value = "";
+	renderConversationPresets("");
+}
+
+async function runConversation() {
+	const body = { id: $("#conversation-model").value, context: $("#conversation-context").value,
+		profiles: { ophelia: $("#conversation-ophelia").value, mathilda: $("#conversation-mathilda").value },
+		variants: parseInt($("#conversation-variants").value, 10), seed: parseInt($("#conversation-seed").value, 10) || 1,
+		temperature: parseFloat($("#conversation-temperature").value), turns: state.conversationTurns };
+	const button = $("#conversation-run");
+	button.disabled = true;
+	button.classList.add("running");
+	button.textContent = `Rendering ${body.variants * body.turns.length} clips…`;
+	$(".conversation-workbench").setAttribute("aria-busy", "true");
+	$("#conversation-results").replaceChildren();
+	$("#conversation-status").textContent = `Rendering ${body.variants * body.turns.length} connected utterances. Each reply gets the scene and preceding turns as context…`;
+	try {
+		const result = await api("/api/model_conversation", body);
+		if (!result.ok) {
+			$("#conversation-status").textContent = result.error || "Conversation render failed.";
+			return;
+		}
+		state.conversationResults = result.variants;
+		state.conversationDirty = false;
+		$("#conversation-status").textContent = `${result.model} · ${result.variants.length} variation${result.variants.length === 1 ? "" : "s"}. Scratch audio only; no story line was changed.`;
+		renderConversationResults();
+	} catch (error) {
+		$("#conversation-status").textContent = `Could not reach the voice worker: ${error.message}`;
+	} finally {
+		button.classList.remove("running");
+		button.textContent = "Render conversation variants";
+		$(".conversation-workbench").setAttribute("aria-busy", "false");
+		updateConversationRunButton();
+	}
+}
+
+function renderConversationResults() {
+	const box = $("#conversation-results");
+	box.replaceChildren();
+	for (const [index, variant] of state.conversationResults.entries()) {
+		const rows = el("ol");
+		for (const turn of variant.turns) rows.append(el("li", {}, playButton(turn.path, `${turn.speaker} · ${turn.text}`),
+			el("span", { textContent: `${turn.speaker} · ${turn.mood} — “${turn.text}”` })));
+		box.append(el("article", { className: "variant-result" }, el("h3", { textContent: `Take ${index + 1} · seed ${variant.seed} · temperature ${variant.temperature.toFixed(2)}${variant.cached ? " · cached" : ""}` }), rows));
+	}
 }
 
 let jobsBusy = false;
@@ -629,6 +845,7 @@ for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "s
 		const button = e.target.closest("button");
 		if (!button) return;
 		for (const b of $(group).children) b.classList.toggle("on", b === button);
+		for (const b of $(group).children) b.setAttribute("aria-pressed", b === button ? "true" : "false");
 		state.filter[key] = button.dataset[key];
 		renderRows();
 	});
@@ -636,6 +853,24 @@ for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "s
 $("#lab-close").onclick = () => { $("#lab").hidden = true; state.selected = null; renderRows(); };
 $("#lab-try").onclick = tryReading;
 $("#lab-engine").onchange = configureModelControls;
+$("#conversation-search").oninput = renderConversationSource;
+$("#conversation-add").onclick = () => addConversationTurn(state.lines.find((line) => line.uid === $("#conversation-source").value));
+$("#conversation-add-free").onclick = () => addConversationTurn();
+$("#conversation-model").onchange = renderConversationTurns;
+$("#conversation-run").onclick = runConversation;
+$("#conversation-new-seed").onclick = () => { $("#conversation-seed").value = Math.floor(Math.random() * 2_147_480_000) + 1; markConversationDirty(); };
+$("#qwen-new-seed").onclick = () => { $("#qwen-seed").value = Math.floor(Math.random() * 2_147_480_000) + 1; };
+$("#qwen-temperature").oninput = (event) => { $("#qwen-temperature-out").textContent = parseFloat(event.target.value).toFixed(2); };
+$("#conversation-temperature").oninput = (event) => { $("#conversation-temperature-out").textContent = parseFloat(event.target.value).toFixed(2); };
+$("#conversation-save").onclick = saveConversationPreset;
+$("#conversation-delete").onclick = deleteConversationPreset;
+$("#conversation-preset").onchange = (event) => loadConversationPreset(event.target.value);
+$(".conversation-workbench").addEventListener("input", (event) => {
+	if (!["conversation-search", "conversation-name", "conversation-source"].includes(event.target.id)) markConversationDirty();
+});
+$(".conversation-workbench").addEventListener("change", (event) => {
+	if (!["conversation-search", "conversation-name", "conversation-source", "conversation-preset"].includes(event.target.id)) markConversationDirty();
+});
 $("#lab-speed").oninput = (e) => { $("#lab-speed-out").textContent = parseFloat(e.target.value).toFixed(2); };
 $("#check-all").onclick = () => runAction("validate");
 $("#lab-text").addEventListener("input", schedulePreview);

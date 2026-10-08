@@ -10,6 +10,7 @@ with its log. docs/STORY_STUDIO.md has the plan this follows.
 import argparse
 import hashlib
 import json
+import math
 import mimetypes
 import os
 import shutil
@@ -23,7 +24,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from studio import model, models, review, writers  # noqa: E402
+from studio import chains, model, models, review, writers  # noqa: E402
 
 ROOT = model.ROOT
 STATIC = Path(__file__).resolve().parent / "static"
@@ -189,7 +190,18 @@ class QwenLab:
         if not ready.get("ready"):
             raise RuntimeError("Qwen worker could not initialize CUDA")
 
-    def render(self, model_id, text, instruction, speaker):
+    def _ask_locked(self, entry, text, instruction, speaker, seed, temperature, out):
+        self._ensure()
+        self.process.stdin.write(json.dumps({"model_path": str(entry["path"]), "mode": entry["mode"],
+            "text": text, "instruction": instruction, "speaker": speaker, "seed": seed,
+            "temperature": temperature, "out": str(out)}) + "\n")
+        self.process.stdin.flush()
+        answer = json.loads(self.process.stdout.readline() or '{"ok":false,"error":"Qwen worker stopped"}')
+        if answer.get("ok"):
+            answer.update(path=out.relative_to(ROOT).as_posix(), model=entry["name"])
+        return answer
+
+    def render(self, model_id, text, instruction, speaker, seed=1, temperature=0.85):
         entry = models.CATALOG.get(model_id)
         if entry is None:
             raise ValueError("unknown curated model")
@@ -197,42 +209,88 @@ class QwenLab:
             raise RuntimeError(f"Download {entry['name']} before trying it.")
         if entry["mode"] == "custom-small" and instruction:
             raise ValueError("the 0.6B CustomVoice model does not support instruction control")
-        digest = hashlib.sha256(f"{model_id}|{text}|{instruction}|{speaker}".encode("utf-8")).hexdigest()[:24]
+        try:
+            seed = min(max(int(seed), 1), 2_147_483_000)
+            temperature = min(max(float(temperature), 0.55), 1.2)
+        except (TypeError, ValueError) as error:
+            raise ValueError("seed and temperature must be numeric") from error
+        if not math.isfinite(temperature):
+            raise ValueError("temperature must be finite")
+        digest = hashlib.sha256(f"{model_id}|{text}|{instruction}|{speaker}|{seed}|{temperature:.2f}".encode("utf-8")).hexdigest()[:24]
         out = SCRATCH / f"qwen-{digest}.wav"
+        if out.is_file():
+            return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "model": entry["name"],
+                    "seed": seed, "temperature": temperature, "cached": True}
+        with self.lock:
+            if out.is_file():
+                return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "model": entry["name"],
+                        "seed": seed, "temperature": temperature, "cached": True}
+            answer = self._ask_locked(entry, text, instruction, speaker, seed, temperature, out)
+        if answer.get("ok"):
+            answer.update(seed=seed, temperature=temperature)
+        return answer
+
+    def render_conversation(self, model_id, payload):
+        entry = models.CATALOG.get(model_id)
+        if entry is None:
+            raise ValueError("unknown curated model")
+        if entry["mode"] == "custom-small":
+            raise ValueError("the 0.6B CustomVoice model cannot follow instruction context; choose an instruction-capable model")
+        if not models.is_downloaded(entry):
+            raise RuntimeError(f"Download {entry['name']} before trying a conversation.")
+        chain = chains.normalize(payload)
+        variants = []
         with self.lock:
             self._ensure()
-            self.process.stdin.write(json.dumps({"model_path": str(entry["path"]), "mode": entry["mode"],
-                "text": text, "instruction": instruction, "speaker": speaker, "out": str(out)}) + "\n")
-            self.process.stdin.flush()
-            answer = json.loads(self.process.stdout.readline() or '{"ok":false,"error":"Qwen worker stopped"}')
-        if answer.get("ok"):
-            answer.update(path=out.relative_to(ROOT).as_posix(), model=entry["name"])
-        return answer
+            for variant_index in range(chain["variants"]):
+                history, results = [], []
+                variant_seed = chain["seed"] + variant_index * 4099
+                for turn_index, turn in enumerate(chain["turns"]):
+                    directive = chains.instruction(chain["context"], chain["profiles"], history,
+                        turn, turn_index + 1, len(chain["turns"]))
+                    seed = (variant_seed + turn_index * 127) % 2_147_483_000
+                    digest = hashlib.sha256(json.dumps([model_id, chain["context"], turn, directive, seed],
+                        sort_keys=True, ensure_ascii=False).encode("utf-8") + f"|{chain['temperature']:.2f}".encode("ascii")).hexdigest()[:24]
+                    out = SCRATCH / f"conversation-{digest}.wav"
+                    if out.is_file():
+                        answer = {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": True}
+                    else:
+                        answer = self._ask_locked(entry, turn["text"], directive, turn["voice"],
+                            seed, chain["temperature"], out)
+                    if not answer.get("ok"):
+                        raise RuntimeError(answer.get("error", "conversation turn failed"))
+                    answer.update(uid=turn["uid"], speaker=turn["speaker"], mood=turn["mood"], text=turn["text"])
+                    results.append(answer)
+                    history.append((turn["speaker"], turn["mood"], turn["text"]))
+                variants.append({"seed": variant_seed, "temperature": chain["temperature"], "turns": results,
+                    "cached": all(result.get("cached") for result in results)})
+        return {"ok": True, "model": entry["name"], "variants": variants}
 
     def unify(self, relative_path):
         source = (ROOT / relative_path).resolve()
         if SCRATCH.resolve() not in source.parents or source.suffix.lower() != ".wav" or not source.is_file():
             raise ValueError("choose an existing WAV preview from the studio scratch folder")
         anchor = ROOT / "tools/voice/ref/steady.wav"
-        if not anchor.is_file():
-            raise RuntimeError("the approved Ophelia steady reference is not installed")
-        if not models.view()["can_unify"]:
-            raise RuntimeError("identity conversion needs the Chatterbox CUDA runtime and an NVIDIA GPU")
         out = SCRATCH / f"{source.stem}-ophelia.wav"
-        if out.exists():
-            return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": True}
-        worker = Path(__file__).with_name("chatterbox_vc_worker.py")
-        request = json.dumps({"source": str(source), "anchor": str(anchor), "out": str(out)})
-        try:
-            result = subprocess.run([str(CB_VENV), str(worker)], cwd=ROOT, input=request + "\n",
-                capture_output=True, text=True, encoding="utf-8", timeout=900)
-        except subprocess.TimeoutExpired as error:
-            raise RuntimeError("Chatterbox identity conversion timed out") from error
-        lines = result.stdout.splitlines()
-        answer = json.loads(lines[-1]) if lines else {}
-        if result.returncode != 0 or not answer.get("ok"):
-            raise RuntimeError(answer.get("error") or result.stderr[-1200:] or "Chatterbox conversion failed")
-        return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": False}
+        with self.lock:
+            if out.exists():
+                return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": True}
+            if not anchor.is_file():
+                raise RuntimeError("the approved Ophelia steady reference is not installed")
+            if not models.view()["can_unify"]:
+                raise RuntimeError("identity conversion needs the Chatterbox CUDA runtime and an NVIDIA GPU")
+            worker = Path(__file__).with_name("chatterbox_vc_worker.py")
+            request = json.dumps({"source": str(source), "anchor": str(anchor), "out": str(out)})
+            try:
+                result = subprocess.run([str(CB_VENV), str(worker)], cwd=ROOT, input=request + "\n",
+                    capture_output=True, text=True, encoding="utf-8", timeout=900)
+            except subprocess.TimeoutExpired as error:
+                raise RuntimeError("Chatterbox identity conversion timed out") from error
+            lines = result.stdout.splitlines()
+            answer = json.loads(lines[-1]) if lines else {}
+            if result.returncode != 0 or not answer.get("ok"):
+                raise RuntimeError(answer.get("error") or result.stderr[-1200:] or "Chatterbox conversion failed")
+            return {"ok": True, "path": out.relative_to(ROOT).as_posix(), "cached": False}
 
 
 CHECKS = {
@@ -450,6 +508,8 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length) or b"{}")
         except json.JSONDecodeError:
             return self._send(400, {"error": "bad json"})
+        if not isinstance(body, dict):
+            return self._send(400, {"error": "json body must be an object"})
         url = urlparse(self.path)
         if url.path == "/api/models/download":
             if JOBS.busy():
@@ -467,7 +527,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "no text"})
             try:
                 result = QWEN_LAB.render(str(body.get("id", "")), text,
-                    str(body.get("instruction", ""))[:500], str(body.get("speaker", "Serena")))
+                    str(body.get("instruction", ""))[:500], str(body.get("speaker", "Serena")),
+                    body.get("seed", 1), body.get("temperature", 0.85))
+                return self._send(200, result)
+            except (RuntimeError, ValueError, OSError) as error:
+                return self._send(503, {"ok": False, "error": str(error)})
+        if url.path == "/api/model_conversation":
+            try:
+                result = QWEN_LAB.render_conversation(str(body.get("id", "")), body)
                 return self._send(200, result)
             except (RuntimeError, ValueError, OSError) as error:
                 return self._send(503, {"ok": False, "error": str(error)})

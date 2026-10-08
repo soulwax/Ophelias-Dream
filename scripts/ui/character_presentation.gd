@@ -20,6 +20,7 @@ var _animation_player: AnimationPlayer
 var _skeleton: Skeleton3D
 var _clips: Array[String] = []
 var _clip_index: int = 0
+var _use_embedded_animations: bool = false
 var _rest_pose: bool = false
 var _animation_label: Label
 var _working_configuration: Dictionary = CHARACTER.DEFAULT.duplicate()
@@ -96,6 +97,7 @@ func show_variant(index: int) -> void:
 		return
 	selected = posmod(index, variants.size())
 	var entry: Dictionary = variants[selected]
+	_use_embedded_animations = bool(entry.get("embedded_animations", false))
 	var instance: Node
 	if entry.get("configuration") is Dictionary:
 		instance = CHARACTER.new()
@@ -215,6 +217,37 @@ func _build_animation_preview() -> void:
 	if _skeleton == null:
 		_animation_label.text = "No character skeleton"
 		return
+	_clips.clear()
+	_animation_select.clear()
+	if _use_embedded_animations:
+		for node: Node in _model.find_children("*", "AnimationPlayer", true, false):
+			var embedded_player := node as AnimationPlayer
+			if embedded_player.get_animation_list().is_empty():
+				continue
+			_animation_player = embedded_player
+			_animation_player.stop()
+			for clip: String in _animation_player.get_animation_list():
+				if clip == "RESET" or clip.ends_with("/RESET"):
+					continue
+				_clips.append(clip)
+				var animation := _animation_player.get_animation(clip)
+				if animation != null:
+					animation.loop_mode = Animation.LOOP_LINEAR if _embedded_motion_key(clip) in ["idle", "walk", "run", "sprint", "crouch", "sit", "drive"] else Animation.LOOP_NONE
+			for clip: String in _clips:
+				if _embedded_motion_key(clip) == "idle":
+					_clips.erase(clip)
+					_clips.push_front(clip)
+					break
+			break
+		if _animation_player == null or _clips.is_empty():
+			_animation_label.text = "No embedded character animations"
+			return
+		for clip: String in _clips:
+			_animation_select.add_item(_embedded_animation_label(clip))
+		_clip_index = 0
+		_skeleton.reset_bone_poses()
+		show_animation(0)
+		return
 	for node: Node in _model.find_children("*", "AnimationPlayer", true, false):
 		(node as AnimationPlayer).stop()
 	for node: Node in _model.find_children("*", "AnimationTree", true, false):
@@ -246,6 +279,19 @@ func _build_animation_preview() -> void:
 		_animation_select.add_item(clip.replace("_", " "))
 	_skeleton.reset_bone_poses()
 	show_animation(0)
+
+
+func _embedded_motion_key(clip: String) -> String:
+	var label: String = clip.get_slice("|", clip.get_slice_count("|") - 1)
+	label = label.to_lower()
+	if label.begins_with("female_"):
+		label = label.trim_prefix("female_")
+	return label.get_slice("_", 0)
+
+
+func _embedded_animation_label(clip: String) -> String:
+	var label: String = clip.get_slice("|", clip.get_slice_count("|") - 1).replace("_", " ").replace("-", " ")
+	return label.capitalize()
 
 
 func show_animation(index: int) -> void:

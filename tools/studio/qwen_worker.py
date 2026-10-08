@@ -38,14 +38,20 @@ def main():
             engine = load(request["model_path"])
             text = str(request["text"]).strip()
             instruction = str(request.get("instruction", "")).strip()
+            seed = int(request.get("seed", 1))
+            temperature = float(request.get("temperature", 0.85))
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
             kind = request["mode"]
             if kind == "design":
                 wavs, rate = engine.generate_voice_design(
-                    text=text, language="English", instruct=instruction, max_new_tokens=384)
+                    text=text, language="English", instruct=instruction, max_new_tokens=384,
+                    do_sample=True, temperature=temperature)
             elif kind in ("custom", "custom-small"):
                 wavs, rate = engine.generate_custom_voice(
                     text=text, language="English", speaker=request.get("speaker", "Serena"),
-                    instruct=instruction if kind == "custom" else None, max_new_tokens=384)
+                    instruct=instruction if kind == "custom" else None, max_new_tokens=384,
+                    do_sample=True, temperature=temperature)
             else:
                 raise ValueError(f"unsupported Qwen model mode: {kind}")
             out = Path(request["out"]).resolve()
