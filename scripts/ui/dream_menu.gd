@@ -9,6 +9,8 @@ const MENU_ENTRIES := [
 	{"id": "QUIT", "label": "EXIT", "japanese": "終了"},
 ]
 
+signal mode_selected
+
 var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
 var _glitch: ShaderMaterial
@@ -305,24 +307,24 @@ func _choose(caption: String) -> void:
 			Game.character_selected = true
 			Game.dream_mode = true
 			Game.mathilda_pov = false
-			get_tree().reload_current_scene()
+			mode_selected.emit()
 		"MATHILDA":
 			_stop_music()
 			Game.character_selected = true
 			Game.dream_mode = false
 			Game.mathilda_pov = true
-			get_tree().reload_current_scene()
+			mode_selected.emit()
 		"OPHELIA":
 			Game.character_selected = true
 			Game.dream_mode = false
 			Game.mathilda_pov = false
 			_stop_music()
-			get_tree().reload_current_scene()
+			mode_selected.emit()
 		"SETTINGS":
 			_panel.hide()
 			_settings_terminal.open_title_settings()
 		"CREDITS":
-			_body.text = "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nBuilt with Godot\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
+			_body.text = "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
 			_panel.show()
 			(_panel.get_child(0).get_child(1) as Button).grab_focus()
 		"QUIT":

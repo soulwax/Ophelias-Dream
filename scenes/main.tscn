@@ -1,10 +1,6 @@
 [gd_scene format=3 uid="uid://cp2fvof6mdmdj"]
 
 [ext_resource type="Script" uid="uid://bq5di4i3jdqq5" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://scenes/editable_level.scn" id="2_level"]
 
 [node name="Main" type="Node3D" unique_id=1775586962]
 script = ExtResource("1_main")
-
-[node name="EditableLevel" parent="." unique_id=1986812039 instance=ExtResource("2_level")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53.693733, -18.505413, 29.961365)

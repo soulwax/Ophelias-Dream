@@ -3,6 +3,14 @@ extends Node3D
 const CATALOG := "res://assets/characters/presentation_catalog.json"
 const CHARACTER := preload("res://scripts/player/creator_character.gd")
 const SAVES := "user://characters"
+const KENNEY_PREVIEW_PALETTES := [
+	{"outfit": "536c7b", "head": "c99e7b"},
+	{"outfit": "6d536b", "head": "d5ad8b"},
+	{"outfit": "536c60", "head": "c58f71"},
+	{"outfit": "75664f", "head": "d8b895"},
+	{"outfit": "4d6275", "head": "c99576"},
+	{"outfit": "71584c", "head": "d0a685"},
+]
 
 var variants: Array[Dictionary] = []
 var selected: int = 0
@@ -12,6 +20,8 @@ var _camera: Camera3D
 var _title: Label
 var _description: Label
 var _counter: Label
+var _heading: Label
+var _creator_panel: PanelContainer
 var _previous: Button
 var _next: Button
 var _turn: float = 0.0
@@ -127,15 +137,50 @@ func show_variant(index: int) -> void:
 	_model = instance as Node3D
 	_model.scale *= maxf(float(entry.get("scale", 1.0)), 0.001)
 	_model.rotation.y += deg_to_rad(float(entry.get("yaw_degrees", 0.0)))
+	_model.visible = true
+	for node: Node in _model.find_children("*", "GeometryInstance3D", true, false):
+		(node as GeometryInstance3D).visible = true
 	_display.add_child(_model)
+	_apply_preview_materials(entry)
 	_turn = 0.0
 	_display.rotation.y = 0.0
 	_frame_model()
 	_title.text = str(entry.get("name", "Unnamed character"))
 	_description.text = str(entry.get("description", ""))
 	_counter.text = "%d / %d" % [selected + 1, variants.size()]
+	var creator_supported := _supports_creator(entry)
+	_creator_panel.visible = creator_supported
+	_heading.text = "MATHILDA  /  CHARACTER STUDIO" if creator_supported else "CHARACTER COLLECTION  /  MODEL PREVIEW"
 	_build_animation_preview()
 	_sync_creator_controls()
+
+
+func _supports_creator(entry: Dictionary) -> bool:
+	if entry.get("configuration") is Dictionary:
+		return true
+	var scene_path := str(entry.get("scene", ""))
+	return scene_path.begins_with("res://assets/characters/styloo_elf/") or scene_path.begins_with("res://assets/characters/variants/") or scene_path.begins_with("res://assets/characters/hairstyles/")
+
+
+func _apply_preview_materials(entry: Dictionary) -> void:
+	if not str(entry.get("scene", "")).begins_with("res://assets/characters/kenney_female/"):
+		return
+	var palette: Dictionary = KENNEY_PREVIEW_PALETTES[posmod(selected - 4, KENNEY_PREVIEW_PALETTES.size())]
+	for node: Node in _model.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh.mesh == null:
+			continue
+		var is_head := mesh.name.to_lower().contains("head")
+		var color := Color.html(str(palette["head"] if is_head else palette["outfit"]))
+		for surface: int in mesh.mesh.get_surface_count():
+			var source := mesh.get_active_material(surface) as StandardMaterial3D
+			if source == null or source.albedo_texture != null or source.albedo_color != Color.WHITE:
+				continue
+			var preview := source.duplicate() as StandardMaterial3D
+			preview.albedo_color = color
+			preview.roughness = 0.82
+			preview.metallic = 0.0
+			mesh.set_surface_override_material(surface, preview)
 
 
 func _sync_creator_controls() -> void:
@@ -403,20 +448,20 @@ func _build_stage() -> void:
 	environment.background_color = Color("18232d")
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color("d8e6ef")
-	environment.ambient_light_energy = 0.55
+	environment.ambient_light_energy = 0.42
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	var world := WorldEnvironment.new()
 	world.environment = environment
 	add_child(world)
 	var key := DirectionalLight3D.new()
 	key.rotation_degrees = Vector3(-35.0, -30.0, 0.0)
-	key.light_energy = 1.4
+	key.light_energy = 1.1
 	key.shadow_enabled = true
 	add_child(key)
 	var fill := DirectionalLight3D.new()
 	fill.rotation_degrees = Vector3(-20.0, 145.0, 0.0)
 	fill.light_color = Color("b8d5ef")
-	fill.light_energy = 0.7
+	fill.light_energy = 0.38
 	add_child(fill)
 	var floor_mesh := CylinderMesh.new()
 	floor_mesh.top_radius = 1.8
@@ -455,11 +500,11 @@ func _build_ui() -> void:
 	var column := VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(column)
-	var heading := Label.new()
-	heading.text = "MATHILDA  /  CHARACTER STUDIO"
-	heading.add_theme_color_override("font_color", Color("a9c5d8"))
-	heading.add_theme_font_size_override("font_size", 18)
-	column.add_child(heading)
+	_heading = Label.new()
+	_heading.text = "MATHILDA  /  CHARACTER STUDIO"
+	_heading.add_theme_color_override("font_color", Color("a9c5d8"))
+	_heading.add_theme_font_size_override("font_size", 18)
+	column.add_child(_heading)
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", 32)
 	column.add_child(_title)
@@ -504,7 +549,8 @@ func _build_ui() -> void:
 
 
 func _build_creator_panel(layer: CanvasLayer) -> void:
-	var panel := PanelContainer.new()
+	_creator_panel = PanelContainer.new()
+	var panel := _creator_panel
 	panel.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
 	panel.offset_left = -350.0
 	panel.offset_right = -24.0

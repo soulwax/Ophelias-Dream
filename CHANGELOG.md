@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5.0 — 2026-10-08
+
+- The title waits before opening the world; a loading interval now marks the crossing into play.
+- Give the camera a closer, more deliberate view of the winter path.
+- Restore color and presence to the other figures in the character showcase.
+
 ## 0.2.4.0 — 2026-10-08
 
 - Give each title choice a clear action and Japanese translation, with brackets marking the selected door.

@@ -12,8 +12,9 @@ config_version=5
 
 config/name="Ophelia's Dream"
 config/description="A daylight snowfield, a wire fence, and something that learns you by the notes."
-config/version="0.2.4.0"
+config/version="0.2.5.0"
 run/main_scene="res://scenes/main.tscn"
+boot_splash/show_image=false
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 run/max_fps=60
 config/icon="res://icon.svg"

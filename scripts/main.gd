@@ -3,6 +3,7 @@ extends Node3D
 
 const BOW_PICKUP := preload("res://scripts/world/bow_pickup.gd")
 const ARROW_SUPPLY := preload("res://scripts/world/arrow_supply.gd")
+const LOADING_SCREEN_SCRIPT := preload("res://scripts/ui/loading_screen.gd")
 
 ## -1 rolls a new seed whenever the editable level is rebuilt.
 @export var world_seed: int = -1
@@ -11,6 +12,8 @@ const ARROW_SUPPLY := preload("res://scripts/world/arrow_supply.gd")
 var _capture := false
 var _frames := 0
 var _bake_pid := -1
+var _loading_screen
+var _title_transition := false
 
 
 func _ready() -> void:
@@ -18,6 +21,13 @@ func _ready() -> void:
 		# The baked editable scene predates this sampler. Bind it for editor
 		# previews too; changing a uniform does not rebuild or save the level.
 		var editable := get_node_or_null("EditableLevel")
+		if editable == null:
+			var authored_level := load("res://scenes/editable_level.scn") as PackedScene
+			if authored_level:
+				editable = authored_level.instantiate()
+				editable.name = "EditableLevel"
+				add_child(editable)
+				editable.owner = self
 		if editable:
 			var noise := load("res://assets/environment/terrain_noise.png") as Texture2D
 			for node in editable.find_children("*", "MeshInstance3D", true, false):
@@ -30,11 +40,24 @@ func _ready() -> void:
 	_capture = OS.get_environment("RUN_CAPTURE") == "1"
 	var repacking := OS.get_cmdline_user_args().has("--repack-editor-level")
 	var baking := repacking or OS.get_cmdline_user_args().has("--bake-editor-level")
-	var snapshot := get_node_or_null("EditableLevel")
-	var chosen_seed := _resolve_seed(null if baking and not repacking else snapshot)
+	var title_only := not Game.character_selected and not Game.resuming() and OS.get_environment("RUN_PLAY") != "1" and OS.get_environment("RUN_MATHILDA") != "1"
+	if title_only and not baking and (not _capture or OS.get_environment("RUN_TITLE") == "1"):
+		Game.reset()
+		_show_title_menu()
+		return
+	var snapshot: Node = get_node_or_null("EditableLevel")
+	if snapshot == null:
+		var authored_level := load("res://scenes/editable_level.scn") as PackedScene
+		if authored_level:
+			snapshot = authored_level.instantiate()
+			snapshot.name = "EditableLevel"
+			add_child(snapshot)
 	if snapshot is Node3D:
 		(snapshot as Node3D).visible = false
+	var chosen_seed := _resolve_seed(null if baking and not repacking else snapshot)
 	Game.reset()
+	_loading_screen = Game.get_node_or_null("LoadingScreen")
+	await _loading_stage(0.08, "REMEMBERING THE SHAPE OF THE PLACE")
 	if baking:
 		# Headless runs report a lean GPU; author the full visual setup.
 		Game.lean_graphics = false
@@ -42,6 +65,7 @@ func _ready() -> void:
 	var atmosphere := Atmosphere.new()
 	atmosphere.name = "Atmosphere"
 	add_child(atmosphere)
+	await _loading_stage(0.2, "GATHERING THE WEATHER")
 	Game.mark("build trail")
 	var trail := Trail.new()
 	trail.name = "Trail"
@@ -57,6 +81,7 @@ func _ready() -> void:
 			trail.authored_start = start.position
 			trail.use_authored_start = true
 	add_child(trail)
+	await _loading_stage(0.4, "DRAWING THE WAY THROUGH THE SNOW")
 	Game.mark("build player")
 	var player := Player.new()
 	player.name = "Player"
@@ -67,6 +92,7 @@ func _ready() -> void:
 	add_child(Wildlife.new())
 	add_child(Camp.new())
 	add_child(Lake.new())
+	await _loading_stage(0.6, "SETTING THE DISTANT LIGHTS")
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
 	if Game.mathilda_pov and not Game.dream_mode:
@@ -81,6 +107,7 @@ func _ready() -> void:
 	add_child(hud)
 	if Game.dream_mode:
 		add_child(preload("res://scripts/world/dream_experience.gd").new())
+	await _loading_stage(0.72, "LISTENING FOR A VOICE")
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player]
 	var built_house := trail.house.transform
@@ -155,6 +182,7 @@ func _ready() -> void:
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()
+	await _loading_stage(0.88, "PLACING WHAT WAS LEFT BEHIND")
 	var bow_pickup := BOW_PICKUP.new()
 	var bow_at := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET)
 	var bow_ahead := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET + 1.0)
@@ -171,6 +199,7 @@ func _ready() -> void:
 		supply.quantity = Tune.ARROW_PICKUP_QUANTITIES[index]
 		supply.position = trail.on_ground(at + side * (1.2 if index % 2 == 0 else -1.2)) + Vector3.UP * 0.38
 		add_child(supply)
+	await _loading_stage(0.96, "THE THRESHOLD IS READY")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# Back to the lookout: no menu and no intro card, she is simply there again.
 	if Game.resuming() and not Game.mathilda_pov and not _capture:
@@ -206,6 +235,9 @@ func _ready() -> void:
 		var ending_kind := OS.get_environment("RUN_ENDING")
 		if ending_kind != "":
 			Game.dev_ending.call_deferred(ending_kind)
+	if _loading_screen:
+		await _loading_screen.dismiss()
+		_loading_screen = null
 	if Game.character_selected and not _capture:
 		Game.character_selected = false
 		if Game.dream_mode:
@@ -216,6 +248,37 @@ func _ready() -> void:
 		add_child(reflection)
 		if not Game.mathilda_pov:
 			Game.begin_intro()
+
+
+func _show_title_menu() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var layer := CanvasLayer.new()
+	layer.name = "TitleMenu"
+	layer.layer = 20
+	add_child(layer)
+	var menu := preload("res://scripts/ui/dream_menu.gd").new()
+	layer.add_child(menu)
+	menu.connect("mode_selected", _on_mode_selected)
+
+
+func _on_mode_selected() -> void:
+	if _title_transition:
+		return
+	_title_transition = true
+	var loading = LOADING_SCREEN_SCRIPT.new()
+	loading.name = "LoadingScreen"
+	Game.add_child(loading)
+	_loading_screen = loading
+	loading.set_progress(0.04, "THE DREAM IS OPENING")
+	await get_tree().process_frame
+	get_tree().reload_current_scene()
+
+
+func _loading_stage(progress: float, caption: String) -> void:
+	if _loading_screen == null or not is_instance_valid(_loading_screen):
+		return
+	_loading_screen.set_progress(progress, caption)
+	await get_tree().process_frame
 
 
 func _process(_delta: float) -> void:

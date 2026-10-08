@@ -12,6 +12,9 @@ const BOOM_STEPS := 16
 const BOOM_CLEARANCE := 0.35
 const INDOOR_BOOM := 1.75
 const INDOOR_SHOULDER := 0.36
+const OUTDOOR_SHOULDER := 0.48
+const OUTDOOR_MOUNT_HEIGHT := 1.62
+const CAMERA_LEAD := 0.42
 # How long after a leap lands it still counts as one (the pose blends out and
 # the rig's own plant of the lead foot is ignored).
 const LEAP_SETTLE_MSEC := 250
@@ -81,6 +84,7 @@ var _boom := BOOM_LENGTH
 var _shoulder := 0.0
 var _glow := 0.0
 var _trail_offset := Vector3.ZERO
+var _camera_lead := Vector3.ZERO
 var _rise_lag := 0.0
 # Dev hook: RUN_AUTOPILOT=walk, jog, or sprint holds forward (sprint sprints),
 # so RUN_CAPTURE can photograph her mid-stride; glance sprints looking back;
@@ -777,11 +781,12 @@ func _apply_look() -> void:
 	# Glancing back swings the view round over her right shoulder; the body
 	# keeps _yaw, so she runs on the way she was going.
 	var turn := Basis(Vector3.UP, _yaw + PI * smoothstep(0.0, 1.0, glance))
-	var mount := Vector3(_shoulder, 1.5 - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake - _rise_lag, 0.0)
+	var mount_height := lerpf(OUTDOOR_MOUNT_HEIGHT, 1.5, _glow)
+	var mount := Vector3(_shoulder, mount_height - 0.4 * _slide_weight + _jolt * Game.settings.camera_shake - _rise_lag, 0.0)
 	var body := get_global_transform_interpolated().origin
 	# The trail behind her momentum stays behind her, whichever way she looks.
 	var trail_behind := Basis(Vector3.UP, _yaw) * _trail_offset
-	spring_arm.global_transform = Transform3D(turn * Basis(Vector3.RIGHT, _pitch), body + turn * mount + trail_behind)
+	spring_arm.global_transform = Transform3D(turn * Basis(Vector3.RIGHT, _pitch), body + turn * mount + trail_behind + _camera_lead)
 	_fit_boom_to_ground()
 	if camera:
 		var shake := Game.weather.gust * 0.012 if Game.weather else 0.0
@@ -808,8 +813,9 @@ func _settle_spawn() -> void:
 	var inside := indoors()
 	var outdoors_boom := BOOM_LENGTH * (Game.settings.camera_distance if Game.settings else 1.0)
 	_boom = minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom
-	_shoulder = INDOOR_SHOULDER if inside else 0.0
+	_shoulder = INDOOR_SHOULDER if inside else OUTDOOR_SHOULDER
 	_glow = 1.0 if inside else 0.0
+	_camera_lead = Vector3.ZERO
 	_arm_reach = _boom
 	if camera and Game.settings:
 		camera.fov = Game.settings.fov
@@ -1061,7 +1067,7 @@ func _move_camera(delta: float) -> void:
 	var inside := indoors()
 	var outdoors_boom := BOOM_LENGTH * Game.settings.camera_distance + 0.5 * pace + Tune.LEAP_BOOM * leap_air * Game.settings.camera_shake
 	_boom = lerpf(_boom, minf(INDOOR_BOOM, outdoors_boom) if inside else outdoors_boom, 1.0 - exp(-delta * 3.0))
-	_shoulder = lerpf(_shoulder, INDOOR_SHOULDER if inside else 0.0, 1.0 - exp(-delta * 3.0))
+	_shoulder = lerpf(_shoulder, INDOOR_SHOULDER if inside else OUTDOOR_SHOULDER, 1.0 - exp(-delta * 3.0))
 	# Pressed into her by a wall anyway, it looks past her instead of
 	# through the inside of her head.
 	if visual:
@@ -1070,6 +1076,13 @@ func _move_camera(delta: float) -> void:
 	_roll_kick = lerpf(_roll_kick, 0.0, 1.0 - exp(-delta * 8.0))
 	var lag := Basis(Vector3.UP, _yaw).inverse() * Vector3(-_glide.x, 0.0, -_glide.z) * 0.04
 	_trail_offset = _trail_offset.lerp(lag.limit_length(0.32), 1.0 - exp(-delta * 3.0))
+	# Keep her just off-centre and let the view look a little way along her path.
+	# This gives the player room to read the snow and surrounding tree line before
+	# she reaches them, while fading the lead when she glances behind herself.
+	var travel := Vector3(_glide.x, 0.0, _glide.z)
+	var lead_speed := clampf(travel.length() / Tune.WALK_SPEED, 0.0, 1.0)
+	var lead_target := travel.normalized() * CAMERA_LEAD * lead_speed * (1.0 - _glow) * (1.0 - smoothstep(0.0, 1.0, glance)) if lead_speed > 0.001 else Vector3.ZERO
+	_camera_lead = _camera_lead.lerp(lead_target, 1.0 - exp(-delta * 2.4))
 	# On a leap the camera trails her rise and fall by a hair.
 	var rise := clampf(velocity.y * 0.012, -0.05, 0.05) * leap_air * Game.settings.camera_shake
 	_rise_lag = lerpf(_rise_lag, rise, 1.0 - exp(-delta * 6.0))
