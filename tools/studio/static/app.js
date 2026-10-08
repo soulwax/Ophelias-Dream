@@ -50,6 +50,7 @@ async function load() {
 	renderModels();
 }
 
+// Chapter progress as cards; a click filters the table to that chapter.
 function renderSummary() {
 	const box = $("#summary");
 	box.replaceChildren();
@@ -58,36 +59,43 @@ function renderSummary() {
 		for (const kind of ["final", "draft", "missing"]) {
 			bar.append(el("span", { style: `width:${(100 * row[kind]) / row.lines}%;background:var(--${kind})`, title: `${row[kind]} ${kind}` }));
 		}
-		box.append(el("div", { className: "chip" }, el("b", { textContent: CHAPTER_NAMES[chapter] || chapter }), bar,
-			el("small", { textContent: `${row.final}/${row.lines} final · ${row.draft} draft · ${row.missing} missing` })));
+		const pct = Math.round((100 * row.final) / Math.max(row.lines, 1));
+		const parts = [`${row.final}/${row.lines} final`];
+		if (row.draft) parts.push(`${row.draft} draft`);
+		if (row.missing) parts.push(`${row.missing} missing`);
+		const card = el("button", { className: `chip${state.filter.chapter === chapter && !state.filter.group ? " on" : ""}`,
+			title: `Show ${CHAPTER_NAMES[chapter] || chapter}` },
+			el("div", { className: "chip-head" }, el("b", { textContent: CHAPTER_NAMES[chapter] || chapter }), el("span", { className: "pct", textContent: `${pct}%` })),
+			bar, el("small", { textContent: parts.join(" · ") }));
+		card.onclick = () => show({ chapter: state.filter.chapter === chapter && !state.filter.group ? "" : chapter, group: "", owed: "" });
+		box.append(card);
 	}
 }
 
-function navLink(label, count, warn, active, onclick) {
-	const link = el("a", { className: active ? "on" : "", onclick }, el("span", { textContent: label }),
+function navLink(label, count, warn, active, onclick, title = "") {
+	const link = el("a", { className: active ? "on" : "", onclick, title, tabIndex: 0 }, el("span", { textContent: label }),
 		el("span", { className: warn ? "n warn" : "n", textContent: count }));
+	link.onkeydown = (e) => { if (e.key === "Enter") onclick(); };
 	if (active) link.setAttribute("aria-current", "page");
 	return link;
 }
 
+// The sidebar only browses lines; the studio's sections are tabs in the top bar.
 function renderNav() {
 	const nav = $("#nav");
 	nav.replaceChildren();
 	const f = state.filter;
 	const lines = state.lines;
-	const linesView = !$("#lines-view").hidden;
-	nav.append(el("h4", { textContent: "Views" }));
-	nav.append(navLink("All lines", lines.length, false, linesView && !f.chapter && !f.owed, () => show({ chapter: "", group: "", owed: "" })));
+	nav.append(el("h4", { textContent: "Browse" }));
+	nav.append(navLink("All lines", lines.length, false, !f.chapter && !f.owed, () => show({ chapter: "", group: "", owed: "" })));
 	const owed = {};
 	for (const line of lines) if (line.owed_to) owed[line.owed_to] = (owed[line.owed_to] || 0) + 1;
 	for (const [engine, n] of Object.entries(owed)) {
-		nav.append(navLink(`Owed to ${engine}`, n, true, linesView && f.owed === engine, () => show({ chapter: "", group: "", owed: engine })));
+		nav.append(navLink(engine === "desktop:chatterbox" ? "Waiting for the desktop" : `Owed to ${engine}`, n, true, f.owed === engine,
+			() => show({ chapter: "", group: "", owed: engine }), `Lines whose final clip needs ${engine}`));
 	}
-	const open = (state.review || []).filter((i) => !i.decision).length;
-	nav.append(navLink("Review new clips", open || "", open > 0, !$("#review-view").hidden, () => showView("review")));
-	nav.append(navLink("Bake & check", "", false, !$("#bake-view").hidden, () => showView("bake")));
-	nav.append(navLink("Voice models", (state.models?.models || []).length, false, !$("#models-view").hidden, () => showView("models")));
-	nav.append(navLink("Dream story", state.dreamStory?.branches.length || "", false, !$("#dream-story-view").hidden, () => showView("dream-story")));
+	nav.append(el("p", { className: "legend", textContent: "Numbers: lines still without a final clip / lines in the group." }));
+	renderTabs();
 	for (const chapter of Object.keys(CHAPTER_NAMES)) {
 		const inChapter = lines.filter((l) => l.chapter === chapter);
 		if (!inChapter.length) continue;
@@ -101,15 +109,31 @@ function renderNav() {
 		for (const [group, g] of Object.entries(groups)) {
 			const label = group === chapter ? "all" : group.replace("/", " · ");
 			nav.append(navLink(label, g.open ? `${g.open}/${g.n}` : g.n, g.open > 0,
-				linesView && f.chapter === chapter && f.group === group, () => show({ chapter, group, owed: "" })));
+				f.chapter === chapter && f.group === group, () => show({ chapter, group, owed: "" }),
+				g.open ? `${g.open} of ${g.n} still without a final clip` : `All ${g.n} have their final clip`));
 		}
 	}
 }
 
 function show(patch) {
 	Object.assign(state.filter, patch);
+	state.kbd = -1;
 	showView("lines");
+	renderSummary();
 	renderRows();
+}
+
+function renderTabs() {
+	const current = currentView();
+	for (const tab of document.querySelectorAll("#tabs a")) {
+		const on = tab.dataset.view === current;
+		tab.classList.toggle("on", on);
+		if (on) tab.setAttribute("aria-current", "page"); else tab.removeAttribute("aria-current");
+	}
+	const open = (state.review || []).filter((i) => !i.decision).length;
+	$("#tab-review").textContent = open || "";
+	$("#tab-review").title = open ? `${open} new clip${open === 1 ? "" : "s"} to review` : "";
+	$("#tab-bake").textContent = jobsBusy ? "running" : "";
 }
 
 function visible() {
@@ -168,33 +192,109 @@ function paintPlayback() {
 for (const kind of ["play", "pause", "ended"]) player.addEventListener(kind, paintPlayback);
 $("#mini-toggle").onclick = () => { if (state.playing) toggle(state.playing.path); };
 
+const CLIP_WORDS = { final: "Final clip", draft: "Draft clip", missing: "No clip yet" };
+
 function renderRows() {
 	const rows = $("#rows");
 	rows.replaceChildren();
 	const list = visible();
+	state.visibleLines = list;
 	$("#count").textContent = `${list.length} line${list.length === 1 ? "" : "s"}`;
-	for (const line of list) {
-		const tr = el("tr", { className: state.selected?.uid === line.uid ? "sel" : "" });
-		tr.onclick = () => select(line);
+	if (!list.length) {
+		rows.append(el("tr", { className: "placeholder" }, el("td", { colSpan: 6,
+			textContent: state.lines.length ? "No line matches these filters." : "Loading every line…" })));
+		return;
+	}
+	// Without a group chosen, group headings keep the long list readable.
+	const headed = !state.filter.group;
+	let lastGroup = "";
+	list.forEach((line, index) => {
+		const heading = `${line.chapter}/${line.group}`;
+		if (headed && heading !== lastGroup) {
+			lastGroup = heading;
+			const name = line.group === line.chapter ? CHAPTER_NAMES[line.chapter] : `${CHAPTER_NAMES[line.chapter]} · ${line.group.replace("/", " · ")}`;
+			rows.append(el("tr", { className: "group-row" }, el("td", { colSpan: 6, textContent: name })));
+		}
+		const classes = [];
+		if (state.selected?.uid === line.uid) classes.push("sel");
+		if (state.kbd === index) classes.push("kbd");
+		const tr = el("tr", { className: classes.join(" ") });
+		tr.dataset.index = index;
+		tr.setAttribute("aria-selected", state.selected?.uid === line.uid ? "true" : "false");
+		tr.onclick = () => {
+			if (line.uid === state.selected?.uid) { state.kbd = index; renderRows(); return; }
+			if (!confirmLineSwitch(line)) return;
+			state.kbd = index;
+			select(line, true);
+		};
 		const who = el("div", { className: `who ${line.speaker}`, textContent: line.speaker });
-		const status = el("td", {}, el("span", { className: `dot ${line.clip}`, title: line.clip + (line.owed_to ? ` · owed to ${line.owed_to}` : "") }));
+		const said = CLIP_WORDS[line.clip] + (line.owed_to ? ` · final owed to ${line.owed_to}` : "");
+		const status = el("td", {}, el("span", { className: `dot ${line.clip}`, title: said }), el("span", { className: "sr", textContent: said }));
 		const last = el("td");
 		if (line.clip_path) last.append(playButton(line.clip_path, labelOf(line)));
-		else last.append(el("span", { className: "owed", textContent: line.owed_to ? `owed: ${line.owed_to}` : "" }));
+		if (!line.clip_path && line.owed_to) {
+			last.append(el("span", { className: "owed-pill", textContent: line.owed_to.startsWith("desktop") ? "Desktop" : "To bake",
+				title: `No clip yet; the final is owed to ${line.owed_to}` }));
+		}
 		tr.append(status, el("td", {}, el("div", { className: "uid", textContent: line.uid.split("/").slice(1).join("/") }), who),
 			el("td", {}, moodChip(line.mood)), el("td", { className: "text", textContent: line.text }),
-			el("td", { className: "src", textContent: line.source.replace("docs/", "") }), last);
+			el("td", { className: "src", textContent: line.source.replace("docs/", ""), title: line.source }), last);
 		rows.append(tr);
-	}
+	});
+}
+
+// Arrow keys (or J/K) move through the visible lines; Enter opens one in the lab.
+function moveLine(delta) {
+	const list = state.visibleLines || [];
+	if (!list.length) return;
+	const from = state.kbd ?? -1;
+	const next = Math.max(0, Math.min(list.length - 1, from < 0 ? 0 : from + delta));
+	const target = list[next];
+	const changesSelection = !$("#lab").hidden && target.uid !== state.selected?.uid;
+	if (changesSelection && !confirmLineSwitch(target)) return;
+	state.kbd = next;
+	renderRows();
+	$(`#rows tr[data-index="${state.kbd}"]`)?.scrollIntoView({ block: "nearest" });
+	if (changesSelection) select(target, true);
 }
 
 // ---------------------------------------------------------------- voice lab
 
-async function select(line) {
+
+function lineDraftChanged() {
+	const line = state.selected;
+	if (!line) return false;
+	const edit = draft();
+	if (edit.text !== line.text || edit.mood !== line.mood) return true;
+	if (!edit.dialogue) return false;
+	const original = {
+		speaker: line.speaker, reaction: line.meta?.reaction || "", answers: line.meta?.answers || "none",
+		quote: line.meta?.quote || "", intensity: line.meta?.intensity ?? 0, pause: line.meta?.pause ?? 0,
+		overlap: line.meta?.overlap ?? 0, break: Boolean(line.meta?.break),
+	};
+	return JSON.stringify(edit.dialogue) !== JSON.stringify(original);
+}
+
+function confirmLineSwitch(nextLine) {
+	if (!lineDraftChanged()) return true;
+	if (nextLine) return window.confirm(`“${state.selected.uid}” has unsaved changes. Discard them and open “${nextLine.uid}”?`);
+	return window.confirm(`“${state.selected.uid}” has unsaved changes. Discard them and close the editor?`);
+}
+
+let selectionSequence = 0;
+async function select(line, discardConfirmed = false) {
+	if (!discardConfirmed && !confirmLineSwitch(line)) return false;
+	const sequence = ++selectionSequence;
+	clearTimeout(previewTimer);
+	previewSequence++;
 	state.selected = line;
 	$("#lab").hidden = false;
+	if (currentView() === "lines") history.replaceState(null, "", `#line=${encodeURIComponent(line.uid)}`);
 	$("#lab-uid").textContent = line.uid;
-	$("#lab-meta").textContent = `${line.speaker} · ${line.mood} · ${line.clip}${line.owed_to ? ` · owed to ${line.owed_to}` : ""}`;
+	const badges = [el("span", { textContent: line.speaker }), el("span", { textContent: line.mood }),
+		el("span", { className: line.clip, textContent: CLIP_WORDS[line.clip] })];
+	if (line.owed_to) badges.push(el("span", { className: "draft", textContent: `owed to ${line.owed_to}` }));
+	$("#lab-meta").replaceChildren(...badges);
 	$("#lab-text").value = line.text;
 	$("#lab-mood").value = line.mood;
 	state.autoDirective = MOOD_DIRECTIONS[line.mood] || MOOD_DIRECTIONS.steady;
@@ -210,6 +310,7 @@ async function select(line) {
 	else current.append(el("span", { className: "muted", textContent: "No clip yet: the game shows this line as a subtitle." }));
 	if (line.meta && line.meta.reaction) current.append(el("div", { className: "muted", textContent: `Action / reaction: ${line.meta.reaction}` }));
 	if (!state.voicesLoaded) await loadVoices();
+	if (sequence !== selectionSequence) return false;
 	if (state.models) configureModelControls();
 	$("#lab-voice").value = line.speaker === "mathilda" ? "af_bella" : "af_sarah";
 	const speed = line.speaker === "mathilda" ? 0.94 : 0.92;
@@ -217,6 +318,7 @@ async function select(line) {
 	$("#lab-speed-out").textContent = speed.toFixed(2);
 	renderTakes();
 	renderRows();
+	return true;
 }
 
 function fillDialogue(line) {
@@ -309,6 +411,7 @@ async function tryReading() {
 // ---------------------------------------------------------------- editing
 
 let previewTimer = 0;
+let previewSequence = 0;
 function schedulePreview() {
 	clearTimeout(previewTimer);
 	previewTimer = setTimeout(preview, 350);
@@ -334,6 +437,7 @@ function draft() {
 async function preview() {
 	const line = state.selected;
 	if (!line) return;
+	const sequence = ++previewSequence;
 	const edit = draft();
 	const panel = $("#lab-edit");
 	const originalDialogue = line.chapter === "doorway" ? {
@@ -347,6 +451,7 @@ async function preview() {
 		return;
 	}
 	const result = await api("/api/edit", { ...edit, dry_run: true });
+	if (sequence !== previewSequence || state.selected?.uid !== line.uid) return;
 	panel.hidden = false;
 	const warnings = $("#lab-warnings");
 	warnings.replaceChildren();
@@ -368,8 +473,8 @@ async function preview() {
 
 function toast(message, ok = true) {
 	const note = el("div", { className: `toast ${ok ? "ok" : "err"}`, textContent: message });
-	document.body.append(note);
-	setTimeout(() => note.remove(), ok ? 3500 : 8000);
+	$("#toasts").append(note);
+	setTimeout(() => note.remove(), ok ? 4000 : 9000);
 }
 
 async function save() {
@@ -393,9 +498,24 @@ async function undo() {
 }
 
 async function reloadKeeping(uid) {
+	clearTimeout(previewTimer);
+	previewSequence++;
+	selectionSequence++;
+	state.selected = null;
 	await load();
 	const line = state.lines.find((l) => l.uid === uid);
-	if (line) select(line);
+	if (line) select(line, true);
+}
+
+function closeLab() {
+	if (!confirmLineSwitch(null)) return;
+	clearTimeout(previewTimer);
+	previewSequence++;
+	selectionSequence++;
+	$("#lab").hidden = true;
+	state.selected = null;
+	history.replaceState(null, "", "#lines");
+	renderRows();
 }
 
 // The same choice the server makes (bake_for): what this machine can render for a line.
@@ -431,12 +551,50 @@ async function refreshUndo() {
 
 // ---------------------------------------------------------------- views
 
-function showView(name) {
-	for (const view of ["lines", "review", "bake", "models", "dream-story"]) $(`#${view}-view`).hidden = view !== name;
+const VIEWS = ["lines", "review", "bake", "models", "dream-story"];
+// Each section has its own address, so links work and Back/Forward move between them.
+const ROUTES = { lines: "#lines", review: "#review", bake: "#bake", models: "#voices", "dream-story": "#dream" };
+
+function currentView() {
+	return VIEWS.find((view) => !$(`#${view}-view`).hidden) || "lines";
+}
+
+function showView(name, push = false) {
+	if (currentView() === "dream-story" && name !== "dream-story" && state.dreamStoryDirty) {
+		const leave = window.confirm("The dream story has unsaved changes. Leave this section? Your draft stays in this tab if you return, but closing the studio will lose it.");
+		if (!leave) {
+			history.replaceState(null, "", ROUTES["dream-story"]);
+			return false;
+		}
+	}
+	for (const view of VIEWS) $(`#${view}-view`).hidden = view !== name;
+	// The browse sidebar and the lab belong to the lines.
+	$(".shell").classList.toggle("no-nav", name !== "lines");
 	if (name === "review") renderReview();
 	if (name === "models") renderModels();
 	if (name === "dream-story" && !state.dreamStory) loadDreamStory();
+	const hash = name === "lines" && state.selected ? `#line=${encodeURIComponent(state.selected.uid)}` : ROUTES[name];
+	if (location.hash !== hash) history[push ? "pushState" : "replaceState"](null, "", hash);
 	renderNav();
+	return true;
+}
+
+function route() {
+	const hash = location.hash;
+	if (hash.startsWith("#line=")) {
+		const uid = decodeURIComponent(hash.slice(6));
+		const line = state.lines.find((l) => l.uid === uid);
+		if (line) {
+			if (!showView("lines")) return;
+			Object.assign(state.filter, { chapter: line.chapter, group: line.group, owed: "" });
+			renderSummary();
+			renderRows();
+			select(line);
+			return;
+		}
+	}
+	const view = Object.keys(ROUTES).find((key) => ROUTES[key] === hash) || "lines";
+	showView(view);
 }
 
 async function loadDreamStory() {
@@ -485,6 +643,27 @@ function renderDreamStory() {
 	$("#dream-opening").oninput = () => { story.opening = $("#dream-opening").value; markDreamStoryDirty(); };
 	$("#dream-arrival").oninput = () => { story.arrival = $("#dream-arrival").value; markDreamStoryDirty(); };
 	$("#dream-question").oninput = () => { story.question = $("#dream-question").value; markDreamStoryDirty(); };
+	$("#dream-story-editor").querySelectorAll("textarea[maxlength]").forEach(updateDreamCharCount);
+}
+
+function updateDreamCharCount(area) {
+	const label = area.closest("label");
+	if (!label) return;
+	let counter = label.querySelector(".dream-char-count");
+	if (!counter) {
+		counter = el("small", { className: "dream-char-count", "aria-hidden": "true" });
+		area.after(counter);
+	}
+	const update = () => {
+		const remaining = area.maxLength - area.value.length;
+		counter.textContent = `${area.value.length} / ${area.maxLength}`;
+		counter.classList.toggle("near-limit", remaining <= 20);
+	};
+	if (area.dataset.countBound !== "true") {
+		area.addEventListener("input", update);
+		area.dataset.countBound = "true";
+	}
+	update();
 }
 
 function renderDreamBranches() {
@@ -492,7 +671,7 @@ function renderDreamBranches() {
 	box.replaceChildren();
 	for (const [index, branch] of state.dreamStory.branches.entries()) {
 		const card = el("fieldset", { className: "dream-branch" });
-		const legend = el("legend", { textContent: `Branch ${index + 1}` });
+		const legend = el("legend", { textContent: `Branch ${index + 1} · ${branch.label || "Untitled answer"}` });
 		const remove = el("button", { className: "ghost", textContent: "Remove branch", disabled: state.dreamStory.branches.length <= 2,
 			title: "A branching story needs at least two answers" });
 		remove.onclick = () => {
@@ -504,7 +683,11 @@ function renderDreamBranches() {
 		const row = el("div", { className: "dream-branch-top" }, legend, remove);
 		card.append(row,
 			dreamTextarea("Branch id · lowercase letters, numbers, _ or -", branch.id, (value) => { branch.id = value; markDreamStoryDirty(); }, 32),
-			dreamTextarea("Choice shown to the player", branch.label, (value) => { branch.label = value; markDreamStoryDirty(); }, 120),
+			dreamTextarea("Choice shown to the player", branch.label, (value) => {
+				branch.label = value;
+				legend.textContent = `Branch ${index + 1} · ${value || "Untitled answer"}`;
+				markDreamStoryDirty();
+			}, 120),
 			dreamTextarea("Answer in the dream", branch.response, (value) => { branch.response = value; markDreamStoryDirty(); }, 360, 3),
 			el("div", { className: "dream-echoes" },
 				dreamTextarea("Ophelia · waking echo", branch.ophelia, (value) => { branch.ophelia = value; markDreamStoryDirty(); }, 360),
@@ -512,6 +695,7 @@ function renderDreamBranches() {
 		box.append(card);
 	}
 	$("#dream-add-branch").disabled = state.dreamStory.branches.length >= 8;
+	$("#dream-branch-count").textContent = `${state.dreamStory.branches.length} of 8 answer branches`;
 }
 
 function addDreamBranch() {
@@ -622,15 +806,40 @@ document.addEventListener("keydown", (e) => {
 
 // ---------------------------------------------------------------- bake
 
+const ACTION_GROUPS = [
+	["check", "Check the scripts", "fast; only “write the line tables” changes files"],
+	["bake", "Bake on this machine", "Kokoro, CPU"],
+	["game", "Into the game", "Godot import and probes"],
+	["desktop", "Desktop only", "Chatterbox needs the CUDA venvs"],
+];
+
+// Full paths make every command unreadable; say which tool runs what, keep the rest in the tooltip.
+function shortCommand(command) {
+	return command
+		.replace(/^\S*[\\/]([\w-]+)[\\/]Scripts[\\/]python\.exe/i, (_, venv) => `python (${venv})`)
+		.replace(/^\S*godot-mono(\.console)?\.exe/i, "godot")
+		.replace(/^\S*python(\.exe)?/i, "python");
+}
+
 function renderActions() {
 	const box = $("#actions");
 	box.replaceChildren();
-	for (const action of state.actions) {
-		const run = el("button", { className: action.kind === "bake" ? "primary" : "", textContent: "Run", disabled: !action.runnable,
-			title: action.runnable ? "" : "This machine cannot run it (missing venv or Godot)" });
-		run.onclick = () => runAction(action.id);
-		box.append(el("div", { className: "action" }, el("div", { className: "kind", textContent: action.kind }),
-			el("b", { textContent: action.label }), el("code", { textContent: action.commands.join("\n") }), run));
+	box.className = "";
+	for (const [kind, title, note] of ACTION_GROUPS) {
+		const actions = state.actions.filter((action) => (action.kind || "check") === kind);
+		if (!actions.length) continue;
+		const grid = el("div", { className: "actions" });
+		for (const action of actions) {
+			const run = el("button", { className: action.kind === "bake" ? "primary" : "", textContent: "Run", disabled: !action.runnable || jobsBusy });
+			run.onclick = () => runAction(action.id);
+			const cmds = el("ul", { className: "cmds", title: action.commands.join("\n") });
+			for (const command of action.commands) cmds.append(el("li", { textContent: shortCommand(command) }));
+			const foot = el("div", { className: "foot" }, run);
+			if (!action.runnable) foot.append(el("small", { textContent: "Needs the desktop (missing venv or Godot here)" }));
+			else if (jobsBusy) foot.append(el("small", { textContent: "Waits for the running job" }));
+			grid.append(el("div", { className: `action${action.runnable ? "" : " unavailable"}` }, el("b", { textContent: action.label }), cmds, foot));
+		}
+		box.append(el("section", { className: "bake-group" }, el("h3", {}, title, el("small", { textContent: note })), grid));
 	}
 }
 
@@ -647,8 +856,10 @@ async function pollJobs() {
 	let busy = true;
 	while (busy) {
 		const jobs = await api("/api/jobs");
+		const wasBusy = jobsBusy;
 		jobsBusy = jobs.some((j) => j.state === "running" || j.state === "queued");
 		renderJobs(jobs);
+		if (wasBusy !== jobsBusy) { renderTabs(); renderActions(); }
 		state.models = await api("/api/models");
 		renderModels();
 		busy = jobsBusy;
@@ -1001,7 +1212,7 @@ for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "s
 		renderRows();
 	});
 }
-$("#lab-close").onclick = () => { $("#lab").hidden = true; state.selected = null; renderRows(); };
+$("#lab-close").onclick = closeLab;
 $("#lab-try").onclick = tryReading;
 $("#lab-engine").onchange = configureModelControls;
 $("#conversation-search").oninput = renderConversationSource;
@@ -1051,14 +1262,15 @@ $("#dialogue-speaker").addEventListener("change", (event) => {
 	$("#lab-speed-out").textContent = parseFloat($("#lab-speed").value).toFixed(2);
 });
 $("#lab-save").onclick = save;
-$("#lab-reset").onclick = () => { if (state.selected) select(state.selected); };
+$("#lab-reset").onclick = () => { if (state.selected) select(state.selected, true); };
 $("#undo").onclick = undo;
 $("#lab-bake").onclick = bakeLine;
 $("#lab-game").onclick = hearInGame;
 document.addEventListener("keydown", (e) => {
-	if ((e.ctrlKey || e.metaKey) && e.key === "s" && !$("#lab-edit").hidden && !$("#lab-save").disabled) {
+	if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
 		e.preventDefault();
-		save();
+		if (currentView() === "dream-story" && state.dreamStoryDirty) saveDreamStory();
+		else if (!$("#lab-edit").hidden && !$("#lab-save").disabled) save();
 	}
 });
 document.addEventListener("keydown", (e) => {
@@ -1068,20 +1280,38 @@ document.addEventListener("keydown", (e) => {
 	if (e.key === " ") {
 		if (state.playing) { e.preventDefault(); toggle(state.playing.path); }
 		else if (state.selected?.clip_path) { e.preventDefault(); toggle(state.selected.clip_path, labelOf(state.selected)); }
+		else if (currentView() === "lines" && state.visibleLines?.[state.kbd]?.clip_path) {
+			e.preventDefault();
+			const line = state.visibleLines[state.kbd];
+			toggle(line.clip_path, labelOf(line));
+		}
 	}
 });
 
-// #line=<uid> opens a line in the lab, so other tools can link straight to it.
-function openFromHash() {
-	if (location.hash === "#review" || location.hash === "#bake") return showView(location.hash.slice(1));
-	const uid = decodeURIComponent(location.hash.replace(/^#line=/, ""));
-	const line = state.lines.find((l) => l.uid === uid);
-	if (line) {
-		show({ chapter: line.chapter, group: line.group, owed: "" });
-		select(line);
+// Addresses: #lines, #review, #bake, #voices, #dream, and #line=<uid> for a line in the lab.
+window.addEventListener("popstate", route);
+window.addEventListener("hashchange", route);
+window.addEventListener("beforeunload", (event) => {
+	if (state.dreamStoryDirty || lineDraftChanged()) {
+		event.preventDefault();
+		event.returnValue = "";
 	}
-}
-window.addEventListener("hashchange", openFromHash);
+});
 
-load().then(() => { openFromHash(); pollJobs(); });
+// Keys that move around the studio (see the ? panel).
+document.addEventListener("keydown", (e) => {
+	if (e.ctrlKey || e.metaKey || e.altKey || e.target.matches("input, textarea, select") || $("#help").open) return;
+	if (e.key === "?") { e.preventDefault(); $("#help").showModal(); return; }
+	if (e.key === "/") { e.preventDefault(); showView("lines", true); $("#search").focus(); $("#search").select(); return; }
+	const index = "12345".indexOf(e.key);
+	if (index >= 0) { e.preventDefault(); showView(VIEWS[index], true); return; }
+	if (currentView() !== "lines") return;
+	if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); moveLine(1); }
+	else if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); moveLine(-1); }
+	else if (e.key === "Enter" && state.kbd >= 0 && state.visibleLines?.[state.kbd]) { e.preventDefault(); select(state.visibleLines[state.kbd]); }
+});
+$("#help-open").onclick = () => $("#help").showModal();
+$("#search").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.target.blur(); } if (e.key === "Enter" || e.key === "ArrowDown") { e.target.blur(); moveLine(0); } });
+
+load().then(() => { route(); pollJobs(); });
 $("#review-all").addEventListener("change", renderReview);

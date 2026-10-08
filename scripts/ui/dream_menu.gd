@@ -1,7 +1,10 @@
 extends Control
 
+const MENU_ENTRIES := ["DREAM", "OPHELIA", "MATHILDA", "SETTINGS", "CREDITS", "QUIT"]
+
 var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
+var _glitch: ShaderMaterial
 var _snow: GPUParticles2D
 var _snow_motion: ParticleProcessMaterial
 var _snow_size := Vector2.ZERO
@@ -19,6 +22,8 @@ var _pointer_light := 0.45
 var _tremor_seed := 0.0
 var _panel: PanelContainer
 var _body: Label
+var _settings_terminal: PauseMenu
+var _settings_button: Button
 
 
 func _ready() -> void:
@@ -46,8 +51,17 @@ func _ready() -> void:
 	_eye.set_shader_parameter("portrait", load("res://assets/ui/mathilda_eye.png"))
 	background.material = _eye
 	add_child(background)
+	var glitch_glass := ColorRect.new()
+	glitch_glass.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	glitch_glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_glitch = ShaderMaterial.new()
+	_glitch.shader = preload("res://shaders/menu_crt.gdshader")
+	glitch_glass.material = _glitch
+	add_child(glitch_glass)
+	_sync_glitch()
+	Game.settings.changed.connect(_sync_glitch)
 	_build_snow()
-	var title := UiChrome.label("Ophelia's Dream", 42, Color("e5dbd3"))
+	var title := UiChrome.term_label("OPHELIA'S DREAM", 42, Color("e5dbd3"), true)
 	title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	title.offset_left = -500
 	title.offset_right = 500
@@ -55,7 +69,7 @@ func _ready() -> void:
 	title.offset_bottom = -305
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(title)
-	var subtitle := UiChrome.label("LEAVE THE LANTERN BURNING", 14, Color("b55750"))
+	var subtitle := UiChrome.term_label("// LEAVE THE LANTERN BURNING", 13, Color("b55750"))
 	subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	subtitle.offset_left = -450
 	subtitle.offset_right = 450
@@ -70,8 +84,8 @@ func _ready() -> void:
 	row.offset_left = 0
 	row.offset_right = 0
 	row.offset_top = 258
-	row.offset_bottom = 286
-	row.add_theme_constant_override("separation", 24)
+	row.offset_bottom = 302
+	row.add_theme_constant_override("separation", 12)
 	add_child(row)
 	var rule := ColorRect.new()
 	rule.color = Color("b5352e")
@@ -84,22 +98,21 @@ func _ready() -> void:
 	rule.offset_top = 248
 	rule.offset_bottom = 250
 	add_child(rule)
-	for caption in ["DREAM", "OPHELIA", "MATHILDA", "CREDITS", "QUIT"]:
+	var button_theme := UiChrome.term_theme()
+	for index in MENU_ENTRIES.size():
+		var caption: String = MENU_ENTRIES[index]
 		var button := Button.new()
-		button.text = caption
-		for letter in range(caption.length() - 1, 0, -1):
-			button.text = button.text.insert(letter, "  ")
-		button.add_theme_font_size_override("font_size", 14)
-		for state in ["normal", "hover", "pressed", "focus"]:
-			var style := StyleBoxFlat.new()
-			style.bg_color = Color("dddcd4") if state != "normal" else Color("b5352e")
-			button.add_theme_stylebox_override(state, style)
+		button.theme = button_theme
+		button.theme_type_variation = "TermAction"
+		button.text = "%02d  /  %s" % [index + 1, caption]
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.custom_minimum_size.y = 38
+		button.add_theme_font_size_override("font_size", 12)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_color_override("font_color", Color("1b1014"))
-		button.add_theme_color_override("font_hover_color", Color("1b1014"))
-		button.add_theme_color_override("font_focus_color", Color("1b1014"))
 		row.add_child(button)
 		_buttons.append(button)
+		if caption == "SETTINGS":
+			_settings_button = button
 		button.mouse_entered.connect(button.grab_focus)
 		button.focus_entered.connect(func() -> void:
 			_target_mobility = 0.55 if caption == "QUIT" else 1.0
@@ -109,7 +122,7 @@ func _ready() -> void:
 	for i in _buttons.size():
 		_buttons[i].focus_neighbor_left = _buttons[i].get_path_to(_buttons[posmod(i - 1, _buttons.size())])
 		_buttons[i].focus_neighbor_right = _buttons[i].get_path_to(_buttons[(i + 1) % _buttons.size()])
-	var credit := UiChrome.label("A GAME BY CHRISTIAN KLING", 13, Color("8f7775"))
+	var credit := UiChrome.term_label("OD-7  //  A GAME BY CHRISTIAN KLING", 11, Color("8f7775"))
 	credit.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	credit.offset_left = -400
 	credit.offset_right = 400
@@ -128,16 +141,22 @@ func _ready() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 24)
 	_panel.add_child(box)
-	_body = UiChrome.label("", 21)
+	_body = UiChrome.term_label("", 17, UiChrome.BONE)
 	_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(_body)
 	var back := Button.new()
-	back.text = "RETURN"
+	back.theme = button_theme
+	back.theme_type_variation = "TermAction"
+	back.text = "▸  RETURN TO TITLE"
+	back.add_theme_font_size_override("font_size", 13)
 	back.pressed.connect(_close)
 	box.add_child(back)
 	_panel.hide()
+	_settings_terminal = PauseMenu.new()
+	_settings_terminal.title_closed.connect(_settings_closed)
+	add_child(_settings_terminal)
 	Game.phase_changed.connect(func(next: Game.Phase) -> void:
 		visible = next == Game.Phase.BOOT
 		if _snow:
@@ -246,6 +265,11 @@ func _process(delta: float) -> void:
 		_eye.set_shader_parameter("aspect", size.x / maxf(size.y, 1.0))
 
 
+func _sync_glitch() -> void:
+	if _glitch:
+		_glitch.set_shader_parameter("strength", minf(Game.settings.screen_effects * 0.16, 0.16))
+
+
 func _choose(caption: String) -> void:
 	match caption:
 		"DREAM":
@@ -266,6 +290,9 @@ func _choose(caption: String) -> void:
 			Game.mathilda_pov = false
 			_stop_music()
 			get_tree().reload_current_scene()
+		"SETTINGS":
+			_panel.hide()
+			_settings_terminal.open_title_settings()
 		"CREDITS":
 			_body.text = "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nBuilt with Godot\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
 			_panel.show()
@@ -277,6 +304,11 @@ func _choose(caption: String) -> void:
 func _close() -> void:
 	_panel.hide()
 	_buttons[0].grab_focus()
+
+
+func _settings_closed() -> void:
+	if is_instance_valid(_settings_button) and visible:
+		_settings_button.grab_focus.call_deferred()
 
 
 func _fade_music_in() -> void:
@@ -292,6 +324,8 @@ func _stop_music() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed("pause"):
-		if _panel.visible:
+		if _settings_terminal and _settings_terminal.is_title_settings_open():
+			_settings_terminal.close_title_settings()
+		elif _panel.visible:
 			_close()
 		get_viewport().set_input_as_handled()
