@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2.1 — 2026-10-08
+
+- Give Ophelia and Mathilda independent voice-performance archetypes for conversation auditions, with editable profiles and saved selections.
+- Keep character voice identity steady while exploring guardedness, tenderness, resolve, humor, confession, unease and reassurance.
+
 ## 0.2.2.0 — 2026-10-08
 
 ### A borrowed curve

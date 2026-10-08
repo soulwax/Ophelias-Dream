@@ -86,13 +86,26 @@
           <textarea id="conversation-context" rows="3" maxlength="900" placeholder="Where are they, what happened just before this exchange, and what is each afraid to say?"></textarea>
         </label>
         <div class="row chain-profiles">
-          <label>Ophelia's voice profile
-            <textarea id="conversation-ophelia" rows="3" maxlength="400">Low, intimate feminine voice, clear consonants, restrained breath; fear appears as a slight catch rather than a raised voice.</textarea>
-          </label>
-          <label>Mathilda's voice profile
-            <textarea id="conversation-mathilda" rows="3" maxlength="400">Soft but steady feminine voice, a little warmer and more open; fatigue sits underneath her calm.</textarea>
-          </label>
+          <section class="character-profile" aria-labelledby="ophelia-profile-heading">
+            <h3 id="ophelia-profile-heading">Ophelia <small class="muted">voice and performance</small></h3>
+            <label>Character archetype
+              <select id="conversation-ophelia-archetype"><option value="guarded_witness">Guarded Witness</option><option value="custom">Custom profile</option></select>
+            </label>
+            <label>Voice profile
+              <textarea id="conversation-ophelia" rows="3" maxlength="400" aria-label="Ophelia voice profile">Low, intimate feminine voice with clear consonants and restrained breath. Guarded Witness: observant and self-contained; let fear show only as a slight catch, never as a raised voice.</textarea>
+            </label>
+          </section>
+          <section class="character-profile" aria-labelledby="mathilda-profile-heading">
+            <h3 id="mathilda-profile-heading">Mathilda <small class="muted">voice and performance</small></h3>
+            <label>Character archetype
+              <select id="conversation-mathilda-archetype"><option value="guarded_witness">Guarded Witness</option><option value="custom">Custom profile</option></select>
+            </label>
+            <label>Voice profile
+              <textarea id="conversation-mathilda" rows="3" maxlength="400" aria-label="Mathilda voice profile">Soft, steady feminine voice, warmer and more open than Ophelia; fatigue sits underneath her calm. Guarded Witness: observant and self-contained; let fear show only as a slight catch, never as a raised voice.</textarea>
+            </label>
+          </section>
         </div>
+        <p class="archetype-note muted">Choose each woman’s performance archetype independently, then refine the voice profile. Archetypes shape delivery while keeping her base voice identity.</p>
         <div class="chain-step"><span>02</span><b>Build the exchange</b></div>
         <div class="chain-picker">
           <label>Find a line to add

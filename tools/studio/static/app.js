@@ -628,6 +628,40 @@ function renderModels() {
 
 const QWEN_SPEAKERS = ["Serena", "Vivian", "Sohee", "Ryan", "Aiden", "Dylan", "Eric", "Uncle_Fu", "Ono_Anna"];
 const CHAIN_STORAGE_KEY = "story-studio:voice-chains:v1";
+const CHARACTER_VOICE_BASES = {
+	ophelia: "Low, intimate feminine voice with clear consonants and restrained breath.",
+	mathilda: "Soft, steady feminine voice, warmer and more open than Ophelia; fatigue sits underneath her calm.",
+};
+const CHARACTER_ARCHETYPES = {
+	guarded_witness: { label: "Guarded Witness", ophelia: "Observant and self-contained; let fear show only as a slight catch, never as a raised voice.", mathilda: "Watchful and composed; warmth is present but carefully rationed, with fatigue held beneath the words." },
+	tender_survivor: { label: "Tender Survivor", ophelia: "Let hard-won tenderness surface in brief, unguarded moments; keep the underlying strain audible.", mathilda: "Offer quiet warmth shaped by exhaustion; allow care to soften phrase endings without sentimentality." },
+	defiant_protector: { label: "Defiant Protector", ophelia: "Use grounded, deliberate resolve; protectiveness should sound controlled, with fear still underneath.", mathilda: "Sound steady and protective, with firm consonants and measured pace; avoid turning resolve into a threat." },
+	quiet_confessor: { label: "Quiet Confessor", ophelia: "Speak as if choosing each admission carefully; let small hesitations carry more than volume.", mathilda: "Allow a private, vulnerable openness; keep the confession plainspoken, with no performed sobbing." },
+	dry_deflector: { label: "Dry Deflector", ophelia: "Use understated, dry humor to deflect discomfort; let the joke pass quickly and leave the hurt intact.", mathilda: "Give wit a gentle, tired edge; make it sound like a familiar defense, not a punchline." },
+	fraying_resolve: { label: "Fraying Resolve", ophelia: "Begin composed and let strain leak through breath and pacing; keep the final words intelligible.", mathilda: "Hold to calm while fatigue begins to fracture it; build subtly, without a sudden theatrical break." },
+	uncanny_calm: { label: "Uncanny Calm", ophelia: "Stay unusually even and close, as if listening to something others cannot hear; avoid a supernatural caricature.", mathilda: "Keep a gentle, unnervingly settled calm; let stillness create unease without an overtly eerie affect." },
+	steadfast_guide: { label: "Steadfast Guide", ophelia: "Give clear, reassuring direction at a low volume; urgency should sharpen focus rather than raise pitch.", mathilda: "Sound practical and quietly reassuring, with patient pacing; let her own uncertainty remain human." },
+};
+
+function profileForArchetype(speaker, archetype) {
+	const entry = CHARACTER_ARCHETYPES[archetype];
+	return entry ? `${CHARACTER_VOICE_BASES[speaker]} ${entry.label}: ${entry[speaker]}` : "";
+}
+
+function setupCharacterArchetypes() {
+	for (const speaker of Object.keys(CHARACTER_VOICE_BASES)) {
+		const select = $(`#conversation-${speaker}-archetype`);
+		for (const [id, archetype] of Object.entries(CHARACTER_ARCHETYPES)) {
+			select.insertBefore(el("option", { value: id, textContent: archetype.label }), select.querySelector('[value="custom"]'));
+		}
+		select.onchange = () => {
+			const profile = profileForArchetype(speaker, select.value);
+			if (profile) $(`#conversation-${speaker}`).value = profile;
+			markConversationDirty();
+		};
+		$(`#conversation-${speaker}`).addEventListener("input", () => { select.value = "custom"; });
+	}
+}
 
 function savedChains() {
 	try {
@@ -755,6 +789,7 @@ function saveConversationPreset() {
 	const all = savedChains();
 	all[name] = { model: $("#conversation-model").value, context: $("#conversation-context").value,
 		profiles: { ophelia: $("#conversation-ophelia").value, mathilda: $("#conversation-mathilda").value },
+		archetypes: { ophelia: $("#conversation-ophelia-archetype").value, mathilda: $("#conversation-mathilda-archetype").value },
 		variants: $("#conversation-variants").value, temperature: $("#conversation-temperature").value,
 		turns: state.conversationTurns };
 	try { localStorage.setItem(CHAIN_STORAGE_KEY, JSON.stringify(all)); }
@@ -771,6 +806,10 @@ function loadConversationPreset(name) {
 	$("#conversation-context").value = chain.context || "";
 	$("#conversation-ophelia").value = chain.profiles?.ophelia || "";
 	$("#conversation-mathilda").value = chain.profiles?.mathilda || "";
+	for (const speaker of Object.keys(CHARACTER_VOICE_BASES)) {
+		const saved = chain.archetypes?.[speaker];
+		$(`#conversation-${speaker}-archetype`).value = saved === "custom" || CHARACTER_ARCHETYPES[saved] ? saved : "custom";
+	}
 	$("#conversation-variants").value = chain.variants || "2";
 	$("#conversation-temperature").value = chain.temperature || "0.85";
 	$("#conversation-temperature-out").textContent = parseFloat($("#conversation-temperature").value).toFixed(2);
@@ -865,6 +904,7 @@ $("#conversation-temperature").oninput = (event) => { $("#conversation-temperatu
 $("#conversation-save").onclick = saveConversationPreset;
 $("#conversation-delete").onclick = deleteConversationPreset;
 $("#conversation-preset").onchange = (event) => loadConversationPreset(event.target.value);
+setupCharacterArchetypes();
 $(".conversation-workbench").addEventListener("input", (event) => {
 	if (!["conversation-search", "conversation-name", "conversation-source"].includes(event.target.id)) markConversationDirty();
 });

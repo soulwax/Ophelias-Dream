@@ -290,6 +290,13 @@ table.lines { border-collapse: separate; border-spacing: 0; }
 .chain-presets { grid-template-columns: minmax(170px, 1fr) minmax(170px, 1.3fr) auto auto; }
 .chain-options { grid-template-columns: minmax(200px, 1.5fr) minmax(120px, .65fr) minmax(190px, 1fr) minmax(145px, .8fr) auto; }
 .chain-profiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.character-profile { min-width: 0; padding: 15px; border: 1px solid #394950; border-radius: 10px; background: linear-gradient(150deg, #182429, #111a1e); }
+.character-profile h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 10px; font-size: 14px; }
+.character-profile h3 small { font-size: 10px; font-weight: 500; }
+.character-profile label + label { margin-top: 10px; }
+.character-profile select { min-height: 38px; }
+.character-profile textarea { min-height: 108px; }
+.archetype-note { margin: -5px 0 18px; font-size: 11px; }
 .conversation-workbench label { min-width: 0; gap: 6px; color: #c0ccca; font-size: 11px; font-weight: 600; }
 .conversation-workbench input, .conversation-workbench select, .conversation-workbench textarea { width: 100%; min-height: 38px; border-color: #3c4c52; border-radius: 8px; background: #10181c; color: var(--ink); }
 .conversation-workbench textarea { padding: 10px; line-height: 1.5; }
