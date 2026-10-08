@@ -22,6 +22,8 @@ var speed := 0.0
 var poise := 1.0
 # 0 looking ahead .. 1 looking back over her right shoulder.
 var glance := 0.0
+var authored_walk := false
+var _walk_blend := 0.0
 var _bones := {}
 var _idle := 0.0
 var _tiptoe := 0.0
@@ -56,7 +58,12 @@ func _process_modification() -> void:
 		_pose[name] = skeleton.get_bone_global_pose(bone)
 		var up := skeleton.get_bone_parent(bone)
 		_parent[name] = skeleton.get_bone_global_pose(up) if up >= 0 else Transform3D()
-	var walk := smoothstep(0.15, 0.9, speed) * (1.0 - smoothstep(1.9, 2.5, speed)) * poise
+	var target := smoothstep(0.15, 0.9, speed) * (1.0 - smoothstep(1.9, 2.5, speed))
+	var duration := Tune.GRACE_WALK_ENTER if target > _walk_blend else Tune.GRACE_WALK_EXIT
+	_walk_blend = move_toward(_walk_blend, target, delta / duration)
+	# Smoothstep gives idle -> walk soft endpoints without delaying movement.
+	# Poise gates the result immediately for airborne/slide/exhausted poses.
+	var walk := smoothstep(0.0, 1.0, _walk_blend) * poise
 	# +1 with her left leg reaching forward, -1 with the right.
 	var reach_l: float = (_pose["DEF-thigh.L"] as Transform3D).basis.y.z
 	var reach_r: float = (_pose["DEF-thigh.R"] as Transform3D).basis.y.z
@@ -68,7 +75,9 @@ func _process_modification() -> void:
 	# left leg reaches. Above that the chest is a touch lifted and open,
 	# more so up on her toes.
 	var back := Quaternion(Vector3.UP, -Tune.GLANCE_CHEST * glance)
-	var counter := Quaternion(Vector3.UP, Tune.GRACE_COUNTER_TURN * legs * walk) * back
+	var counter_gain := Tune.GRACE_AUTHORED_COUNTER if authored_walk else 1.0
+	var arm_gain := Tune.GRACE_AUTHORED_ARM if authored_walk else 1.0
+	var counter := Quaternion(Vector3.UP, Tune.GRACE_COUNTER_TURN * counter_gain * legs * walk) * back
 	var lift := Quaternion(Vector3.RIGHT, -(Tune.GRACE_CHEST_LIFT + 0.03 * rise) * poise)
 	_turn(skeleton, "DEF-spine.003", counter)
 	_turn(skeleton, "DEF-spine.004", lift)
@@ -76,12 +85,12 @@ func _process_modification() -> void:
 		var sign := 1.0 if side == "L" else -1.0
 		# Each arm swings against the leg on its own side, back as it
 		# reaches, and hangs close, opening a little for balance on her toes.
-		var swing := Tune.GRACE_ARM_SWING * legs * sign * walk
+		var swing := Tune.GRACE_ARM_SWING * arm_gain * legs * sign * walk
 		var hang := sign * deg_to_rad(-3.0 + 4.0 * rise) * poise
 		_turn(skeleton, "DEF-upper_arm." + side, Quaternion(Vector3.BACK, hang) * Quaternion(Vector3.RIGHT, swing))
 		# The elbow stays soft and folds as the hand comes forward.
 		var ahead := clampf(-legs * sign, 0.0, 1.0)
-		_turn(skeleton, "DEF-forearm." + side, Quaternion(Vector3.RIGHT, -deg_to_rad(5.0 + 16.0 * ahead) * walk))
+		_turn(skeleton, "DEF-forearm." + side, Quaternion(Vector3.RIGHT, -deg_to_rad(5.0 + 16.0 * ahead) * arm_gain * walk))
 	if rise > 0.001:
 		_rise_onto_toes(skeleton, rise)
 	# The head keeps its own carriage, so the turning chest never rocks it;

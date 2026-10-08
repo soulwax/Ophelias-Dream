@@ -1,0 +1,176 @@
+{
+  "environments": {
+    "gpu-venv": {
+      "python": "3.12.13",
+      "packages": {
+        "torch": "2.11.0+cu128",
+        "torchaudio": "2.11.0+cu128",
+        "qwen-tts": "0.1.1",
+        "faster-whisper": "1.2.1",
+        "speechbrain": "1.1.1"
+      },
+      "requirements": "requirements-gpu-venv.txt"
+    },
+    "cb-venv": {
+      "python": "3.12.13",
+      "packages": {
+        "torch": "2.6.0+cu124",
+        "torchaudio": "2.6.0+cu124",
+        "chatterbox-tts": "0.1.7",
+        "faster-whisper": "1.2.1",
+        "speechbrain": "1.1.1"
+      },
+      "requirements": "requirements-cb-venv.txt"
+    }
+  },
+  "models": {
+    "impressions": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    "lines": "ResembleAI/chatterbox",
+    "unify": "ResembleAI/chatterbox (ChatterboxVC)",
+    "judge": [
+      "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+      "speechbrain/spkrec-ecapa-voxceleb"
+    ]
+  },
+  "identity": "A woman around thirty. A low, soft alto with a little breath in it, plain North American accent. She is cold, tired, and talking quietly to herself in an empty place; never theatrical, never narrating.",
+  "moods": {
+    "steady": {
+      "direction": "Calm and even, talking herself into calm.",
+      "impression": "Okay. The kettle's on, the door's shut, the lantern's lit. Everything is where it should be. I'm fine.",
+      "exaggeration": 0.45,
+      "cfg_weight": 0.5,
+      "temperature": 0.8,
+      "level_dbfs": -12.0
+    },
+    "warm": {
+      "direction": "Tender and fond, almost smiling, a catch at the end.",
+      "impression": "You always do this. You show up late with snow in your hair and you think a smile fixes it. ...It does, a bit.",
+      "exaggeration": 0.55,
+      "cfg_weight": 0.45,
+      "temperature": 0.8,
+      "level_dbfs": -12.0
+    },
+    "hushed": {
+      "direction": "Barely above a whisper, close and careful, as if something might hear.",
+      "impression": "Shh. Don't move. If we stay very still, maybe it won't hear us breathing.",
+      "exaggeration": 0.35,
+      "cfg_weight": 0.55,
+      "temperature": 0.7,
+      "level_dbfs": -18.0
+    },
+    "shaken": {
+      "direction": "Unsteady, breath short, words coming a little too fast.",
+      "impression": "I don't... I don't understand, it was right here, I put it right here, I know I did.",
+      "exaggeration": 0.7,
+      "cfg_weight": 0.4,
+      "temperature": 0.85,
+      "level_dbfs": -12.0
+    },
+    "breaking": {
+      "direction": "On the edge of tears, voice cracking, pauses where it gives out.",
+      "impression": "I'm sorry. I'm so sorry. I didn't mean it, I never meant any of it, please come back.",
+      "exaggeration": 0.85,
+      "cfg_weight": 0.35,
+      "temperature": 0.9,
+      "level_dbfs": -13.0
+    },
+    "resolve": {
+      "direction": "Low and determined, jaw set, each word placed.",
+      "impression": "No. I'm not stopping. Not now. I'll walk until there's nowhere left to walk.",
+      "exaggeration": 0.55,
+      "cfg_weight": 0.45,
+      "temperature": 0.75,
+      "level_dbfs": -12.0
+    },
+    "calling": {
+      "direction": "Shouting as loud as she can into a strong wind, straining, desperate.",
+      "impression": "Can you hear me? Hello? I'm over here! Over here!",
+      "exaggeration": 1.0,
+      "cfg_weight": 0.3,
+      "temperature": 0.85,
+      "level_dbfs": -9.0
+    },
+    "numb": {
+      "direction": "Flat, slow and far away, the feeling gone out of her voice.",
+      "impression": "It doesn't hurt any more. That's the strange part. Nothing hurts. It's all very far away.",
+      "exaggeration": 0.25,
+      "cfg_weight": 0.6,
+      "temperature": 0.6,
+      "level_dbfs": -15.0
+    },
+    "bitter": {
+      "direction": "Hurt turned into anger, clipped, a little too loud, then quiet.",
+      "impression": "Oh, of course. Of course you did. You always get to leave, and I always get to clean up after.",
+      "exaggeration": 0.75,
+      "cfg_weight": 0.4,
+      "temperature": 0.85,
+      "level_dbfs": -11.0
+    },
+    "pleading": {
+      "direction": "Small and begging, bargaining with something that isn't listening.",
+      "impression": "Please. I'll do anything. Just this once. Just let her be all right, and I won't ask for anything else.",
+      "exaggeration": 0.7,
+      "cfg_weight": 0.35,
+      "temperature": 0.85,
+      "level_dbfs": -13.0
+    },
+    "wry": {
+      "direction": "Dark humour under her breath, half a laugh, to keep from crying.",
+      "impression": "Well. That went about as well as everything else today. Brilliant. Really.",
+      "exaggeration": 0.5,
+      "cfg_weight": 0.45,
+      "temperature": 0.85,
+      "level_dbfs": -13.0
+    },
+    "remembering": {
+      "direction": "Soft and slow, looking at something far away, a smile that hurts.",
+      "impression": "We used to skate on the lake when it froze. She'd hold my hands and go backwards, laughing, the whole way across.",
+      "exaggeration": 0.4,
+      "cfg_weight": 0.5,
+      "temperature": 0.75,
+      "level_dbfs": -14.0
+    },
+    "panicked": {
+      "direction": "Fast and breathless, words tripping over each other.",
+      "impression": "No no no, where is it, where did it go, I can't, I can't breathe, where is it...",
+      "exaggeration": 0.95,
+      "cfg_weight": 0.3,
+      "temperature": 0.95,
+      "level_dbfs": -11.0
+    },
+    "spent": {
+      "direction": "Completely out of breath, gasping between the words.",
+      "impression": "Wait... wait... I just... I need... one second. Okay. Okay.",
+      "exaggeration": 0.8,
+      "cfg_weight": 0.35,
+      "temperature": 0.9,
+      "level_dbfs": -13.0
+    }
+  },
+  "seeds": {
+    "impressions": 500,
+    "takes": [
+      1,
+      2,
+      3
+    ]
+  },
+  "max_wer": 0.15,
+  "picks": {
+    "steady": "1",
+    "warm": "0",
+    "hushed": "1",
+    "shaken": "1",
+    "breaking": "3",
+    "resolve": "1",
+    "calling": "0",
+    "numb": "1",
+    "bitter": "1",
+    "pleading": "3",
+    "wry": "0",
+    "remembering": "1",
+    "panicked": "2",
+    "spent": "1"
+  },
+  "locked": "2026-10-06"
+}

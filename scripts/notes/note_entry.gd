@@ -9,3 +9,10 @@ extends Resource
 @export var record_of: String = ""
 # Trail notes advance the hunt. Pages in the house do not.
 @export var counts: bool = true
+
+# Smudged words in body order: {"readings": [right, wrong, wrong], "key":
+# "page:<title>" | "place:<place>" | "event:<call|echo>"}. The body holds
+# {0}, {1}, ... where they sit (NoteCatalog._make).
+@export var smudges: Array[Dictionary] = []
+# The sentence between the lines, legible once every smudge is solved.
+@export var between: String = ""

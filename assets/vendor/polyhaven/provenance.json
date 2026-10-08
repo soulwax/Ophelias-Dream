@@ -1026,5 +1026,104 @@
         "bytes": 404720
       }
     ]
+  },
+  {
+    "id": "forrest_ground_01",
+    "type": "texture",
+    "name": "Forest Ground 01",
+    "source": "https://polyhaven.com/a/forrest_ground_01",
+    "api_source": "https://api.polyhaven.com/files/forrest_ground_01",
+    "authors": [
+      "Rob Tuytel"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-06",
+    "resolution": "1k",
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/forrest_ground_01/forrest_ground_01_diff_1k.jpg",
+        "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forrest_ground_01/forrest_ground_01_diff_1k.jpg",
+        "retrieved": "2026-10-06",
+        "license": "CC0 1.0",
+        "md5": "236e7d928f5e357a194fd92de189cbe4",
+        "sha256": "3dd6875cb3908e022a3c45ebbffa5e84c670ff2691fbbb6dc9ea4bff88523800",
+        "bytes": 833711
+      },
+      {
+        "path": "./assets/vendor/polyhaven/forrest_ground_01/forrest_ground_01_nor_gl_1k.jpg",
+        "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forrest_ground_01/forrest_ground_01_nor_gl_1k.jpg",
+        "retrieved": "2026-10-06",
+        "license": "CC0 1.0",
+        "md5": "ba4265df25aea293913d004b69ef9ab0",
+        "sha256": "32528a7cdee962cc0b248ee4023a74d0df175737ea90e1eb425122351e0bdab4",
+        "bytes": 1428763
+      }
+    ]
+  },
+  {
+    "id": "aerial_grass_rock",
+    "type": "texture",
+    "name": "Aerial Grass Rock",
+    "source": "https://polyhaven.com/a/aerial_grass_rock",
+    "api_source": "https://api.polyhaven.com/files/aerial_grass_rock",
+    "authors": [
+      "Rob Tuytel"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-06",
+    "resolution": "1k",
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/aerial_grass_rock/aerial_grass_rock_diff_1k.jpg",
+        "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_grass_rock/aerial_grass_rock_diff_1k.jpg",
+        "retrieved": "2026-10-06",
+        "license": "CC0 1.0",
+        "md5": "e920ce36afd0abff000b8366d3d768d3",
+        "sha256": "57b8041bfe0d0f01430e4dbaad45e7ddddf0a9fc97317f90dbc51f7b0d9e1b5d",
+        "bytes": 666655
+      },
+      {
+        "path": "./assets/vendor/polyhaven/aerial_grass_rock/aerial_grass_rock_nor_gl_1k.jpg",
+        "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/aerial_grass_rock/aerial_grass_rock_nor_gl_1k.jpg",
+        "retrieved": "2026-10-06",
+        "license": "CC0 1.0",
+        "md5": "c8aa4c4f09b113cc7edef89ddeaccad9",
+        "sha256": "1aa3e23bff453f152e089b9f83aa36b4901651e019f7e2ca01d5331a9bbbda78",
+        "bytes": 904956
+      }
+    ]
+  },
+  {
+    "id": "brown_mud_leaves_01",
+    "type": "texture",
+    "name": "Brown Mud Leaves 01",
+    "source": "https://polyhaven.com/a/brown_mud_leaves_01",
+    "api_source": "https://api.polyhaven.com/files/brown_mud_leaves_01",
+    "authors": [
+      "Rob Tuytel"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-06",
+    "resolution": "1k",
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/brown_mud_leaves_01/brown_mud_leaves_01_diff_1k.jpg",
+        "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_leaves_01/brown_mud_leaves_01_diff_1k.jpg",
+        "retrieved": "2026-10-06",
+        "license": "CC0 1.0",
+        "md5": "5340848384f9bb19bfa6e7ac459683d7",
+        "sha256": "c598c555f13cd5328409fd5e2a45496a26e319e52299e3959042f1449c2f1b06",
+        "bytes": 1206953
+      },
+      {
+        "path": "./assets/vendor/polyhaven/brown_mud_leaves_01/brown_mud_leaves_01_nor_gl_1k.jpg",
+        "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_leaves_01/brown_mud_leaves_01_nor_gl_1k.jpg",
+        "retrieved": "2026-10-06",
+        "license": "CC0 1.0",
+        "md5": "3698df51ef8262ddf2248ffca1e73196",
+        "sha256": "8dd5166ddcc293cefd331d491ce6b9162bc9202ddd999ac1e4141697560d38e0",
+        "bytes": 1486072
+      }
+    ]
   }
 ]

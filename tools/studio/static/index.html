@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Studio</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark">◐</span> Story Studio <small>Ophelia's Dream</small></div>
+  <div id="summary" class="summary"></div>
+  <div id="mini" class="mini" hidden>
+    <button id="mini-toggle" class="play" title="Play / pause (Space)">▶</button>
+    <span id="mini-label" class="mini-label"></span>
+  </div>
+  <button id="undo" class="ghost" hidden title="Put the last saved edit back">Undo edit</button>
+  <button id="check-all" class="ghost" title="Runs every script's --check">Check everything</button>
+</header>
+<div class="shell">
+  <nav id="nav" class="nav" aria-label="Story Studio navigation"></nav>
+  <main class="main">
+    <section id="lines-view">
+      <div class="filters">
+        <input id="search" type="search" aria-label="Search story lines" placeholder="Search text, id, mood…" autocomplete="off">
+        <div id="status-filter" class="segmented">
+          <button data-status="" class="on" aria-pressed="true">All</button>
+          <button data-status="final" aria-pressed="false">Final</button>
+          <button data-status="draft" aria-pressed="false">Draft</button>
+          <button data-status="missing" aria-pressed="false">Missing</button>
+        </div>
+        <div id="speaker-filter" class="segmented">
+          <button data-speaker="" class="on" aria-pressed="true">Both</button>
+          <button data-speaker="ophelia" aria-pressed="false">Ophelia</button>
+          <button data-speaker="mathilda" aria-pressed="false">Mathilda</button>
+        </div>
+        <span id="count" class="muted"></span>
+      </div>
+      <table class="lines" aria-label="Story lines">
+        <thead><tr><th scope="col">Status</th><th scope="col">Line</th><th scope="col">Mood</th><th scope="col">Text</th><th scope="col">Source</th><th scope="col">Audio</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+    <section id="review-view" hidden>
+      <h2>Review new clips</h2>
+      <p class="muted">Clips made since the last commit, next to what they replace. <kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Space</kbd> play · <kbd>A</kbd> accept · <kbd>R</kbd> reject (archived, never deleted).</p>
+      <label class="muted"><input id="review-all" type="checkbox"> show accepted</label>
+      <div id="review" class="review"></div>
+    </section>
+    <section id="bake-view" hidden>
+      <h2>Bake &amp; check</h2>
+      <p class="muted">Each button runs the command beside it, one job at a time. Desktop jobs need the CUDA venvs and stay greyed out on this machine.</p>
+      <div id="actions" class="actions"></div>
+      <h2>Jobs</h2>
+      <div id="jobs" class="jobs"></div>
+    </section>
+    <section id="models-view" hidden>
+      <h1>Voice models</h1>
+      <p class="muted">Explore distinct performance layers, then compare them in the voice lab. Downloads stay in the ignored build/voice/hf folder.</p>
+      <div class="constellation" aria-label="Voice model workflow">
+        <div class="flow-node"><b>Script line</b><small>text + mood</small></div><span class="flow-edge">→</span>
+        <div class="flow-node"><b>Qwen3-TTS</b><small>voice design / expressive take</small></div><span class="flow-edge">→</span>
+        <div class="flow-node"><b>Chatterbox VC</b><small>unify to character identity</small></div><span class="flow-edge">→</span>
+        <div class="flow-node"><b>Whisper + ECAPA</b><small>transcript + voice checks</small></div>
+      </div>
+      <p id="model-runtime" class="runtime muted" role="status"></p>
+      <div id="model-cards" class="model-cards"></div>
+      <section class="conversation-workbench">
+        <h2>Conversation audition</h2>
+        <p class="muted">Select real script lines or add experimental turns. Each utterance is generated separately, with the scene and preceding text passed into its acting direction; audio itself is not carried between turns. The script is never edited.</p>
+        <div class="chain-step"><span>01</span><b>Set up the chain</b></div>
+        <div class="row chain-presets">
+          <label>Saved local chain <select id="conversation-preset"><option value="">New chain</option></select></label>
+          <label>Save as <input id="conversation-name" type="text" maxlength="48" placeholder="e.g. Doorway · held-back grief"></label>
+          <button id="conversation-save" class="ghost">Save chain</button>
+          <button id="conversation-delete" class="ghost" disabled>Delete</button>
+        </div>
+        <div class="row chain-options">
+          <label>Context model <select id="conversation-model"><option value="">Download an instruction model first</option></select></label>
+          <label>Variants <select id="conversation-variants"><option value="1">1 take</option><option value="2" selected>2 takes</option><option value="3">3 takes</option></select></label>
+          <label>Variation temperature <input id="conversation-temperature" type="range" min="0.55" max="1.2" step="0.05" value="0.85"><output id="conversation-temperature-out">0.85</output></label>
+          <label>Seed <input id="conversation-seed" type="number" min="1" max="2147483000" value="31871"></label>
+          <button id="conversation-new-seed" class="ghost">New variation</button>
+        </div>
+        <label class="chain-context-label">Scene and relationship context
+          <textarea id="conversation-context" rows="3" maxlength="900" placeholder="Where are they, what happened just before this exchange, and what is each afraid to say?"></textarea>
+        </label>
+        <div class="row chain-profiles">
+          <section class="character-profile" aria-labelledby="ophelia-profile-heading">
+            <h3 id="ophelia-profile-heading">Ophelia <small class="muted">voice and performance</small></h3>
+            <label>Character archetype
+              <select id="conversation-ophelia-archetype"><option value="guarded_witness">Guarded Witness</option><option value="custom">Custom profile</option></select>
+            </label>
+            <label>Voice profile
+              <textarea id="conversation-ophelia" rows="3" maxlength="400" aria-label="Ophelia voice profile">Low, intimate feminine voice with clear consonants and restrained breath. Guarded Witness: observant and self-contained; let fear show only as a slight catch, never as a raised voice.</textarea>
+            </label>
+          </section>
+          <section class="character-profile" aria-labelledby="mathilda-profile-heading">
+            <h3 id="mathilda-profile-heading">Mathilda <small class="muted">voice and performance</small></h3>
+            <label>Character archetype
+              <select id="conversation-mathilda-archetype"><option value="guarded_witness">Guarded Witness</option><option value="custom">Custom profile</option></select>
+            </label>
+            <label>Voice profile
+              <textarea id="conversation-mathilda" rows="3" maxlength="400" aria-label="Mathilda voice profile">Soft, steady feminine voice, warmer and more open than Ophelia; fatigue sits underneath her calm. Guarded Witness: observant and self-contained; let fear show only as a slight catch, never as a raised voice.</textarea>
+            </label>
+          </section>
+        </div>
+        <p class="archetype-note muted">Choose each woman’s performance archetype independently, then refine the voice profile. Archetypes shape delivery while keeping her base voice identity.</p>
+        <div class="chain-step"><span>02</span><b>Build the exchange</b></div>
+        <div class="chain-picker">
+          <label>Find a line to add
+            <input id="conversation-search" type="search" placeholder="Search script lines…">
+            <select id="conversation-source" size="5"></select>
+          </label>
+          <div class="row"><button id="conversation-add" class="primary">Add selected line</button><button id="conversation-add-free" class="ghost">Add blank turn</button></div>
+        </div>
+        <h3>Turn order <small class="muted">2–8 turns · move with the arrows</small></h3>
+        <ol id="conversation-turns" class="conversation-turns"></ol>
+        <div class="chain-step"><span>03</span><b>Render and compare</b></div>
+        <button id="conversation-run" class="primary" disabled>Render conversation variants</button>
+        <p id="conversation-status" class="muted" role="status" aria-live="polite"></p>
+        <div id="conversation-results" class="conversation-results"></div>
+      </section>
+      <h2>Recent model and bake jobs</h2>
+      <div id="model-jobs" class="jobs"></div>
+    </section>
+    <section id="dream-story-view" hidden>
+      <h1>Dream story</h1>
+      <p class="muted">A separate branching script for the playable dream. Edit its approach, choice and aftermath here; the game reads the same story file. These words stay outside the voiced line catalogue.</p>
+      <div class="dream-story-editor" id="dream-story-editor" aria-busy="false">
+        <p id="dream-story-status" class="runtime muted" role="status" aria-live="polite">Loading the dream story…</p>
+        <label>Opening caption
+          <textarea id="dream-opening" rows="3" maxlength="400"></textarea>
+        </label>
+        <div class="dream-beats">
+          <h2>Along the path</h2>
+          <p class="muted">Four fixed movement beats; shape the encounter without moving its authored pacing.</p>
+          <div id="dream-beats"></div>
+        </div>
+        <label>Arrival caption
+          <textarea id="dream-arrival" rows="2" maxlength="240"></textarea>
+        </label>
+        <label>What she asks
+          <textarea id="dream-question" rows="2" maxlength="180"></textarea>
+        </label>
+        <div class="dream-branch-heading">
+          <div><h2>Answers and waking echoes</h2><p class="muted">Each answer is its own branch with a response in the dream and a different echo for each playable woman.</p></div>
+          <button id="dream-add-branch" class="ghost">Add answer branch</button>
+        </div>
+        <div id="dream-branches" class="dream-branches"></div>
+        <div class="dream-story-actions">
+          <button id="dream-story-reload" class="ghost">Reload from file</button>
+          <button id="dream-story-save" class="primary" disabled>Save dream story</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <aside id="lab" class="lab" hidden>
+    <div class="lab-head">
+      <div><div id="lab-uid" class="uid"></div><div id="lab-meta" class="muted"></div></div>
+      <button id="lab-close" class="ghost" title="Close (Esc)">✕</button>
+    </div>
+    <div id="lab-current" class="current"></div>
+    <div class="row lab-actions">
+      <button id="lab-bake" title="">Bake this line</button>
+      <button id="lab-game" title="Launch the game where this line is heard">Hear it in the game</button>
+    </div>
+    <div id="lab-why" class="muted why"></div>
+    <label>Text <small class="muted">(try it freely; nothing is written until you save)</small>
+      <textarea id="lab-text" rows="4"></textarea></label>
+    <div class="row">
+      <label>Mood <select id="lab-mood"></select></label>
+      <label>Voice <select id="lab-voice"></select></label>
+    </div>
+    <fieldset class="model-controls">
+      <legend>Preview engine</legend>
+      <label>Model <select id="lab-engine"><option value="kokoro">Kokoro · quick baseline</option></select></label>
+      <label id="qwen-instruction-wrap" hidden>Performance / voice direction
+        <textarea id="qwen-instruction" rows="3" placeholder="A restrained, breath-thin reading; grief held close, with a slight tremor on the last word."></textarea>
+      </label>
+      <label id="qwen-speaker-wrap" hidden>Built-in voice <select id="qwen-speaker"><option>Serena</option><option>Vivian</option><option>Sohee</option><option>Ryan</option><option>Aiden</option><option>Dylan</option><option>Eric</option><option>Uncle_Fu</option><option>Ono_Anna</option></select></label>
+      <div id="qwen-variation-row" class="row" hidden><label>Sampling seed <input id="qwen-seed" type="number" min="1" max="2147483000" value="8137"></label><button id="qwen-new-seed" class="ghost">New variation</button><label>Variation temperature <input id="qwen-temperature" type="range" min="0.55" max="1.2" step="0.05" value="0.85"><output id="qwen-temperature-out">0.85</output></label></div>
+      <small id="engine-help" class="muted">Kokoro is a local baseline. Qwen experimental takes are saved only in scratch and do not alter the game's voice locks.</small>
+    </fieldset>
+    <fieldset id="lab-dialogue" hidden>
+      <legend>Doorway choreography</legend>
+      <div class="row">
+        <label>Speaker <select id="dialogue-speaker"><option value="ophelia">Ophelia</option><option value="mathilda">Mathilda</option></select></label>
+        <label>Answers <select id="dialogue-answers"></select></label>
+      </div>
+      <label>Action / reaction <input id="dialogue-reaction" type="text" maxlength="180"></label>
+      <label>Quoted words <input id="dialogue-quote" type="text" maxlength="180"></label>
+      <div class="row">
+        <label>Intensity <input id="dialogue-intensity" type="number" min="0" max="1" step="0.05"></label>
+        <label>Pause (s) <input id="dialogue-pause" type="number" min="0" max="5" step="0.05"></label>
+        <label>Overlap (s) <input id="dialogue-overlap" type="number" min="0" max="3" step="0.05"></label>
+      </div>
+      <label class="check"><input id="dialogue-break" type="checkbox"> Mark an intentional intensity break</label>
+      <small class="muted">Answers quotes are checked against the chosen line. The doorway script check validates the whole exchange before you keep the save.</small>
+    </fieldset>
+    <label>Speed <input id="lab-speed" type="range" min="0.6" max="1.3" step="0.02" value="0.94"><output id="lab-speed-out">0.94</output></label>
+    <button id="lab-try" class="primary">Try this reading <kbd>T</kbd></button>
+    <div id="lab-status" class="muted"></div>
+    <div id="lab-edit" class="edit" hidden>
+      <div id="lab-warnings"></div>
+      <pre id="lab-diff" class="diff"></pre>
+      <div class="row"><button id="lab-save" class="save">Save to script</button><button id="lab-reset" class="ghost">Put it back</button></div>
+    </div>
+    <h3>Takes</h3>
+    <ol id="lab-takes" class="takes"></ol>
+  </aside>
+</div>
+<audio id="player"></audio>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -2,9 +2,13 @@ class_name Hud
 extends CanvasLayer
 
 var _intro: Control
-var _objective_plate: PanelContainer
-var _objective: Label
-var _pips: Array[ColorRect] = []
+var _toast: PanelContainer
+var _toast_keys: HBoxContainer
+var _toast_left := 0.0
+var _checkpoint: PanelContainer
+var _checkpoint_left := 0.0
+var journal: Journal
+
 var _warning_plate: PanelContainer
 var _warning: Label
 var _murmur_plate: PanelContainer
@@ -15,6 +19,7 @@ var _prompt_caption: Label
 var _prompt_target: Node3D
 var _prompt_tween: Tween
 var _reticle: Panel
+var _quiver: Label
 var _feedback_text := ""
 var _feedback_left := 0.0
 var _breath: Control
@@ -33,6 +38,8 @@ func _ready() -> void:
 	_build()
 	Game.phase_changed.connect(_on_phase)
 	Game.interaction_feedback.connect(_on_interaction_feedback)
+	Game.page_added.connect(_on_page_added)
+	Game.checkpoint_reached.connect(func() -> void: _checkpoint_left = Tune.JOURNAL_TOAST + 1.5)
 	_on_phase(Game.phase)
 
 
@@ -43,36 +50,60 @@ func _process(delta: float) -> void:
 	_warning_plate.visible = _warning.text != "" and playing
 	if Game.phase != Game.Phase.PAUSED:
 		Game.murmur_left = maxf(0.0, Game.murmur_left - delta)
-	var reading := Game.phase == Game.Phase.READING
-	var spoken := Game.murmur_left > 0.0 and (playing or reading)
+	var reading := Game.phase == Game.Phase.READING or Game.phase == Game.Phase.JOURNAL
+	var spoken := Game.murmur_left > 0.0 and Hud.murmur_shown(Game.phase) and Game.settings.subtitles
+	_murmur.add_theme_font_size_override("font_size", Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, 2)])
 	_murmur.text = Game.murmur if spoken else ""
-	_murmur_plate.visible = spoken
+	_murmur_plate.visible = spoken and (Game.dialogue == null or Game.phase != Game.Phase.PLAYING)
 	if spoken:
-		_murmur_plate.offset_top = -84 if reading else -192
-		_murmur_plate.offset_bottom = -24 if reading else -132
-	_objective_plate.visible = playing and Game.settings.show_objective
-	_refresh_objective()
+		var low := reading or Game.phase == Game.Phase.ESCAPED
+		_murmur_plate.offset_top = -84 if low else -192
+		_murmur_plate.offset_bottom = -24 if low else -132
+	_toast_left = maxf(0.0, _toast_left - delta)
+	_toast.visible = _toast_left > 0.0 and (playing or Game.phase == Game.Phase.READING)
+	_toast.modulate.a = clampf(_toast_left / 0.4, 0.0, 1.0)
+	_checkpoint_left = maxf(0.0, _checkpoint_left - delta)
+	_checkpoint.visible = _checkpoint_left > 0.0 and playing
+	_checkpoint.modulate.a = clampf(_checkpoint_left / 0.6, 0.0, 1.0)
 	_refresh_prompt()
 	_refresh_breath()
-	_refresh_pips()
+	if _quiver:
+		_quiver.visible = playing and Game.player != null and (Game.has_bow or Game.arrow_count > 0)
+		_quiver.text = "ARROWS  %02d / %02d" % [Game.arrow_count, Tune.ARROW_CAPACITY]
 	if Game.phase == Game.Phase.INTRO:
 		_intro.modulate.a = clampf(Game.intro_left / 0.65, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
 		var whiteout_press := (Game.weather.whiteout * 0.14) if Game.weather and Game.player and not Game.player.indoors() else 0.0
-		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62 + whiteout_press)
+		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", (0.18 + Game.threat() * 0.62 + whiteout_press) * Game.settings.screen_effects)
 		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.threat() * 0.5, 0.0, 0.0))
 	if _debug.visible and Game.player:
 		var wx := Game.weather.regime_name() if Game.weather else "None"
 		_debug.text = "%s   threat %.2f   breath %.1f" % [wx, Game.threat(), Game.player.stamina]
 
 
+## Her subtitles show in play, over a page or the journal, and over the escape card.
+static func murmur_shown(phase: Game.Phase) -> bool:
+	return phase in [Game.Phase.PLAYING, Game.Phase.READING, Game.Phase.JOURNAL, Game.Phase.ESCAPED]
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if Game.phase == Game.Phase.BOOT or Game.mathilda_pov:
+		return
+	if event.is_action_pressed("journal"):
+		if Game.phase == Game.Phase.JOURNAL:
+			Game.close_journal()
+			get_viewport().set_input_as_handled()
+		elif Game.phase == Game.Phase.PLAYING or Game.phase == Game.Phase.READING:
+			Game.open_journal()
+			get_viewport().set_input_as_handled()
 	if event.is_action_pressed("pause"):
 		Game.toggle_pause()
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("restart"):
 		if Game.phase == Game.Phase.CAUGHT or Game.phase == Game.Phase.ESCAPED or Game.phase == Game.Phase.PAUSED:
-			Game.restart()
+			# After the lookout, a catch goes back there; R in the pause menu is
+			# "Restart the run", and an ending starts a new run.
+			Game.restart(Game.phase == Game.Phase.CAUGHT)
 			get_viewport().set_input_as_handled()
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F3 and OS.is_debug_build():
 		_debug.visible = not _debug.visible
@@ -80,21 +111,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_phase(next: Game.Phase) -> void:
 	_intro.visible = next == Game.Phase.INTRO
-	_refresh_objective()
 
 
-func _refresh_objective() -> void:
-	if not Game.hunt_started:
-		_objective.text = "Reach the lookout."
-	else:
-		_objective.text = "Keep moving."
-
-
-func _refresh_pips() -> void:
-	var found := Game.notes_found
-	for index in _pips.size():
-		var on := index < found
-		_pips[index].color = Color(0.93, 0.86, 0.7) if on else Color(1, 1, 1, 0.22)
 
 
 func _refresh_breath() -> void:
@@ -104,12 +122,9 @@ func _refresh_breath() -> void:
 	var ratio := clampf(Game.player.stamina / Tune.STAMINA_MAX, 0.0, 1.0)
 	_breath_fill.anchor_right = ratio
 	var spent := Game.player.exhaust_left > 0.0
-	var short := ratio < 0.995 or spent or Game.player.holding_breath
+	var short := ratio < 0.995 or spent
 	_breath.visible = Game.phase == Game.Phase.PLAYING and (Game.settings.breath_meter == 0 or short)
-	if Game.player.holding_breath:
-		_breath_fill.color = Color(0.62, 0.78, 0.95)
-		_breath_label.text = "Holding breath"
-	elif spent:
+	if spent:
 		_breath_fill.color = Color(0.86, 0.32, 0.24)
 		_breath_label.text = "Catching breath"
 	elif ratio < 0.28:
@@ -162,7 +177,7 @@ func _refresh_prompt() -> void:
 		elif _against_wire():
 			show = true
 			key = ""
-			caption = "The fence does not give."
+			caption = "The mountains close the way."
 		if _feedback_left > 0.0 and _feedback_text != "":
 			show = true
 			key = ""
@@ -185,14 +200,17 @@ func _refresh_prompt() -> void:
 # Only there when something can be picked: bright on what is under it, faint
 # when a nearby thing was chosen around it, rust when it is out of reach.
 func _refresh_reticle(aim: Aim) -> void:
-	var playing := Game.phase == Game.Phase.PLAYING and aim != null and Game.settings.show_prompts
-	var shown := playing and (aim.target != null or aim.far != null)
+	var playing := Game.phase == Game.Phase.PLAYING and aim != null and Game.settings.show_reticle
+	var combat_aim: bool = playing and Game.player != null and Game.player.bow_hoist != null and Game.player.bow_hoist.AimWeight > 0.12
+	var shown: bool = playing and (aim.target != null or aim.far != null or combat_aim)
 	var back := _reticle.get_parent() as Control
 	back.visible = shown
 	if not shown:
 		return
 	var ring := _reticle.get_theme_stylebox("panel") as StyleBoxFlat
-	if aim.far:
+	if combat_aim:
+		ring.border_color = Color(0.92, 0.76, 0.48, 1.0)
+	elif aim.far:
 		ring.border_color = Color(UiChrome.RUST, 0.85)
 	elif aim.direct:
 		ring.border_color = Color(UiChrome.PAPER, 1.0)
@@ -220,9 +238,10 @@ func _pulse_prompt(succeeded: bool) -> void:
 
 func _against_wire() -> bool:
 	var at := Game.player.global_position
-	var dx := minf(at.x - Tune.FENCE_MIN_X, Tune.FENCE_MAX_X - at.x)
-	var dz := minf(at.z - Tune.FENCE_MIN_Z, Tune.FENCE_MAX_Z - at.z)
-	return minf(dx, dz) < 2.6
+	var dx := minf(at.x - Tune.WORLD_MIN_X, Tune.WORLD_MAX_X - at.x)
+	var dz := minf(at.z - Tune.WORLD_MIN_Z, Tune.WORLD_MAX_Z - at.z)
+	# Ground's boundary walls stop her 12 m inside the mesh bounds.
+	return minf(dx, dz) < 12.0 + 2.6
 
 
 func _build() -> void:
@@ -236,15 +255,19 @@ func _build() -> void:
 	add_child(_vignette)
 	_letterbox()
 	_build_intro()
-	_build_objective()
+	_build_toast()
 	_build_warning()
 	_build_bottom()
 	_build_reticle()
+	_build_quiver()
 	reader = NoteReader.new()
 	add_child(reader)
+	journal = Journal.new()
+	add_child(journal)
 	_build_murmur()
 	ending = EndCard.new()
 	add_child(ending)
+	add_child(preload("res://scripts/ui/dream_menu.gd").new())
 	menu = PauseMenu.new()
 	add_child(menu)
 	_debug = UiChrome.label("", 14, UiChrome.MUTED)
@@ -272,8 +295,8 @@ func _build_intro() -> void:
 	card.set_anchors_preset(Control.PRESET_CENTER)
 	card.offset_left = -340
 	card.offset_right = 340
-	card.offset_top = -100
-	card.offset_bottom = 100
+	card.offset_top = -118
+	card.offset_bottom = 118
 	card.add_theme_stylebox_override("panel", UiChrome.plate(28, 8))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro.add_child(card)
@@ -281,47 +304,20 @@ func _build_intro() -> void:
 	box.add_theme_constant_override("separation", 10)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(box)
-	var title := UiChrome.label("RUN AWAY", 54)
+	var title := UiChrome.label("OPHELIA'S DREAM", 54)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var line := UiChrome.label("The fence is as far as the snow goes.", 18, UiChrome.MUTED)
+	var line := UiChrome.label("Ophelia left the lantern burning." if Game.mathilda_pov else "Mathilda went out into the storm.", 18, UiChrome.MUTED)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
+	var told := UiChrome.label("You kept her cup." if Game.mathilda_pov else "You told her to.", 15, Color(UiChrome.MUTED, 0.75))
+	told.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(told)
 	# The controls live in the Esc menu, not on screen.
 	var menu_line := UiChrome.label("Esc: controls and settings", 13, UiChrome.MUTED)
 	menu_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(menu_line)
 
-
-func _build_objective() -> void:
-	_objective_plate = PanelContainer.new()
-	_objective_plate.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_objective_plate.offset_left = 28
-	_objective_plate.offset_top = 28
-	_objective_plate.offset_right = 360
-	_objective_plate.offset_bottom = 118
-	_objective_plate.add_theme_stylebox_override("panel", UiChrome.plate(16, 6))
-	_objective_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_objective_plate)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_objective_plate.add_child(box)
-	_objective = UiChrome.label("Reach the lookout.", 20)
-	box.add_child(_objective)
-	var notes := HBoxContainer.new()
-	notes.add_theme_constant_override("separation", 8)
-	notes.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	notes.add_child(UiChrome.label("Notes", 13, UiChrome.MUTED))
-	var total := NoteCatalog.all().size()
-	for _index in total:
-		var pip := ColorRect.new()
-		pip.custom_minimum_size = Vector2(18, 8)
-		pip.color = Color(1, 1, 1, 0.22)
-		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		notes.add_child(pip)
-		_pips.append(pip)
-	box.add_child(notes)
 
 
 func _build_warning() -> void:
@@ -381,6 +377,19 @@ func _build_reticle() -> void:
 	_reticle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_reticle.add_theme_stylebox_override("panel", _ring(Color(UiChrome.PAPER, 0.95), 2, 9))
 	back.add_child(_reticle)
+
+
+func _build_quiver() -> void:
+	_quiver = UiChrome.label("ARROWS  00 / 08", 14, UiChrome.PAPER)
+	_quiver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_quiver.offset_left = -206
+	_quiver.offset_top = -56
+	_quiver.offset_right = -24
+	_quiver.offset_bottom = -28
+	_quiver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_quiver.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quiver.visible = false
+	add_child(_quiver)
 
 
 func _ring(color: Color, width: int, radius: int) -> StyleBoxFlat:
@@ -453,3 +462,37 @@ func _letterbox() -> void:
 			bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 			bar.offset_top = -10
 		add_child(bar)
+
+
+func _build_toast() -> void:
+	_toast = PanelContainer.new()
+	_toast.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_toast.offset_left = 28
+	_toast.offset_top = -86
+	_toast.offset_right = 340
+	_toast.offset_bottom = -28
+	_toast.add_theme_stylebox_override("panel", UiChrome.plate(14, 6))
+	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast.visible = false
+	add_child(_toast)
+	_toast_keys = UiChrome.key_row("J", "Added to the journal")
+	_toast.add_child(_toast_keys)
+	# Reached the lookout: the Esc menu (and a catch) can bring her back here.
+	_checkpoint = PanelContainer.new()
+	_checkpoint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_checkpoint.offset_left = 28
+	_checkpoint.offset_top = -146
+	_checkpoint.offset_right = 340
+	_checkpoint.offset_bottom = -96
+	_checkpoint.add_theme_stylebox_override("panel", UiChrome.plate(14, 6))
+	_checkpoint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_checkpoint.visible = false
+	_checkpoint.add_child(UiChrome.label("Checkpoint: the lookout", 15, UiChrome.MUTED))
+	add_child(_checkpoint)
+
+
+func _on_page_added(_entry: NoteEntry) -> void:
+	if not Game.settings.show_journal_toast:
+		return
+	UiChrome.set_key(_toast_keys, Game.settings.key_label("journal"))
+	_toast_left = Tune.JOURNAL_TOAST

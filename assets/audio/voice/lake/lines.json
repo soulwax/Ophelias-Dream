@@ -1,0 +1,303 @@
+[
+  {
+    "id": "m01",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "You didn't turn around.",
+    "pause": 0.6
+  },
+  {
+    "id": "o01",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "I wanted to. Every step.",
+    "pause": 0.4
+  },
+  {
+    "id": "o02",
+    "speaker": "ophelia",
+    "mood": "bitter",
+    "text": "You lied about the car.",
+    "pause": 0.4
+  },
+  {
+    "id": "m02",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "I didn't know what else would get you this far. You only ever walk toward a way out.",
+    "pause": 0.4
+  },
+  {
+    "id": "m03",
+    "speaker": "mathilda",
+    "mood": "steady",
+    "text": "This is where it happened. Do you remember which of us went through?",
+    "pause": 0.4
+  },
+  {
+    "id": "o03",
+    "speaker": "ophelia",
+    "mood": "steady",
+    "text": "You did. I pulled you out.",
+    "pause": 0.4
+  },
+  {
+    "id": "m04",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "That's how you tell it.",
+    "pause": 0.4
+  },
+  {
+    "id": "o04",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I don't. I've never known.",
+    "pause": 0.9
+  },
+  {
+    "id": "m05",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "One of us held very still, and one of us pulled. And after that you never let me go anywhere again.",
+    "pause": 0.4
+  },
+  {
+    "id": "o05",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I was scared you'd go through again.",
+    "pause": 0.9
+  },
+  {
+    "id": "o06",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "The card in the cellar said one cup.",
+    "pause": 0.6
+  },
+  {
+    "id": "m06",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "You only ever set out one for yourself. Mine you set out for me.",
+    "pause": 0.6
+  },
+  {
+    "id": "o07",
+    "speaker": "ophelia",
+    "mood": "warm",
+    "text": "I found your pack. Two cups.",
+    "pause": 0.4
+  },
+  {
+    "id": "m07",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "I packed for both of us. I always do. You just never came.",
+    "pause": 0.4
+  },
+  {
+    "id": "o08",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "You wrote on the post that it used my name.",
+    "pause": 0.4
+  },
+  {
+    "id": "m08",
+    "speaker": "mathilda",
+    "mood": "shaken",
+    "text": "It did. And I answered. That's how I knew it wasn't lying.",
+    "pause": 0.4
+  },
+  {
+    "id": "m09",
+    "speaker": "mathilda",
+    "mood": "bitter",
+    "text": "So you said go, then.",
+    "pause": 0.4
+  },
+  {
+    "id": "o09",
+    "speaker": "ophelia",
+    "mood": "breaking",
+    "text": "I'm sorry. I'm so sorry I said it.",
+    "pause": 0.9
+  },
+  {
+    "id": "o10",
+    "speaker": "ophelia",
+    "mood": "bitter",
+    "text": "You were already going.",
+    "pause": 0.4
+  },
+  {
+    "id": "m10",
+    "speaker": "mathilda",
+    "mood": "steady",
+    "text": "I was standing at the door, waiting for you to stop me.",
+    "pause": 0.4
+  },
+  {
+    "id": "m11",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "I know. I heard you. Every time you called, I heard you.",
+    "pause": 0.6
+  },
+  {
+    "id": "o11",
+    "speaker": "ophelia",
+    "mood": "pleading",
+    "text": "Then why didn't you answer?",
+    "pause": 0.4
+  },
+  {
+    "id": "m12",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "I did. You kept hearing yourself.",
+    "pause": 0.4
+  },
+  {
+    "id": "o12",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "It's my handwriting on your pages.",
+    "pause": 0.6
+  },
+  {
+    "id": "m13",
+    "speaker": "mathilda",
+    "mood": "steady",
+    "text": "Then you've been writing to yourself the whole time. Read it back sometime. Out loud.",
+    "pause": 0.4
+  },
+  {
+    "id": "o13",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "The torn page said the prints just stop.",
+    "pause": 0.4
+  },
+  {
+    "id": "m14",
+    "speaker": "mathilda",
+    "mood": "numb",
+    "text": "They stop where you stopped looking.",
+    "pause": 0.9
+  },
+  {
+    "id": "m15",
+    "speaker": "mathilda",
+    "mood": "steady",
+    "text": "I'm not the one who went out into the storm, Ophelia. I'm the part of you that wanted to.",
+    "pause": 0.4
+  },
+  {
+    "id": "o14",
+    "speaker": "ophelia",
+    "mood": "shaken",
+    "text": "Then what's under the sheet?",
+    "pause": 0.4
+  },
+  {
+    "id": "m16",
+    "speaker": "mathilda",
+    "mood": "numb",
+    "text": "A coat, buttoned to the throat. Nobody was ever in it.",
+    "pause": 0.9
+  },
+  {
+    "id": "o15",
+    "speaker": "ophelia",
+    "mood": "resolve",
+    "text": "I don't care what you are. Come home.",
+    "pause": 0.4
+  },
+  {
+    "id": "m17",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "Ask me properly. Not \"come home.\" Ask.",
+    "pause": 0.4
+  },
+  {
+    "id": "o16",
+    "speaker": "ophelia",
+    "mood": "pleading",
+    "text": "Walk back with me. Beside me. Not behind.",
+    "pause": 0.4
+  },
+  {
+    "id": "m18",
+    "speaker": "mathilda",
+    "mood": "warm",
+    "text": "Okay.",
+    "pause": 0.4
+  },
+  {
+    "id": "o17",
+    "speaker": "ophelia",
+    "mood": "resolve",
+    "text": "Stay out here if you need to. I'll keep the lantern lit.",
+    "pause": 0.4
+  },
+  {
+    "id": "m19",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Then I'll always know where you are.",
+    "pause": 0.6
+  },
+  {
+    "id": "o18",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "I need a minute.",
+    "pause": 0.6
+  },
+  {
+    "id": "m20",
+    "speaker": "mathilda",
+    "mood": "steady",
+    "text": "The ice will hold. Take it.",
+    "pause": 0.4
+  },
+  {
+    "id": "m21",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Still here. Still holding still.",
+    "pause": 0.6
+  },
+  {
+    "id": "o19",
+    "speaker": "ophelia",
+    "mood": "warm",
+    "text": "You left the door open for me. The page by the bed.",
+    "pause": 0.4
+  },
+  {
+    "id": "m22",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "For one of us. I never could decide which one needed rescuing.",
+    "pause": 0.4
+  },
+  {
+    "id": "o20",
+    "speaker": "ophelia",
+    "mood": "hushed",
+    "text": "I saw you on the trail. You didn't say anything.",
+    "pause": 0.6
+  },
+  {
+    "id": "m23",
+    "speaker": "mathilda",
+    "mood": "wry",
+    "text": "Neither did you.",
+    "pause": 0.4
+  }
+]

@@ -1,0 +1,165 @@
+{
+  "source": "assets/characters/styloo_elf/elf.glb",
+  "bone_count": 216,
+  "parts": {
+    "Skin_SOURCE_INCOMPLETE": {
+      "polygons": 6176,
+      "vertices": 4044
+    },
+    "Costume_ORIGINAL": {
+      "polygons": 2700,
+      "vertices": 1898
+    },
+    "Hair_ORIGINAL": {
+      "polygons": 1556,
+      "vertices": 1155
+    }
+  },
+  "status": "Authoring foundation only; missing body surfaces have not been rebuilt.",
+  "skin_boundary_candidates_below_neck": [
+    {
+      "vertices": 12,
+      "bounds": [
+        [
+          0.05774,
+          0.19608
+        ],
+        [
+          -0.07798,
+          0.04867
+        ],
+        [
+          0.45567,
+          0.48517
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 12,
+      "bounds": [
+        [
+          -0.19608,
+          -0.05774
+        ],
+        [
+          -0.07798,
+          0.04867
+        ],
+        [
+          0.45567,
+          0.48517
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 12,
+      "bounds": [
+        [
+          0.48491,
+          0.51011
+        ],
+        [
+          -0.02557,
+          0.02699
+        ],
+        [
+          1.20747,
+          1.23402
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 12,
+      "bounds": [
+        [
+          -0.51011,
+          -0.48491
+        ],
+        [
+          -0.02557,
+          0.02699
+        ],
+        [
+          1.20747,
+          1.23402
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 24,
+      "bounds": [
+        [
+          -0.13578,
+          0.13578
+        ],
+        [
+          -0.13499,
+          0.06732
+        ],
+        [
+          1.26291,
+          1.31563
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 12,
+      "bounds": [
+        [
+          -0.40964,
+          -0.35958
+        ],
+        [
+          -0.03877,
+          0.03443
+        ],
+        [
+          1.34001,
+          1.40907
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 12,
+      "bounds": [
+        [
+          0.35958,
+          0.40964
+        ],
+        [
+          -0.03877,
+          0.03443
+        ],
+        [
+          1.34001,
+          1.40907
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "vertices": 38,
+      "bounds": [
+        [
+          -0.13245,
+          0.13245
+        ],
+        [
+          -0.18635,
+          0.04279
+        ],
+        [
+          1.44772,
+          1.58097
+        ]
+      ],
+      "closed": true
+    }
+  ]
+}

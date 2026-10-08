@@ -11,14 +11,14 @@ extends Node3D
 ## walls; the terrain is flattened over it and holed only under the house.
 
 const PLINTH := 0.4
-const LAYOUT_REVISION := 3
+const LAYOUT_REVISION := 9
 const UPSTAIRS := Rect2(-6.3, -4.9, 12.6, 9.8)
 const DOOR_WIDTH := 1.3
 const DOOR_HEIGHT := 2.3
 # Ground-floor windows: wall centre at the boards and the yaw it faces out.
 const WINDOWS := [
 	[Vector3(-4.3, 0.0, 4.9), 0.0], [Vector3(4.3, 0.0, 4.9), 0.0], [Vector3(4.3, 0.0, -4.9), PI],
-	[Vector3(-6.3, 0.0, 2.8), -PI * 0.5], [Vector3(6.3, 0.0, 2.5), PI * 0.5], [Vector3(6.3, 0.0, -2.4), PI * 0.5],
+	[Vector3(-6.3, 0.0, 2.8), -PI * 0.5], [Vector3(6.3, 0.0, 2.5), PI * 0.5], [Vector3(6.3, 0.0, -3.2), PI * 0.5],
 ]
 const WINDOW_NAMES := ["FrontWest", "FrontEast", "Back", "West", "EastFront", "EastBack"]
 # Someone crossing the boards above the cellar, toward the head of the stair.
@@ -70,6 +70,7 @@ const GROUND_ROOMS := {
 	"hall": Rect2(-1.5, 0.6, 3.0, 4.3),
 	"living": Rect2(1.5, -4.9, 4.8, 9.8),
 	"backhall": Rect2(-6.3, -4.9, 7.8, 5.5),
+	"bathroom": Rect2(-6.3, -4.9, 2.2, 3.4),
 }
 var _plank_out: Material
 var _plank_floor: Material
@@ -86,11 +87,11 @@ func _ready() -> void:
 	_plank_floor = HouseKit.surface(HouseKit.scan("weathered_plank_siding", Color(0.55, 0.4, 0.29), 0.7), "wood")
 	# Clean warm paint upstairs; the scanned plaster is grimy enough for the
 	# cellar's limewash once lifted toward white.
-	_plaster = HouseKit.paint(Color("e0d8c9"), 0.92)
+	_plaster = HouseKit.paint(Color("d8d8ce"), 0.92)
 	_limewash = HouseKit.scan("white_plaster_rough_01", Color(1.0, 1.0, 0.97), 1.4)
 	_concrete = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.42, 0.42, 0.42), 2.0), "stone")
 	_stone = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.45, 0.46, 0.48), 0.6), "stone")
-	_timber = HouseKit.paint(Color("4a3222"), 0.8)
+	_timber = HouseKit.paint(Color("30393d"), 0.8)
 	_volumes = [
 		AABB(Vector3(UPSTAIRS.position.x, -0.3, UPSTAIRS.position.y), Vector3(UPSTAIRS.size.x, CEILING + 0.3, UPSTAIRS.size.y)),
 		AABB(Vector3(STAIR_BOTTOM_X - 0.1, CELLAR_FLOOR - 0.2, -3.5), Vector3(STAIR_TOP_X - STAIR_BOTTOM_X + 0.2, 3.7, 1.4)),
@@ -130,9 +131,12 @@ func windows() -> Array:
 	if not found.is_empty():
 		return found
 	for spot in WINDOWS:
+		if HouseLoftRoom.available() and (spot[0] as Vector3).is_equal_approx(Vector3(6.3,0,2.5)):
+			continue
 		var yaw: float = spot[1]
 		var normal := (global_transform.basis * Vector3(sin(yaw), 0.0, cos(yaw))).normalized()
-		found.append([to_global((spot[0] as Vector3) + Vector3(0.0, 1.47, 0.0)), normal])
+		var spec := _window_spec(spot[0])
+		found.append([to_global((spot[0] as Vector3) + Vector3(0.0, spec.sill+spec.height*.5, 0.0)), normal])
 	return found
 
 
@@ -141,7 +145,7 @@ func windows() -> Array:
 ## harder one in the stone cellar. [[name, reverb bus, send, local boxes]].
 func acoustic_zones() -> Array:
 	return [
-		["RoomTone", "Room", 0.32, [_volumes[0]]],
+		["RoomTone", "Room", 0.32, [_volumes[0],HouseLoftRoom.VOLUME] if HouseLoftRoom.available() else [_volumes[0]]],
 		["CellarTone", "Cellar", 0.5, _volumes.slice(1)],
 	]
 
@@ -169,6 +173,10 @@ func room_at(world_point: Vector3) -> String:
 		return best
 	var local := to_local(world_point)
 	if local.y > -0.6:
+		if HouseLoftRoom.available() and HouseLoftRoom.VOLUME.has_point(local):
+			return "loft"
+		if HouseDomestic.BATHROOM.has_point(Vector2(local.x,local.z)) and local.y<CEILING+.3:
+			return "bathroom"
 		for room in GROUND_ROOMS:
 			if (GROUND_ROOMS[room] as Rect2).grow(0.06).has_point(Vector2(local.x, local.z)) and local.y < CEILING + 0.3:
 				return room
@@ -264,10 +272,12 @@ func add_authoring() -> void:
 	root.add_child(windows)
 	for index in WINDOWS.size():
 		var spot: Array = WINDOWS[index]
+		if HouseLoftRoom.available() and index == 4: continue
 		var yaw: float = spot[1]
 		var outward := Vector3(sin(yaw), 0.0, cos(yaw))
 		var label: String = WINDOW_NAMES[index] if index < WINDOW_NAMES.size() else "Window%d" % index
-		_marker(windows, label, (spot[0] as Vector3) + Vector3(0.0, 1.47, 0.0), outward, 0.35)
+		var spec := _window_spec(spot[0])
+		_marker(windows, label, (spot[0] as Vector3) + Vector3(0.0, spec.sill+spec.height*.5, 0.0), outward, 0.35)
 	var path := Path3D.new()
 	path.name = "StepsAbove"
 	var curve := Curve3D.new()
@@ -275,7 +285,7 @@ func add_authoring() -> void:
 		curve.add_point(point)
 	path.curve = curve
 	root.add_child(path)
-	_reverb_area(root, "RoomTone", "Room", 0.32, [_volumes[0]])
+	_reverb_area(root, "RoomTone", "Room", 0.32, [_volumes[0],HouseLoftRoom.VOLUME] if HouseLoftRoom.available() else [_volumes[0]])
 	_reverb_area(root, "CellarTone", "Cellar", 0.5, _volumes.slice(1))
 	var rooms := Node3D.new()
 	rooms.name = "Rooms"
@@ -283,6 +293,8 @@ func add_authoring() -> void:
 	root.add_child(rooms)
 	for room_name in GROUND_ROOMS:
 		_room_box(rooms, room_name, GROUND_ROOMS[room_name] as Rect2, -0.5, CEILING)
+	if HouseLoftRoom.available():
+		_room_box(rooms,"loft",HouseLoftRoom.RECT,-.3,3.35)
 	_room_box(rooms, "stair", Rect2(STAIR_BOTTOM_X, -3.5, 0.97 - STAIR_BOTTOM_X, 1.4), CELLAR_FLOOR - 0.2, -0.55)
 	_room_box(rooms, "landing", LANDING, CELLAR_FLOOR - 0.2, -0.55)
 	_room_box(rooms, "corridor", CORRIDOR, CELLAR_FLOOR - 0.2, -0.55)
@@ -294,6 +306,7 @@ func add_authoring() -> void:
 		doorstep_marker.add_to_group(EditableLevel.AUTHORING_GROUP)
 	_add_traces(root)
 	_add_comfort(root)
+	HouseDomestic.build(self)
 
 
 ## Pages and objects that disagree with the trail notes. Last under Authoring,
@@ -304,6 +317,10 @@ func _add_traces(authoring: Node3D) -> void:
 	traces.add_to_group(EditableLevel.AUTHORING_GROUP)
 	authoring.add_child(traces)
 	_trace_page(traces, "NightstandPage", Vector3(-5.35, 0.68, 3.97), NoteCatalog.bedside())
+	# On the kitchen table, the end nearest the stove.
+	_trace_page(traces, "GratePage", Vector3(5.1, 0.78, -2.35), NoteCatalog.grate())
+	# Face down on the boot bench by the front door.
+	_trace_page(traces, "PhotographPage", Vector3(-1.16, 0.46, 3.72), NoteCatalog.photograph())
 	var desk := _morgue_desk()
 	_trace_page(traces, "Intake", desk + Vector3(0.12, 0.76, -0.08), NoteCatalog.intake())
 	var wax := HouseKit.paint(Color(0.86, 0.78, 0.62), 0.55)
@@ -378,6 +395,34 @@ func settle_comfort() -> void:
 	_retune(lights, "HallLight", Color("ffe6c8"), 0.38, 4.0, 1.15)
 	for lamp_name in ["LandingLight", "CorridorSouthLight", "JanitorLight"]:
 		_retune(lights, lamp_name, Color("c5d4e2"), 0.28, 4.0, 1.35)
+	HouseIdentity.retune(self)
+
+
+## Built after authored properties are applied. Only the opaque structural
+## boxes occlude: their actual window, door and stair openings stay open.
+func build_occluders() -> void:
+	if has_node("RenderOccluders"):
+		return
+	var root := Node3D.new()
+	root.name = "RenderOccluders"
+	add_child(root)
+	for group_name in ["GroundFloor", "Cellar"]:
+		var branch := get_node_or_null(group_name)
+		if branch == null:
+			continue
+		for node in branch.find_children("*", "MeshInstance3D", true, false):
+			var mesh := node as MeshInstance3D
+			var label := String(mesh.name)
+			if not mesh.mesh is BoxMesh or not mesh.is_visible_in_tree() or "_face" in label:
+				continue
+			if not ("Wall" in label or label.begins_with("Ceiling_") or label.begins_with("Floor_")):
+				continue
+			var box := BoxOccluder3D.new()
+			box.size = (mesh.mesh as BoxMesh).size - Vector3.ONE * 0.01
+			var occluder := OccluderInstance3D.new()
+			occluder.occluder = box
+			root.add_child(occluder)
+			occluder.global_transform = mesh.global_transform
 
 
 func _retune(parent: Node, lamp_name: String, color: Color, energy: float, reach: float, attenuation: float) -> void:
@@ -489,22 +534,27 @@ func _build_ground_floor() -> void:
 		HouseKit.wall(root, "Plinth", side[0], side[1], SLAB_TOP, 0.0, EXTERIOR + 0.04, _stone)
 	var stair_hole := Rect2(STAIR_BOTTOM_X, STAIR_Z - STAIR_WIDTH * 0.5, STAIR_TOP_X - STAIR_BOTTOM_X, STAIR_WIDTH)
 	HouseKit.slab(root, "Floor", UPSTAIRS, -0.25, 0.0, _plank_floor, [stair_hole])
-	HouseKit.slab(root, "Ceiling", UPSTAIRS, CEILING, CEILING + 0.15, HouseKit.scan("weathered_plank_siding", Color(0.7, 0.6, 0.5), 0.7))
-	var window := {"width": 1.15, "height": 1.15, "sill": 0.9}
+	HouseKit.slab(root, "Ceiling", UPSTAIRS, CEILING, CEILING + 0.15, HouseKit.paint(Color("c7c4b6"),0.96))
+	var window := _window_spec(Vector3.ZERO)
+	var kitchen_window := _window_spec(Vector3(0,0,-4.9))
+	var east_front := {"width":2.0,"height":2.5,"sill":0.0} if HouseLoftRoom.available() else window
 	HouseKit.wall(root, "FrontWall", Vector2(west - 0.12, front), Vector2(east + 0.12, front), 0.0, WALL_TOP, EXTERIOR, _plank_out, [
 		{"at": -west + 0.12, "width": DOOR_WIDTH, "height": DOOR_HEIGHT},
 		_at(window, -4.3 - west + 0.12), _at(window, 4.3 - west + 0.12)], _plaster, _plank_out)
-	HouseKit.wall(root, "BackWall", Vector2(east + 0.12, back), Vector2(west - 0.12, back), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, east + 0.12 - 4.3)], _plaster, _plank_out)
+	HouseKit.wall(root, "BackWall", Vector2(east + 0.12, back), Vector2(west - 0.12, back), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(kitchen_window, east + 0.12 - 4.3)], _plaster, _plank_out)
 	HouseKit.wall(root, "WestWall", Vector2(west, back + 0.12), Vector2(west, front - 0.12), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, 2.8 - back - 0.12)], _plaster, _plank_out)
-	HouseKit.wall(root, "EastWall", Vector2(east, front - 0.12), Vector2(east, back + 0.12), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(window, front - 0.12 - 2.5), _at(window, front - 0.12 + 2.4)], _plaster, _plank_out)
+	HouseKit.wall(root, "EastWall", Vector2(east, front - 0.12), Vector2(east, back + 0.12), 0.0, WALL_TOP, EXTERIOR, _plank_out, [_at(east_front, front - 0.12 - 2.5), _at(window, front - 0.12 + 3.2)], _plaster, _plank_out)
 	for spot in WINDOWS:
-		_glaze(root, spot[0], spot[1], window)
+		if HouseLoftRoom.available() and (spot[0] as Vector3).is_equal_approx(Vector3(6.3,0,2.5)): continue
+		_glaze(root, spot[0], spot[1], _window_spec(spot[0]))
 	HouseKit.wall(root, "BedroomWall", Vector2(-1.5, 0.6), Vector2(-1.5, front - 0.06), 0.0, CEILING, PARTITION, _plaster, [{"at": 2.2, "width": DOOR_WIDTH, "height": DOOR_HEIGHT}])
 	HouseKit.wall(root, "LivingWall", Vector2(1.5, back + 0.06), Vector2(1.5, front - 0.06), 0.0, CEILING, PARTITION, _plaster, [{"at": 2.8 - back - 0.06, "width": DOOR_WIDTH, "height": DOOR_HEIGHT}, {"at": -1.4 - back - 0.06, "width": 1.6, "height": 2.4}])
 	HouseKit.wall(root, "BackHallWall", Vector2(west + 0.06, 0.6), Vector2(1.44, 0.6), 0.0, CEILING, PARTITION, _plaster, [{"at": -west - 0.06, "width": DOOR_WIDTH, "height": DOOR_HEIGHT}])
 	# Three centimetres at each jamb clears the rotating leaf's hinge corner.
 	var leaf := Vector3(DOOR_WIDTH - 0.06, DOOR_HEIGHT - 0.02, 0.045)
 	doors["front"] = HouseDoor.make(root, "FrontDoor", Vector3(0.0, 0.0, front), 0.0, leaf, "plank", _timber, -1.0, 100.0, "Front door")
+	# Swollen shut after the storm: the first thing in her way, not the last.
+	doors["front"].jam_shoves = 2
 	doors["bedroom"] = HouseDoor.make(root, "BedroomDoor", Vector3(-1.5, 0.0, 2.8), PI * 0.5, leaf, "plank", _timber, 1.0, 95.0, "Bedroom door")
 	doors["living"] = HouseDoor.make(root, "LivingDoor", Vector3(1.5, 0.0, 2.8), -PI * 0.5, leaf, "plank", _timber, -1.0, 95.0, "Living room door")
 	doors["backhall"] = HouseDoor.make(root, "CellarHallDoor", Vector3(0.0, 0.0, 0.6), 0.0, leaf, "plank", _timber, 1.0, 95.0, "Back hall door")
@@ -517,14 +567,17 @@ func _at(spec: Dictionary, along: float) -> Dictionary:
 	copy["at"] = along
 	return copy
 
+func _window_spec(at: Vector3) -> Dictionary:
+	return {"width":1.8,"height":1.5,"sill":1.1} if at.z< -4.5 else {"width":1.6,"height":1.7,"sill":.65}
+
 
 func _glaze(root: Node3D, at: Vector3, yaw: float, spec: Dictionary) -> void:
 	var center := at + Vector3(0.0, float(spec["sill"]) + float(spec["height"]) * 0.5, 0.0)
 	var w: float = spec["width"]
 	var h: float = spec["height"]
 	HouseKit.box(root, "Glass", center, Vector3(w, h, 0.012), HouseKit.glass(), yaw)
-	var frame := HouseKit.paint(Color("e6e0d2"), 0.6)
-	var sides := [[Vector3(0.0, h * 0.5, 0.0), Vector3(w + 0.08, 0.06, 0.1)], [Vector3(0.0, -h * 0.5, 0.0), Vector3(w + 0.12, 0.07, 0.18)], [Vector3(w * 0.5, 0.0, 0.0), Vector3(0.06, h, 0.1)], [Vector3(-w * 0.5, 0.0, 0.0), Vector3(0.06, h, 0.1)], [Vector3.ZERO, Vector3(w, 0.035, 0.05)], [Vector3.ZERO, Vector3(0.035, h, 0.05)]]
+	var frame := HouseKit.paint(Color("27343b"), 0.48)
+	var sides := [[Vector3(0.0,h*.5,0.0),Vector3(w+.06,.04,.09)],[Vector3(0.0,-h*.5,0.0),Vector3(w+.08,.04,.14)],[Vector3(w*.5,0,0),Vector3(.04,h,.09)],[Vector3(-w*.5,0,0),Vector3(.04,h,.09)]]
 	var basis := Basis(Vector3.UP, yaw)
 	for index in sides.size():
 		HouseKit.box(root, "Frame_%d" % index, center + basis * (sides[index][0] as Vector3), sides[index][1], frame, yaw)
@@ -644,7 +697,10 @@ func _build_cellar() -> void:
 		HouseKit.slab(root, "CellarFloor", rect, CELLAR_FLOOR - 0.2, CELLAR_FLOOR, _concrete)
 	for rect in [LANDING, CORRIDOR, JANITOR, MORGUE]:
 		HouseKit.slab(root, "CellarCeiling", rect, CELLAR_CEILING, SLAB_TOP, _limewash)
-	doors["janitor"] = HouseDoor.make(root, "JanitorDoor", Vector3(-6.2, CELLAR_FLOOR, JANITOR_DOOR_Z), PI * 0.5, Vector3(0.9, 2.03, 0.045), "plank", HouseKit.paint(Color("3d4a52"), 0.75), 1.0, 95.0, "Janitor's door")
+	# On the room face of the masonry, opening into the room: hung on the wall's
+	# centre line, the leaf ran into the reveal at 65 degrees and left no way through.
+	doors["janitor"] = HouseDoor.make(root, "JanitorDoor", Vector3(-6.2 - MASONRY * 0.5 - 0.03, CELLAR_FLOOR, JANITOR_DOOR_Z), PI * 0.5, Vector3(0.9, 2.03, 0.045), "plank", HouseKit.paint(Color("3d4a52"), 0.75), -1.0, 95.0, "Janitor's door")
+	doors["janitor"].opens_one_way()
 	doors["morgue"] = HouseDoor.make(root, "MorgueDoor", Vector3(-4.6, CELLAR_FLOOR, MORGUE_DOOR_Z), -PI * 0.5, Vector3(1.18, 2.13, 0.05), "steel", null, -1.0, 100.0, "Mortuary door")
 	_janitor_room(root)
 	morgue = Morgue.new()
@@ -670,18 +726,19 @@ func _janitor_room(root: Node3D) -> void:
 	HouseKit.box(root, "SlopSinkBasin", sink_at + Vector3(0.0, 0.66, 0.0), Vector3(0.6, 0.1, 0.4), HouseKit.paint(Color("6f7276"), 0.25, 0.6))
 	HouseKit.box(root, "SlopTap", sink_at + Vector3(0.0, 1.0, -0.2), Vector3(0.03, 0.22, 0.03), steel)
 	HouseKit.box(root, "Duckboard", sink_at + Vector3(0.0, 0.02, -0.55), Vector3(0.8, 0.04, 0.5), _timber)
-	var shelf_x := room.end.x - 0.32
+	# Steel shelving along the south wall, clear of the door's swing.
+	var shelf := Vector3(room.end.x - 0.95, floor_y, room.position.y + 0.27)
 	for tier in 4:
-		HouseKit.box(root, "Shelf_%d" % tier, Vector3(shelf_x, floor_y + 0.3 + tier * 0.45, room.get_center().y - 0.2), Vector3(0.45, 0.025, 1.6), steel)
+		HouseKit.box(root, "Shelf_%d" % tier, shelf + Vector3(0.0, 0.3 + tier * 0.45, 0.0), Vector3(1.6, 0.025, 0.45), steel)
 	for corner in [-0.78, 0.78]:
 		for post in [-0.2, 0.2]:
-			HouseKit.box(root, "ShelfPost", Vector3(shelf_x + post, floor_y + 0.9, room.get_center().y - 0.2 + corner), Vector3(0.03, 1.8, 0.03), steel)
-	HouseKit.blocker(root, "ShelfBody", Vector3(shelf_x, floor_y + 0.9, room.get_center().y - 0.2), Vector3(0.45, 1.8, 1.6))
-	HouseKit.prop(root, "bleach_bottle", Vector3(shelf_x, floor_y + 0.765, room.get_center().y - 0.6))
-	HouseKit.prop(root, "bleach_bottle", Vector3(shelf_x - 0.05, floor_y + 0.765, room.get_center().y - 0.45), 40.0)
-	HouseKit.prop(root, "wicker_basket_01", Vector3(shelf_x, floor_y + 1.215, room.get_center().y + 0.2), 0.0, 0.8)
+			HouseKit.box(root, "ShelfPost", shelf + Vector3(corner, 0.9, post), Vector3(0.03, 1.8, 0.03), steel)
+	HouseKit.blocker(root, "ShelfBody", shelf + Vector3(0.0, 0.9, 0.0), Vector3(1.6, 1.8, 0.45))
+	HouseKit.prop(root, "bleach_bottle", shelf + Vector3(-0.4, 0.765, 0.0))
+	HouseKit.prop(root, "bleach_bottle", shelf + Vector3(-0.25, 0.765, 0.05), 40.0)
+	HouseKit.prop(root, "wicker_basket_01", shelf + Vector3(0.3, 1.215, 0.0), 0.0, 0.8)
 	HouseKit.prop(root, "metal_trash_can", Vector3(room.position.x + 0.45, floor_y, room.position.y + 0.45))
-	HouseKit.prop(root, "trashbag", Vector3(room.position.x + 1.1, floor_y, room.position.y + 0.4), 30.0)
+	HouseKit.prop(root, "trashbag", Vector3(room.position.x + 0.5, floor_y, room.position.y + 1.05), 30.0)
 	HouseKit.prop(root, "WetFloorSign_01", Vector3(room.get_center().x, floor_y, room.position.y + 0.8), -20.0)
 	# A galvanised mop bucket with the mop leaning in it.
 	var bucket := Vector3(room.get_center().x - 0.4, floor_y, room.get_center().y + 0.5)

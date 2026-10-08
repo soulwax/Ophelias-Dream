@@ -17,6 +17,7 @@ var _storm: Array[AudioStreamPlayer3D] = []
 var _breeze: Array[AudioStreamPlayer3D] = []
 var _howl: AudioStreamPlayer3D
 var _whistles: Array[AudioStreamPlayer3D] = []
+var _door_leak: AudioStreamPlayer3D
 
 
 func _ready() -> void:
@@ -37,6 +38,15 @@ func _ready() -> void:
 		if whistle.stream:
 			whistle.play(randf() * whistle.stream.get_length())
 		_whistles.append(whistle)
+	_door_leak = Loudness.voice(Loudness.WIND_CALM, "Ambience")
+	_door_leak.name = "FrontDoorWind"
+	_door_leak.top_level = true
+	_door_leak.max_distance = 8.0
+	_door_leak.volume_db = -80.0
+	_door_leak.stream = _stream("breeze_0.ogg")
+	add_child(_door_leak)
+	if _door_leak.stream:
+		_door_leak.play()
 
 
 # Streamed loops still playing at quit are reported as leaks.
@@ -75,6 +85,29 @@ func apply(intensity: float, gust: float, wind: Vector3, shelter: float, whiteou
 	if Game.settings:
 		Game.settings.set_walls(lerpf(20000.0, 650.0, shelter) * lerpf(1.0, 0.55, cellar))
 	_place_whistles(ears, upwind, intensity, gust, shelter, whiteout)
+	_place_door_leak(ears, intensity, gust, shelter)
+
+
+## The opening admits a local wind source while the room still muffles the distant storm.
+## Use physical leaf angle: a requested opening stalled against a body stays nearly shut.
+func _place_door_leak(ears: Vector3, intensity: float, gust: float, shelter: float) -> void:
+	if _door_leak == null:
+		return
+	var target := -80.0
+	if Game.house and shelter > .05:
+		var door := Game.house.doors.get("front") as HouseDoor
+		if door:
+			var opening := clampf(absf(door._motion.angle)/deg_to_rad(75.0),0.0,1.0)
+			_door_leak.global_position = door.to_global(Vector3(0,1.3,-.18))
+			var distance := _door_leak.global_position.distance_to(ears)
+			if opening > .02 and distance < 8.0 and not House.is_cellar(Game.house.room_at(ears)):
+				var query := PhysicsRayQueryParameters3D.create(_door_leak.global_position,ears,Tune.LAYER_WORLD)
+				if Game.player:
+					query.exclude = [Game.player.get_rid()]
+				var blocked := not get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+				var level := lerpf(Loudness.WIND_CALM-5,Loudness.WIND_STORM-8,intensity)+gust*4
+				target = Loudness.volume(level)+linear_to_db(maxf(opening*shelter,.001))-(Loudness.WALLS if blocked else 0.0)
+	_door_leak.volume_db = lerpf(_door_leak.volume_db,target,.12)
 
 
 # At the two windows nearest her among those that face into the wind.

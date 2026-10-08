@@ -27,6 +27,8 @@ func update(player: Player) -> void:
 	direct = false
 	far = null
 	var camera := player.camera
+	if player.bow_hoist and player.bow_hoist.Busy:
+		return
 	if camera == null or not player.is_inside_tree() or Game.phase != Game.Phase.PLAYING or player.glance > 0.05:
 		return
 	var origin := camera.global_position

@@ -5,6 +5,8 @@ var _title: Label
 var _body: Label
 var _again: Button
 var _hint: Label
+# A catch after the lookout sends her back there; an ending starts a new run.
+var _from_checkpoint := false
 
 
 func _ready() -> void:
@@ -20,16 +22,29 @@ func _on_phase(next: Game.Phase) -> void:
 		Game.Phase.CAUGHT:
 			var title := Game.ending_title if Game.ending_title != "" else "It caught you"
 			var body := Game.ending_body if Game.ending_body != "" else "You stopped. The snow closed over the place you were."
-			_show(title, body, "Wake in the cabin")
+			_show(title, body, "Back to the lookout" if not Game.checkpoint.is_empty() else "Wake in the cabin")
+			_from_checkpoint = not Game.checkpoint.is_empty()
 		Game.Phase.ESCAPED:
-			var road := "Headlights. You do not look back."
-			if Game.read_last_page:
-				road += " The line was not finished."
-			_show(
-				"The road",
-				road,
-				"Walk the ridge again"
-			)
+			if Game.mathilda_pov:
+				# Her chapter's endings name themselves (MathildaPov.ENDINGS).
+				_show(Game.ending_title, Game.ending_body, "Return to the menu")
+				_hint.text = ""
+			elif Game.ending_title != "":
+				# Mathilda is gone, or the meeting on the ice: named by Game.
+				_show(Game.ending_title, Game.ending_body, "Walk the ridge again")
+			elif Game.turned_around:
+				var prints := "You turned around. Out on the lake, one set of prints goes to the old hole in the ice, and one set comes back. Only ever yours. The ice is singing; it always was."
+				if Game.all_deciphered():
+					prints += " By the hole, two cups, one fitted inside the other."
+				_show("One set of prints", prints, "Walk the ridge again")
+			else:
+				var lake := "The posts end at the lake. Two sets of prints go out to the old hole in the ice, and two come back, close together, as if one of them was holding the other up."
+				if Game.read_last_page:
+					lake += " You didn't turn around."
+				if Game.all_deciphered():
+					lake += " By the hole, a cup in the snow. Beside it, a second one. Still warm."
+				_show("The lake", lake, "Walk the ridge again")
+			_from_checkpoint = false
 		_:
 			visible = false
 
@@ -74,7 +89,9 @@ func _build() -> void:
 	box.add_child(_body)
 
 	_again = UiChrome.text_button("Wake in the cabin")
-	_again.pressed.connect(func() -> void: Game.restart())
+	_again.pressed.connect(func() -> void:
+		Game.mathilda_pov = false
+		Game.restart(_from_checkpoint))
 	box.add_child(_again)
 
 	_hint = UiChrome.label("R does the same.", 13, UiChrome.MUTED)

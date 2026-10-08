@@ -149,7 +149,9 @@ func _birds(trees: PackedVector3Array, ears: Vector3, intensity: float, threat: 
 # The rustling follows her: the nearest pines carry it, and a tree she has
 # left fades out before its voice moves to one she is coming to.
 func _follow_trees(trees: PackedVector3Array, ears: Vector3) -> void:
-	var near := _nearest(trees, ears, NEAR_TREES, RUSTLE_REACH)
+	# The woods answer from their spatial hash; thousands of trees are not scanned.
+	var flora := Game.trail.flora if Game.trail else null
+	var near := flora.nearest_indices(ears, NEAR_TREES, RUSTLE_REACH) if flora else _nearest(trees, ears, NEAR_TREES, RUSTLE_REACH)
 	for i in _rustles.size():
 		if _rustle_tree[i] >= 0 and near.has(_rustle_tree[i]):
 			near.erase(_rustle_tree[i])

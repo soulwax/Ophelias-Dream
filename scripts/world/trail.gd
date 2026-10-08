@@ -1,6 +1,9 @@
 class_name Trail
 extends Node3D
 
+# How far along the route (from the start) each trail page lies.
+const PAGE_MARKS: Array[float] = [15.0, 40.0, 70.0, 138.0, 176.0]
+
 var curve: Curve3D
 var ground: Ground
 var house: House
@@ -9,6 +12,13 @@ var length: float = 1.0
 var player_start_offset: float = 0.0
 var exit_offset: float = 1.0
 var exit_point: Vector3 = Vector3.ZERO
+# The leg past the lookout: the curve goes on to the frozen lake. lake_point is
+# where it ends (the lake's centre); lake_hole the old hole in the ice.
+var lake_offset: float = 1.0
+var lake_point: Vector3 = Vector3.ZERO
+var lake_hole: Vector3 = Vector3.ZERO
+# The route as drawn, without the lake leg: what the editable level stores.
+var _drawn_curve: Curve3D
 
 var _rng := RandomNumberGenerator.new()
 var _reserved: Array[Vector3] = []
@@ -30,8 +40,17 @@ func _ready() -> void:
 	# where the stair well goes down through it.
 	# Level well past the cellar: the 3 m grid starts blending a whole cell
 	# before the pad's edge.
-	ground.pads = [[Vector2(house_frame.origin.x, house_frame.origin.z), 14.0, 22.0]]
+	# And one for the frozen lake at the end of the path.
+	ground.pads = [
+		[Vector2(house_frame.origin.x, house_frame.origin.z), 14.0, 22.0],
+		[Vector2(lake_point.x, lake_point.z), Tune.LAKE_RADIUS + 3.0, Tune.LAKE_RADIUS + 22.0],
+	]
 	ground.cuts = [[house_frame, House.stair_cut()]]
+	# The land is shaped around the path: a valley along it, a ravine on one stretch.
+	ground.route = curve
+	ground.route_from = player_start_offset
+	ground.route_to = exit_offset
+	ground.story_points = _story_points(house_frame)
 	add_child(ground)
 	house = House.new()
 	house.name = "House"
@@ -44,9 +63,15 @@ func _ready() -> void:
 	for x in range(-12, 13, 3):
 		for z in range(-10, 11, 3):
 			_reserve(house.to_global(Vector3(x, 0.0, z)))
-	var fence := Fence.new()
+	# No trees out on the ice.
+	var keep_clear := int(Tune.LAKE_RADIUS) + 4
+	for x in range(-keep_clear, keep_clear + 1, 4):
+		for z in range(-keep_clear, keep_clear + 1, 4):
+			if Vector2(x, z).length() <= keep_clear:
+				_reserve(on_ground(lake_point + Vector3(x, 0.0, z)))
+	# Keep the authored child slot, but the larger world ends at its mountains.
+	var fence := Node3D.new()
 	fence.name = "Fence"
-	fence.ground = ground
 	add_child(fence)
 	_build_landmarks()
 	flora = Flora.new()
@@ -71,6 +96,11 @@ func route_derived() -> Array[Node]:
 		if child.name in ["Ground", "Flora"] or child.name not in ["House", "Fence", "Threats", "Route"]:
 			derived.append(child)
 	return derived
+
+
+func settle_house() -> void:
+	if house and ground:
+		house.position.y = ground.height_at(house.position.x, house.position.z) + House.PLINTH
 
 
 func adopt_markers() -> void:
@@ -123,13 +153,57 @@ func _build_curve() -> void:
 	player_start_offset = curve.get_closest_offset(start_at)
 	exit_offset = length - Tune.EXIT_MARGIN
 	exit_point = curve.sample_baked(exit_offset)
+	_drawn_curve = curve.duplicate() as Curve3D
+	_extend_to_lake()
+
+
+## Carries the path on past the lookout to the frozen lake, so the land keeps
+## its walkable valley the whole way. Heads on the way the route ends, turned
+## as little as needed to keep the lake well inside the world's peaks.
+func _extend_to_lake() -> void:
+	var end := curve.sample_baked(length)
+	var before := curve.sample_baked(maxf(length - 12.0, 0.0))
+	var ahead := Vector3(end.x - before.x, 0.0, end.z - before.z).normalized()
+	if ahead == Vector3.ZERO:
+		ahead = Vector3.FORWARD
+	var heading := ahead
+	var reach := Tune.LAKE_LEG + Tune.LAKE_RADIUS + 40.0
+	for turn in [0.0, 25.0, -25.0, 50.0, -50.0, 75.0, -75.0, 100.0, -100.0, 130.0, -130.0]:
+		var candidate := ahead.rotated(Vector3.UP, deg_to_rad(turn))
+		var far := end + candidate * reach
+		var margin := Tune.RING_WIDTH + 30.0
+		if far.x > Tune.WORLD_MIN_X + margin and far.x < Tune.WORLD_MAX_X - margin \
+				and far.z > Tune.WORLD_MIN_Z + margin and far.z < Tune.WORLD_MAX_Z - margin:
+			heading = candidate
+			break
+	var side := heading.cross(Vector3.UP)
+	var leg: Array[Vector3] = [
+		end + ahead.lerp(heading, 0.5).normalized() * 40.0 + side * 9.0,
+		end + heading * 95.0 - side * 7.0,
+		end + heading * Tune.LAKE_LEG,
+	]
+	var last := curve.point_count - 1
+	curve.set_point_out(last, ahead * 12.0)
+	for index in leg.size():
+		var point := leg[index]
+		point.y = end.y
+		var previous := end if index == 0 else leg[index - 1]
+		var following := leg[index + 1] if index + 1 < leg.size() else point + heading * 20.0
+		var tangent := (following - previous) * 0.22
+		tangent.y = 0.0
+		curve.add_point(point, -tangent, tangent)
+	length = curve.get_baked_length()
+	lake_offset = length
+	lake_point = curve.sample_baked(length)
+	lake_hole = lake_point + side * 3.5 + heading * 2.0
 
 
 func _add_route() -> void:
 	var route := Path3D.new()
 	route.name = "Route"
 	route.add_to_group(EditableLevel.AUTHORING_GROUP)
-	route.curve = curve.duplicate() as Curve3D
+	# The drawn route only: the lake leg is added again on every build.
+	route.curve = _drawn_curve.duplicate() as Curve3D
 	add_child(route)
 	var start := Marker3D.new()
 	start.name = "Start"
@@ -153,6 +227,30 @@ func _house_frame() -> Transform3D:
 	return Transform3D(Basis(Vector3.UP, atan2(facing.x, facing.z)), at)
 
 
+# Where the story happens besides the path itself, worked out from the route
+# alone (before there is ground): the house, the pages, the camp, the lookout.
+# Keep in step with _build_landmarks.
+func _story_points(house_frame: Transform3D) -> PackedVector3Array:
+	var points := PackedVector3Array([house_frame.origin])
+	var marks: Array[float] = PAGE_MARKS
+	for index in marks.size():
+		var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
+		var frame := frame_at(along)
+		var side := -1.0 if index % 2 == 0 else 1.0
+		points.append(frame.origin + frame.basis.x * side * 3.6)
+	var camp := frame_at(player_start_offset + 98.0)
+	points.append(camp.origin + camp.basis.x * 7.5)
+	var ending := frame_at(exit_offset)
+	points.append(ending.origin + ending.basis.x * 6.0)
+	# The posts on to the lake and the lake itself: snow there, no peaks.
+	var along := exit_offset + 30.0
+	while along < lake_offset:
+		points.append(curve.sample_baked(along))
+		along += 30.0
+	points.append(lake_point)
+	return points
+
+
 func _build_landmarks() -> void:
 	var start := frame_at(player_start_offset)
 	_prop("SM_Prop_Bench_01.fbx", on_ground(start.origin + start.basis.x * -4.2 + (-start.basis.z) * 2.0), start, 1.0, false, Vector3.ZERO)
@@ -161,7 +259,7 @@ func _build_landmarks() -> void:
 	_light(on_ground(start.origin) + Vector3(0, 1.8, 0), Color(1.0, 0.62, 0.32), 1.1, 9.0)
 
 	var notes := NoteCatalog.all()
-	var marks: Array[float] = [15.0, 40.0, 70.0, 138.0, 176.0]
+	var marks: Array[float] = PAGE_MARKS
 	for index in notes.size():
 		var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
 		var frame := frame_at(along)

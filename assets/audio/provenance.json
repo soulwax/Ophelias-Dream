@@ -1,5 +1,5 @@
 {
-	"note": "Recorded sounds for Run Away. All sources are CC0 1.0 (public domain); credit is not required but is kept here. Regenerate with tools/fetch_sounds.py then tools/make_soundscape.py.",
+	"note": "Recorded sounds for Ophelia's Dream. All sources are CC0 1.0 (public domain); credit is not required but is kept here. Regenerate with tools/fetch_sounds.py then tools/make_soundscape.py.",
 	"files": {
 		"nature/crow_00.wav": {
 			"source": "freesound",
@@ -489,6 +489,246 @@
 			"author": "Joseph Sardin (BigSoundBank)",
 			"license": "CC0 1.0",
 			"taken": "4.735-4.935s",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_00.wav": {
+			"source": "freesound",
+			"id": "521587",
+			"page": "https://freesound.org/s/521587/",
+			"title": "Hiking Boot Footsteps on Grass",
+			"author": "Fission9",
+			"license": "CC0 1.0",
+			"taken": "0.100-0.245s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_01.wav": {
+			"source": "freesound",
+			"id": "521587",
+			"page": "https://freesound.org/s/521587/",
+			"title": "Hiking Boot Footsteps on Grass",
+			"author": "Fission9",
+			"license": "CC0 1.0",
+			"taken": "0.795-0.980s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_02.wav": {
+			"source": "freesound",
+			"id": "521587",
+			"page": "https://freesound.org/s/521587/",
+			"title": "Hiking Boot Footsteps on Grass",
+			"author": "Fission9",
+			"license": "CC0 1.0",
+			"taken": "1.485-1.655s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_03.wav": {
+			"source": "freesound",
+			"id": "521587",
+			"page": "https://freesound.org/s/521587/",
+			"title": "Hiking Boot Footsteps on Grass",
+			"author": "Fission9",
+			"license": "CC0 1.0",
+			"taken": "2.270-2.375s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_04.wav": {
+			"source": "freesound",
+			"id": "521587",
+			"page": "https://freesound.org/s/521587/",
+			"title": "Hiking Boot Footsteps on Grass",
+			"author": "Fission9",
+			"license": "CC0 1.0",
+			"taken": "3.050-3.235s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_05.wav": {
+			"source": "freesound",
+			"id": "521587",
+			"page": "https://freesound.org/s/521587/",
+			"title": "Hiking Boot Footsteps on Grass",
+			"author": "Fission9",
+			"license": "CC0 1.0",
+			"taken": "3.790-3.950s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_06.wav": {
+			"source": "freesound",
+			"id": "331167",
+			"page": "https://freesound.org/s/331167/",
+			"title": "Grass_Footsteps.wav",
+			"author": "Adielees9",
+			"license": "CC0 1.0",
+			"taken": "3.075-3.455s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_07.wav": {
+			"source": "freesound",
+			"id": "331167",
+			"page": "https://freesound.org/s/331167/",
+			"title": "Grass_Footsteps.wav",
+			"author": "Adielees9",
+			"license": "CC0 1.0",
+			"taken": "4.040-4.405s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_08.wav": {
+			"source": "freesound",
+			"id": "331167",
+			"page": "https://freesound.org/s/331167/",
+			"title": "Grass_Footsteps.wav",
+			"author": "Adielees9",
+			"license": "CC0 1.0",
+			"taken": "5.365-5.845s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_09.wav": {
+			"source": "freesound",
+			"id": "331167",
+			"page": "https://freesound.org/s/331167/",
+			"title": "Grass_Footsteps.wav",
+			"author": "Adielees9",
+			"license": "CC0 1.0",
+			"taken": "7.890-8.060s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_10.wav": {
+			"source": "freesound",
+			"id": "331167",
+			"page": "https://freesound.org/s/331167/",
+			"title": "Grass_Footsteps.wav",
+			"author": "Adielees9",
+			"license": "CC0 1.0",
+			"taken": "8.895-9.235s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_11.wav": {
+			"source": "freesound",
+			"id": "505833",
+			"page": "https://freesound.org/s/505833/",
+			"title": "Footsteps grass.wav",
+			"author": "jedg",
+			"license": "CC0 1.0",
+			"taken": "0.215-0.725s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_12.wav": {
+			"source": "freesound",
+			"id": "505833",
+			"page": "https://freesound.org/s/505833/",
+			"title": "Footsteps grass.wav",
+			"author": "jedg",
+			"license": "CC0 1.0",
+			"taken": "1.155-1.665s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_13.wav": {
+			"source": "freesound",
+			"id": "505833",
+			"page": "https://freesound.org/s/505833/",
+			"title": "Footsteps grass.wav",
+			"author": "jedg",
+			"license": "CC0 1.0",
+			"taken": "5.150-5.505s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_14.wav": {
+			"source": "freesound",
+			"id": "505833",
+			"page": "https://freesound.org/s/505833/",
+			"title": "Footsteps grass.wav",
+			"author": "jedg",
+			"license": "CC0 1.0",
+			"taken": "5.525-5.960s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_15.wav": {
+			"source": "freesound",
+			"id": "505833",
+			"page": "https://freesound.org/s/505833/",
+			"title": "Footsteps grass.wav",
+			"author": "jedg",
+			"license": "CC0 1.0",
+			"taken": "6.385-6.895s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_16.wav": {
+			"source": "freesound",
+			"id": "206030",
+			"page": "https://freesound.org/s/206030/",
+			"title": "footsteps grass.wav",
+			"author": "Yuval",
+			"license": "CC0 1.0",
+			"taken": "0.230-0.525s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_17.wav": {
+			"source": "freesound",
+			"id": "206030",
+			"page": "https://freesound.org/s/206030/",
+			"title": "footsteps grass.wav",
+			"author": "Yuval",
+			"license": "CC0 1.0",
+			"taken": "2.490-2.775s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_18.wav": {
+			"source": "freesound",
+			"id": "206030",
+			"page": "https://freesound.org/s/206030/",
+			"title": "footsteps grass.wav",
+			"author": "Yuval",
+			"license": "CC0 1.0",
+			"taken": "4.750-5.065s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_19.wav": {
+			"source": "freesound",
+			"id": "206030",
+			"page": "https://freesound.org/s/206030/",
+			"title": "footsteps grass.wav",
+			"author": "Yuval",
+			"license": "CC0 1.0",
+			"taken": "6.920-7.305s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_20.wav": {
+			"source": "freesound",
+			"id": "389625",
+			"page": "https://freesound.org/s/389625/",
+			"title": "Footsteps_Grass_1.wav",
+			"author": "SilentStrikeZ",
+			"license": "CC0 1.0",
+			"taken": "0.865-1.160s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_21.wav": {
+			"source": "freesound",
+			"id": "389625",
+			"page": "https://freesound.org/s/389625/",
+			"title": "Footsteps_Grass_1.wav",
+			"author": "SilentStrikeZ",
+			"license": "CC0 1.0",
+			"taken": "2.425-2.805s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_22.wav": {
+			"source": "freesound",
+			"id": "389625",
+			"page": "https://freesound.org/s/389625/",
+			"title": "Footsteps_Grass_1.wav",
+			"author": "SilentStrikeZ",
+			"license": "CC0 1.0",
+			"taken": "4.625-4.905s, channel 0",
+			"processing": "levelled one-shot"
+		},
+		"steps/grass_23.wav": {
+			"source": "freesound",
+			"id": "389625",
+			"page": "https://freesound.org/s/389625/",
+			"title": "Footsteps_Grass_1.wav",
+			"author": "SilentStrikeZ",
+			"license": "CC0 1.0",
+			"taken": "5.230-5.670s, channel 0",
 			"processing": "levelled one-shot"
 		},
 		"steps/snow_00.wav": {

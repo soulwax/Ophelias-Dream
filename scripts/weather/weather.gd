@@ -18,6 +18,9 @@ var flurry := 0.55
 var wind := Vector3(8.0, 0.0, 3.0)
 var wind_scroll := Vector3.ZERO
 var shelter := 0.0
+# 0..1, smoothed: how much snow falls here. Over green land (Ground.snow_at
+# under the camera) the snowfall thins away; the wind keeps blowing.
+var snow_scale := 1.0
 
 var _heading := 0.72
 var _heading_target := 0.72
@@ -164,12 +167,15 @@ func settle() -> void:
 		global_position = Game.player.global_position
 	var inside := _is_inside()
 	shelter = 1.0 if inside else 0.0
+	snow_scale = _snow_here()
 	for layer in _layers:
 		layer.apply(intensity, wind, gust, whiteout, flurry)
+		layer.amount_ratio *= snow_scale
 		if inside:
 			layer.amount_ratio = 0.0
 	if _atmosphere:
 		_atmosphere.shelter = shelter
+		_atmosphere.snow_cover = snow_scale
 		_atmosphere.apply_weather(intensity, gust, whiteout, flurry, wind, wind_scroll, _ground_focus_y())
 	if _audio:
 		_audio.apply(intensity, gust, wind, shelter, whiteout)
@@ -181,8 +187,10 @@ func _process(delta: float) -> void:
 	if camera:
 		global_position = camera.global_position
 	var inside := _is_inside()
+	snow_scale = move_toward(snow_scale, _snow_here(), delta * 0.6)
 	for layer in _layers:
 		layer.apply(intensity, wind, gust, whiteout, flurry)
+		layer.amount_ratio *= snow_scale
 		# No snow falls indoors; the storm is only heard through the walls.
 		if inside:
 			layer.amount_ratio = 0.0
@@ -190,9 +198,17 @@ func _process(delta: float) -> void:
 	shelter = move_toward(shelter, 1.0 if inside else 0.0, delta * 1.4)
 	if _atmosphere:
 		_atmosphere.shelter = shelter
+		_atmosphere.snow_cover = snow_scale
 		_atmosphere.apply_weather(intensity, gust, whiteout, flurry, wind, wind_scroll, _ground_focus_y())
 	if _audio:
 		_audio.apply(intensity, gust, wind, shelter, whiteout)
+
+
+# The snow weight under the camera: snow falls where the snow lies.
+func _snow_here() -> float:
+	if Game.trail == null or Game.trail.ground == null:
+		return 1.0
+	return clampf(Game.trail.ground.snow_at(global_position.x, global_position.z) * 1.25 - 0.1, 0.0, 1.0)
 
 
 func _advance(delta: float) -> void:

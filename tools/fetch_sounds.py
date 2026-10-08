@@ -17,7 +17,7 @@ import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "build" / "sfx_src"
-AGENT = {"User-Agent": "RunAway-soundscape-fetch/1.0 (CC0 sources for a Godot game)"}
+AGENT = {"User-Agent": "OpheliasDream-soundscape-fetch/1.0 (CC0 sources for a Godot game)"}
 CC0 = "creativecommons.org/publicdomain/zero/1.0"
 
 # name -> (source, id). Names are what make_soundscape.py refers to.
@@ -40,6 +40,12 @@ SOURCES = {
 	"creak_fs_506665": ("freesound", "506665"),
 	"creak_fs_264306": ("freesound", "264306"),
 	"creak_bsb_0518": ("bigsoundbank", "0518"),
+	# Grass and forest floor, for the green land beyond the snow
+	"grass_fs_521587": ("freesound", "521587"),
+	"grass_fs_331167": ("freesound", "331167"),
+	"grass_fs_505833": ("freesound", "505833"),
+	"grass_fs_206030": ("freesound", "206030"),
+	"grass_fs_389625": ("freesound", "389625"),
 	# Weather
 	"storm_fs_505999": ("freesound", "505999"),
 	"storm_fs_35480": ("freesound", "35480"),

@@ -1,0 +1,125 @@
+[
+  {
+    "id": "modern_ceiling_lamp_01",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "license": "CC0 1.0",
+    "source": "https://polyhaven.com/a/modern_ceiling_lamp_01",
+    "retrieved": "2026-10-06",
+    "dimensions_mm": [
+      431.6493272781372,
+      431.6607564687729,
+      951.5514969825745
+    ],
+    "files": [
+      {
+        "path": "assets/vendor/polyhaven/modern_ceiling_lamp_01/modern_ceiling_lamp_01_1k.gltf",
+        "sha256": "f88b5d0a81fa813457a77474e7e4e812f97ad5fac2109ba03ddb183274be3f8c",
+        "bytes": 6177
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_ceiling_lamp_01/textures/modern_ceiling_lamp_01_arm_1k.jpg",
+        "sha256": "f4c6a8e7c86b1deaaf0f74099539ff635063b63f594b0fadfc3ec8fac805df4e",
+        "bytes": 124022
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_ceiling_lamp_01/textures/modern_ceiling_lamp_01_diff_1k.jpg",
+        "sha256": "c08bfbf7576a86a4a09d386ae9f0a92965fc652bf82f3a8dba1c796b1aa9e535",
+        "bytes": 79705
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_ceiling_lamp_01/modern_ceiling_lamp_01.bin",
+        "sha256": "ae5140a64e12e639554158901a5e92340bb37c706096ff255804e3220fb96367",
+        "bytes": 146828
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_ceiling_lamp_01/textures/modern_ceiling_lamp_01_nor_gl_1k.jpg",
+        "sha256": "dd75bd21a901581325f5c363bd89b45430b8531cb27dead314cd087196a33c27",
+        "bytes": 79333
+      }
+    ]
+  },
+  {
+    "id": "painted_wooden_bench",
+    "authors": [
+      "Kirill Sannikov"
+    ],
+    "license": "CC0 1.0",
+    "source": "https://polyhaven.com/a/painted_wooden_bench",
+    "retrieved": "2026-10-06",
+    "dimensions_mm": [
+      1164.9435758590698,
+      496.5430945158005,
+      889.2914750613272
+    ],
+    "files": [
+      {
+        "path": "assets/vendor/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf",
+        "sha256": "2289ab82f3fe3045bf18f7b9541743d2c65b9f071cb34bbe424d2bc998f3e507",
+        "bytes": 2835
+      },
+      {
+        "path": "assets/vendor/polyhaven/painted_wooden_bench/textures/painted_wooden_bench_diff_1k.jpg",
+        "sha256": "9bc533313091ee71eaca5fa6334b71d27935d9d75311f64df6a53c28a67c435c",
+        "bytes": 545216
+      },
+      {
+        "path": "assets/vendor/polyhaven/painted_wooden_bench/textures/painted_wooden_bench_nor_gl_1k.jpg",
+        "sha256": "a0f53740d77fc61aac01de0b7e1ae6109445d1756839f739ae31fdf10c9911f2",
+        "bytes": 830104
+      },
+      {
+        "path": "assets/vendor/polyhaven/painted_wooden_bench/textures/painted_wooden_bench_arm_1k.jpg",
+        "sha256": "878785565eeff706b8f1e4db7e3d794a544e9cf0e56cee424d9a271ab4ead47e",
+        "bytes": 586040
+      },
+      {
+        "path": "assets/vendor/polyhaven/painted_wooden_bench/painted_wooden_bench.bin",
+        "sha256": "5799bcb20924105cccd6424de8cdb8e67eb57fddc19c395befeac634a7b2e013",
+        "bytes": 25444
+      }
+    ]
+  },
+  {
+    "id": "modern_wooden_cabinet",
+    "authors": [
+      "Patrik Pangerl"
+    ],
+    "license": "CC0 1.0",
+    "source": "https://polyhaven.com/a/modern_wooden_cabinet",
+    "retrieved": "2026-10-06",
+    "dimensions_mm": [
+      2440.0004148483276,
+      520.0000107288361,
+      680.1425069570541
+    ],
+    "files": [
+      {
+        "path": "assets/vendor/polyhaven/modern_wooden_cabinet/modern_wooden_cabinet_1k.gltf",
+        "sha256": "9c0765063297018e854d11bc27da3cbab3c33904a3be2f5c15f46635df7e857f",
+        "bytes": 10960
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_wooden_cabinet/modern_wooden_cabinet.bin",
+        "sha256": "04e664a95f52c48d0caa8c3148ab7e4ad4a0554b37a2a5c0e39dc6ed6c46cafe",
+        "bytes": 1170136
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_wooden_cabinet/textures/modern_wooden_cabinet_nor_gl_1k.jpg",
+        "sha256": "f08b3d0619a60e2eac19c9d9c0d7dc0e3eb75af2692d84b32ddfd12d857c15ab",
+        "bytes": 430053
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_wooden_cabinet/textures/modern_wooden_cabinet_arm_1k.jpg",
+        "sha256": "fad6df227ec6d431387b10bd244a0d087e89e6dce0b1c732df5c87f0a1def3f5",
+        "bytes": 574020
+      },
+      {
+        "path": "assets/vendor/polyhaven/modern_wooden_cabinet/textures/modern_wooden_cabinet_diff_1k.jpg",
+        "sha256": "e494b67439da73775413d6aaea369ae05a8ebd7705be8df08dbcd2ee4fd545e4",
+        "bytes": 670353
+      }
+    ]
+  }
+]
