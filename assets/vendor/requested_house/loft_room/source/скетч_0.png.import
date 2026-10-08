@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://kigo5yr32gyw"
-path="res://.godot/imported/скетч_0.png-772604cd4d81adb6d5d15cac18c9daab.ctex"
+path.s3tc="res://.godot/imported/скетч_0.png-772604cd4d81adb6d5d15cac18c9daab.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "fe25dc2c67121026c1489a69cfa738c5"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/vendor/requested_house/loft_room/source/скетч_0.png"
-dest_files=["res://.godot/imported/скетч_0.png-772604cd4d81adb6d5d15cac18c9daab.ctex"]
+dest_files=["res://.godot/imported/скетч_0.png-772604cd4d81adb6d5d15cac18c9daab.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
