@@ -9,18 +9,43 @@
 <body>
 <header class="top">
   <div class="brand"><span class="mark">◐</span> Story Studio <small>Ophelia's Dream</small></div>
-  <div id="summary" class="summary"></div>
-  <div id="mini" class="mini" hidden>
-    <button id="mini-toggle" class="play" title="Play / pause (Space)">▶</button>
-    <span id="mini-label" class="mini-label"></span>
+  <nav id="tabs" class="tabs" aria-label="Studio sections">
+    <a href="#lines" data-view="lines">Lines</a>
+    <a href="#review" data-view="review">Review <span class="badge" id="tab-review"></span></a>
+    <a href="#bake" data-view="bake">Bake &amp; check <span class="badge busy" id="tab-bake"></span></a>
+    <a href="#voices" data-view="models">Voices</a>
+    <a href="#dream" data-view="dream-story">Dream story</a>
+  </nav>
+  <div class="top-tools">
+    <div id="mini" class="mini" hidden>
+      <button id="mini-toggle" class="play" title="Play / pause (Space)">▶</button>
+      <span id="mini-label" class="mini-label"></span>
+    </div>
+    <button id="undo" class="ghost" hidden title="Put the last saved edit back">Undo edit</button>
+    <button id="check-all" class="ghost" title="Runs every script's --check">Check everything</button>
+    <button id="help-open" class="ghost icon" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
   </div>
-  <button id="undo" class="ghost" hidden title="Put the last saved edit back">Undo edit</button>
-  <button id="check-all" class="ghost" title="Runs every script's --check">Check everything</button>
 </header>
+<dialog id="help" class="help" aria-labelledby="help-title">
+  <h2 id="help-title">Keyboard</h2>
+  <dl>
+    <dt><kbd>↑</kbd><kbd>↓</kbd> or <kbd>J</kbd><kbd>K</kbd></dt><dd>Move through lines, or through clips in Review</dd>
+    <dt><kbd>Enter</kbd></dt><dd>Open the line in the lab</dd>
+    <dt><kbd>Space</kbd></dt><dd>Play or pause (the line, or whatever is loaded)</dd>
+    <dt><kbd>T</kbd></dt><dd>Try a reading of the open line</dd>
+    <dt><kbd>Ctrl</kbd><kbd>S</kbd></dt><dd>Save the open line edit or Dream story</dd>
+    <dt><kbd>/</kbd></dt><dd>Search lines</dd>
+    <dt><kbd>A</kbd> · <kbd>R</kbd></dt><dd>Review: accept · reject</dd>
+    <dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd>Lines · Review · Bake · Voices · Dream story</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Close the lab or this panel</dd>
+  </dl>
+  <form method="dialog"><button class="primary">Got it</button></form>
+</dialog>
 <div class="shell">
-  <nav id="nav" class="nav" aria-label="Story Studio navigation"></nav>
+  <nav id="nav" class="nav" aria-label="Browse lines"></nav>
   <main class="main">
     <section id="lines-view">
+      <div id="summary" class="summary" aria-label="Clip progress by chapter"></div>
       <div class="filters">
         <input id="search" type="search" aria-label="Search story lines" placeholder="Search text, id, mood…" autocomplete="off">
         <div id="status-filter" class="segmented">
@@ -36,10 +61,12 @@
         </div>
         <span id="count" class="muted"></span>
       </div>
-      <table class="lines" aria-label="Story lines">
-        <thead><tr><th scope="col">Status</th><th scope="col">Line</th><th scope="col">Mood</th><th scope="col">Text</th><th scope="col">Source</th><th scope="col">Audio</th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table class="lines" aria-label="Story lines">
+          <thead><tr><th scope="col" class="c-status"><span class="sr">Status</span></th><th scope="col">Line</th><th scope="col">Mood</th><th scope="col">Text</th><th scope="col" class="c-src">Source</th><th scope="col" class="c-audio">Audio</th></tr></thead>
+          <tbody id="rows"><tr class="placeholder"><td colspan="6">Loading every line…</td></tr></tbody>
+        </table>
+      </div>
     </section>
     <section id="review-view" hidden>
       <h2>Review new clips</h2>
@@ -145,7 +172,7 @@
         </label>
         <div class="dream-branch-heading">
           <div><h2>Answers and waking echoes</h2><p class="muted">Each answer is its own branch with a response in the dream and a different echo for each playable woman.</p></div>
-          <button id="dream-add-branch" class="ghost">Add answer branch</button>
+          <div class="dream-branch-tools"><small id="dream-branch-count" class="dream-branch-count">— of 8 answer branches</small><button id="dream-add-branch" class="ghost">Add answer branch</button></div>
         </div>
         <div id="dream-branches" class="dream-branches"></div>
         <div class="dream-story-actions">
@@ -155,23 +182,33 @@
       </div>
     </section>
   </main>
-  <aside id="lab" class="lab" hidden>
+  <aside id="lab" class="lab" hidden aria-labelledby="lab-uid">
     <div class="lab-head">
-      <div><div id="lab-uid" class="uid"></div><div id="lab-meta" class="muted"></div></div>
-      <button id="lab-close" class="ghost" title="Close (Esc)">✕</button>
+      <div class="lab-title"><div id="lab-uid" class="uid"></div><div id="lab-meta" class="lab-badges"></div></div>
+      <button id="lab-close" class="ghost icon" title="Close (Esc)" aria-label="Close the lab">✕</button>
     </div>
-    <div id="lab-current" class="current"></div>
-    <div class="row lab-actions">
-      <button id="lab-bake" title="">Bake this line</button>
-      <button id="lab-game" title="Launch the game where this line is heard">Hear it in the game</button>
-    </div>
-    <div id="lab-why" class="muted why"></div>
-    <label>Text <small class="muted">(try it freely; nothing is written until you save)</small>
-      <textarea id="lab-text" rows="4"></textarea></label>
-    <div class="row">
+    <section class="lab-section">
+      <h3 class="lab-h">In the game</h3>
+      <div id="lab-current" class="current"></div>
+      <div class="row lab-actions">
+        <button id="lab-bake" title="">Bake this line</button>
+        <button id="lab-game" title="Launch the game where this line is heard">Hear it in the game</button>
+      </div>
+      <div id="lab-why" class="muted why"></div>
+    </section>
+    <section class="lab-section">
+      <h3 class="lab-h">Words <small class="muted">nothing is written until you save</small></h3>
+      <label>Text <textarea id="lab-text" rows="3"></textarea></label>
       <label>Mood <select id="lab-mood"></select></label>
-      <label>Voice <select id="lab-voice"></select></label>
+    <div id="lab-edit" class="edit" hidden>
+      <div id="lab-warnings"></div>
+      <pre id="lab-diff" class="diff"></pre>
+      <div class="row"><button id="lab-save" class="save">Save to script <kbd>Ctrl S</kbd></button><button id="lab-reset" class="ghost">Put it back</button></div>
     </div>
+    </section>
+    <section class="lab-section">
+      <h3 class="lab-h">Audition <small class="muted">scratch takes only</small></h3>
+      <label>Voice <select id="lab-voice"></select></label>
     <fieldset class="model-controls">
       <legend>Preview engine</legend>
       <label>Model <select id="lab-engine"><option value="kokoro">Kokoro · quick baseline</option></select></label>
@@ -200,15 +237,12 @@
     </fieldset>
     <label>Speed <input id="lab-speed" type="range" min="0.6" max="1.3" step="0.02" value="0.94"><output id="lab-speed-out">0.94</output></label>
     <button id="lab-try" class="primary">Try this reading <kbd>T</kbd></button>
-    <div id="lab-status" class="muted"></div>
-    <div id="lab-edit" class="edit" hidden>
-      <div id="lab-warnings"></div>
-      <pre id="lab-diff" class="diff"></pre>
-      <div class="row"><button id="lab-save" class="save">Save to script</button><button id="lab-reset" class="ghost">Put it back</button></div>
-    </div>
-    <h3>Takes</h3>
+    <div id="lab-status" class="muted" role="status" aria-live="polite"></div>
+    <h3 class="lab-h">Takes</h3>
     <ol id="lab-takes" class="takes"></ol>
+    </section>
   </aside>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 </div>
 <audio id="player"></audio>
 <script src="/static/app.js"></script>

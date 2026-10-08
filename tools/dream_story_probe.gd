@@ -32,8 +32,18 @@ func _ready() -> void:
 		"the playable dream should display every authored branch")
 	var menu = MENU.new()
 	add_child(menu)
-	assert(menu._buttons.size() == 5, "the main menu should offer three modes, credits, and quit")
-	assert((menu._buttons[0] as Button).text.replace(" ", "") == "DREAM", "the dream must be the first mode")
+	assert(menu._buttons.size() == 6, "the main menu should offer three modes, settings, credits, and quit")
+	assert((menu._buttons[0] as Button).text.ends_with("DREAM"), "the dream must be the first mode")
+	assert((menu._buttons[3] as Button).text.ends_with("SETTINGS"), "settings should be part of the title menu")
+	menu._choose("SETTINGS")
+	assert(menu._settings_terminal.is_title_settings_open(), "settings should open the terminal without leaving the title phase")
+	await get_tree().create_timer(0.7).timeout
+	assert(is_equal_approx(menu._settings_terminal._frame.scale.y, 1.0), "the terminal should open in ordered stages")
+	var close_started := Time.get_ticks_msec()
+	menu._settings_terminal.close_title_settings()
+	await get_tree().create_timer(0.35).timeout
+	assert(Time.get_ticks_msec() - close_started < 1000, "the terminal should deconstruct in under a second")
+	assert(not menu._settings_terminal.visible, "the terminal should return to the main menu")
 	menu._stop_music()
 	menu.queue_free()
 	Game.dream_mode = true

@@ -1,6 +1,8 @@
 class_name PauseMenu
 extends Control
 
+signal title_closed
+
 # The Esc menu, drawn as an old instrument console: page list on the left,
 # the page's fields on the right, and a readout underneath that explains
 # whatever the cursor is on. Values apply the moment they change and are saved
@@ -59,7 +61,17 @@ var _hint: Label
 var _clock: Label
 var _cursor: Label
 var _crt: ColorRect
+var _scrim: ColorRect
+var _content_stack: Control
+var _mode_label: Label
+var _subject_label: Label
+var _session_heading: Label
+var _resume_action: Button
+var _lookout_action: Button
+var _title_hidden: Array[Control] = []
 var _open_tween: Tween
+var _title_mode := false
+var _title_dirty := false
 # The binding being listened for, [action, slot], or empty.
 var _capture: Array = []
 # The open page's fields by id: {key, focus, panel, mark, caption, note, default}.
@@ -83,6 +95,10 @@ func _ready() -> void:
 
 
 func _on_phase(next: Game.Phase) -> void:
+	if _title_mode:
+		if next != Game.Phase.BOOT:
+			_finish_title_close(false)
+		return
 	var open := next == Game.Phase.PAUSED
 	if open and not visible:
 		_capture = []
@@ -91,6 +107,11 @@ func _on_phase(next: Game.Phase) -> void:
 		_show_page(_page)
 		_play_open()
 		_focus_tab.call_deferred()
+		_scrim.color = Color(0.02, 0.012, 0.015, 0.74)
+		_content_stack.modulate.a = 1.0
+		_session_heading.text = "SESSION"
+		_resume_action.text = str(_resume_action.get_meta("text", "▸  RESUME"))
+		_restore_session_controls()
 	visible = open
 
 
@@ -108,7 +129,86 @@ func _process(_delta: float) -> void:
 
 func _on_settings_changed() -> void:
 	if _crt and _crt.material is ShaderMaterial:
-		(_crt.material as ShaderMaterial).set_shader_parameter("strength", Game.settings.screen_effects)
+		(_crt.material as ShaderMaterial).set_shader_parameter("strength",
+			minf(Game.settings.screen_effects, 0.22) if _title_mode else Game.settings.screen_effects)
+	if _title_mode:
+		_title_dirty = true
+
+
+func open_title_settings() -> void:
+	_title_mode = true
+	_title_dirty = false
+	_capture = []
+	_status.text = ""
+	_disarm()
+	_show_page(_page)
+	_mode_label.text = "// TITLE CONFIGURATION · STORY NOT STARTED"
+	_subject_label.text = "MODE  UNSELECTED"
+	_session_heading.text = "MENU"
+	_resume_action.text = "▸  RETURN TO TITLE"
+	for control in _title_hidden:
+		control.visible = false
+	_scrim.color = Color(0.02, 0.012, 0.015, 0.0)
+	_content_stack.modulate.a = 0.0
+	_frame.scale = Vector2(1.0, 0.015)
+	_frame.modulate.a = 1.0
+	visible = true
+	_play_title_open()
+	_focus_tab.call_deferred()
+
+
+func is_title_settings_open() -> bool:
+	return _title_mode and visible
+
+
+func close_title_settings() -> void:
+	if not _title_mode or not visible:
+		return
+	_capture = []
+	_disarm()
+	if _title_dirty:
+		Game.settings.save()
+	if _open_tween and _open_tween.is_running():
+		_open_tween.kill()
+	_open_tween = create_tween()
+	_open_tween.set_parallel(true)
+	_open_tween.tween_property(_content_stack, "modulate:a", 0.0, 0.11)
+	_open_tween.tween_property(_frame, "scale:y", 0.015, 0.27).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	_open_tween.tween_property(_scrim, "color", Color(0.02, 0.012, 0.015, 0.0), 0.24)
+	if _crt.material is ShaderMaterial:
+		_open_tween.tween_property(_crt.material, "shader_parameter/strength", 0.0, 0.12)
+	_open_tween.chain().tween_callback(_finish_title_close)
+
+
+func _finish_title_close(save_changes := false) -> void:
+	if save_changes and _title_dirty:
+		Game.settings.save()
+	_title_mode = false
+	_title_dirty = false
+	visible = false
+	_frame.scale = Vector2.ONE
+	_content_stack.modulate.a = 1.0
+	_scrim.color = Color(0.02, 0.012, 0.015, 0.74)
+	_mode_label.text = "// PAUSIERT · NOTHING MOVES"
+	_subject_label.text = "SUBJECT  %s" % ("MATHILDA" if Game.mathilda_pov else "OPHELIA")
+	_session_heading.text = "SESSION"
+	_resume_action.text = str(_resume_action.get_meta("text", "▸  RESUME"))
+	_restore_session_controls()
+	title_closed.emit()
+
+
+func _restore_session_controls() -> void:
+	for control in _title_hidden:
+		control.visible = true
+	if _lookout_action:
+		_lookout_action.visible = not Game.checkpoint.is_empty()
+
+
+func _resume_action_pressed() -> void:
+	if _title_mode:
+		close_title_settings()
+	else:
+		Game.toggle_pause()
 
 
 func _input(event: InputEvent) -> void:
@@ -592,11 +692,11 @@ func _times(value: float) -> String:
 # --- Frame --------------------------------------------------------------
 
 func _build() -> void:
-	var scrim := ColorRect.new()
-	scrim.color = Color(0.02, 0.012, 0.015, 0.74)
-	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(scrim)
+	_scrim = ColorRect.new()
+	_scrim.color = Color(0.02, 0.012, 0.015, 0.74)
+	_scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_scrim)
 	_frame = Control.new()
 	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_frame)
@@ -612,6 +712,7 @@ func _build() -> void:
 	brackets.resized.connect(brackets.queue_redraw)
 	_frame.add_child(brackets)
 	var stack := VBoxContainer.new()
+	_content_stack = stack
 	stack.set_anchors_preset(Control.PRESET_FULL_RECT)
 	stack.add_theme_constant_override("separation", 0)
 	_frame.add_child(stack)
@@ -659,6 +760,24 @@ func _play_open() -> void:
 	_open_tween.tween_property(_frame, "modulate:a", 1.0, 0.07)
 
 
+func _play_title_open() -> void:
+	if _open_tween and _open_tween.is_running():
+		_open_tween.kill()
+	_frame.scale = Vector2(1.0, 0.015)
+	_frame.modulate.a = 1.0
+	_content_stack.modulate.a = 0.0
+	var glass := _crt.material as ShaderMaterial
+	glass.set_shader_parameter("strength", 0.0)
+	_open_tween = create_tween()
+	_open_tween.tween_property(_scrim, "color", Color(0.02, 0.012, 0.015, 0.34), 0.12)
+	_open_tween.tween_property(_frame, "scale:y", 1.02, 0.25).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	_open_tween.parallel().tween_property(_crt.material, "shader_parameter/strength", 0.22, 0.25)
+	_open_tween.tween_interval(0.055)
+	_open_tween.tween_property(_content_stack, "modulate:a", 1.0, 0.14)
+	_open_tween.parallel().tween_property(_frame, "scale:y", 1.0, 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_open_tween.parallel().tween_property(_crt.material, "shader_parameter/strength", 0.10, 0.12)
+
+
 func _build_header() -> Control:
 	var margin := _margin(10, 18)
 	var bar := HBoxContainer.new()
@@ -672,15 +791,15 @@ func _build_header() -> Control:
 	var title := UiChrome.term_label("SYSTEM CONFIGURATION", 20, UiChrome.BONE, true)
 	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	bar.add_child(title)
-	var paused := UiChrome.term_label("// PAUSIERT · NOTHING MOVES", 12, UiChrome.ASH)
-	paused.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	bar.add_child(paused)
+	_mode_label = UiChrome.term_label("// PAUSIERT · NOTHING MOVES", 12, UiChrome.ASH)
+	_mode_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.add_child(_mode_label)
 	var fill := Control.new()
 	fill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(fill)
-	var subject := UiChrome.term_label("SUBJECT  %s" % ("MATHILDA" if Game.mathilda_pov else "OPHELIA"), 12, UiChrome.ASH)
-	subject.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	bar.add_child(subject)
+	_subject_label = UiChrome.term_label("SUBJECT  %s" % ("MATHILDA" if Game.mathilda_pov else "OPHELIA"), 12, UiChrome.ASH)
+	_subject_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.add_child(_subject_label)
 	_clock = UiChrome.term_label("00:00:00", 14, UiChrome.BONE)
 	_clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	bar.add_child(_clock)
@@ -726,21 +845,31 @@ func _build_sidebar() -> Control:
 	var fill := Control.new()
 	fill.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(fill)
-	box.add_child(UiChrome.term_label("SESSION", 11, UiChrome.ASH, true))
+	_session_heading = UiChrome.term_label("SESSION", 11, UiChrome.ASH, true)
+	box.add_child(_session_heading)
 	box.add_child(_gap(4))
-	box.add_child(_action("Resume", func() -> void: Game.toggle_pause()))
+	_resume_action = _action("Resume", _resume_action_pressed)
+	box.add_child(_resume_action)
 	# Once she has reached the lookout she can go back there with what she had.
-	var lookout := _action("Back to the lookout", func() -> void: Game.restart(true), true)
-	lookout.visible = not Game.checkpoint.is_empty()
-	Game.checkpoint_reached.connect(func() -> void: lookout.visible = true)
-	box.add_child(lookout)
-	box.add_child(_action("Restart the run", func() -> void: Game.restart(), true))
-	box.add_child(_action("Quit to desktop", func() -> void: Game.quit(), true))
-	box.add_child(_gap(10))
+	_lookout_action = _action("Back to the lookout", func() -> void: Game.restart(true), true)
+	_lookout_action.visible = not Game.checkpoint.is_empty()
+	Game.checkpoint_reached.connect(func() -> void: _lookout_action.visible = true)
+	_title_hidden.append(_lookout_action)
+	box.add_child(_lookout_action)
+	var restart := _action("Restart the run", func() -> void: Game.restart(), true)
+	_title_hidden.append(restart)
+	box.add_child(restart)
+	var quit := _action("Quit to desktop", func() -> void: Game.quit(), true)
+	_title_hidden.append(quit)
+	box.add_child(quit)
+	var session_gap := _gap(10)
+	_title_hidden.append(session_gap)
+	box.add_child(session_gap)
 	# The forest pack's author and page are still to be supplied (see its README).
 	var credit := UiChrome.term_label("Her walk and jog: Bandai Namco Research Motion Dataset, Bandai Namco Research Inc., CC BY-NC 4.0, adapted. Green woods: \"Fir forest in the mountains\", Sketchfab, Standard licence, adapted.", 10, Color(UiChrome.ASH, 0.8))
 	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit.custom_minimum_size.x = 220
+	_title_hidden.append(credit)
 	box.add_child(credit)
 	return margin
 
