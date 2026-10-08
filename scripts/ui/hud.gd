@@ -19,6 +19,7 @@ var _prompt_caption: Label
 var _prompt_target: Node3D
 var _prompt_tween: Tween
 var _reticle: Panel
+var _quiver: Label
 var _feedback_text := ""
 var _feedback_left := 0.0
 var _breath: Control
@@ -65,6 +66,9 @@ func _process(delta: float) -> void:
 	_checkpoint.modulate.a = clampf(_checkpoint_left / 0.6, 0.0, 1.0)
 	_refresh_prompt()
 	_refresh_breath()
+	if _quiver:
+		_quiver.visible = playing and Game.player != null and (Game.has_bow or Game.arrow_count > 0)
+		_quiver.text = "ARROWS  %02d / %02d" % [Game.arrow_count, Tune.ARROW_CAPACITY]
 	if Game.phase == Game.Phase.INTRO:
 		_intro.modulate.a = clampf(Game.intro_left / 0.65, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
@@ -196,13 +200,16 @@ func _refresh_prompt() -> void:
 # when a nearby thing was chosen around it, rust when it is out of reach.
 func _refresh_reticle(aim: Aim) -> void:
 	var playing := Game.phase == Game.Phase.PLAYING and aim != null and Game.settings.show_prompts
-	var shown := playing and (aim.target != null or aim.far != null)
+	var combat_aim: bool = playing and Game.player != null and Game.player.bow_hoist != null and Game.player.bow_hoist.AimWeight > 0.12
+	var shown: bool = playing and (aim.target != null or aim.far != null or combat_aim)
 	var back := _reticle.get_parent() as Control
 	back.visible = shown
 	if not shown:
 		return
 	var ring := _reticle.get_theme_stylebox("panel") as StyleBoxFlat
-	if aim.far:
+	if combat_aim:
+		ring.border_color = Color(0.92, 0.76, 0.48, 1.0)
+	elif aim.far:
 		ring.border_color = Color(UiChrome.RUST, 0.85)
 	elif aim.direct:
 		ring.border_color = Color(UiChrome.PAPER, 1.0)
@@ -251,6 +258,7 @@ func _build() -> void:
 	_build_warning()
 	_build_bottom()
 	_build_reticle()
+	_build_quiver()
 	reader = NoteReader.new()
 	add_child(reader)
 	journal = Journal.new()
@@ -368,6 +376,19 @@ func _build_reticle() -> void:
 	_reticle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_reticle.add_theme_stylebox_override("panel", _ring(Color(UiChrome.PAPER, 0.95), 2, 9))
 	back.add_child(_reticle)
+
+
+func _build_quiver() -> void:
+	_quiver = UiChrome.label("ARROWS  00 / 08", 14, UiChrome.PAPER)
+	_quiver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_quiver.offset_left = -206
+	_quiver.offset_top = -56
+	_quiver.offset_right = -24
+	_quiver.offset_bottom = -28
+	_quiver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_quiver.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quiver.visible = false
+	add_child(_quiver)
 
 
 func _ring(color: Color, width: int, radius: int) -> StyleBoxFlat:

@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://8q5yfx0onfff"
-path.s3tc="res://.godot/imported/bow_elfSecond_color.png-f35db56f8e583579b8c2e944c6d81dfd.s3tc.ctex"
+uid="uid://bxdt2kk4lxauh"
+path.s3tc="res://.godot/imported/arrow_elfSecond_color.png-ec057e77342ce85bc590d3e1f5387d2a.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -14,8 +14,8 @@ generator_parameters={
 
 [deps]
 
-source_file="res://assets/props/bow/bow_elfSecond_color.png"
-dest_files=["res://.godot/imported/bow_elfSecond_color.png-f35db56f8e583579b8c2e944c6d81dfd.s3tc.ctex"]
+source_file="res://assets/props/arrow/arrow_elfSecond_color.png"
+dest_files=["res://.godot/imported/arrow_elfSecond_color.png-ec057e77342ce85bc590d3e1f5387d2a.s3tc.ctex"]
 
 [params]
 

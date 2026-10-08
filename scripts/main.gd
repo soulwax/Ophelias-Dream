@@ -2,6 +2,7 @@
 extends Node3D
 
 const BOW_PICKUP := preload("res://scripts/world/bow_pickup.gd")
+const ARROW_SUPPLY := preload("res://scripts/world/arrow_supply.gd")
 
 ## -1 rolls a new seed whenever the editable level is rebuilt.
 @export var world_seed: int = -1
@@ -157,6 +158,16 @@ func _ready() -> void:
 	var bow_side := (bow_ahead - bow_at).cross(Vector3.UP).normalized()
 	bow_pickup.position = trail.on_ground(bow_at + bow_side * 1.1) + Vector3.UP * 1.15
 	add_child(bow_pickup)
+	for index in Tune.ARROW_PICKUP_OFFSETS.size():
+		var offset: float = Tune.ARROW_PICKUP_OFFSETS[index]
+		var at := trail.position_at(trail.player_start_offset + offset)
+		var ahead := trail.position_at(trail.player_start_offset + offset + 1.0)
+		var side := (ahead - at).cross(Vector3.UP).normalized()
+		var supply := ARROW_SUPPLY.new()
+		supply.supply_id = "trail_arrows_%d" % index
+		supply.quantity = Tune.ARROW_PICKUP_QUANTITIES[index]
+		supply.position = trail.on_ground(at + side * (1.2 if index % 2 == 0 else -1.2)) + Vector3.UP * 0.38
+		add_child(supply)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# Back to the lookout: no menu and no intro card, she is simply there again.
 	if Game.resuming() and not Game.mathilda_pov and not _capture:

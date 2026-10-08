@@ -9,16 +9,20 @@ import bmesh
 from mathutils import Vector
 
 source = Path(sys.argv[sys.argv.index("--") + 1]).resolve()
-out = Path(__file__).resolve().parents[1] / "assets/props/bow"
+arrow = "--arrow" in sys.argv
+kind = "arrow" if arrow else "bow"
+out = Path(__file__).resolve().parents[1] / ("assets/props/" + kind)
 out.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(source))
 meshes = [obj for obj in bpy.context.scene.objects if obj.type == "MESH"]
 kept = []
 for obj in meshes:
-    groups = {g.index for g in obj.vertex_groups if g.name.startswith("DEF-bow")}
+    groups = {g.index for g in obj.vertex_groups if g.name.startswith("DEF-" + kind) and g.name != "DEF-bowcorde"}
+    cord = {g.index for g in obj.vertex_groups if g.name == "DEF-bowcorde"}
     gear = {v.index for v in obj.data.vertices
-            if any(g.group in groups and g.weight > 0.1 for g in v.groups)}
+            if any(g.group in groups and g.weight > 0.1 for g in v.groups)
+            and (arrow or not any(g.group in cord and g.weight > 0.1 for g in v.groups))}
     if not gear:
         continue
     bm = bmesh.new()
@@ -44,9 +48,9 @@ for obj in kept:
     for vertex in obj.data.vertices:
         point = obj.matrix_world @ vertex.co - centre
         # Bow's long X axis becomes glTF Y, curvature glTF X, depth glTF Z.
-        vertex.co = Vector((point.y, point.z, point.x))
+        vertex.co = Vector((point.x, -point.z, point.y)) if arrow else Vector((point.y, point.z, point.x))
     obj.matrix_world.identity()
-    obj.name = "StylooBow"
+    obj.name = "Styloo" + kind.title()
 for obj in list(bpy.context.scene.objects):
     if obj not in kept:
         bpy.data.objects.remove(obj, do_unlink=True)
@@ -54,7 +58,7 @@ bpy.ops.object.select_all(action="SELECT")
 editable = out / "source"
 editable.mkdir(exist_ok=True)
 (editable / ".gdignore").write_text("", encoding="utf-8")
-bpy.ops.wm.save_as_mainfile(filepath=str(editable / "bow.blend"))
-bpy.ops.export_scene.gltf(filepath=str(out / "bow.glb"), export_format="GLB",
+bpy.ops.wm.save_as_mainfile(filepath=str(editable / (kind + ".blend")))
+bpy.ops.export_scene.gltf(filepath=str(out / (kind + ".glb")), export_format="GLB",
                           use_selection=True, export_animations=False)
-print("Exported", out / "bow.glb")
+print("Exported", out / (kind + ".glb"))

@@ -33,6 +33,8 @@ var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
 var notes_found: int = 0
 var has_bow := false
+var arrow_count := 0
+var arrow_pickups: Dictionary = {}
 var lean_graphics := true
 var blackbox: Blackbox
 var settings: Settings
@@ -106,6 +108,11 @@ func _ready() -> void:
 	_bind("move_right", KEY_D)
 	_bind("sprint", KEY_SHIFT)
 	_bind("interact", KEY_E)
+	_bind("draw_bow", KEY_F)
+	_bind("aim_bow", KEY_X)
+	_bind("shoot_arrow", KEY_G)
+	_bind_mouse("aim_bow", MOUSE_BUTTON_RIGHT)
+	_bind_mouse("shoot_arrow", MOUSE_BUTTON_LEFT)
 	_bind("pause", KEY_ESCAPE)
 	_bind("restart", KEY_R)
 	_bind("jump", KEY_SPACE)
@@ -181,6 +188,8 @@ func reset() -> void:
 	active_note = null
 	notes_found = 0
 	has_bow = false
+	arrow_count = 0
+	arrow_pickups.clear()
 	house = null
 	dread = 0.0
 	threat_hint = ""
@@ -561,6 +570,8 @@ func reach_checkpoint() -> void:
 		"hunt_started": hunt_started,
 		"notes_found": notes_found,
 		"has_bow": has_bow,
+		"arrow_count": arrow_count,
+		"arrow_pickups": arrow_pickups.duplicate(),
 		"day_seconds": day_seconds,
 		"moments_said": _moments_said.duplicate(),
 	}
@@ -588,6 +599,10 @@ func resume_checkpoint() -> bool:
 	hunt_started = checkpoint.hunt_started
 	notes_found = checkpoint.notes_found
 	has_bow = bool(checkpoint.get("has_bow", false))
+	arrow_count = int(checkpoint.get("arrow_count", 0))
+	arrow_pickups = (checkpoint.get("arrow_pickups", {}) as Dictionary).duplicate()
+	for supply in get_tree().get_nodes_in_group("arrow_supplies"):
+		supply.call("refresh")
 	if has_bow:
 		player.restore_bow()
 		for pickup in get_tree().get_nodes_in_group("bow_pickup"):
@@ -775,9 +790,11 @@ func _bind_pad() -> void:
 			["look_up", JOY_AXIS_RIGHT_Y, -1.0], ["look_down", JOY_AXIS_RIGHT_Y, 1.0],
 			["sprint", JOY_AXIS_TRIGGER_LEFT, 1.0]]:
 		_bind_axis(axis[0], axis[1], axis[2])
+	_bind_axis("shoot_arrow", JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	for button in [["jump", JOY_BUTTON_A], ["slide", JOY_BUTTON_B], ["interact", JOY_BUTTON_X],
 			["sprint", JOY_BUTTON_LEFT_STICK], ["glance_back", JOY_BUTTON_RIGHT_STICK],
-			["walk_slow", JOY_BUTTON_LEFT_SHOULDER],
+			["aim_bow", JOY_BUTTON_LEFT_SHOULDER],
+			["draw_bow", JOY_BUTTON_RIGHT_SHOULDER],
 			["journal", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK]]:
 		if not InputMap.has_action(button[0]):
 			InputMap.add_action(button[0])

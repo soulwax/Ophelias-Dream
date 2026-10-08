@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2.0 — 2026-10-08
+
+### A borrowed curve
+
+- The spine lends a curve; the left palm inherits it.
+- Three sealed sheaves, eight notches: flight subtracts, earth may answer.
+- Two hands keep the pause. The stride continues underneath.
+
 ## 0.2.1.11 — 2026-10-08
 
 **Revised build, same version.** The zip on the 0.2.1.11 release was rebuilt later the same day with:

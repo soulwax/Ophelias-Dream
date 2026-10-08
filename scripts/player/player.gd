@@ -100,6 +100,8 @@ var _outlined_meshes: Array[MeshInstance3D] = []
 var _outline_material: ShaderMaterial
 # Read / open pressed just before she can: kept a moment and tried again.
 var _interact_buffer := 0.0
+var _collection_source: Node
+var _combat_aim_weight := 0.0
 # 0 looking ahead .. 1 looking back over her right shoulder.
 var glance := 0.0
 var _look_ramp := 0.0
@@ -136,6 +138,12 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("draw_bow") and toggle_bow():
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("shoot_arrow") and _shoot_arrow():
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("interact"):
 		if Game.phase == Game.Phase.READING:
 			Game.close_reading()
@@ -149,9 +157,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
 		# A click uses only what is under the reticle, never a guess around it.
 		var click := (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
-		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and aim.direct and _try_interact():
-			get_viewport().set_input_as_handled()
-			return
+		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			if Input.is_action_pressed("aim_bow") and _shoot_arrow():
+				get_viewport().set_input_as_handled()
+				return
+			if aim.direct and _try_interact():
+				get_viewport().set_input_as_handled()
+				return
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	# Look goes straight to the camera every frame. screen_relative is in real
 	# pixels, so the window size or stretch never changes the sensitivity.
@@ -257,6 +269,8 @@ func _physics_process(delta: float) -> void:
 		speed = 2.6
 	if sprinting:
 		speed = Tune.SPRINT_SPEED
+		if bow_hoist and bow_hoist.IsDrawn:
+			speed *= Tune.BOW_COMBAT_SPEED
 		stamina = maxf(stamina - delta, 0.0)
 		if stamina <= 0.0:
 			exhaust_left = Tune.EXHAUST_LOCK
@@ -868,6 +882,12 @@ func _animate(delta: float, moving: bool, sprinting: bool) -> void:
 			grace.poise = 0.0
 	# A slight side-to-side carry in time with her steps.
 	_sway = 0.0 if not moving else sin(_stride_phase) * (0.012 if sprinting else 0.02)
+	if bow_hoist:
+		var aiming: bool = bow_hoist.IsDrawn and Input.is_action_pressed("aim_bow")
+		_combat_aim_weight = move_toward(_combat_aim_weight, 1.0 if aiming else 0.0, delta * 7.0)
+		bow_hoist.AimWeight = _combat_aim_weight
+		bow_hoist.RunWeight = move_toward(bow_hoist.RunWeight, 1.0 if bow_hoist.IsDrawn and sprinting else 0.0, delta * 5.5)
+		bow_hoist.HasArrowForAim = Game.arrow_count > 0
 
 
 # 0..1 through a leap's flight: by time at first, then by the ground coming
@@ -1185,7 +1205,11 @@ func _build_model() -> void:
 	bow_hoist.name = "BowHoist"
 	skeleton.add_child(bow_hoist)
 	bow_hoist.Configure(Tune.BOW_HOIST_SECONDS, Tune.BOW_BACK_POSITION, Tune.BOW_BACK_ROLL)
+	bow_hoist.ConfigureDrawing(Tune.BOW_DRAW_SECONDS, Tune.BOW_HAND_POSITION, Tune.BOW_HAND_ROLL)
 	bow_hoist.connect("Hoisted", _on_bow_hoisted)
+	bow_hoist.connect("Drawn", _on_bow_drawn)
+	bow_hoist.connect("ArrowReleased", _on_arrow_released)
+	bow_hoist.connect("CollectionFinished", _on_collection_finished)
 	if Game.has_bow:
 		restore_bow()
 
@@ -1208,7 +1232,23 @@ func take_bow(bow: Node3D) -> bool:
 
 func _on_bow_hoisted() -> void:
 	Game.has_bow = true
-	Game.interaction_feedback.emit("The bow rests across your back.", true)
+	var key := Game.settings.key_label("draw_bow")
+	Game.interaction_feedback.emit("The bow rests across your back. %s to draw." % key, true)
+
+
+func toggle_bow() -> bool:
+	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or not bow_hoist.HasBow or bow_hoist.Busy:
+		return false
+	if not is_on_floor() or _airborne or sliding or _ground_speed() > Tune.WALK_SPEED + 0.1:
+		return false
+	return bow_hoist.Stow() if bow_hoist.IsDrawn else bow_hoist.Draw()
+
+
+func _on_bow_drawn() -> void:
+	var put_away := Game.settings.key_label("draw_bow")
+	var aim_key := Game.settings.key_label("aim_bow")
+	var fire_key := Game.settings.key_label("shoot_arrow")
+	Game.interaction_feedback.emit("%s aim, %s loose; %s to put away." % [aim_key, fire_key, put_away], true)
 
 
 func restore_bow() -> void:
@@ -1217,3 +1257,62 @@ func restore_bow() -> void:
 	var bow := (load(Tune.BOW_MODEL) as PackedScene).instantiate() as Node3D
 	add_child(bow)
 	bow_hoist.Restore(bow)
+
+
+func _shoot_arrow() -> bool:
+	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or not bow_hoist.IsDrawn:
+		return false
+	if not Input.is_action_pressed("aim_bow"):
+		return false
+	if Game.arrow_count <= 0:
+		Game.interaction_feedback.emit("No arrows. Find more along the trail.", false)
+		return true
+	return bow_hoist.Shoot()
+
+
+func _on_arrow_released() -> void:
+	if Game.arrow_count <= 0 or camera == null:
+		return
+	Game.arrow_count -= 1
+	var projectile := (load("res://scripts/world/arrow_projectile.gd") as Script).new() as Node3D
+	var world := get_tree().current_scene
+	if world == null:
+		world = get_tree().root
+	world.add_child(projectile)
+	var forward := -camera.global_basis.z
+	var from: Vector3 = bow_hoist.ArrowLaunchPosition + Vector3.UP * 0.025 + (-global_transform.basis.z * 0.18)
+	var target := camera.global_position + forward * Tune.AIM_RANGE * 1.8
+	var query := PhysicsRayQueryParameters3D.create(camera.global_position, target, Tune.LAYER_WORLD)
+	query.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		target = hit.position
+	var direction: Vector3 = (target - from).normalized()
+	projectile.global_position = from
+	projectile.set("velocity", direction * Tune.ARROW_SPEED + Vector3.UP * 0.8 + velocity * 0.18)
+	projectile.set("shooter", get_rid())
+	Game.interaction_feedback.emit("Arrow loosed. %d remain." % Game.arrow_count, true)
+
+
+func collect_arrows(source: Node, source_visual: Node3D) -> bool:
+	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or bow_hoist.Busy or not is_instance_valid(source):
+		return false
+	if Game.arrow_count >= Tune.ARROW_CAPACITY or not bow_hoist.BeginCollection():
+		return false
+	_collection_source = source
+	var arrow := (load(Tune.ARROW_MODEL) as PackedScene).instantiate() as Node3D
+	get_tree().current_scene.add_child(arrow)
+	arrow.global_position = source_visual.global_position
+	arrow.scale = Vector3.ONE * Tune.PLAYER_MODEL_SCALE
+	var hand := global_position + (-global_transform.basis.z * 0.18) + Vector3.UP * 1.25
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(arrow, "global_position", hand, 0.56)
+	tween.tween_callback(arrow.queue_free)
+	return true
+
+
+func _on_collection_finished() -> void:
+	if _collection_source and is_instance_valid(_collection_source):
+		_collection_source.call("complete_collection")
+	_collection_source = null
