@@ -8,7 +8,7 @@ extends RefCounted
 # Natural speeds (metres per second at playback 1) live in Tune.
 
 const IDLE := "Idle"
-const WALK := "Walk_Formal"
+const WALK := "Walk"
 const JOG := "Jog_Fwd"
 const SPRINT := "Sprint"
 const STUMBLE := "Hit_Chest"
@@ -41,7 +41,7 @@ static func build(player: AnimationPlayer, model: Node) -> Stride:
 	# bands she crosses while speeding up or slowing down.
 	stride._gaits = [
 		[IDLE, 0.0, 0.0],
-		# A plateau over the walking pace, so it stays Walk_Formal and the
+		# A plateau over the walking pace, so it stays feminine/Walk and the
 		# playback rate rises with her. The jog only begins past that.
 		[WALK, 1.05, Tune.STRIDE_WALK],
 		[WALK, 1.95, Tune.STRIDE_WALK],

@@ -40,6 +40,7 @@ var kicks: SnowKick
 var foot_lock: FootLock
 var grace: Grace
 var leap_layer: Leap
+var bow_hoist: BowHoist
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -162,6 +163,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # Whatever the aim has outlined: the page, door or switch she sees picked.
 func _try_interact() -> bool:
+	if bow_hoist and bow_hoist.Busy:
+		return false
 	var thing := aim.target
 	if thing == null or not is_instance_valid(thing):
 		return false
@@ -173,6 +176,8 @@ func _try_interact() -> bool:
 	var feedback := ""
 	if not accepted and thing is HouseDoor:
 		feedback = (thing as HouseDoor).blocked_label()
+	elif not accepted and thing.has_method("blocked_label"):
+		feedback = str(thing.call("blocked_label"))
 	Game.interaction_feedback.emit(feedback, accepted)
 	return true
 
@@ -183,6 +188,8 @@ func _physics_process(delta: float) -> void:
 	# The body faces the camera so the keys move her relative to the view;
 	# her model turns on its own (_carry).
 	rotation.y = _yaw
+	if bow_hoist and Game.phase == Game.Phase.PLAYING:
+		bow_hoist.Advance(delta)
 	if _interact_buffer > 0.0:
 		_interact_buffer -= delta
 		if Game.phase == Game.Phase.PLAYING and _try_interact():
@@ -201,6 +208,8 @@ func _physics_process(delta: float) -> void:
 			stride.update(_ground_speed())
 		if grace:
 			grace.speed = _ground_speed()
+			if bow_hoist and bow_hoist.Busy:
+				grace.poise = 0.0
 		_breathe(delta, false)
 		_carry(delta, false)
 		return
@@ -220,6 +229,11 @@ func _physics_process(delta: float) -> void:
 		if _autopilot == "leap" and _autopilot_clock > 2.4 and _ground_speed() > Tune.SPRINT_SPEED * 0.9:
 			_autopilot_clock = 0.0
 			jump_pressed = true
+	var hoisting: bool = bow_hoist != null and bow_hoist.Busy
+	if hoisting:
+		jump_pressed = false
+		slide_pressed = false
+		_jump_buffer = 0.0
 	var wish := Vector3(input.x, 0.0, input.y)
 	if wish.length() > 1.0:
 		wish = wish.normalized()
@@ -230,7 +244,7 @@ func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
-	var slow := Input.is_action_pressed("walk_slow") and _autopilot == ""
+	var slow := hoisting or (Input.is_action_pressed("walk_slow") and _autopilot == "")
 	var wants_sprint := moving and not slow and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
 	# Once spent she must get some breath back before she can sprint again,
 	# so holding Shift through exhaustion cannot stutter into a stumble loop.
@@ -239,7 +253,7 @@ func _physics_process(delta: float) -> void:
 		_kick_off()
 	_sprinting = sprinting
 	var speed := Tune.WALK_SLOW_SPEED if slow else Tune.WALK_SPEED
-	if _autopilot == "jog":
+	if _autopilot == "jog" and not hoisting:
 		speed = 2.6
 	if sprinting:
 		speed = Tune.SPRINT_SPEED
@@ -850,6 +864,8 @@ func _animate(delta: float, moving: bool, sprinting: bool) -> void:
 	if grace:
 		grace.speed = _ground_speed()
 		grace.poise = (1.0 - _air_weight) * (1.0 - _slide_weight) * (0.0 if exhaust_left > 0.0 else 1.0)
+		if bow_hoist and bow_hoist.Busy:
+			grace.poise = 0.0
 	# A slight side-to-side carry in time with her steps.
 	_sway = 0.0 if not moving else sin(_stride_phase) * (0.012 if sprinting else 0.02)
 
@@ -1144,6 +1160,7 @@ func _build_model() -> void:
 	rig_root.add_child(animation_player)
 	animation_player.root_node = NodePath("..")
 	animation_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
+	animation_player.add_animation_library("feminine", load("res://assets/characters/styloo_elf/feminine/elf_feminine.res") as AnimationLibrary)
 	stride = Stride.build(animation_player, rig_root)
 	var mouth := BoneAttachment3D.new()
 	mouth.name = "Mouth"
@@ -1162,4 +1179,41 @@ func _build_model() -> void:
 		return trail.ground.height_at(point.x, point.z)
 	foot_lock.planted.connect(_on_planted)
 	grace = Grace.fit(skeleton)
+	grace.authored_walk = true
 	leap_layer = Leap.fit(skeleton)
+	bow_hoist = BowHoist.new()
+	bow_hoist.name = "BowHoist"
+	skeleton.add_child(bow_hoist)
+	bow_hoist.Configure(Tune.BOW_HOIST_SECONDS, Tune.BOW_BACK_POSITION, Tune.BOW_BACK_ROLL)
+	bow_hoist.connect("Hoisted", _on_bow_hoisted)
+	if Game.has_bow:
+		restore_bow()
+
+
+func take_bow(bow: Node3D) -> bool:
+	if bow_hoist == null or bow_hoist.Busy or bow_hoist.HasBow or Game.has_bow:
+		return false
+	if not is_on_floor() or _ground_speed() > 0.25 or sliding or _airborne:
+		return false
+	var toward := bow.global_position - global_position
+	toward.y = 0.0
+	if toward.length() > Tune.BOW_PICKUP_REACH:
+		return false
+	# Face the discovered grip before the reach; the camera remains free.
+	_facing = atan2(-toward.x, -toward.z)
+	visual.rotation = Vector3(0.0, _facing - _yaw, 0.0)
+	_glide = Vector3.ZERO
+	return bow_hoist.Begin(bow)
+
+
+func _on_bow_hoisted() -> void:
+	Game.has_bow = true
+	Game.interaction_feedback.emit("The bow rests across your back.", true)
+
+
+func restore_bow() -> void:
+	if bow_hoist == null or bow_hoist.HasBow:
+		return
+	var bow := (load(Tune.BOW_MODEL) as PackedScene).instantiate() as Node3D
+	add_child(bow)
+	bow_hoist.Restore(bow)

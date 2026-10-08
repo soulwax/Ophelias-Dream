@@ -46,7 +46,9 @@ func _run() -> void:
 	_skeleton.get_parent().add_child(_player)
 	_player.root_node = NodePath("..")
 	_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
+	_player.add_animation_library("feminine", load("res://assets/characters/styloo_elf/feminine/elf_feminine.res") as AnimationLibrary)
 	_grace = Grace.fit(_skeleton)
+	_grace.authored_walk = true
 	for on in [true, false]:
 		_grace.active = on
 		var tag := "on" if on else "off"

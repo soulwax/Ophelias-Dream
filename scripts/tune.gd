@@ -57,13 +57,26 @@ const PIVOT_SPEED := 0.9
 const FACE_RATE_WALK := 7.5
 const FACE_RATE_SPRINT := 10.0
 # Natural ground speed of the movement clips at playback 1.
-const STRIDE_WALK := 1.02
+const STRIDE_WALK := 0.986 # Bandai Walk, measured at PLAYER_MODEL_SCALE.
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
 # Her carriage over the clips (Grace), in radians unless noted.
 const GRACE_ARM_SWING := 0.34
 const GRACE_COUNTER_TURN := 0.09
 const GRACE_CHEST_LIFT := 0.05
+# Authored walk already carries the hips, shoulders and arms.
+const GRACE_AUTHORED_ARM := 0.2
+const GRACE_AUTHORED_COUNTER := 0.25
+# Carriage eases into a walk and settles after stopping (seconds).
+const GRACE_WALK_ENTER := 0.18
+const GRACE_WALK_EXIT := 0.24
+# Found bow: seconds, metres in world reach / unscaled skeleton carry frame.
+const BOW_HOIST_SECONDS := 2.8
+const BOW_MODEL := "res://assets/props/bow/bow.glb"
+const BOW_PICKUP_REACH := 0.4
+const BOW_BACK_POSITION := Vector3(0.04, 1.48, -0.48)
+const BOW_BACK_ROLL := -0.45
+const BOW_TRAIL_OFFSET := 12.0
 # Standing still this long (s) she rises onto her toes, once per cycle (s).
 const TIPTOE_AFTER := 5.0
 const TIPTOE_CYCLE := 7.5

@@ -32,6 +32,7 @@ var weather: Weather
 var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
 var notes_found: int = 0
+var has_bow := false
 var lean_graphics := true
 var blackbox: Blackbox
 var settings: Settings
@@ -179,6 +180,7 @@ func reset() -> void:
 	weather = null
 	active_note = null
 	notes_found = 0
+	has_bow = false
 	house = null
 	dread = 0.0
 	threat_hint = ""
@@ -558,6 +560,7 @@ func reach_checkpoint() -> void:
 		"turned_around": turned_around,
 		"hunt_started": hunt_started,
 		"notes_found": notes_found,
+		"has_bow": has_bow,
 		"day_seconds": day_seconds,
 		"moments_said": _moments_said.duplicate(),
 	}
@@ -584,6 +587,11 @@ func resume_checkpoint() -> bool:
 	turned_around = checkpoint.turned_around
 	hunt_started = checkpoint.hunt_started
 	notes_found = checkpoint.notes_found
+	has_bow = bool(checkpoint.get("has_bow", false))
+	if has_bow:
+		player.restore_bow()
+		for pickup in get_tree().get_nodes_in_group("bow_pickup"):
+			pickup.call("remove_found_bow")
 	# The day goes on from where she was, not from the start.
 	day_seconds = float(checkpoint.get("day_seconds", 0.0))
 	_moments_said = (checkpoint.get("moments_said", {}) as Dictionary).duplicate()

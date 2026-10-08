@@ -1,6 +1,8 @@
 @tool
 extends Node3D
 
+const BOW_PICKUP := preload("res://scripts/world/bow_pickup.gd")
+
 ## -1 rolls a new seed whenever the editable level is rebuilt.
 @export var world_seed: int = -1
 @export_tool_button("Randomize / rebuild editable level") var rebuild_level_action := _regenerate_editor_level
@@ -149,6 +151,12 @@ func _ready() -> void:
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()
+	var bow_pickup := BOW_PICKUP.new()
+	var bow_at := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET)
+	var bow_ahead := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET + 1.0)
+	var bow_side := (bow_ahead - bow_at).cross(Vector3.UP).normalized()
+	bow_pickup.position = trail.on_ground(bow_at + bow_side * 1.1) + Vector3.UP * 1.15
+	add_child(bow_pickup)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# Back to the lookout: no menu and no intro card, she is simply there again.
 	if Game.resuming() and not Game.mathilda_pov and not _capture:
