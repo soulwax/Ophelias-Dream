@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3.0 — 2026-10-08
+
+- The dream moved out of the pause between lives. It has its own door now; answers follow you back through it.
+- The console gained fields for the unseen: voice, words, glass, scale, direction. Some defaults remember.
+
 ## 0.2.2.2 — 2026-10-08
 
 - The subprogram doors now answer to names. Character studio, story workbench, terrain and camp views: commands left in the README, for when the menu forgets.
