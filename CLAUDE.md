@@ -301,8 +301,10 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **UI (`scripts/ui/`)**: `Hud` creates `NoteReader`, `Journal`, `EndCard` and `PauseMenu`. The HUD has no objective; `show_journal_toast` controls the journal notice. J/Tab or pad Y opens the rebindable `journal` action. Smudges use `NoteCatalog` `{word}` markup, `Game.known` keys and `Game.decipher`; `Game.awake()` keeps the world running during `JOURNAL`. Controls are not shown on screen; the intro card only points to Esc.
 - `PauseMenu` (`pause_menu.gd`) is the Esc menu.
- - The sidebar has Resume, Restart and Quit, and five pages: Controls with rebinding, Camera, Display, Audio and Interface.
- - Each page has a reset, and its controls come from `_slider` / `_toggle` / `_choice` / `_binding`.
+ - Styled as an instrument console (Signalis-like): `UiChrome.term_theme()` (bone on near-black with one signal red, type variations `TermTab`/`TermAction`/`TermField`, system fonts Bahnschrift and Consolas via `display_font()`/`mono_font()`), corner brackets, and `shaders/menu_crt.gdshader` (scanlines, fringes, grain) scaled by `Settings.screen_effects`.
+ - Six pages (Controls, Keys, Camera, Display, Audio, Interface) and a Session list (Resume, Back to the lookout, Restart, Quit; restart and quit need a second press). A readout under the page explains the field under the cursor and its default; a ◆ marks fields changed from their default.
+ - Mouse, keys and pad all drive it: arrows/d-pad move, left/right adjust, Q/E or the bumpers turn pages, Backspace or pad Y restores the field under the cursor. Each page has a reset; fields come from `_slider` / `_flag` / `_choice` (stepped in place, no dropdowns) / `_binding`.
+ - Settings it added beyond the originals: `invert_x`, `anti_aliasing` (off/FXAA/SMAA/TAA), `ui_scale` (root `content_scale_factor`), `voice_volume` (the `Voice` bus), `show_reticle`, `subtitles` and `subtitle_size` (HUD murmur and the in-world bubble outside conversations), `screen_effects` (dread vignette and the menu glass).
  - Rebinding listens in `_input` before anything else: Esc cancels and Backspace clears.
  - Dev hooks: `RUN_MENU=<page>`, `RUN_JOURNAL=<title>` and `RUN_ENDING=road|prints` with `RUN_CAPTURE` open the menu, a half-deciphered journal or an escape card for a shot.
 - In-world key hints (the prompt, the note reader footer, the end card) read `Game.settings.key_label(action)`, so they follow rebinding.

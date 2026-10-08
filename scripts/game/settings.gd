@@ -33,6 +33,7 @@ const DEFAULTS := {
 	"mouse_sensitivity": 1.0,
 	"stick_sensitivity": 1.0,
 	"invert_y": false,
+	"invert_x": false,
 	"sprint_toggle": false,
 	"rumble": true,
 	"fov": 70.0,
@@ -45,20 +46,30 @@ const DEFAULTS := {
 	"render_scale": 1.0,
 	"graphics": 0,
 	"brightness": 1.0,
+	"anti_aliasing": 0,
+	"ui_scale": 1.0,
 	"master_volume": 1.0,
 	"ambience_volume": 1.0,
 	"effects_volume": 1.0,
 	"dread_volume": 1.0,
+	"voice_volume": 1.0,
 	"mute_unfocused": true,
 	"show_prompts": true,
 	"show_journal_toast": true,
 	"breath_meter": 0,
+	"show_reticle": true,
+	"subtitles": true,
+	"subtitle_size": 1,
+	"screen_effects": 1.0,
 }
+# Subtitle font sizes for subtitle_size 0 small, 1 medium, 2 large.
+const SUBTITLE_SIZES := [14, 16, 20]
 
 # Look and keys.
 var mouse_sensitivity: float = DEFAULTS.mouse_sensitivity
 var stick_sensitivity: float = DEFAULTS.stick_sensitivity
 var invert_y: bool = DEFAULTS.invert_y
+var invert_x: bool = DEFAULTS.invert_x
 var sprint_toggle: bool = DEFAULTS.sprint_toggle
 var rumble: bool = DEFAULTS.rumble
 # Camera: base field of view in degrees, boom length as a share of the
@@ -77,16 +88,27 @@ var max_fps: int = DEFAULTS.max_fps
 var render_scale: float = DEFAULTS.render_scale
 var graphics: int = DEFAULTS.graphics
 var brightness: float = DEFAULTS.brightness
+# anti_aliasing 0 off, 1 FXAA, 2 SMAA, 3 TAA. ui_scale multiplies every 2D
+# element (menus, HUD, subtitles), not the world.
+var anti_aliasing: int = DEFAULTS.anti_aliasing
+var ui_scale: float = DEFAULTS.ui_scale
 # Sound, linear 0..1 per bus.
 var master_volume: float = DEFAULTS.master_volume
 var ambience_volume: float = DEFAULTS.ambience_volume
 var effects_volume: float = DEFAULTS.effects_volume
 var dread_volume: float = DEFAULTS.dread_volume
+var voice_volume: float = DEFAULTS.voice_volume
 var mute_unfocused: bool = DEFAULTS.mute_unfocused
 # Interface. breath_meter 0 always, 1 only while she is short of breath.
 var show_prompts: bool = DEFAULTS.show_prompts
 var show_journal_toast: bool = DEFAULTS.show_journal_toast
 var breath_meter: int = DEFAULTS.breath_meter
+# The ring at the screen centre; her spoken lines as text and their size; how
+# strongly the dread vignette darkens the screen's edges.
+var show_reticle: bool = DEFAULTS.show_reticle
+var subtitles: bool = DEFAULTS.subtitles
+var subtitle_size: int = DEFAULTS.subtitle_size
+var screen_effects: float = DEFAULTS.screen_effects
 
 # action -> the events it shipped with, for resetting the keys.
 var _default_keys := {}
@@ -382,11 +404,22 @@ func _apply_display() -> void:
 	if viewport:
 		viewport.scaling_3d_scale = render_scale
 		viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if render_scale < 0.99 else Viewport.SCALING_3D_MODE_BILINEAR
+		viewport.use_taa = anti_aliasing == 3
+		match anti_aliasing:
+			1:
+				viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
+			2:
+				viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_SMAA
+			_:
+				viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		var window := viewport as Window
+		if window:
+			window.content_scale_factor = ui_scale
 
 
 func apply_audio() -> void:
 	var fade := smoothstep(0.0, 1.0, Game.audio_fade) if Game and Game.phase not in [Game.Phase.PAUSED, Game.Phase.BOOT] else 1.0
-	var levels := {"Master": master_volume * fade, "Ambience": ambience_volume, "Effects": effects_volume, "Dread": dread_volume}
+	var levels := {"Master": master_volume * fade, "Ambience": ambience_volume, "Effects": effects_volume, "Dread": dread_volume, "Voice": voice_volume}
 	for bus in levels:
 		var index := AudioServer.get_bus_index(bus)
 		if index < 0:

@@ -84,7 +84,7 @@ func _ready() -> void:
 	rule.offset_top = 248
 	rule.offset_bottom = 250
 	add_child(rule)
-	for caption in ["OPHELIA", "MATHILDA", "CREDITS", "QUIT"]:
+	for caption in ["DREAM", "OPHELIA", "MATHILDA", "CREDITS", "QUIT"]:
 		var button := Button.new()
 		button.text = caption
 		for letter in range(caption.length() - 1, 0, -1):
@@ -148,8 +148,8 @@ func _ready() -> void:
 	visible = Game.phase == Game.Phase.BOOT
 	_snow.emitting = visible
 	_layout_snow()
-	# Neither of them comes first: the menu opens on one name or the other.
-	_buttons[randi() % 2].grab_focus.call_deferred()
+	# The separate dream mode is the first threshold into the story.
+	_buttons[0].grab_focus.call_deferred()
 
 
 func _aim_at(point: Vector2) -> void:
@@ -248,15 +248,21 @@ func _process(delta: float) -> void:
 
 func _choose(caption: String) -> void:
 	match caption:
+		"DREAM":
+			_stop_music()
+			Game.character_selected = true
+			Game.dream_mode = true
+			Game.mathilda_pov = false
+			get_tree().reload_current_scene()
 		"MATHILDA":
 			_stop_music()
 			Game.character_selected = true
-			Game.dream_mode = not Game.dream_completed
+			Game.dream_mode = false
 			Game.mathilda_pov = true
 			get_tree().reload_current_scene()
 		"OPHELIA":
 			Game.character_selected = true
-			Game.dream_mode = not Game.dream_completed
+			Game.dream_mode = false
 			Game.mathilda_pov = false
 			_stop_music()
 			get_tree().reload_current_scene()

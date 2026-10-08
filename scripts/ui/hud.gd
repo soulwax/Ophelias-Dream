@@ -51,7 +51,8 @@ func _process(delta: float) -> void:
 	if Game.phase != Game.Phase.PAUSED:
 		Game.murmur_left = maxf(0.0, Game.murmur_left - delta)
 	var reading := Game.phase == Game.Phase.READING or Game.phase == Game.Phase.JOURNAL
-	var spoken := Game.murmur_left > 0.0 and Hud.murmur_shown(Game.phase)
+	var spoken := Game.murmur_left > 0.0 and Hud.murmur_shown(Game.phase) and Game.settings.subtitles
+	_murmur.add_theme_font_size_override("font_size", Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, 2)])
 	_murmur.text = Game.murmur if spoken else ""
 	_murmur_plate.visible = spoken and (Game.dialogue == null or Game.phase != Game.Phase.PLAYING)
 	if spoken:
@@ -73,7 +74,7 @@ func _process(delta: float) -> void:
 		_intro.modulate.a = clampf(Game.intro_left / 0.65, 0.0, 1.0)
 	if _vignette and _vignette.material is ShaderMaterial:
 		var whiteout_press := (Game.weather.whiteout * 0.14) if Game.weather and Game.player and not Game.player.indoors() else 0.0
-		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", 0.18 + Game.threat() * 0.62 + whiteout_press)
+		(_vignette.material as ShaderMaterial).set_shader_parameter("strength", (0.18 + Game.threat() * 0.62 + whiteout_press) * Game.settings.screen_effects)
 		(_vignette.material as ShaderMaterial).set_shader_parameter("hurt", Vector3(0.02 + Game.threat() * 0.5, 0.0, 0.0))
 	if _debug.visible and Game.player:
 		var wx := Game.weather.regime_name() if Game.weather else "None"
@@ -199,7 +200,7 @@ func _refresh_prompt() -> void:
 # Only there when something can be picked: bright on what is under it, faint
 # when a nearby thing was chosen around it, rust when it is out of reach.
 func _refresh_reticle(aim: Aim) -> void:
-	var playing := Game.phase == Game.Phase.PLAYING and aim != null and Game.settings.show_prompts
+	var playing := Game.phase == Game.Phase.PLAYING and aim != null and Game.settings.show_reticle
 	var combat_aim: bool = playing and Game.player != null and Game.player.bow_hoist != null and Game.player.bow_hoist.AimWeight > 0.12
 	var shown: bool = playing and (aim.target != null or aim.far != null or combat_aim)
 	var back := _reticle.get_parent() as Control

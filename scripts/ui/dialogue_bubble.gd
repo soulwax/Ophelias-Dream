@@ -215,7 +215,7 @@ func _process(delta: float) -> void:
 	if camera == null:
 		_surface.hide()
 		return
-	var spoken := Game.murmur_left > 0 and Hud.murmur_shown(Game.phase)
+	var spoken := Game.murmur_left > 0 and Hud.murmur_shown(Game.phase) and Game.settings.subtitles
 	var shown := _active or (spoken and Game.phase == Game.Phase.PLAYING)
 	if not _active:
 		_topics.hide()

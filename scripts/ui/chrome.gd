@@ -146,6 +146,159 @@ static func menu_theme() -> Theme:
 	return theme
 
 
+# --- Terminal (the Esc menu) ----------------------------------------------
+# Bone text on a near-black screen with one signal red: the colours of an old
+# instrument console. Fonts are the system's (Bahnschrift for headings,
+# Consolas for everything read), with fallbacks for other systems.
+
+const VOID := Color(0.035, 0.03, 0.034, 0.97)
+const SIGNAL := Color(0.86, 0.12, 0.16)
+const SIGNAL_DIM := Color(0.46, 0.07, 0.09)
+const BONE := Color(0.91, 0.89, 0.85)
+const ASH := Color(0.56, 0.54, 0.53)
+const SOOT := Color(0.06, 0.035, 0.035)
+
+static var _mono: FontVariation
+static var _display: FontVariation
+
+
+## The console's reading face, tracked out a little.
+static func mono_font() -> Font:
+	if _mono == null:
+		var base := SystemFont.new()
+		base.font_names = PackedStringArray(["Consolas", "Cascadia Mono", "Lucida Console", "DejaVu Sans Mono", "Liberation Mono", "monospace"])
+		_mono = FontVariation.new()
+		_mono.base_font = base
+		_mono.spacing_glyph = 1
+	return _mono
+
+
+## The heading face: condensed, technical, tracked wide.
+static func display_font() -> Font:
+	if _display == null:
+		var base := SystemFont.new()
+		base.font_names = PackedStringArray(["Bahnschrift", "DIN Alternate", "Arial Narrow", "Roboto Condensed", "sans-serif"])
+		base.font_weight = 600
+		base.font_stretch = 87
+		_display = FontVariation.new()
+		_display.base_font = base
+		_display.spacing_glyph = 3
+	return _display
+
+
+static func term_label(text: String, size: int, color: Color = BONE, heading := false) -> Label:
+	var node := label(text, size, color)
+	node.add_theme_font_override("font", display_font() if heading else mono_font())
+	return node
+
+
+static func term_box(fill: Color, border: Color = Color(0, 0, 0, 0), width := 0, margin := 8) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.set_border_width_all(width)
+	style.set_content_margin_all(margin)
+	style.content_margin_left = margin + 6
+	style.content_margin_right = margin + 6
+	style.anti_aliasing = false
+	return style
+
+
+static func _square(size: Vector2i, color: Color) -> ImageTexture:
+	var image := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+	image.fill(color)
+	return ImageTexture.create_from_image(image)
+
+
+## Square edges, one red, thin rules. Type variations: TermTab (the page
+## list), TermAction (resume, restart, quit), TermField (a value you cycle or
+## a key you rebind).
+static func term_theme() -> Theme:
+	var theme := Theme.new()
+	theme.default_font = mono_font()
+	theme.default_font_size = 15
+	theme.set_color("font_color", "Label", BONE)
+	var clear := Color(0, 0, 0, 0)
+	for kind in ["Button", "TermTab", "TermAction", "TermField"]:
+		if kind != "Button":
+			theme.set_type_variation(kind, "Button")
+		theme.set_color("font_color", kind, BONE)
+		theme.set_color("font_hover_color", kind, Color.WHITE)
+		theme.set_color("font_focus_color", kind, Color.WHITE)
+		theme.set_color("font_pressed_color", kind, Color.WHITE)
+		theme.set_color("font_hover_pressed_color", kind, Color.WHITE)
+		theme.set_color("font_disabled_color", kind, ASH)
+		theme.set_stylebox("disabled", kind, term_box(clear, Color(BONE, 0.08), 1))
+	# Plain buttons (the page reset).
+	theme.set_stylebox("normal", "Button", term_box(clear, Color(BONE, 0.22), 1))
+	theme.set_stylebox("hover", "Button", term_box(Color(SIGNAL, 0.16), SIGNAL, 1))
+	theme.set_stylebox("pressed", "Button", term_box(SIGNAL, SIGNAL, 1))
+	theme.set_stylebox("hover_pressed", "Button", term_box(SIGNAL, SIGNAL, 1))
+	theme.set_stylebox("focus", "Button", term_box(clear, SIGNAL, 1))
+	# Pages: the open one is a solid red block with dark letters.
+	var tab_focus := term_box(clear)
+	tab_focus.border_color = SIGNAL
+	tab_focus.border_width_left = 3
+	theme.set_stylebox("normal", "TermTab", term_box(clear))
+	theme.set_stylebox("hover", "TermTab", term_box(Color(BONE, 0.06)))
+	theme.set_stylebox("pressed", "TermTab", term_box(SIGNAL))
+	theme.set_stylebox("hover_pressed", "TermTab", term_box(SIGNAL))
+	theme.set_stylebox("focus", "TermTab", tab_focus)
+	theme.set_color("font_color", "TermTab", ASH)
+	theme.set_color("font_pressed_color", "TermTab", SOOT)
+	theme.set_color("font_hover_pressed_color", "TermTab", SOOT)
+	theme.set_color("font_focus_color", "TermTab", BONE)
+	theme.set_font_size("font_size", "TermTab", 15)
+	# Actions: quiet until pointed at.
+	theme.set_stylebox("normal", "TermAction", term_box(clear))
+	theme.set_stylebox("hover", "TermAction", term_box(Color(BONE, 0.06)))
+	theme.set_stylebox("pressed", "TermAction", term_box(Color(SIGNAL, 0.3)))
+	theme.set_stylebox("focus", "TermAction", tab_focus)
+	theme.set_color("font_color", "TermAction", ASH)
+	theme.set_font_size("font_size", "TermAction", 14)
+	# Fields.
+	theme.set_stylebox("normal", "TermField", term_box(Color(BONE, 0.035), Color(BONE, 0.14), 1, 6))
+	theme.set_stylebox("hover", "TermField", term_box(Color(SIGNAL, 0.12), Color(SIGNAL, 0.7), 1, 6))
+	theme.set_stylebox("pressed", "TermField", term_box(Color(SIGNAL, 0.3), SIGNAL, 1, 6))
+	theme.set_stylebox("hover_pressed", "TermField", term_box(Color(SIGNAL, 0.3), SIGNAL, 1, 6))
+	theme.set_stylebox("focus", "TermField", term_box(clear, SIGNAL, 1, 6))
+	theme.set_font_size("font_size", "TermField", 14)
+	# Sliders: a hairline track filled red, a bone bar for the grabber.
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(BONE, 0.12)
+	track.content_margin_top = 2
+	track.content_margin_bottom = 2
+	theme.set_stylebox("slider", "HSlider", track)
+	var fill := track.duplicate() as StyleBoxFlat
+	fill.bg_color = SIGNAL_DIM
+	theme.set_stylebox("grabber_area", "HSlider", fill)
+	var lit := track.duplicate() as StyleBoxFlat
+	lit.bg_color = SIGNAL
+	theme.set_stylebox("grabber_area_highlight", "HSlider", lit)
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.border_color = SIGNAL
+	ring.set_border_width_all(1)
+	ring.set_expand_margin_all(5)
+	theme.set_stylebox("focus", "HSlider", ring)
+	theme.set_icon("grabber", "HSlider", _square(Vector2i(6, 18), BONE))
+	theme.set_icon("grabber_highlight", "HSlider", _square(Vector2i(6, 18), Color.WHITE))
+	theme.set_icon("grabber_disabled", "HSlider", _square(Vector2i(6, 18), ASH))
+	var bar := StyleBoxFlat.new()
+	bar.bg_color = Color(BONE, 0.04)
+	bar.content_margin_left = 2
+	bar.content_margin_right = 2
+	theme.set_stylebox("scroll", "VScrollBar", bar)
+	var thumb := bar.duplicate() as StyleBoxFlat
+	thumb.bg_color = Color(BONE, 0.25)
+	theme.set_stylebox("grabber", "VScrollBar", thumb)
+	var thumb_lit := bar.duplicate() as StyleBoxFlat
+	thumb_lit.bg_color = SIGNAL
+	theme.set_stylebox("grabber_highlight", "VScrollBar", thumb_lit)
+	theme.set_stylebox("grabber_pressed", "VScrollBar", thumb_lit)
+	return theme
+
+
 static func text_button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text

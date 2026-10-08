@@ -169,7 +169,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# pixels, so the window size or stretch never changes the sensitivity.
 	if event is InputEventMouseMotion and not Game.locks_look() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var turn := (event as InputEventMouseMotion).screen_relative * Tune.MOUSE_SENS * Game.settings.mouse_sensitivity
-		_yaw -= turn.x
+		_yaw -= -turn.x if Game.settings.invert_x else turn.x
 		_pitch = clampf(_pitch + (turn.y if Game.settings.invert_y else -turn.y), Tune.PITCH_DOWN, Tune.PITCH_UP)
 
 
@@ -768,7 +768,7 @@ func _stick_look(delta: float) -> void:
 	_look_ramp = move_toward(_look_ramp, 1.0 if full else 0.0, delta * (1.0 / Tune.STICK_RAMP_TIME if full else 6.0))
 	var rate := pow(amount, Tune.STICK_LOOK_CURVE) * (1.0 + Tune.STICK_RAMP_BOOST * _look_ramp) * Game.settings.stick_sensitivity
 	var direction := stick / stick.length()
-	_yaw -= direction.x * Tune.STICK_YAW_RATE * rate * delta
+	_yaw -= direction.x * Tune.STICK_YAW_RATE * rate * delta * (-1.0 if Game.settings.invert_x else 1.0)
 	var tilt := direction.y * Tune.STICK_PITCH_RATE * rate * delta
 	_pitch = clampf(_pitch + (tilt if Game.settings.invert_y else -tilt), Tune.PITCH_DOWN, Tune.PITCH_UP)
 

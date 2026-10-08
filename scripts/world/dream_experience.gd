@@ -242,6 +242,9 @@ func _choose_memory(memory: String) -> void:
 
 func _wake() -> void:
 	Game.complete_dream()
+	if Game.dream_mode:
+		_show_standalone_waking()
+		return
 	Game.dream_mode = false
 	Game.player.global_position = Game.house.spawn_point() if Game.house else Game.player.global_position
 	Game.player.velocity = Vector3.ZERO
@@ -259,6 +262,42 @@ func _wake() -> void:
 		get_tree().current_scene.add_child(DialogueBubble.new())
 		Game.begin_intro()
 	queue_free()
+
+
+func _show_standalone_waking() -> void:
+	var branch := STORY.branch_for(_story, Game.dream_memory)
+	_caption.hide()
+	_choice_panel.offset_top = -205
+	_choice_panel.offset_bottom = 235
+	var box := _choice_panel.get_child(0) as VBoxContainer
+	for child in box.get_children():
+		box.remove_child(child)
+		child.queue_free()
+	var heading := UiChrome.label("WHAT WAKES", 24, Color("e4e0df"))
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(heading)
+	for speaker in ["OPHELIA", "MATHILDA"]:
+		var echo_text := str(branch.get(speaker.to_lower(), ""))
+		var echo := UiChrome.label("%s\n%s" % [speaker, echo_text], 17, Color("c9c0c0"))
+		echo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		echo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(echo)
+	var return_button := UiChrome.text_button("Return to the threshold")
+	return_button.focus_mode = Control.FOCUS_ALL
+	return_button.pressed.connect(_return_to_menu)
+	box.add_child(return_button)
+	_choice_panel.show()
+	Game.set_phase(Game.Phase.DIALOGUE)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	return_button.grab_focus.call_deferred()
+
+
+func _return_to_menu() -> void:
+	Game.dream_mode = false
+	Game.mathilda_pov = false
+	Game.character_selected = false
+	Game.set_phase(Game.Phase.BOOT)
+	get_tree().reload_current_scene()
 
 
 func _set_caption(line: String) -> void:
