@@ -69,15 +69,18 @@ func _ready() -> void:
 	add_child(Lake.new())
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
-	if Game.mathilda_pov:
+	if Game.mathilda_pov and not Game.dream_mode:
 		add_child(preload("res://scripts/player/mathilda_pov.gd").new())
-	else:
+	elif not Game.dream_mode:
 		add_child(Voice.new())
 	# The other one, out on her own afternoon (after the voices, so it hears input first).
-	add_child(Encounters.new())
-	add_child(DialogueBubble.new())
+	if not Game.dream_mode:
+		add_child(Encounters.new())
+		add_child(DialogueBubble.new())
 	var hud := Hud.new()
 	add_child(hud)
+	if Game.dream_mode:
+		add_child(preload("res://scripts/world/dream_experience.gd").new())
 	Game.mark("scene built")
 	var editable_nodes: Array[Node] = [atmosphere, trail, player]
 	var built_house := trail.house.transform
@@ -203,6 +206,16 @@ func _ready() -> void:
 		var ending_kind := OS.get_environment("RUN_ENDING")
 		if ending_kind != "":
 			Game.dev_ending.call_deferred(ending_kind)
+	if Game.character_selected and not _capture:
+		Game.character_selected = false
+		if Game.dream_mode:
+			return
+		var reflection := preload("res://scripts/ui/dream_reflection.gd").new()
+		reflection.set("memory", Game.dream_memory)
+		reflection.set("mathilda", Game.mathilda_pov)
+		add_child(reflection)
+		if not Game.mathilda_pov:
+			Game.begin_intro()
 
 
 func _process(_delta: float) -> void:

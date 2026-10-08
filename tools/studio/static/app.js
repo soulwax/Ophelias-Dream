@@ -27,7 +27,7 @@ const MOOD_DIRECTIONS = {
 };
 
 const state = { lines: [], summary: {}, actions: [], filter: { chapter: "", group: "", status: "", speaker: "", owed: "", q: "" },
-	selected: null, takes: {}, playing: null, voicesLoaded: false, conversationTurns: [], conversationResults: [] };
+	selected: null, takes: {}, playing: null, voicesLoaded: false, conversationTurns: [], conversationResults: [], dreamStory: null };
 const player = $("#player");
 
 async function api(path, body) {
@@ -87,6 +87,7 @@ function renderNav() {
 	nav.append(navLink("Review new clips", open || "", open > 0, !$("#review-view").hidden, () => showView("review")));
 	nav.append(navLink("Bake & check", "", false, !$("#bake-view").hidden, () => showView("bake")));
 	nav.append(navLink("Voice models", (state.models?.models || []).length, false, !$("#models-view").hidden, () => showView("models")));
+	nav.append(navLink("Dream story", state.dreamStory?.branches.length || "", false, !$("#dream-story-view").hidden, () => showView("dream-story")));
 	for (const chapter of Object.keys(CHAPTER_NAMES)) {
 		const inChapter = lines.filter((l) => l.chapter === chapter);
 		if (!inChapter.length) continue;
@@ -431,10 +432,121 @@ async function refreshUndo() {
 // ---------------------------------------------------------------- views
 
 function showView(name) {
-	for (const view of ["lines", "review", "bake", "models"]) $(`#${view}-view`).hidden = view !== name;
+	for (const view of ["lines", "review", "bake", "models", "dream-story"]) $(`#${view}-view`).hidden = view !== name;
 	if (name === "review") renderReview();
 	if (name === "models") renderModels();
+	if (name === "dream-story" && !state.dreamStory) loadDreamStory();
 	renderNav();
+}
+
+async function loadDreamStory() {
+	const status = $("#dream-story-status");
+	status.textContent = "Loading the dream story…";
+	$("#dream-story-editor").setAttribute("aria-busy", "true");
+	try {
+		const result = await api("/api/dream_story");
+		if (!result.story) throw new Error(result.error || "The dream story could not be loaded.");
+		state.dreamStory = result.story;
+		state.dreamRevision = result.revision;
+		state.dreamStoryDirty = false;
+		renderDreamStory();
+		status.textContent = "Story loaded from assets/dialogue/dream.json. Four path beats lead into its answer branches.";
+		renderNav();
+	} catch (error) {
+		status.textContent = error.message;
+	} finally {
+		$("#dream-story-editor").setAttribute("aria-busy", "false");
+	}
+}
+
+function markDreamStoryDirty() {
+	state.dreamStoryDirty = true;
+	$("#dream-story-status").textContent = "Unsaved story changes. Save to write them to the game’s dream script.";
+	$("#dream-story-save").disabled = false;
+}
+
+function dreamTextarea(labelText, value, oninput, maxLength, rows = 2) {
+	const area = el("textarea", { value, rows, maxLength });
+	area.addEventListener("input", () => oninput(area.value));
+	return el("label", {}, labelText, area);
+}
+
+function renderDreamStory() {
+	const story = state.dreamStory;
+	if (!story) return;
+	$("#dream-opening").value = story.opening;
+	$("#dream-arrival").value = story.arrival;
+	$("#dream-question").value = story.question;
+	$("#dream-beats").replaceChildren(...story.beats.map((beat, index) =>
+		dreamTextarea(`${String(index + 1).padStart(2, "0")} · ${beat.id.replaceAll("_", " ")}`,
+			beat.text, (value) => { beat.text = value; markDreamStoryDirty(); }, 240)));
+	renderDreamBranches();
+	$("#dream-story-save").disabled = !state.dreamStoryDirty;
+	$("#dream-opening").oninput = () => { story.opening = $("#dream-opening").value; markDreamStoryDirty(); };
+	$("#dream-arrival").oninput = () => { story.arrival = $("#dream-arrival").value; markDreamStoryDirty(); };
+	$("#dream-question").oninput = () => { story.question = $("#dream-question").value; markDreamStoryDirty(); };
+}
+
+function renderDreamBranches() {
+	const box = $("#dream-branches");
+	box.replaceChildren();
+	for (const [index, branch] of state.dreamStory.branches.entries()) {
+		const card = el("fieldset", { className: "dream-branch" });
+		const legend = el("legend", { textContent: `Branch ${index + 1}` });
+		const remove = el("button", { className: "ghost", textContent: "Remove branch", disabled: state.dreamStory.branches.length <= 2,
+			title: "A branching story needs at least two answers" });
+		remove.onclick = () => {
+			if (state.dreamStory.branches.length <= 2) return;
+			state.dreamStory.branches.splice(index, 1);
+			markDreamStoryDirty();
+			renderDreamBranches();
+		};
+		const row = el("div", { className: "dream-branch-top" }, legend, remove);
+		card.append(row,
+			dreamTextarea("Branch id · lowercase letters, numbers, _ or -", branch.id, (value) => { branch.id = value; markDreamStoryDirty(); }, 32),
+			dreamTextarea("Choice shown to the player", branch.label, (value) => { branch.label = value; markDreamStoryDirty(); }, 120),
+			dreamTextarea("Answer in the dream", branch.response, (value) => { branch.response = value; markDreamStoryDirty(); }, 360, 3),
+			el("div", { className: "dream-echoes" },
+				dreamTextarea("Ophelia · waking echo", branch.ophelia, (value) => { branch.ophelia = value; markDreamStoryDirty(); }, 360),
+				dreamTextarea("Mathilda · waking echo", branch.mathilda, (value) => { branch.mathilda = value; markDreamStoryDirty(); }, 360)));
+		box.append(card);
+	}
+	$("#dream-add-branch").disabled = state.dreamStory.branches.length >= 8;
+}
+
+function addDreamBranch() {
+	const story = state.dreamStory;
+	if (!story || story.branches.length >= 8) return;
+	let suffix = story.branches.length + 1;
+	let id = `answer_${suffix}`;
+	while (story.branches.some((branch) => branch.id === id)) id = `answer_${++suffix}`;
+	story.branches.push({ id, label: "A new answer.", response: "The figure waits for what follows.\nPress E to wake.",
+		ophelia: "The dream leaves Ophelia with a question she cannot place.",
+		mathilda: "The dream leaves Mathilda with a question she cannot place." });
+	markDreamStoryDirty();
+	renderDreamBranches();
+}
+
+async function saveDreamStory() {
+	if (!state.dreamStoryDirty) return;
+	const button = $("#dream-story-save");
+	button.disabled = true;
+	$("#dream-story-editor").setAttribute("aria-busy", "true");
+	$("#dream-story-status").textContent = "Checking and saving the separate dream branch…";
+	try {
+		const result = await api("/api/dream_story", { story: state.dreamStory, revision: state.dreamRevision });
+		if (!result.ok) throw new Error(result.error || "The dream story could not be saved.");
+		state.dreamStory = result.story;
+		state.dreamRevision = result.revision;
+		state.dreamStoryDirty = false;
+		renderDreamStory();
+		$("#dream-story-status").textContent = "Saved. The game will use this branch the next time it starts.";
+	} catch (error) {
+		$("#dream-story-status").textContent = error.message;
+		button.disabled = false;
+	} finally {
+		$("#dream-story-editor").setAttribute("aria-busy", "false");
+	}
 }
 
 // ---------------------------------------------------------------- review
@@ -905,6 +1017,13 @@ $("#conversation-save").onclick = saveConversationPreset;
 $("#conversation-delete").onclick = deleteConversationPreset;
 $("#conversation-preset").onchange = (event) => loadConversationPreset(event.target.value);
 setupCharacterArchetypes();
+$("#dream-add-branch").onclick = addDreamBranch;
+$("#dream-story-save").onclick = saveDreamStory;
+$("#dream-story-reload").onclick = () => {
+	if (state.dreamStoryDirty && !window.confirm("Discard your unsaved dream story changes and reload the saved file?")) return;
+	state.dreamStory = null;
+	loadDreamStory();
+};
 $(".conversation-workbench").addEventListener("input", (event) => {
 	if (!["conversation-search", "conversation-name", "conversation-source"].includes(event.target.id)) markConversationDirty();
 });

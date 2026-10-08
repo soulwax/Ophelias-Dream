@@ -124,6 +124,36 @@
       <h2>Recent model and bake jobs</h2>
       <div id="model-jobs" class="jobs"></div>
     </section>
+    <section id="dream-story-view" hidden>
+      <h1>Dream story</h1>
+      <p class="muted">A separate branching script for the playable dream. Edit its approach, choice and aftermath here; the game reads the same story file. These words stay outside the voiced line catalogue.</p>
+      <div class="dream-story-editor" id="dream-story-editor" aria-busy="false">
+        <p id="dream-story-status" class="runtime muted" role="status" aria-live="polite">Loading the dream story…</p>
+        <label>Opening caption
+          <textarea id="dream-opening" rows="3" maxlength="400"></textarea>
+        </label>
+        <div class="dream-beats">
+          <h2>Along the path</h2>
+          <p class="muted">Four fixed movement beats; shape the encounter without moving its authored pacing.</p>
+          <div id="dream-beats"></div>
+        </div>
+        <label>Arrival caption
+          <textarea id="dream-arrival" rows="2" maxlength="240"></textarea>
+        </label>
+        <label>What she asks
+          <textarea id="dream-question" rows="2" maxlength="180"></textarea>
+        </label>
+        <div class="dream-branch-heading">
+          <div><h2>Answers and waking echoes</h2><p class="muted">Each answer is its own branch with a response in the dream and a different echo for each playable woman.</p></div>
+          <button id="dream-add-branch" class="ghost">Add answer branch</button>
+        </div>
+        <div id="dream-branches" class="dream-branches"></div>
+        <div class="dream-story-actions">
+          <button id="dream-story-reload" class="ghost">Reload from file</button>
+          <button id="dream-story-save" class="primary" disabled>Save dream story</button>
+        </div>
+      </div>
+    </section>
   </main>
   <aside id="lab" class="lab" hidden>
     <div class="lab-head">

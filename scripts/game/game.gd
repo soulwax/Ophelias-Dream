@@ -1,6 +1,6 @@
 extends Node
 
-enum Phase { BOOT, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL, DIALOGUE }
+enum Phase { BOOT, DREAM, INTRO, PLAYING, READING, PAUSED, CAUGHT, ESCAPED, JOURNAL, DIALOGUE }
 
 signal phase_changed(next: Phase)
 signal closeness_changed(value: float)
@@ -16,8 +16,16 @@ signal turned
 
 enum Reading { LOCKED, WRONG, RIGHT }
 
+const DREAM_SAVE_PATH := "user://dream.cfg"
+const DREAM_STORY := preload("res://scripts/world/dream_story.gd")
+
 var mathilda_pov := false
+var dream_mode := false
+var dream_memory := ""
+var dream_completed := false
+var character_selected := false
 var phase: Phase = Phase.BOOT
+var _paused_phase: Phase = Phase.PLAYING
 # Threats report here: how near the one that hunts her is (closeness), the
 # strongest other pressure (dread) and the HUD line that goes with it. The
 # UI never shows distances. There are no threats in the field yet; see
@@ -97,6 +105,7 @@ var _audio_hold := 4
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_load_dream_memory()
 	var blackbox_path := OS.get_environment("RUN_BLACKBOX")
 	if blackbox_path != "":
 		blackbox = Blackbox.open(blackbox_path)
@@ -140,7 +149,7 @@ func _process(delta: float) -> void:
 			audio_fade = move_toward(audio_fade, 1.0, minf(delta, 0.05) / Tune.INTRO_TIME)
 			if settings:
 				settings.apply_audio()
-	if not mathilda_pov and phase == Phase.PLAYING and player and trail:
+	if not mathilda_pov and not dream_mode and phase == Phase.PLAYING and player and trail:
 		# The lights at the lookout were only lanterns: a checkpoint. The way
 		# out is the old hole in the lake ice, further on.
 		if _at_exit() and not at_checkpoint:
@@ -153,13 +162,13 @@ func _process(delta: float) -> void:
 			elif not _unready_said and voice:
 				_unready_said = true
 				voice.moment("unready")
-	if not mathilda_pov and day_running and awake() and phase != Phase.DIALOGUE:
+	if not mathilda_pov and not dream_mode and day_running and awake() and phase != Phase.DIALOGUE:
 		_tick_day(delta)
 	if awake():
-		if not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
+		if not dream_mode and not hunt_started and player and trail and not indoors(player.global_position + Vector3.UP * 0.9):
 			if trail.offset_of(player.global_position) >= trail.player_start_offset + Tune.HUNT_ROUTE_DISTANCE:
 				start_hunt()
-		if hunt_started:
+		if hunt_started and not dream_mode:
 			_hunt_seconds += delta
 	if awake() and player:
 		visit(place_at(player.global_position))
@@ -241,12 +250,45 @@ func mark(line: String) -> void:
 		blackbox.write(line)
 
 
+func save_dream_memory(memory: String) -> void:
+	if not DREAM_STORY.has_branch(memory):
+		return
+	dream_memory = memory
+	var file := ConfigFile.new()
+	file.load(DREAM_SAVE_PATH)
+	file.set_value("dream", "memory", dream_memory)
+	file.set_value("dream", "completed", dream_completed)
+	var result := file.save(DREAM_SAVE_PATH)
+	if result != OK:
+		push_warning("Could not save the dream memory: %s" % error_string(result))
+
+
+func complete_dream() -> void:
+	dream_completed = true
+	var file := ConfigFile.new()
+	file.load(DREAM_SAVE_PATH)
+	file.set_value("dream", "memory", dream_memory)
+	file.set_value("dream", "completed", true)
+	var result := file.save(DREAM_SAVE_PATH)
+	if result != OK:
+		push_warning("Could not save dream completion: %s" % error_string(result))
+
+
+func _load_dream_memory() -> void:
+	var file := ConfigFile.new()
+	if file.load(DREAM_SAVE_PATH) != OK:
+		return
+	var saved: Variant = file.get_value("dream", "memory", "")
+	dream_memory = str(saved) if DREAM_STORY.has_branch(str(saved)) else ""
+	dream_completed = bool(file.get_value("dream", "completed", false))
+
+
 func set_phase(next: Phase) -> void:
 	if phase == next:
 		return
 	phase = next
 	# Her day begins the first time she is in the world.
-	if next == Phase.PLAYING and not mathilda_pov and not day_running and player:
+	if next == Phase.PLAYING and not mathilda_pov and not dream_mode and not day_running and player:
 		start_day()
 	phase_changed.emit(phase)
 
@@ -654,7 +696,8 @@ func toggle_pause() -> void:
 	if phase == Phase.JOURNAL:
 		close_journal()
 		return
-	if phase == Phase.PLAYING:
+	if phase == Phase.PLAYING or phase == Phase.DREAM or (phase == Phase.DIALOGUE and dream_mode):
+		_paused_phase = phase
 		get_tree().paused = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		set_phase(Phase.PAUSED)
@@ -662,8 +705,8 @@ func toggle_pause() -> void:
 		if settings:
 			settings.save()
 		get_tree().paused = false
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-		set_phase(Phase.PLAYING)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if _paused_phase == Phase.DIALOGUE else Input.MOUSE_MODE_CAPTURED
+		set_phase(_paused_phase)
 
 
 # title and body are the threat's own ending; empty gives the default card.
@@ -742,11 +785,11 @@ func indoors(world_point: Vector3) -> bool:
 
 
 func locks_movement() -> bool:
-	return phase != Phase.PLAYING
+	return phase != Phase.PLAYING and phase != Phase.DREAM
 
 
 func locks_look() -> bool:
-	return phase != Phase.PLAYING and phase != Phase.INTRO
+	return phase != Phase.PLAYING and phase != Phase.DREAM and phase != Phase.INTRO
 
 
 # Integrated GPUs hard-froze on volumetric fog and the full shadow load.

@@ -154,7 +154,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			else:
 				_interact_buffer = Tune.INTERACT_BUFFER
-	if event is InputEventMouseButton and event.pressed and Game.phase == Game.Phase.PLAYING:
+	if event is InputEventMouseButton and event.pressed and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM]:
 		# A click uses only what is under the reticle, never a guess around it.
 		var click := (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
 		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:

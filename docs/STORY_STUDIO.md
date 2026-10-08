@@ -24,6 +24,8 @@ Status: the first slice is built (2026-10-08):
   - The contextual chain editor arranges two to eight existing lines or experimental turns, assigns each character a mood direction and (for CustomVoice) a timbre, and generates one to three seeded conversational variants. Seed and sampling temperature are adjustable for repeatable A/B comparisons and fresh variation. Each response receives the scene summary, speaker profile, and preceding text as context. Named chains persist in the browser's local storage; generated utterances remain individual scratch clips.
   - `python tools/studio/test_chains.py` checks chain limits, supported speakers, and contextual prompt assembly without downloading or loading models.
   - The catalog is deliberately curated; API callers can only request these fixed repository IDs and destinations, never arbitrary Hugging Face repos or filesystem paths. Model weights are ignored by git.
+- **Dream story.** A separate *Dream story* view edits the optional playable dream's opening, four paced path beats, arrival, question, and two to eight answer branches. Each branch has its own choice text, in-dream response, and waking echo for Ophelia and Mathilda. Saving validates `assets/dialogue/dream.json`, guards against stale browser edits, and writes the same data the runtime reads; it does not add these passages to the voiced line catalogue.
+  - `python tools/studio/test_dream_story.py` checks the branch schema, round-trip save and stale-edit guard. `godot --headless --path . -s tools/dream_story_probe.gd` checks the game's branch lookup.
 - **Review (5.6).** *Review new clips* lists every clip made since the last commit (untracked under `assets/audio/voice`, from `git status`).
   - Each one plays next to the version it replaces, recovered from the line tables at `HEAD`, with the old wording struck through, and next to the mood's reference performance when one exists.
   - *Accept* records the decision in `build/studio/review.json`. *Reject* moves the clip and its `.import` into `build/voice/archive/<date>-rejected/` through `bake_speech.archive()`, so nothing is deleted.
@@ -34,7 +36,7 @@ Deliberate deviation: the server is standard-library `http.server` rather than F
 
 ## 1. Why
 
-The story is spread over four scripts of record, written in three Markdown dialects, plus a GDScript catalogue of pages. The voice comes from six Python tools, three speech engines, four virtual environments and two machines. It works, but only for someone who remembers the order:
+The spoken story is spread over four scripts of record, written in three Markdown dialects, plus a GDScript catalogue of pages. The optional playable dream is its own branching story, read by the game but kept outside the voice line catalogue. The voice comes from six Python tools, three speech engines, four virtual environments and two machines. It works, but only for someone who remembers the order:
 
 | Today | Source of record | Tool | Engine / machine | Output |
 |---|---|---|---|---|
@@ -43,6 +45,7 @@ The story is spread over four scripts of record, written in three Markdown diale
 | The meeting on the ice (43) | `docs/LAKE_MEETING.md` (table) + `assets/dialogue/lake.json` | `bake_lake.py` | Kokoro for Mathilda; Ophelia waits for Chatterbox | `assets/audio/voice/lake/` |
 | The meeting at the door (41) | `docs/MATHILDA_MEETING.md` (`### id \| speaker \| mood \| pause` blocks with Action/reaction, Answers, Intensity, Break) + `assets/dialogue/meeting.json` | `bake_meeting.py` (`--write`, `--check`, `--paths`, `--engine kokoro\|chatterbox`), `dialogue_post.py` | Kokoro drafts; Chatterbox finals with a speaker-similarity gate | `assets/audio/voice/meeting/` (+ `draft/`, `timing.json`) |
 | Pages | `scripts/notes/note_catalog.gd` (`_make(title, body, corruption, smudges, between)`) | none | none | in code |
+| The playable dream (branching, not voiced) | `assets/dialogue/dream.json` | Story Studio's separate Dream story editor | Godot reads the same file | opening, four approach beats, player answers and waking echoes |
 
 What hurts:
 - **Silent drift.** A text change makes a new clip key (`sha256(text|mood)`). The old clip is orphaned and the new line plays as a subtitle, and nobody notices until a probe or a playthrough.

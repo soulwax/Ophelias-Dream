@@ -24,7 +24,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from studio import chains, model, models, review, writers  # noqa: E402
+from studio import chains, dream_story, model, models, review, writers  # noqa: E402
 
 ROOT = model.ROOT
 STATIC = Path(__file__).resolve().parent / "static"
@@ -487,6 +487,12 @@ class Handler(BaseHTTPRequestHandler):
                 "actions": [{k: v for k, v in a.items() if k != "commands"} | {"commands": [" ".join(c) for c in a["commands"]]}
                             for a in _actions().values()],
             })
+        if url.path == "/api/dream_story":
+            try:
+                story, revision = dream_story.load()
+                return self._send(200, {"story": story, "revision": revision})
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                return self._send(500, {"error": f"Could not read the dream story: {error}"})
         if url.path == "/api/models":
             return self._send(200, models.view())
         if url.path == "/api/jobs":
@@ -511,6 +517,14 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(body, dict):
             return self._send(400, {"error": "json body must be an object"})
         url = urlparse(self.path)
+        if url.path == "/api/dream_story":
+            try:
+                story, revision = dream_story.save(body.get("story"), body.get("revision"))
+                return self._send(200, {"ok": True, "story": story, "revision": revision})
+            except dream_story.ConflictError as error:
+                return self._send(409, {"error": str(error)})
+            except (OSError, ValueError) as error:
+                return self._send(400, {"error": str(error)})
         if url.path == "/api/models/download":
             if JOBS.busy():
                 return self._send(409, {"error": "another studio job is running; try again when it finishes"})

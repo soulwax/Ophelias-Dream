@@ -1,0 +1,35 @@
+extends Node
+
+const STORY := preload("res://scripts/world/dream_story.gd")
+const EXPERIENCE := preload("res://scripts/world/dream_experience.gd")
+const REFLECTION := preload("res://scripts/ui/dream_reflection.gd")
+
+
+func _ready() -> void:
+	var story := STORY.load_data()
+	assert(not story.is_empty(), "dream story data should load")
+	assert(story["beats"].size() == 4, "four path beats must keep their movement pacing")
+	assert(story["branches"].size() >= 2, "dream must offer a branch")
+	var seen := {}
+	for branch in story["branches"]:
+		assert(not seen.has(branch["id"]), "branch ids must be unique")
+		seen[branch["id"]] = true
+		assert(STORY.has_branch(branch["id"]), "saved branch ids must be recognized by Game")
+		assert(not STORY.branch_for(story, branch["id"])["ophelia"].is_empty(), "Ophelia needs a waking echo")
+		assert(not STORY.branch_for(story, branch["id"])["mathilda"].is_empty(), "Mathilda needs a waking echo")
+	var reflection = REFLECTION.new()
+	reflection.memory = "name"
+	assert(reflection._reflection_text() == STORY.branch_for(story, "name")["ophelia"], "Ophelia should wake into her branch text")
+	reflection.mathilda = true
+	assert(reflection._reflection_text() == STORY.branch_for(story, "name")["mathilda"], "Mathilda should wake into her branch text")
+	assert(EXPERIENCE != null, "the playable dream scene script should parse")
+	assert(not STORY.has_branch("missing_branch"), "unknown saved choices should be discarded")
+	var experience = EXPERIENCE.new()
+	add_child(experience)
+	experience._build_choices()
+	assert(experience._choice_panel.get_child(0).get_child_count() == story["branches"].size() + 1,
+		"the playable dream should display every authored branch")
+	print("Dream story data and runtime branches checked")
+	experience.free()
+	reflection.free()
+	get_tree().quit()

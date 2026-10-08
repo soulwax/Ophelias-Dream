@@ -1,9 +1,10 @@
 extends Control
 
-const STORY := "Ophelia keeps the house. Mathilda keeps a fire past the pines.\nLast night one of them said go, and the other went.\n\nSince then they have been walking the same afternoon,\nand now and then they almost meet.\n\nChoose whose afternoon it is.\nNeither of them is sure the other is real."
-
 var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
+var _snow: GPUParticles2D
+var _snow_motion: ParticleProcessMaterial
+var _snow_size := Vector2.ZERO
 var _buttons: Array[Button] = []
 var _gaze := 0.5
 var _target := 0.5
@@ -29,11 +30,12 @@ func _ready() -> void:
 	_music.stream = load("res://assets/audio/music/danse_macabre.ogg")
 	if _music.stream is AudioStreamOggVorbis:
 		(_music.stream as AudioStreamOggVorbis).loop = true
-	_music.volume_db = -12.0
+	_music.volume_db = -60.0
 	add_child(_music)
-	if Game.phase == Game.Phase.BOOT:
+	if Game.phase == Game.Phase.BOOT and not Game.dream_mode and not Game.mathilda_pov and not Game.character_selected:
 		Game.settings.apply_audio()
 		_music.play()
+		_fade_music_in()
 
 	var background := ColorRect.new()
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -44,6 +46,7 @@ func _ready() -> void:
 	_eye.set_shader_parameter("portrait", load("res://assets/ui/mathilda_eye.png"))
 	background.material = _eye
 	add_child(background)
+	_build_snow()
 	var title := UiChrome.label("Ophelia's Dream", 42, Color("e5dbd3"))
 	title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	title.offset_left = -500
@@ -81,7 +84,7 @@ func _ready() -> void:
 	rule.offset_top = 248
 	rule.offset_bottom = 250
 	add_child(rule)
-	for caption in ["OPHELIA", "MATHILDA", "THE DREAM", "CREDITS", "QUIT"]:
+	for caption in ["OPHELIA", "MATHILDA", "CREDITS", "QUIT"]:
 		var button := Button.new()
 		button.text = caption
 		for letter in range(caption.length() - 1, 0, -1):
@@ -137,10 +140,14 @@ func _ready() -> void:
 	_panel.hide()
 	Game.phase_changed.connect(func(next: Game.Phase) -> void:
 		visible = next == Game.Phase.BOOT
-		if Game.mathilda_pov and next != Game.Phase.BOOT:
-			_music.stop()
+		if _snow:
+			_snow.emitting = visible
+		if next != Game.Phase.BOOT:
+			_stop_music()
 	)
 	visible = Game.phase == Game.Phase.BOOT
+	_snow.emitting = visible
+	_layout_snow()
 	# Neither of them comes first: the menu opens on one name or the other.
 	_buttons[randi() % 2].grab_focus.call_deferred()
 
@@ -149,6 +156,55 @@ func _aim_at(point: Vector2) -> void:
 	var relative := point / size.max(Vector2.ONE) - Vector2(0.424, 0.454)
 	_target = clampf(0.5 + relative.x, 0.08, 0.92)
 	_target_y = clampf(0.5 + relative.y, 0.12, 0.88)
+
+
+func _build_snow() -> void:
+	_snow = GPUParticles2D.new()
+	_snow.name = "SlowEyeSnow"
+	_snow.amount = 14
+	_snow.lifetime = 20.0
+	_snow.preprocess = 20.0
+	_snow.randomness = 0.85
+	_snow.explosiveness = 0.0
+	_snow.local_coords = true
+	_snow.texture = load("res://assets/weather/flake.png") as Texture2D
+	_snow_motion = ParticleProcessMaterial.new()
+	_snow_motion.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	_snow_motion.direction = Vector3(-0.12, 1.0, 0.0)
+	_snow_motion.spread = 8.0
+	_snow_motion.initial_velocity_min = 2.2
+	_snow_motion.initial_velocity_max = 5.8
+	_snow_motion.gravity = Vector3(-0.035, 0.12, 0.0)
+	_snow_motion.scale_min = 0.62
+	_snow_motion.scale_max = 1.0
+	_snow_motion.angle_min = -12.0
+	_snow_motion.angle_max = 12.0
+	_snow_motion.angular_velocity_min = -2.0
+	_snow_motion.angular_velocity_max = 2.0
+	_snow_motion.color = Color(0.88, 0.93, 1.0, 0.14)
+	_snow_motion.turbulence_enabled = true
+	_snow_motion.turbulence_noise_strength = 0.08
+	_snow_motion.turbulence_noise_scale = 1.8
+	_snow_motion.turbulence_noise_speed = Vector3(0.025, 0.045, 0.0)
+	_snow_motion.turbulence_influence_min = 0.12
+	_snow_motion.turbulence_influence_max = 0.3
+	_snow.process_material = _snow_motion
+	_snow.emitting = false
+	_snow.z_index = 0
+	add_child(_snow)
+
+
+func _layout_snow() -> void:
+	var viewport_size := get_viewport_rect().size.max(Vector2.ONE)
+	if _snow_size.is_equal_approx(viewport_size):
+		return
+	_snow_size = viewport_size
+	var focus := Vector2(viewport_size.x * 0.424, viewport_size.y * 0.454)
+	var extent := Vector2(viewport_size.x * 0.3, viewport_size.y * 0.27)
+	var margin := Vector2.ONE * 160.0
+	_snow.position = focus
+	_snow.visibility_rect = Rect2(-extent - margin, extent * 2.0 + margin * 2.0)
+	_snow_motion.emission_box_extents = Vector3(extent.x, extent.y, 0.0)
 
 
 func _input(event: InputEvent) -> void:
@@ -164,6 +220,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	if visible:
+		_layout_snow()
 	if visible:
 		# A living eye never quite settles: a small, smooth tremor on top of
 		# the deliberate pursuit, each frequency irrational against the rest
@@ -191,16 +249,19 @@ func _process(delta: float) -> void:
 func _choose(caption: String) -> void:
 	match caption:
 		"MATHILDA":
+			_stop_music()
+			Game.character_selected = true
+			Game.dream_mode = not Game.dream_completed
 			Game.mathilda_pov = true
 			get_tree().reload_current_scene()
 		"OPHELIA":
+			Game.character_selected = true
+			Game.dream_mode = not Game.dream_completed
 			Game.mathilda_pov = false
-			var fade := create_tween()
-			fade.tween_property(_music, "volume_db", -60.0, 0.65)
-			fade.tween_callback(_music.stop)
-			Game.begin_intro()
-		"THE DREAM", "CREDITS":
-			_body.text = STORY if caption == "THE DREAM" else "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nBuilt with Godot\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
+			_stop_music()
+			get_tree().reload_current_scene()
+		"CREDITS":
+			_body.text = "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nBuilt with Godot\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
 			_panel.show()
 			(_panel.get_child(0).get_child(1) as Button).grab_focus()
 		"QUIT":
@@ -210,6 +271,17 @@ func _choose(caption: String) -> void:
 func _close() -> void:
 	_panel.hide()
 	_buttons[0].grab_focus()
+
+
+func _fade_music_in() -> void:
+	if _music.playing:
+		var fade := create_tween()
+		fade.tween_property(_music, "volume_db", -12.0, 6.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func _stop_music() -> void:
+	if _music and _music.playing:
+		_music.stop()
 
 
 func _unhandled_input(event: InputEvent) -> void:

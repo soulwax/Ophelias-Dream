@@ -4,6 +4,7 @@
 
 - Give Ophelia and Mathilda independent voice-performance archetypes for conversation auditions, with editable profiles and saved selections.
 - Keep character voice identity steady while exploring guardedness, tenderness, resolve, humor, confession, unease and reassurance.
+- Give the optional dream its own branching script in Story Studio, so its path, answers and waking echoes can be written without entering the voiced-line catalogue.
 
 ## 0.2.2.0 — 2026-10-08
 
