@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2.2 — 2026-10-08
+
+- The subprogram doors now answer to names. Character studio, story workbench, terrain and camp views: commands left in the README, for when the menu forgets.
+
 ## 0.2.2.1 — 2026-10-08
 
 - Give Ophelia and Mathilda independent voice-performance archetypes for conversation auditions, with editable profiles and saved selections.

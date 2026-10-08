@@ -48,6 +48,28 @@ godot --path .
 Remove-Item Env:RUN_GRAPHICS
 ```
 
+## Open the subprograms
+
+Run these commands from the repository root with Godot 4.7 on `PATH`. This
+project uses C#, so use the Mono executable (`godot-mono`) when the installed
+Godot build provides separate standard and Mono commands.
+
+| Subprogram | Command | Purpose |
+| --- | --- | --- |
+| Main game | `godot-mono --path .` | Start Ophelia's Dream. |
+| Godot editor | `godot-mono --path . -e` | Open the project for editing. |
+| Character studio | `godot-mono --path . scenes/character_presentation.tscn` | Browse the character collection, animation previews, and creator. |
+| Story Studio | `python tools/studio/server.py` | Start the browser-based narrative authoring tool; see [docs/STORY_STUDIO.md](docs/STORY_STUDIO.md). |
+| Terrain showcase | `godot-mono --path . tools/terrain_view.tscn` | Capture terrain overview images under `build/terrain/`. |
+| Camp showcase | `godot-mono --path . tools/camp_view.tscn` | Capture camp views under `build/camp/`. |
+
+The character studio supports browsing with the arrow keys, orbiting with left
+mouse drag, and zooming with the wheel. Its creator panel can save designs to
+Godot's local `user://characters/` folder. The terrain and camp showcases open
+their own windows, save their captures, and exit when finished. On Windows,
+replace `godot-mono` with the full path to `godot-mono.exe` if it is not on
+`PATH`.
+
 ## Project layout
 
 | Path | Purpose |
