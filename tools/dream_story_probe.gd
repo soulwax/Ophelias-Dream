@@ -28,6 +28,13 @@ func _ready() -> void:
 	assert(reflection._reflection_text() == STORY.branch_for(story, "name")["ophelia"], "Ophelia should wake into her branch text")
 	reflection.mathilda = true
 	assert(reflection._reflection_text() == STORY.branch_for(story, "name")["mathilda"], "Mathilda should wake into her branch text")
+	reflection.mathilda = false
+	reflection.outcome = "unresolved"
+	assert(reflection._reflection_text() == story["unresolved"]["ophelia"], "missing clues should have an unresolved Ophelia waking")
+	reflection.mathilda = true
+	reflection.outcome = "ruptured"
+	assert(reflection._reflection_text() == story["ruptured"]["mathilda"], "a closed conversation should have a distinct Mathilda waking")
+	reflection.outcome = "complete"
 	assert(EXPERIENCE != null, "the playable dream scene script should parse")
 	for asset_path in DREAM_LANDMARK_SCENES:
 		assert(load(asset_path) is PackedScene, "dream landmark should import as an instantiable scene: %s" % asset_path)
@@ -76,6 +83,9 @@ func _ready() -> void:
 	assert(not menu._settings_terminal.visible, "the terminal should return to the main menu")
 	menu._stop_music()
 	menu.free()
+	experience._opened_memory_doors = {"window": true, "sisters": true}
+	experience._conversation_strain = 0
+	assert(experience._ending_text() == story["ending"], "the warm window and one other door should complete the warning")
 	Game.dream_mode = true
 	Game.dream_memory = story["branches"][0]["id"]
 	experience._show_standalone_waking()
@@ -84,6 +94,20 @@ func _ready() -> void:
 	assert(experience._caption.text == story["ending"], "standalone dream should hold the final warning")
 	assert(experience._choice_title.text.contains("RETURN TO THE THRESHOLD"), "standalone dream should show its return action in the world")
 	assert(Game.phase == Game.Phase.DIALOGUE, "the closing card should wait for the player's return")
+	experience._opened_memory_doors.clear()
+	experience._conversation_strain = 0
+	assert(experience._ending_text() == story["unresolved"]["response"], "passing the clue doors should lead to the unresolved wakeup")
+	experience._conversation_strain = 4
+	assert(experience._ending_text() == story["ruptured"]["response"], "repeatedly pressing after repair chances should rupture the conversation")
+	experience._conversation_strain = 2
+	experience._repair_menu_attempts = 0
+	experience._repair_menu_active = false
+	experience._conversation_round = 1
+	experience._answer_open = true
+	experience._build_small_talk_choices()
+	assert(experience._repair_menu_active and experience._choice_buttons.size() == story["repair"]["choices"].size(), "pressure should open the in-world repair dialogue")
+	experience._choose_small_talk(0)
+	assert(experience._conversation_strain == 0 and not experience._conversation_choice_advances, "a repair should restore trust and return to the interrupted topic")
 	Game.dream_mode = false
 	Game.dream_memory = ""
 	Game.set_phase(Game.Phase.BOOT)

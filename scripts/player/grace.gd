@@ -2,11 +2,10 @@ class_name Grace
 extends SkeletonModifier3D
 
 # Her carriage on top of the baked clips, in the elf's skeleton space (+Z is
-# forward, +X her left). Walk_Formal holds the arms almost still, so a walk
-# gets a loose counter-swing taken from the legs, soft elbows that fold as
-# each hand comes forward, and shoulders that turn against the hips while
-# the head stays level. Standing a while, she rises onto her toes and lets
-# herself back down. Runs after FootLock, so steps are judged on the clip.
+# forward, +X her left). The authored neutral walk carries most of its arm
+# and hip swing; this adds a restrained counter-turn and soft elbow. Standing
+# a while, she rises onto her toes and lets herself back down. Runs after
+# FootLock, so steps are judged on the clip.
 #
 # Global poses read back inside a modification go stale once a parent is
 # written, so every turn is written as a local rotation, conjugated through

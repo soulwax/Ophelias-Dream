@@ -1,0 +1,15 @@
+{
+  "source_pack": "Carpenters Workshop Forward+",
+  "vendor": "Leartes Studios",
+  "central_asset_bank_path": "CarpentersWorkshopForward/Carpenters_Workshop_Forward/Assets/LeartesStudios/CarpentersWorkshop/Art",
+  "selected_asset": "Meshes/SM_Paper_01.gltf",
+  "destination": "assets/vendor/requested_paper/carpenters_workshop/Art",
+  "role": "single loose sheet for FieldNote pickups",
+  "dependencies": [
+    "Meshes/SM_Paper_01.bin",
+    "Textures/T_Paper_B.tga",
+    "Textures/T_Paper_N.tga"
+  ],
+  "conversion": "Only changed the copied glTF image URIs from the absent PNG names to the supplied TGA texture paths. The source bank files remain untouched.",
+  "license": "The central pack contains no asset license file. Redistribution rights have not been verified; the copied files stay ignored and the game uses a built-in single-sheet fallback when they are absent."
+}

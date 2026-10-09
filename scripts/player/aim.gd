@@ -29,7 +29,7 @@ func update(player: Player) -> void:
 	var camera := player.camera
 	if player.bow_hoist and player.bow_hoist.Busy:
 		return
-	if camera == null or not player.is_inside_tree() or Game.phase != Game.Phase.PLAYING or player.glance > 0.05:
+	if camera == null or not player.is_inside_tree() or Game.phase not in [Game.Phase.PLAYING, Game.Phase.DREAM] or player.glance > 0.05:
 		return
 	var origin := camera.global_position
 	var forward := -camera.global_basis.z
@@ -80,6 +80,8 @@ func _candidates(player: Player) -> Array[Node3D]:
 		for node in player.get_tree().get_nodes_in_group(group_name):
 			var thing := node as Node3D
 			if thing == null or not thing.is_visible_in_tree() or not thing.has_method("aim_box"):
+				continue
+			if Game.phase == Game.Phase.DREAM and thing.is_in_group("bow_pickup"):
 				continue
 			if thing.global_position.distance_to(player.global_position) > near:
 				continue

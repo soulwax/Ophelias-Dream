@@ -13,6 +13,8 @@ decrypt.key
 /assets/derived/requested_house/
 # Owner-supplied dream landmark meshes from the central asset bank.
 /assets/vendor/requested_dream/
+# Owner-supplied single-paper model and textures; keep the authored fallback portable.
+/assets/vendor/requested_paper/
 # Mathilda's camp props from the same asset bank (tools/curate_camp_assets.py).
 /assets/vendor/requested_camp/
 

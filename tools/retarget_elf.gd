@@ -6,7 +6,7 @@ extends SceneTree
 const SOURCE := "res://addons/quaternius_ik_rigged/Models_with_rigging/Master_Rigged.tscn"
 const TARGET := "res://assets/characters/styloo_elf/elf.glb"
 const OUTPUT := "res://assets/characters/styloo_elf/elf_animations.res"
-const CLIPS := ["Idle", "Walk_Formal", "Jog_Fwd", "Sprint", "Jump_Start", "Jump_Land", "Crouch_Idle", "Hit_Chest"]
+const CLIPS := ["Idle", "Walk", "Walk_Formal", "Jog_Fwd", "Sprint", "Jump_Start", "Jump_Land", "Crouch_Idle", "Hit_Chest"]
 const BONES := {
 	"Hips": "DEF-spine",
 	"Spine": "DEF-spine.001",

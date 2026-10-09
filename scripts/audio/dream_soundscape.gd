@@ -10,6 +10,7 @@ var _voices: Array[AudioStreamPlayer3D] = []
 var _last_clip := -1
 var _next_pair := 5.5
 var _second_step_in := -1.0
+var _apparition_quiet_time := 0.0
 
 
 func _ready() -> void:
@@ -29,6 +30,9 @@ func _exit_tree() -> void:
 
 func _process(delta: float) -> void:
 	if Game.phase != Game.Phase.DREAM or Game.player == null or Game.trail == null:
+		return
+	_apparition_quiet_time = maxf(_apparition_quiet_time - delta, 0.0)
+	if _apparition_quiet_time > 0.0:
 		return
 	var speed := Vector2(Game.player.velocity.x, Game.player.velocity.z).length()
 	if speed < 0.9:
@@ -58,6 +62,22 @@ func _play_step(voice_index: int, behind: float) -> void:
 	voice.pitch_scale = randf_range(0.96, 1.04)
 	Loudness.sound(voice, STEP_LEVEL, true)
 	voice.play()
+
+
+func apparition_footstep(at: Vector3, returning: bool) -> void:
+	if _voices.is_empty():
+		return
+	var voice := _voices[1 if returning else 0]
+	if voice.playing:
+		voice.stop()
+	voice.stream = _pick_step()
+	if voice.stream == null:
+		return
+	voice.global_position = at + Vector3.UP * 0.08
+	voice.pitch_scale = 0.94 if returning else 0.84
+	Loudness.sound(voice, STEP_LEVEL - 8.0, true)
+	voice.play()
+	_apparition_quiet_time = 2.0
 
 
 func _pick_step() -> AudioStream:

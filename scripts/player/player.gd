@@ -158,10 +158,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			Game.close_reading()
 			get_viewport().set_input_as_handled()
 			return
-		if Game.phase == Game.Phase.PLAYING:
+		if Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM]:
 			if _try_interact():
 				get_viewport().set_input_as_handled()
-			else:
+			elif Game.phase == Game.Phase.PLAYING:
 				_interact_buffer = Tune.INTERACT_BUFFER
 	if event is InputEventMouseButton and event.pressed and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and not dialogue_locked:
 		# A click uses only what is under the reticle, never a guess around it.
@@ -190,6 +190,8 @@ func _try_interact() -> bool:
 	if thing == null or not is_instance_valid(thing):
 		return false
 	if thing is FieldNote:
+		if Game.phase != Game.Phase.PLAYING:
+			return false
 		Game.active_note = thing as FieldNote
 		Game.begin_reading()
 		return true
@@ -213,7 +215,7 @@ func _physics_process(delta: float) -> void:
 		bow_hoist.Advance(delta)
 	if _interact_buffer > 0.0:
 		_interact_buffer -= delta
-		if Game.phase == Game.Phase.PLAYING and _try_interact():
+		if Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and _try_interact():
 			_interact_buffer = 0.0
 	if dialogue_locked:
 		if sliding:
@@ -1237,7 +1239,6 @@ func _build_model() -> void:
 	rig_root.add_child(animation_player)
 	animation_player.root_node = NodePath("..")
 	animation_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
-	animation_player.add_animation_library("feminine", load("res://assets/characters/styloo_elf/feminine/elf_feminine.res") as AnimationLibrary)
 	stride = Stride.build(animation_player, rig_root)
 	var mouth := BoneAttachment3D.new()
 	mouth.name = "Mouth"

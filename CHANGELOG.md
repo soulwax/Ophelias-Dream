@@ -3,6 +3,9 @@
 ## 0.2.6.0 — 2026-10-09
 
 - Begin the title music at second seven and fade to its menu level by second eight.
+- Replace the paper heap at every trail note with one loose sheet; the dream trail has no note pickups.
+- Add three openable dream thresholds; Mathilda's dialogue and the memories behind them gather in a separate journal.
+- Make Mathilda's shadow appear with a slow dissolve, leave when a memory surfaces, and return to the path with a paired footstep; add a distinct journal note for each chosen reply and gentle cues for approaching difficult subjects.
 - Move the dream's speech and choices into the world: Mathilda's subtitle box follows her, answers gather around her, and each line names its speaker.
 - Keep the characters facing each other through direct dialogue; Mathilda looks toward the woods during her symbolic monologues while the player can keep moving.
 - Choreograph Mathilda's steps to her four dream monologues: a look into the cut trees, a delayed approach, a turn toward the lantern, and a halt at the clearing.

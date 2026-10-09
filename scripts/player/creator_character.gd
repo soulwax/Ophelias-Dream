@@ -10,7 +10,8 @@ const DEFAULT := {
 	"cloth_color": "344e66",
 	"trim_color": "bca57b",
 }
-const HAIRS := ["long", "bob", "bun", "braids"]
+const HAIRS := ["long", "bob", "snowbob", "bun", "braids"]
+const HAIR_LABELS := ["Long • original", "Frost bob", "Enhanced Snow Bob", "Gathered bun", "Twin braids"]
 const OUTFITS := ["elf"]
 
 var configuration: Dictionary = DEFAULT.duplicate()

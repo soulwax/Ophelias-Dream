@@ -1,88 +1,229 @@
 {
   "version": 1,
-  "opening": "The forest has moved the threshold again.",
+  "opening": "Three doors lie along the path. The warm window keeps the clearest piece; open it and one other if you want the whole warning. If a place stays with you, press J. I will not look.",
+  "journal_cue": {
+    "id": "moved_threshold",
+    "title": "A moved threshold",
+    "text": "The forest has shifted its doorway. The trail still leads somewhere; the entrance makes no promise about what waits inside.",
+    "approach": "Let her set the pace. A quiet pause is still part of the conversation."
+  },
   "beats": [
     {
       "id": "tree_line",
       "motion": "cut_tree",
+      "journal": {
+        "id": "rings_of_wood",
+        "title": "Rings of wood",
+        "text": "A tree's rings count what it survived, not what it agreed to.",
+        "approach": "Stay with the image she chose. You do not have to ask for the whole story."
+      },
       "text": "The trees are cut at doorway height. A tree is a house that learned to stand. The axe thinks strength means permission; the rings remember every blow and call the remembering a season."
     },
     {
       "id": "footsteps",
       "motion": "delayed_steps",
+      "journal": {
+        "id": "the_late_step",
+        "title": "The late step",
+        "text": "Your footsteps stop. The other set needs a moment to obey.",
+        "approach": "Offer a choice, then let her decide whether to move, wait, or stop."
+      },
       "text": "You stop. The heavier steps stop a moment later. Three sisters spin the road: leave, follow, freeze. Old stories call the frozen one faithless. Old stories are told by the living."
     },
     {
       "id": "lantern",
       "motion": "lantern_witness",
+      "journal": {
+        "id": "witness_flame",
+        "title": "Witness flame",
+        "text": "The light was turned toward the trees. The flame records what darkness tries to rename.",
+        "approach": "Ask what would help her feel safer now. Do not make her prove what happened."
+      },
       "text": "Someone turned the lantern toward the woods. Prometheus stole a flame and they called it crime. A man takes what is not given and names the silence afterward peace. The lantern knows."
     },
     {
       "id": "empty_path",
       "motion": "tracks_stop",
+      "journal": {
+        "id": "tracks_return",
+        "title": "Tracks that return",
+        "text": "Three paths enter. Two come back. The missing tracks do not explain themselves.",
+        "approach": "Do not treat silence, stillness, or looking back as consent."
+      },
       "text": "Three sets of tracks enter the clearing. Only two return. Orpheus was told not to turn, so the song blames his looking, not the hand that let go."
+    }
+  ],
+  "doors": [
+    {
+      "id": "sisters",
+      "line": "Three sisters, all called duty: leave, follow, freeze. They make a maze when someone else chooses the walls.",
+      "journal": {
+        "id": "three_sisters",
+        "title": "Three sisters",
+        "text": "A choice is not a prophecy. Leave, follow, freeze: none of those names can decide for you.",
+        "approach": "Offer options without naming one as the brave or correct choice."
+      }
+    },
+    {
+      "id": "thread",
+      "line": "The red thread leads back out. I thought that meant I had to follow it. A way out is still a choice.",
+      "journal": {
+        "id": "red_thread",
+        "title": "The red thread",
+        "text": "Ariadne's thread returns from the maze. It does not tell you who built it.",
+        "approach": "Follow the detail she offers. Do not pull her toward a confession."
+      }
+    },
+    {
+      "id": "window",
+      "line": "The warm window caught the axe below it. The snow had not covered the handle yet. He had been close.",
+      "journal": {
+        "id": "warm_window",
+        "title": "A warm window",
+        "text": "A light in a closed room can be a landmark without being an invitation.",
+        "approach": "Ask before coming closer; accept the distance she chooses."
+      }
     }
   ],
   "arrival": "The trees are empty. The lantern is still turned toward them.",
   "small_talk": [
     {
       "prompt": "The snow keeps changing the path.",
+      "guidance": "Begin with the ordinary. Let her choose how far to follow it.",
       "choices": [
         {
           "label": "Cold night.",
-          "response": "Hestia had one coal. Or it was Vesta. The gods change names when you cross a mountain. I keep forgetting which mountain this is."
+          "response": "Hestia had one coal. Or it was Vesta. The gods change names when you cross a mountain. I keep forgetting which mountain this is.",
+          "journal": {"id": "weather_first", "title": "A little weather", "text": "You began with the cold. She answered the question you asked, then wandered where she wished.", "approach": "Small talk can be a safe beginning; let her decide whether to go deeper."}
         },
         {
           "label": "I thought the path went farther.",
-          "response": "Ariadne gives the hero a thread. Nobody asks who taught the maze to hunger, or why she has to stay behind and hold the other end."
+          "response": "Ariadne gives the hero a thread. Nobody asks who taught the maze to hunger, or why she has to stay behind and hold the other end.",
+          "journal": {"id": "thread_without_pull", "title": "A thread without a pull", "text": "You noticed the path. She chose the maze inside the image.", "approach": "Notice what she brings into the conversation without demanding an explanation."}
         },
         {
           "label": "We can wait a while.",
-          "response": "Cronos ate his children. Winter does it with names, very slowly. I was trying to say the snow is pretty."
+          "response": "Cronos ate his children. Winter does it with names, very slowly. I was trying to say the snow is pretty.",
+          "journal": {"id": "shared_quiet", "title": "Shared quiet", "text": "You offered time without asking her to fill it.", "approach": "Being present can be enough; silence does not need fixing."}
         }
       ]
     },
     {
       "prompt": "The path sounds longer from here.",
+      "guidance": "Ask permission before changing distance. Keep the way back open.",
       "choices": [
         {
           "label": "We don't have to talk about anything.",
-          "response": "The Fates knot the thread when a hand is afraid. I thought the knot meant I had chosen to stay."
+          "response": "The Fates knot the thread when a hand is afraid. I thought the knot meant I had chosen to stay.",
+          "journal": {"id": "permission_to_pause", "title": "Permission to pause", "text": "You let her leave the sentence unfinished.", "approach": "Do not press for details. Let her decide whether to return to a subject."}
         },
         {
           "label": "Would you like me to stand nearer?",
-          "response": "That distance is all right. The wolf in the old tale waits outside the ring of fire. Please don't come up behind me."
+          "response": "That distance is all right. The wolf in the old tale waits outside the ring of fire. Please don't come up behind me.",
+          "journal": {"id": "chosen_distance", "title": "The chosen distance", "text": "You asked before moving. She named the space that felt all right.", "approach": "Ask clearly, then respect the first answer. Do not approach from behind."}
         },
         {
           "label": "We can go back together.",
-          "response": "I still listen for him when the trees go quiet. The forest has learned his footstep by heart."
+          "response": "I still listen for him when the trees go quiet. The forest has learned his footstep by heart.",
+          "journal": {"id": "return_by_choice", "title": "A way back", "text": "You offered to leave together. The choice stayed hers.", "approach": "Offer an exit without taking control of it."}
+        },
+        {
+          "label": "Was it the lumberjack? Tell me exactly what he did.",
+          "response": "The name makes the trees close. I can't give you the whole thing because you asked for it.",
+          "effect": "push",
+          "journal": {"id": "the_question_that_closes", "title": "The question that closes", "text": "You asked for the whole account before she was ready to give it.", "approach": "When a question closes the conversation, acknowledge the pressure and return control to her."}
         }
       ]
     },
     {
       "prompt": "I'm sorry. I keep giving you a maze instead of an answer. Will you stay and talk with me a little longer?",
+      "guidance": "You can reassure her without asking her to explain the apology.",
       "choices": [
         {
           "label": "Yes. Take your time.",
-          "response": "Thank you. The lantern remembers him; I only need to name what I saw."
+          "response": "Thank you. The lantern remembers him; I only need to name what I saw.",
+          "journal": {"id": "time_without_debt", "title": "Time without debt", "text": "You stayed without making her earn your patience.", "approach": "A gentle answer can reassure without asking for more."}
         },
         {
           "label": "We can stop whenever you want.",
-          "response": "I know. Knowing is a door; believing it is another room."
+          "response": "I know. Knowing is a door; believing it is another room.",
+          "journal": {"id": "stop_is_allowed", "title": "Stopping is allowed", "text": "You made stopping an option before she needed to ask.", "approach": "Keep control of the conversation with the person sharing it."}
         },
         {
           "label": "We can go back together.",
-          "response": "Not yet. The path behind us is full of footprints facing the wrong way."
+          "response": "Not yet. The path behind us is full of footprints facing the wrong way.",
+          "journal": {"id": "not_yet", "title": "Not yet", "text": "She chose to continue, for now. The way back remains open.", "approach": "Treat a yes as belonging to this moment, not every next moment."}
+        },
+        {
+          "label": "You have to tell me what happened.",
+          "response": "Have to? The door shuts when you say it like that.",
+          "effect": "push",
+          "journal": {"id": "the_door_shuts", "title": "The door shuts", "text": "The demand made the room smaller. You can still choose what to do next.", "approach": "A disclosure is hers to offer. Notice the boundary before asking again."}
+        }
+      ]
+    },
+    {
+      "prompt": "The axe is his. The rest is still fog. What would help you feel safe now?",
+      "guidance": "Name present choices. Do not demand a full account or promise a confrontation.",
+      "choices": [
+        {
+          "label": "We can stay by the light.",
+          "response": "Yes. Here, where I can see the path. The fire asks nothing of me.",
+          "journal": {"id": "stay_in_sight", "title": "Where the light reaches", "text": "She chose a place where the path stays visible.", "approach": "Offer practical safety and let her choose the place."}
+        },
+        {
+          "label": "We don't have to look for him.",
+          "response": "Thank you. A warning is not a summons. Let the axe be a warning enough.",
+          "journal": {"id": "warning_not_summons", "title": "A warning, not a summons", "text": "You heard the danger without turning the dream into a hunt.", "approach": "Believe the warning; do not make her lead a search or confrontation."}
+        },
+        {
+          "label": "Tell me what you want me to know.",
+          "response": "Only this: he is still out there. I do not owe the forest every detail for it to be true.",
+          "journal": {"id": "enough_to_believe", "title": "Enough to believe", "text": "She named what mattered and kept the rest for herself.", "approach": "Believe what she tells you without asking for proof."}
+        },
+        {
+          "label": "Then let's go find him.",
+          "response": "No. I asked you not to take the path alone. I did not ask you to take me back to him.",
+          "effect": "push",
+          "journal": {"id": "not_a_summons", "title": "Not a summons", "text": "The warning was about safety, not permission to confront him.", "approach": "Do not turn a disclosure into a hunt. Ask what would help her feel safe now."}
         }
       ]
     }
   ],
+  "repair": {
+    "prompt": "She looks past you. What now?",
+    "guidance": "You can step back and listen again. Or keep pressing and lose the thread.",
+    "choices": [
+      {
+        "label": "I asked too much. We can stop.",
+        "response": "Thank you. Stay there a moment. I can find the path again.",
+        "effect": "repair",
+        "advance": false,
+        "journal": {"id": "repair_by_stepping_back", "title": "Room to return", "text": "You named the pressure and gave her space to choose whether to continue.", "approach": "A repair starts with recognizing the impact, then leaving the next move to her."}
+      },
+      {
+        "label": "You owe me the truth.",
+        "response": "No. You have made the truth a price I have to pay.",
+        "effect": "escalate",
+        "journal": {"id": "truth_as_a_price", "title": "Truth as a price", "text": "The demand deepened the distance between you.", "approach": "The story is not a debt. Pressing for it can close the conversation."}
+      },
+      {
+        "label": "I believe you. I won't make you prove it.",
+        "response": "Then let me say only what I can. The light is still there.",
+        "effect": "repair",
+        "advance": false,
+        "journal": {"id": "belief_without_proof", "title": "Belief without proof", "text": "You offered trust without asking her to earn it with details.", "approach": "Believing her leaves the next choice with her."}
+      }
+    ]
+  },
   "question": "What do you wish someone understood?",
+  "question_guidance": "Choose what is yours to say. You may keep the rest private. If she turns away, step back; a name is not the same as a warning.",
   "branches": [
     {
       "id": "name",
       "label": "I said no.",
       "response": "You said it. I heard you. The word can stay here without becoming a whole story.",
+      "journal": {"id": "no_is_complete", "title": "A word left whole", "text": "You chose to name the boundary. Mathilda did not ask you to defend it.", "approach": "A no needs no supporting evidence or explanation."},
       "ophelia": "At the first bend, she remembers that no is a complete sentence.",
       "mathilda": "By the cups, she remembers she does not owe anyone an explanation."
     },
@@ -90,6 +231,7 @@
       "id": "waiting",
       "label": "I went still. That wasn't yes.",
       "response": "You went still. I believe you. You don't have to prove what your body did to survive.",
+      "journal": {"id": "still_is_not_yes", "title": "Still is not yes", "text": "You chose to name what stillness did not mean.", "approach": "Do not mistake freezing or silence for agreement."},
       "ophelia": "She leaves the lamp where it is and does not ask why the door stayed shut.",
       "mathilda": "She sits by the fire until her hands remember they are her own."
     },
@@ -97,6 +239,7 @@
       "id": "remember",
       "label": "I was trying to get away.",
       "response": "You were trying to get away. The way back can belong to you now.",
+      "journal": {"id": "way_back_is_mine", "title": "A way back", "text": "You chose the part of the story that points toward freedom now.", "approach": "Offer choices about what happens next; do not take over."},
       "ophelia": "The house is not a debt. She can leave it and return by choice.",
       "mathilda": "The path past the tent is hers to take, or not take."
     },
@@ -104,9 +247,48 @@
       "id": "silence",
       "label": "I can't say it yet.",
       "response": "Then we can leave it there. I can sit with you without asking again.",
+      "journal": {"id": "not_yet_shared", "title": "Not yet shared", "text": "You chose to keep the sentence private. The conversation made room for that.", "approach": "Respect an unfinished answer. Do not ask again in another form."},
       "ophelia": "At the first bend, the unsaid sentence can stay unsaid.",
       "mathilda": "By the spare cup, there is room for a pause."
+    },
+    {
+      "id": "walk_beside",
+      "label": "I can stay beside you without an answer.",
+      "response": "Then stay where I can see you. We can let the path be a path for a while.",
+      "journal": {"id": "company_without_demand", "title": "Company without demand", "text": "You chose to remain present without turning the silence into a question.", "approach": "Offer company, then let the other person decide whether to speak."},
+      "ophelia": "At the first bend, they walk together without making the silence carry a message.",
+      "mathilda": "By the spare cup, Ophelia stays in sight. Nothing is asked of the quiet."
+    },
+    {
+      "id": "present_need",
+      "label": "What would help you feel safer right now?",
+      "response": "Keep the light between us and the trees. We can leave when I say. That is enough for now.",
+      "journal": {"id": "safety_in_the_present", "title": "Safety in the present", "text": "You asked about the moment in front of her, not for a complete account of the past.", "approach": "Ask about present needs. Let her set the next step and the distance."},
+      "ophelia": "She leaves the lamp where it is and asks what would help now.",
+      "mathilda": "The fire stays in view. For this moment, the path is hers to choose."
     }
   ],
-  "ending": "I'm sorry I'm still being so vague. The one who cut the trees is still out there. I saw his axe by the path. Please don't take the path alone."
+  "ending": "I'm sorry I'm still being so vague. The one who cut the trees is still out there. I saw his axe by the path. Please don't take the path alone.",
+  "unresolved": {
+    "response": "I'm sorry. I gave you fragments and still couldn't say what they meant. The warning has no name yet.",
+    "ophelia": "The forest opened three doors. She passed the warm window. Morning brings her home with no answer.",
+    "mathilda": "She woke with a cold feeling and no picture she could hold. By morning, even the warning had lost its words.",
+    "journal": {
+      "id": "unresolved_warning",
+      "title": "A warning without its words",
+      "text": "The warm window held the clearest memory. It stayed unopened, and the fragments never became an answer.",
+      "approach": "Return to the warm window and one other door. A fragment is not a failure; the path is still there."
+    }
+  },
+  "ruptured": {
+    "response": "I wanted to tell you. Then it became something you needed from me. I can't stay in this room now.",
+    "ophelia": "She tried to make the answer arrive. In the morning, the door is shut, and the question is all she remembers.",
+    "mathilda": "She woke at the edge of the light. The path behind her had closed before she could name what she feared.",
+    "journal": {
+      "id": "conversation_lost",
+      "title": "The conversation closed",
+      "text": "Pushing for certainty turned the warning into a demand. The dream ended without the words Mathilda had been trying to find.",
+      "approach": "A bad turn is not permanent. Slow down, acknowledge the pressure, and let her set the pace."
+    }
+  }
 }

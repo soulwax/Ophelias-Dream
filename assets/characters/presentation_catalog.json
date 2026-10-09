@@ -215,5 +215,20 @@
 			"trim_color": "bca57b"
 		},
 		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Enhanced Snow Bob",
+		"description": "Mathilda's Frost Bob with sculpted glacial inlays and a delicate six-point snow crystal pin, all bound to her existing head rig.",
+		"scale": 0.8,
+		"configuration": {
+			"name": "Mathilda",
+			"hair": "snowbob",
+			"outfit": "elf",
+			"hair_color": "d4e2eb",
+			"eye_color": "5b9fae",
+			"cloth_color": "344e66",
+			"trim_color": "bca57b"
+		},
+		"collection": "Character Studio · Variants"
 	}
 ]

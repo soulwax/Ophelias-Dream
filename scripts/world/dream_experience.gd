@@ -6,6 +6,10 @@ const FIGURE_SCENE := preload("res://assets/characters/quaternius_modular_women/
 const FIGURE_OFFSETS := [9.0, 20.0, 34.0, 50.0, 67.0]
 const SCENE_CAMERA_DISTANCE := [4.8, 4.5, 4.2, 3.9]
 const SCENE_CAMERA_HEIGHT := [1.65, 1.58, 1.5, 1.42]
+# Each memory takes her for one full reveal, then gives her back on the path.
+const APPARITION_DISSOLVE := 0.38
+const APPARITION_FADE_SECONDS := 1.1
+const APPARITION_MEMORY_SECONDS := 3.85
 const FLASHBACK_CUES := [
 	{"offset": 13.0, "id": "sisters"},
 	{"offset": 29.0, "id": "thread"},
@@ -27,6 +31,12 @@ var _figure_moving := false
 var _figure_rambling := false
 var _rambling_gaze_target := Vector3.ZERO
 var _silhouette: ShaderMaterial
+enum ApparitionState { PRESENT, LEAVING, ABSENT, RETURNING }
+var _apparition_state := ApparitionState.PRESENT
+var _apparition_timer := 0.0
+var _apparition_dissolve := 0.0
+var _apparition_tween: Tween
+var _apparition_link_strength := 0.0
 var _boundary_shadow: MeshInstance3D
 var _boundary_material: ShaderMaterial
 var _boundary_strength := 0.0
@@ -70,6 +80,11 @@ var _answer_open := false
 var _conversation_intro_waiting := false
 var _conversation_round := 0
 var _conversation_waiting := false
+var _conversation_strain := 0
+var _repair_menu_attempts := 0
+var _repair_menu_active := false
+var _conversation_choice_advances := true
+var _dream_outcome := "complete"
 var _ending_warning_shown := false
 var _waking_card := false
 var _dialogue_ui_hidden_for_pause := false
@@ -94,7 +109,21 @@ var _effect_cue := "doubt"
 var _effect_focus: Node3D
 var _flashback_cue_index := 0
 var _flashback_cooldown := 0.0
+var _flashback_seen: Dictionary = {}
+var _opened_memory_doors: Dictionary = {}
+var _dream_understood := false
 var _story: Dictionary
+var _dream_journal_entries: Array[Dictionary] = []
+var _dream_journal_seen: Dictionary = {}
+var _dream_journal_layer: CanvasLayer
+var _dream_journal_hint: Label
+var _dream_journal_hint_panel: PanelContainer
+var _dream_journal_scrim: ColorRect
+var _dream_journal_panel: PanelContainer
+var _dream_journal_scroll: ScrollContainer
+var _dream_journal_rows: VBoxContainer
+var _dream_journal_available := false
+var _dream_journal_open := false
 
 
 func _ready() -> void:
@@ -104,6 +133,7 @@ func _ready() -> void:
 		return
 	_build_dream_route()
 	_build_caption()
+	_build_dream_journal()
 	_build_figure()
 	_build_warning_prop()
 	_build_post_effect()
@@ -124,12 +154,14 @@ func _start() -> void:
 	Game.player.reset_physics_interpolation()
 	_figure_offset = Game.trail.player_start_offset + FIGURE_OFFSETS[0]
 	_place_figure(_figure_offset)
+	_begin_figure_appearance(1.55)
 	_build_lantern()
 	Game.audio_fade = 1.0
 	Game.set_phase(Game.Phase.DREAM)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	Game.settings.apply_audio()
-	_set_caption(str(_story.get("opening", "")))
+	_set_caption(str(_story.get("opening", "")), "MATHILDA")
+	_record_dream_entry(_story.get("journal_cue", {}))
 	_set_figure_moving(false)
 
 
@@ -140,12 +172,18 @@ func _build_dream_route() -> void:
 	_dream_route.name = "DreamRoute"
 	add_child(_dream_route)
 	_dream_route.call("build", Game.trail)
+	var doors: Array = _dream_route.call("dream_doors")
+	for door_variant in doors:
+		var door := door_variant as Node
+		if door:
+			door.connect("opened", _on_dream_door_opened)
 
 
 func _build_figure() -> void:
 	_figure = FIGURE_SCENE.instantiate() as Node3D
 	_figure.name = "UnrememberedFigure"
 	_figure.scale = Vector3.ONE * 1.0
+	_figure.visible = false
 	add_child(_figure)
 	_silhouette = ShaderMaterial.new()
 	_silhouette.shader = preload("res://shaders/dream_shadow.gdshader")
@@ -244,7 +282,7 @@ func _build_caption() -> void:
 	_speech_sprite = Sprite3D.new()
 	_speech_sprite.name = "InWorldSpeech"
 	_speech_sprite.texture = _speech_view.get_texture()
-	_speech_sprite.pixel_size = 0.0023
+	_speech_sprite.pixel_size = 0.0036
 	_speech_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_speech_sprite.no_depth_test = true
 	_speech_sprite.shaded = false
@@ -295,6 +333,172 @@ func _build_caption() -> void:
 	_build_choice_panel()
 
 
+func _build_dream_journal() -> void:
+	_dream_journal_layer = CanvasLayer.new()
+	_dream_journal_layer.name = "DreamJournalLayer"
+	_dream_journal_layer.layer = 28
+	add_child(_dream_journal_layer)
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dream_journal_layer.add_child(root)
+	_dream_journal_hint_panel = PanelContainer.new()
+	_dream_journal_hint_panel.name = "DreamClueProgress"
+	_dream_journal_hint_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_dream_journal_hint_panel.offset_left = 24.0
+	_dream_journal_hint_panel.offset_top = -56.0
+	_dream_journal_hint_panel.offset_right = 660.0
+	_dream_journal_hint_panel.offset_bottom = -14.0
+	_dream_journal_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hint_style := StyleBoxFlat.new()
+	hint_style.bg_color = Color(0.012, 0.018, 0.03, 0.78)
+	hint_style.border_color = Color("9c8a70", 0.42)
+	hint_style.set_border_width_all(1)
+	hint_style.set_corner_radius_all(5)
+	hint_style.content_margin_left = 10.0
+	hint_style.content_margin_right = 10.0
+	hint_style.content_margin_top = 4.0
+	hint_style.content_margin_bottom = 4.0
+	_dream_journal_hint_panel.add_theme_stylebox_override("panel", hint_style)
+	_dream_journal_hint_panel.hide()
+	root.add_child(_dream_journal_hint_panel)
+	_dream_journal_hint = UiChrome.label("", 17, Color("e2d3b6"))
+	_dream_journal_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dream_journal_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_dream_journal_hint_panel.add_child(_dream_journal_hint)
+	_dream_journal_scrim = ColorRect.new()
+	_dream_journal_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dream_journal_scrim.color = Color(0.008, 0.012, 0.022, 0.78)
+	_dream_journal_scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_dream_journal_scrim.hide()
+	root.add_child(_dream_journal_scrim)
+	_dream_journal_panel = PanelContainer.new()
+	_dream_journal_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_dream_journal_panel.offset_left = -430.0
+	_dream_journal_panel.offset_top = -310.0
+	_dream_journal_panel.offset_right = 430.0
+	_dream_journal_panel.offset_bottom = 310.0
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.025, 0.03, 0.045, 0.97)
+	panel_style.border_color = Color("9c8a70", 0.54)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(8)
+	panel_style.set_content_margin_all(28)
+	_dream_journal_panel.add_theme_stylebox_override("panel", panel_style)
+	_dream_journal_panel.hide()
+	root.add_child(_dream_journal_panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 12)
+	_dream_journal_panel.add_child(column)
+	var title := UiChrome.label("DREAM JOURNAL", 27, Color("d5b779"))
+	column.add_child(title)
+	var subtitle := UiChrome.label("Words kept from the path. Press J or Esc to close.", 15, Color("9e9aa0"))
+	column.add_child(subtitle)
+	var divider := HSeparator.new()
+	column.add_child(divider)
+	_dream_journal_scroll = ScrollContainer.new()
+	_dream_journal_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_dream_journal_scroll.custom_minimum_size = Vector2(0.0, 440.0)
+	column.add_child(_dream_journal_scroll)
+	_dream_journal_rows = VBoxContainer.new()
+	_dream_journal_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_dream_journal_rows.add_theme_constant_override("separation", 14)
+	_dream_journal_scroll.add_child(_dream_journal_rows)
+	var foot := UiChrome.label("The field pages are gone here. Mathilda's words make the record.", 13, Color("7e8791"))
+	column.add_child(foot)
+
+
+func _record_dream_entry(raw_entry: Variant) -> void:
+	if typeof(raw_entry) != TYPE_DICTIONARY:
+		return
+	var entry := (raw_entry as Dictionary).duplicate(true)
+	var identifier := str(entry.get("id", ""))
+	if identifier.is_empty() or _dream_journal_seen.has(identifier):
+		return
+	if str(entry.get("title", "")).strip_edges().is_empty() or str(entry.get("text", "")).strip_edges().is_empty():
+		return
+	_dream_journal_seen[identifier] = true
+	_dream_journal_entries.append(entry)
+	_dream_journal_available = true
+	_refresh_dream_journal_hint()
+	_dream_journal_hint_panel.show()
+	_refresh_dream_journal()
+
+
+func _refresh_dream_journal_hint() -> void:
+	var door_count := _opened_memory_doors.size()
+	var progress := "OPEN THE WARM WINDOW + ONE OTHER"
+	if _opened_memory_doors.has("window") and door_count >= 2:
+		progress = "WARNING REMEMBERED  ·  2/2"
+	elif _opened_memory_doors.has("window"):
+		progress = "WARM WINDOW FOUND  ·  %d/1 OTHER" % maxi(door_count - 1, 0)
+	elif door_count > 0:
+		progress = "WARM WINDOW STILL NEEDED  ·  %d/2" % door_count
+	_dream_journal_hint.text = "%s  DREAM JOURNAL  ·  %d  |  %s" % [Game.settings.key_label("journal"), _dream_journal_entries.size(), progress]
+
+
+func _refresh_dream_journal() -> void:
+	if _dream_journal_rows == null:
+		return
+	for child in _dream_journal_rows.get_children():
+		_dream_journal_rows.remove_child(child)
+		child.queue_free()
+	for entry in _dream_journal_entries:
+		var title := UiChrome.label(str(entry.get("title", "")), 19, Color("c8ad79"))
+		_dream_journal_rows.add_child(title)
+		var text := UiChrome.label(str(entry.get("text", "")), 16, Color("dedbd7"))
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_dream_journal_rows.add_child(text)
+		var approach := str(entry.get("approach", "")).strip_edges()
+		if not approach.is_empty():
+			var guidance := UiChrome.label("A WAY THROUGH  ·  " + approach, 14, Color("a9b0b8"))
+			guidance.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			guidance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			_dream_journal_rows.add_child(guidance)
+		var divider := HSeparator.new()
+		_dream_journal_rows.add_child(divider)
+
+
+func _open_dream_journal() -> void:
+	if not _dream_journal_available or _dream_journal_open:
+		return
+	_dream_journal_open = true
+	_dream_journal_scroll.scroll_vertical = 0
+	if Game.player:
+		Game.player.dialogue_locked = true
+	_dream_journal_scrim.show()
+	_dream_journal_panel.show()
+
+
+func _close_dream_journal() -> void:
+	if not _dream_journal_open:
+		return
+	_dream_journal_open = false
+	_dream_journal_scrim.hide()
+	_dream_journal_panel.hide()
+	if Game.player:
+		Game.player.dialogue_locked = _story_line_active or _conversation_camera_active or _conversation_camera_returning or _conversation_waiting or _conversation_intro_waiting or _answer_open
+
+
+func _on_dream_door_opened(door_id: String, flashback_id: String) -> void:
+	if _opened_memory_doors.has(door_id):
+		return
+	_opened_memory_doors[door_id] = true
+	var threshold := STORY.door_for(_story, door_id)
+	if threshold.is_empty():
+		return
+	var entry: Dictionary = threshold.get("journal", {})
+	_record_dream_entry(entry)
+	if not _flashback_seen.has(flashback_id):
+		var flashback := _dream_route.call("play_flashback", flashback_id) as Node3D if _dream_route else null
+		if flashback:
+			_flashback_seen[flashback_id] = true
+			_begin_figure_departure()
+			_pulse_effect(0.96, "insight", flashback)
+	_queue_story_line(str(threshold.get("line", "")))
+
+
 func _layout_caption() -> void:
 	if _speech_sprite and _speech_target and is_instance_valid(_speech_target):
 		_speech_sprite.global_position = _speech_target.global_position + Vector3.UP * 2.25
@@ -318,6 +522,10 @@ func _process(delta: float) -> void:
 	_update_post_effect(delta)
 	if Game.phase != Game.Phase.DREAM:
 		return
+	if _dream_journal_open:
+		if Game.player and not Game.player.dialogue_locked:
+			Game.player.dialogue_locked = true
+		return
 	_update_dream_quiet(delta)
 	if _conversation_camera_active:
 		_update_conversation_camera(delta)
@@ -327,6 +535,7 @@ func _process(delta: float) -> void:
 		_conversation_response_timer -= delta
 		if _conversation_response_timer <= 0.0:
 			_reveal_conversation_response()
+	_update_figure_apparition(delta)
 	_update_boundary_shadow(delta)
 	if _finished:
 		return
@@ -342,10 +551,10 @@ func _process(delta: float) -> void:
 	var route_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
 	_update_flashback_cues(delta, route_progress)
 	var beats: Array = _story.get("beats", [])
-	if _stage < beats.size() and route_progress >= FIGURE_OFFSETS[_stage] - 2.5:
+	if _stage < beats.size() and _apparition_state == ApparitionState.PRESENT and route_progress >= FIGURE_OFFSETS[_stage] - 2.5:
 		_stage += 1
 		var beat: Dictionary = beats[_stage - 1]
-		_queue_story_line(str(beat.get("text", "")), str(beat.get("motion", "")))
+		_queue_story_line(str(beat.get("text", "")), str(beat.get("motion", "")), beat.get("journal", {}))
 		var cue := "footstep"
 		match str(beat.get("id", "")):
 			"lantern":
@@ -361,7 +570,11 @@ func _process(delta: float) -> void:
 
 func _update_flashback_cues(delta: float, route_progress: float) -> void:
 	_flashback_cooldown = maxf(_flashback_cooldown - delta, 0.0)
-	if _flashback_cooldown > 0.0 or _flashback_cue_index >= FLASHBACK_CUES.size():
+	if _apparition_state != ApparitionState.PRESENT or _flashback_cooldown > 0.0 or _flashback_cue_index >= FLASHBACK_CUES.size():
+		return
+	while _flashback_cue_index < FLASHBACK_CUES.size() and _flashback_seen.has(str(FLASHBACK_CUES[_flashback_cue_index]["id"])):
+		_flashback_cue_index += 1
+	if _flashback_cue_index >= FLASHBACK_CUES.size():
 		return
 	var cue: Dictionary = FLASHBACK_CUES[_flashback_cue_index]
 	if route_progress < float(cue["offset"]):
@@ -370,24 +583,27 @@ func _update_flashback_cues(delta: float, route_progress: float) -> void:
 	var flashback := _dream_route.call("play_flashback", str(cue["id"])) as Node3D if _dream_route else null
 	if flashback == null:
 		return
+	_flashback_seen[str(cue["id"])] = true
 	_flashback_cooldown = 1.2
+	_begin_figure_departure()
 	_pulse_effect(0.96, "insight", flashback)
 
 
-func _queue_story_line(line: String, motion: String = "") -> void:
+func _queue_story_line(line: String, motion: String = "", journal_entry: Dictionary = {}) -> void:
 	if line.strip_edges().is_empty():
 		return
-	_story_line_queue.append({"text": line, "motion": motion})
-	if not _story_line_active and _story_gap_remaining <= 0.0:
+	_story_line_queue.append({"text": line, "motion": motion, "journal": journal_entry})
+	if not _story_line_active and _story_gap_remaining <= 0.0 and _apparition_state == ApparitionState.PRESENT:
 		_show_next_story_line()
 
 
 func _show_next_story_line() -> void:
-	if _story_line_queue.is_empty():
+	if _story_line_queue.is_empty() or _apparition_state != ApparitionState.PRESENT:
 		return
 	_begin_character_conversation(true)
 	var beat: Dictionary = _story_line_queue.pop_front()
 	var line := str(beat.get("text", ""))
+	_record_dream_entry(beat.get("journal", {}))
 	_play_story_choreography(str(beat.get("motion", "")))
 	_set_caption(line, "MATHILDA")
 	_caption_time = 0.0
@@ -494,6 +710,8 @@ func _turn_figure_toward_rambling_gaze() -> void:
 
 
 func _update_story_lines(delta: float) -> void:
+	if not _story_line_active and _apparition_state != ApparitionState.PRESENT:
+		return
 	if _story_line_active:
 		_caption_time += delta
 		if _caption_time >= _story_line_hold:
@@ -507,11 +725,29 @@ func _update_story_lines(delta: float) -> void:
 		_story_gap_remaining = maxf(_story_gap_remaining - delta, 0.0)
 		if _story_gap_remaining <= 0.0:
 			_show_next_story_line()
+	elif not _story_line_queue.is_empty():
+		_show_next_story_line()
 	if _story_finish_pending and not _story_line_active and _story_line_queue.is_empty() and _story_gap_remaining <= 0.0:
 		_finish_dream()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Game.phase == Game.Phase.DREAM and Game.dream_mode and event.is_action_pressed("journal"):
+		if _dream_journal_open:
+			_close_dream_journal()
+		else:
+			_open_dream_journal()
+		get_viewport().set_input_as_handled()
+		return
+	if _dream_journal_open:
+		if event.is_action_pressed("pause"):
+			_close_dream_journal()
+		elif event.is_action_pressed("ui_up"):
+			_dream_journal_scroll.scroll_vertical = maxi(_dream_journal_scroll.scroll_vertical - 120, 0)
+		elif event.is_action_pressed("ui_down"):
+			_dream_journal_scroll.scroll_vertical += 120
+		get_viewport().set_input_as_handled()
+		return
 	if _waking_card and Game.phase == Game.Phase.DIALOGUE:
 		if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
 			_return_to_menu()
@@ -541,9 +777,13 @@ func _unhandled_input(event: InputEvent) -> void:
 					_conversation_waiting = false
 					if _memory_chosen:
 						_continue_memory_dialogue()
-				else:
-					_conversation_round += 1
-					_build_small_talk_choices()
+					elif _conversation_choice_advances:
+						_conversation_round += 1
+						_conversation_choice_advances = true
+						_build_small_talk_choices()
+					else:
+						_conversation_choice_advances = true
+						_build_small_talk_choices()
 			get_viewport().set_input_as_handled()
 			return
 		if not _answer_open:
@@ -577,7 +817,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _update_figure(delta: float) -> void:
-	if _figure == null or Game.trail == null or Game.player == null:
+	if _figure == null or Game.trail == null or Game.player == null or _apparition_state != ApparitionState.PRESENT:
 		return
 	var player_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
 	var goal_index := mini(_stage, FIGURE_OFFSETS.size() - 1)
@@ -600,7 +840,8 @@ func _update_boundary_shadow(delta: float) -> void:
 	var beats: Array = _story.get("beats", [])
 	var merging := _stage >= beats.size() and _effect_cue == "merge" and _effect_strength > 0.01
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
-	var target_strength := _effect_strength * (0.08 + screen_effects * 0.3) if merging and distance <= 14.0 else 0.0
+	var merge_strength := _effect_strength * (0.08 + screen_effects * 0.3) if merging and distance <= 14.0 else 0.0
+	var target_strength := maxf(merge_strength, _apparition_link_strength)
 	_boundary_strength = move_toward(_boundary_strength, target_strength, delta * (0.34 if target_strength > _boundary_strength else 0.16))
 	_boundary_material.set_shader_parameter("strength", _boundary_strength)
 	_boundary_shadow.visible = _boundary_strength > 0.003 and distance > 0.1
@@ -632,6 +873,78 @@ func _set_figure_moving(moving: bool) -> void:
 		_animation.pause()
 
 
+func _begin_figure_appearance(duration: float) -> void:
+	if _figure == null or _silhouette == null:
+		return
+	if _apparition_tween and _apparition_tween.is_running():
+		_apparition_tween.kill()
+	_figure.show()
+	_apparition_state = ApparitionState.RETURNING
+	_set_figure_dissolve(APPARITION_DISSOLVE)
+	_apparition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_apparition_tween.tween_method(_set_figure_dissolve, APPARITION_DISSOLVE, 0.0, duration)
+	_apparition_tween.tween_callback(_complete_figure_appearance)
+
+
+func _begin_figure_departure() -> void:
+	if _figure == null or _silhouette == null or _apparition_state != ApparitionState.PRESENT:
+		return
+	if _apparition_tween and _apparition_tween.is_running():
+		_apparition_tween.kill()
+	_set_figure_moving(false)
+	_apparition_state = ApparitionState.LEAVING
+	_apparition_timer = APPARITION_MEMORY_SECONDS
+	_apparition_link_strength = 0.2
+	if _dream_soundscape:
+		_dream_soundscape.call("apparition_footstep", _figure.global_position, false)
+	_apparition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_apparition_tween.tween_method(_set_figure_dissolve, _apparition_dissolve, APPARITION_DISSOLVE, APPARITION_FADE_SECONDS)
+	_apparition_tween.tween_callback(_finish_figure_departure)
+
+
+func _finish_figure_departure() -> void:
+	if _apparition_state != ApparitionState.LEAVING:
+		return
+	_figure.hide()
+	_apparition_state = ApparitionState.ABSENT
+
+
+func _update_figure_apparition(delta: float) -> void:
+	# Her absence lasts as long as the memory landscape. The paired return cue
+	# lands just after it has folded away, even if the player stopped to look.
+	if _apparition_state == ApparitionState.LEAVING or _apparition_state == ApparitionState.ABSENT:
+		_apparition_timer = maxf(_apparition_timer - delta, 0.0)
+		if _apparition_state == ApparitionState.ABSENT and _apparition_timer <= 0.0:
+			_return_figure_to_path()
+
+
+func _return_figure_to_path() -> void:
+	if _figure == null or Game.trail == null or Game.player == null:
+		return
+	var player_offset := Game.trail.offset_of(Game.player.global_position)
+	_figure_offset = maxf(_figure_offset, player_offset + 4.2)
+	_place_figure(_figure_offset)
+	_figure.show()
+	_apparition_state = ApparitionState.RETURNING
+	_apparition_link_strength = 0.0
+	if _dream_soundscape:
+		_dream_soundscape.call("apparition_footstep", _figure.global_position, true)
+	_begin_figure_appearance(1.25)
+
+
+func _set_figure_dissolve(value: float) -> void:
+	_apparition_dissolve = clampf(value, 0.0, APPARITION_DISSOLVE)
+	if _silhouette:
+		_silhouette.set_shader_parameter("dissolve", _apparition_dissolve)
+
+
+func _complete_figure_appearance() -> void:
+	_apparition_state = ApparitionState.PRESENT
+	_apparition_tween = null
+	_apparition_link_strength = 0.0
+	_set_figure_dissolve(0.0)
+
+
 func _place_figure(along: float, delta: float = 0.0) -> void:
 	if _figure == null or Game.trail == null:
 		return
@@ -647,8 +960,6 @@ func _place_figure(along: float, delta: float = 0.0) -> void:
 		var target_yaw := atan2(-toward.x, -toward.z)
 		var turn_blend := 1.0 if delta <= 0.0 else 1.0 - exp(-delta * 10.0)
 		_figure.rotation.y = lerp_angle(_figure.rotation.y, target_yaw, turn_blend)
-	_figure.visible = true
-	_figure.scale = Vector3.ONE
 
 
 func _build_lantern() -> void:
@@ -1031,6 +1342,9 @@ func _build_choices() -> void:
 	for branch in branches:
 		labels.append(str(branch.get("label", "")))
 	_set_choice_rows(str(_story.get("question", "")), labels)
+	var guidance := str(_story.get("question_guidance", ""))
+	if not guidance.is_empty():
+		_choice_hint.text = "%s\n%s" % [guidance, _choice_hint.text]
 	_choice_panel.show()
 	_choice_index = 0
 	_refresh_choices()
@@ -1038,6 +1352,22 @@ func _build_choices() -> void:
 
 func _build_small_talk_choices() -> void:
 	var rounds: Array = _story.get("small_talk", [])
+	if _conversation_strain >= 2 and _repair_menu_attempts < 2:
+		var repair: Dictionary = _story.get("repair", {})
+		var repair_choices: Array = repair.get("choices", [])
+		var repair_labels: Array[String] = []
+		for choice in repair_choices:
+			repair_labels.append(str(choice.get("label", "")))
+		_repair_menu_attempts += 1
+		_repair_menu_active = true
+		_set_caption("")
+		_set_choice_rows(str(repair.get("prompt", "")), repair_labels)
+		_choice_hint.text = "%s\n%s" % [str(repair.get("guidance", "")), _choice_hint.text]
+		_choice_index = 0
+		_refresh_conversation_choices(repair_choices)
+		_choice_panel.show()
+		return
+	_repair_menu_active = false
 	if _conversation_round >= rounds.size():
 		_conversation_waiting = false
 		_set_caption("")
@@ -1050,6 +1380,9 @@ func _build_small_talk_choices() -> void:
 	for choice in choices:
 		labels.append(str(choice.get("label", "")))
 	_set_choice_rows(str(round_data.get("prompt", "")), labels)
+	var guidance := str(round_data.get("guidance", ""))
+	if not guidance.is_empty():
+		_choice_hint.text = "%s\n%s" % [guidance, _choice_hint.text]
 	_choice_index = 0
 	_refresh_conversation_choices(choices)
 	_choice_panel.show()
@@ -1090,14 +1423,18 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 			_choice_panel.remove_child(child)
 			child.queue_free()
 	_choice_buttons.clear()
+	var row_spacing := 0.31 if labels.size() <= 4 else 0.26
+	var row_half_height := float(maxi(labels.size() - 1, 0)) * row_spacing * 0.5
+	_choice_title.position.y = row_half_height + 0.52
+	_choice_hint.position.y = -row_half_height - 0.54
 	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
 	_choice_hint.text = (
 		"PRESS %s TO RETURN" % Game.settings.key_label("interact")
 		if _waking_card else "YOUR REPLY  ·  ↑ / ↓  ·  %s  ·  ESC TO PAUSE" % Game.settings.key_label("interact")
 	)
 	for index in range(labels.size()):
-		var choice_label := _new_choice_label(25)
-		choice_label.position = Vector3(0.0, 0.28 - float(index) * 0.31, 0.0)
+		var choice_label := _new_choice_label(24 if labels.size() <= 4 else 21)
+		choice_label.position = Vector3(0.0, row_half_height - float(index) * row_spacing, 0.0)
 		choice_label.text = labels[index]
 		_choice_panel.add_child(choice_label)
 		_choice_buttons.append(choice_label)
@@ -1115,15 +1452,27 @@ func _update_choice_positions() -> void:
 
 
 func _choose_small_talk(index: int) -> void:
-	var rounds: Array = _story.get("small_talk", [])
-	if _conversation_round >= rounds.size():
-		return
-	var round_data: Dictionary = rounds[_conversation_round]
+	var round_data: Dictionary
+	if _repair_menu_active:
+		round_data = _story.get("repair", {})
+	else:
+		var rounds: Array = _story.get("small_talk", [])
+		if _conversation_round >= rounds.size():
+			return
+		round_data = rounds[_conversation_round]
 	var choices: Array = round_data.get("choices", [])
 	if index < 0 or index >= choices.size():
 		return
 	var choice: Dictionary = choices[index]
+	var effect := str(choice.get("effect", ""))
+	if effect == "push" or effect == "escalate":
+		_conversation_strain += 2
+	elif effect == "repair":
+		_conversation_strain = 0
+	_repair_menu_active = false
+	_conversation_choice_advances = bool(choice.get("advance", true))
 	_choice_panel.hide()
+	_record_dream_entry(choice.get("journal", {}))
 	_set_caption("")
 	_begin_dialogue_exchange(str(choice.get("label", "")), str(choice.get("response", "")))
 	_lantern_prompt.hide()
@@ -1155,7 +1504,7 @@ func _continue_memory_dialogue() -> void:
 	elif not _ending_warning_shown:
 		_ending_warning_shown = true
 		_show_warning_prop()
-		_set_caption("%s\n\n%s TO WAKE" % [str(_story.get("ending", _story.get("arrival", ""))), Game.settings.key_label("interact")], "MATHILDA")
+		_set_caption("%s\n\n%s TO WAKE" % [_ending_text(), Game.settings.key_label("interact")], "MATHILDA")
 	else:
 		_wake()
 
@@ -1188,6 +1537,10 @@ func _style_choice(index: int, text: String) -> void:
 
 
 func _refresh_choices() -> void:
+	if _repair_menu_active:
+		var repair: Dictionary = _story.get("repair", {})
+		_refresh_conversation_choices(repair.get("choices", []))
+		return
 	var rounds: Array = _story.get("small_talk", [])
 	if _answer_open and not _conversation_waiting and _conversation_round < rounds.size():
 		var round_data: Dictionary = rounds[_conversation_round]
@@ -1215,6 +1568,7 @@ func _choose_memory(memory: String) -> void:
 	if branch.is_empty():
 		return
 	Game.save_dream_memory(memory)
+	_record_dream_entry(branch.get("journal", {}))
 	_memory_chosen = true
 	_finished = true
 	_answer_open = false
@@ -1263,6 +1617,7 @@ func _wake() -> void:
 	var reflection := preload("res://scripts/ui/dream_reflection.gd").new()
 	reflection.set("memory", Game.dream_memory)
 	reflection.set("mathilda", Game.mathilda_pov)
+	reflection.set("outcome", _dream_outcome)
 	get_tree().current_scene.add_child(reflection)
 	if Game.mathilda_pov:
 		get_tree().current_scene.add_child(preload("res://scripts/player/mathilda_pov.gd").new())
@@ -1278,12 +1633,29 @@ func _wake() -> void:
 func _show_standalone_waking() -> void:
 	_waking_card = true
 	_show_warning_prop()
-	_set_caption(str(_story.get("ending", _story.get("arrival", ""))), "MATHILDA")
+	_set_caption(_ending_text(), "MATHILDA")
 	_lantern_prompt.hide()
 	_set_choice_rows("THE LIGHT REMAINS\n\nRETURN TO THE THRESHOLD  ·  %s" % Game.settings.key_label("interact"), [])
 	Game.set_phase(Game.Phase.DIALOGUE)
 	_choice_panel.show()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+func _ending_text() -> String:
+	if _conversation_strain >= 4:
+		_dream_understood = false
+		_dream_outcome = "ruptured"
+		var ruptured: Dictionary = _story.get("ruptured", {})
+		_record_dream_entry(ruptured.get("journal", {}))
+		return str(ruptured.get("response", _story.get("arrival", "")))
+	_dream_understood = _opened_memory_doors.has("window") and _opened_memory_doors.size() >= 2
+	if _dream_understood:
+		_dream_outcome = "complete"
+		return str(_story.get("ending", _story.get("arrival", "")))
+	var unresolved: Dictionary = _story.get("unresolved", {})
+	_dream_outcome = "unresolved"
+	_record_dream_entry(unresolved.get("journal", {}))
+	return str(unresolved.get("response", _story.get("arrival", "")))
 
 
 func _return_to_menu() -> void:

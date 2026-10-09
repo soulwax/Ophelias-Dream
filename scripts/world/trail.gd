@@ -258,20 +258,21 @@ func _build_landmarks() -> void:
 	_prop("SM_Prop_Lantern_01.fbx", on_ground(start.origin + start.basis.x * -2.6), start, 1.0, false, Vector3.ZERO)
 	_light(on_ground(start.origin) + Vector3(0, 1.8, 0), Color(1.0, 0.62, 0.32), 1.1, 9.0)
 
-	var notes := NoteCatalog.all()
-	var marks: Array[float] = PAGE_MARKS
-	for index in notes.size():
-		var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
-		var frame := frame_at(along)
-		var side := -1.0 if index % 2 == 0 else 1.0
-		var at := on_ground(frame.origin + frame.basis.x * side * 3.6)
-		at.y += 0.04
-		_reserve(at)
-		var page := FieldNote.new()
-		page.name = "FieldNote_%d" % index
-		page.entry = notes[index]
-		page.position = at
-		add_child(page)
+	if not Game.dream_mode:
+		var notes := NoteCatalog.all()
+		var marks: Array[float] = PAGE_MARKS
+		for index in notes.size():
+			var along := minf(player_start_offset + marks[index], exit_offset - 16.0)
+			var frame := frame_at(along)
+			var side := -1.0 if index % 2 == 0 else 1.0
+			var at := on_ground(frame.origin + frame.basis.x * side * 3.6)
+			at.y += 0.04
+			_reserve(at)
+			var page := FieldNote.new()
+			page.name = "FieldNote_%d" % index
+			page.entry = notes[index]
+			page.position = at
+			add_child(page)
 
 	var camp := frame_at(player_start_offset + 98.0)
 	var camp_at := on_ground(camp.origin + camp.basis.x * 7.5)

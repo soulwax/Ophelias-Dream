@@ -158,7 +158,7 @@ func _refresh_prompt() -> void:
 	var target: Node3D
 	var dim := false
 	var aim: Aim = Game.player.aim if Game.player else null
-	if Game.phase == Game.Phase.PLAYING and aim and Game.settings.show_prompts:
+	if Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and aim and Game.settings.show_prompts:
 		var focused: Node3D = aim.target
 		if focused is FieldNote:
 			show = true

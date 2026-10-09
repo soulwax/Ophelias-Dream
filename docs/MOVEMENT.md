@@ -11,7 +11,7 @@ A lot already works, and none of it should be redone.
 - **Sliding.** Slides use snow friction and gravity along the slope.
 - **Steps.** `_step_surge` checks her speed as a foot lands and surges as it pushes off.
 - **Her body.** `CharacterBody3D` already snaps to the floor (`floor_snap_length`), keeps a constant speed on slopes, and has physics interpolation on.
-- **Locomotion clips.** `Stride` blends Idle, `Walk_Formal`, `Jog_Fwd`, and `Sprint` by her ground speed, at a playback rate that keeps the feet from skating. Air, slide, landing, and stumble layers ride on top.
+- **Locomotion clips.** `Stride` blends Idle, the neutral Quaternius `Walk`, `Jog_Fwd`, and `Sprint` by her ground speed. Air, slide, landing, and stumble layers ride on top.
 - **Foot contact.** `FootLock` finds real foot contacts and drives steps, prints, and powder. It can hold feet with IK, but nothing on the elf uses that yet.
 - **Carriage.** `Grace` adds arm counter-swing, soft elbows, a lifted chest, a level head, and a recurring rise onto her toes.
 - **Camera.** It widens with speed, jolts on each footfall, rolls slightly into turns, and leans with her acceleration.
@@ -23,7 +23,7 @@ What is missing is where the remaining feel lives.
 - **Her hands sit in their rest pose.** The retarget in `tools/retarget_elf.gd` maps no finger bones, so the fingers keep the shape they had in the bind pose.
 - **Her hair, dress, and face are not driven.** The skeleton has 216 bones, including the hair chains (`DEF-hairfront`, `DEF-hairside.L/R`, three segments each), the dress chains (`DEF-dressA`, `DEF-dressF.L/R`, `DEF-dressB.L/R`), eyelids, brows, jaw, lips, eyes, and twist bones in the arms and legs. Nothing animates any of them. `CLAUDE.md` says the model has no face or cloth to simulate; the bones say otherwise.
 - **Turns in place, starts, and stops are just rotations and speed changes.** Nothing in her body anticipates them or settles after them.
-- **Every clip comes from one male performance.** All the clips are baked from the Quaternius library. `Walk_Formal` is a stiff, formal walk that `Grace` has to work against.
+- **The locomotion clips use the neutral Quaternius library.** `Walk` replaces the Bandai Namco walk in gameplay; the licensed Bandai clips remain only as archived, attributed source material.
 
 ## Principles
 
@@ -73,7 +73,7 @@ How to check: in the gait probe, a planted foot drifts less than 2 cm and the kn
 1. **Quaternius Universal Animation Library 2.** It is [CC0](https://quaternius.com/packs/universalanimationlibrary2.html), released January 2026, now at v2.1, with more than 130 clips, new idles, and walks in eight directions. It is built on the same universal rig as the first library, so the bone map in `tools/retarget_elf.gd` already fits. Download the standard glTF export without root motion into `assets/vendor/quaternius_ual2/`, with a `provenance.json` like the Poly Haven one. Audition the clips in the [animation viewer](https://quaternius.com/animviewer.html) first. Look for a lighter walk than `Walk_Formal`, a less bouncy jog, an athletic run, idles that shift weight, turns in place, and the eight-direction walk.
 2. **A general retarget.** Change `tools/retarget_elf.gd` to read a list of (source scene, source clip, role name). Map the finger bones too if the source has them. Bake the clips into `elf_animations.res` under role names (`Walk`, `Jog`, `Run`, `Idle_Calm`, `Idle_Cold`, `Step_L`, …), so `Stride` stops hard-coding Quaternius clip names.
 3. **Natural speeds.** Re-measure `Tune.STRIDE_*` for each new clip with the gait probe, so the playback rate still keeps her feet from skating.
-4. **Bandai Namco motion dataset.** [Dataset 1](https://github.com/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset) has walk, run, dash, and walking back, left, and right performed in a *feminine* style, as BVH at 30 fps. Her walk, jog, and sprint come from it. The licence is CC BY-NC 4.0: Ophelia's Dream must stay non-commercial while these clips are in it, and the credit travels with the game. `tools/retarget_bvh.gd` reads the BVH directly (Godot does not import BVH), cuts one looping cycle, and bakes it onto the elf.
+4. **Legacy Bandai Namco motion dataset.** [Dataset 1](https://github.com/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset) has walk, run, dash, and walking back, left, and right BVH clips at 30 fps. The adapted takes are retained in `assets/characters/styloo_elf/feminine/` with their CC BY-NC 4.0 licence and attribution, but are no longer loaded by gameplay or Character Studio. `tools/retarget_bvh.gd` can rebuild that archive.
 5. **Not used.**
    - [100STYLE](https://ianxmason.github.io/100style/) is CC BY 4.0, but all of it is one 182 cm male performer. A cautious or tiptoe style might help. None of it is feminine.
    - Mixamo is under Adobe's terms, not CC0, and does not fit the provenance rule.

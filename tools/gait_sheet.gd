@@ -6,7 +6,7 @@ extends SceneTree
 # Sheets land in build/gait/.
 
 const OUT := "res://build/gait/"
-const CLIPS := ["Walk_Formal", "feminine/Walk", "feminine/Jog", "feminine/Run", "Sprint"]
+const CLIPS := ["Walk", "Walk_Formal", "Jog_Fwd", "Sprint"]
 const CELL := Vector2i(240, 300)
 
 var _player: AnimationPlayer
@@ -47,7 +47,6 @@ func _run() -> void:
 	skeleton.get_parent().add_child(_player)
 	_player.root_node = NodePath("..")
 	_player.add_animation_library("", load("res://assets/characters/styloo_elf/elf_animations.res") as AnimationLibrary)
-	_player.add_animation_library("feminine", load("res://assets/characters/styloo_elf/feminine/elf_feminine.res") as AnimationLibrary)
 	for clip: String in CLIPS:
 		if not _player.has_animation(clip):
 			print("missing ", clip)

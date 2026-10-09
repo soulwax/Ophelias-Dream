@@ -6,4 +6,4 @@ Source: `thecompanycharactersStyloo/glb/elf.glb` by Styloo ([creator page](https
 
 `elf_animations.res` contains movement clips baked onto this skeleton. Rebuild it with `godot --headless --path . -s tools/retarget_elf.gd`; that tool uses the hunter's shared Quaternius animation source. Run `godot --headless --path . --import` after changing the GLB.
 
-Her walk and jog come from `feminine/elf_feminine.res`, adapted from the Bandai Namco Research Motion Dataset under CC BY-NC 4.0. See [feminine/README.md](feminine/README.md).
+The player uses the neutral Quaternius `Walk`, `Jog_Fwd` and `Sprint` clips baked into `elf_animations.res`. The separately licensed Bandai Namco clips in `feminine/` are retained as legacy source material and are not loaded by gameplay or Character Studio; see [feminine/README.md](feminine/README.md).

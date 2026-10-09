@@ -24,17 +24,30 @@ const FOLD_HEIGHT := 6.5
 const FOLD_SEGMENTS := 52
 const FOLD_REVEAL_OFFSET := 18.0
 const FOLD_FULL_OFFSET := 42.0
+# The six memory landscapes are parked beyond ordinary route sightlines. Their
+# centres are more than 115 m apart; queued memories briefly return as visions.
+const MEMORY_SITES := {
+	"lighthouse": Vector2(12.0, -235.0),
+	"cabin": Vector2(35.0, 352.0),
+	"doorway": Vector2(55.0, -469.0),
+	"sisters": Vector2(13.0, 469.0),
+	"thread": Vector2(34.0, -352.0),
+	"window": Vector2(56.0, 235.0),
+}
 const ASSET_TOWER_02 := "res://assets/vendor/requested_dream/stylized_medieval_town/Art/Meshes/SM_Tower_02.gltf"
 const ASSET_WINDOW := "res://assets/vendor/requested_dream/stylized_medieval_town/Art/Meshes/SM_Window_01.gltf"
 const WEB_LIGHTHOUSE := "res://assets/dream/web/godot/lighthouse_rocky_coast.glb"
 const WEB_CAMP := "res://assets/dream/web/godot/snowbound_forest_camp.glb"
 const WEB_FROZEN_RETREAT := "res://assets/dream/web/godot/frozen_lake_retreat.glb"
+const DREAM_DOOR_SCRIPT := preload("res://scripts/world/dream_door.gd")
 
 var trail: Trail
 var _anchors: Dictionary = {}
 var _fold_material: ShaderMaterial
 var _fold_reveal := 0.0
 var _queued_flashbacks: Dictionary = {}
+var _flashback_parked_transforms: Dictionary = {}
+var _dream_doors: Array[Node3D] = []
 
 
 func build(source: Trail) -> void:
@@ -51,6 +64,7 @@ func build(source: Trail) -> void:
 	_build_dark_patches()
 	_build_flashback_landscapes()
 	_build_folded_path()
+	_build_dream_doors()
 
 
 func _process(delta: float) -> void:
@@ -69,6 +83,25 @@ func anchor(key: String) -> Transform3D:
 
 func world_position(key: String) -> Vector3:
 	return anchor(key).origin
+
+
+func dream_doors() -> Array[Node3D]:
+	return _dream_doors.duplicate()
+
+
+func _build_dream_doors() -> void:
+	var thresholds := [
+		{"id": "sisters", "label": "three sisters", "cue": "sisters", "offset": 15.0, "side": 1.75, "tint": Color("9cabc9")},
+		{"id": "thread", "label": "red thread", "cue": "thread", "offset": 31.0, "side": -1.75, "tint": Color("b59abc")},
+		{"id": "window", "label": "warm window", "cue": "window", "offset": 46.0, "side": 1.75, "tint": Color("d0a078")},
+	]
+	for threshold in thresholds:
+		var door := DREAM_DOOR_SCRIPT.new() as Node3D
+		door.name = "DreamDoor_%s" % str(threshold["id"]).capitalize()
+		add_child(door)
+		var tint: Color = threshold["tint"]
+		door.call("configure", str(threshold["id"]), str(threshold["label"]), str(threshold["cue"]), _anchor(float(threshold["offset"]), float(threshold["side"])), tint)
+		_dream_doors.append(door)
 
 
 func _anchor(route_offset: float, side_offset: float) -> Transform3D:
@@ -198,17 +231,33 @@ func play_flashback(cue_id: String) -> Node3D:
 	var flashback := _queued_flashbacks.get(cue_id) as Node3D
 	if flashback == null or not is_instance_valid(flashback):
 		return null
+	if not _flashback_parked_transforms.has(flashback):
+		_flashback_parked_transforms[flashback] = flashback.global_transform
+	flashback.global_transform = _flashback_reveal_transform(cue_id, _flashback_parked_transforms[flashback])
 	flashback.show()
 	var fade_timer := get_tree().create_timer(3.6)
 	fade_timer.timeout.connect(func() -> void:
 		if is_instance_valid(flashback):
 			flashback.hide()
+			if _flashback_parked_transforms.has(flashback):
+				flashback.global_transform = _flashback_parked_transforms[flashback]
+				_flashback_parked_transforms.erase(flashback)
 	)
 	return flashback
 
 
+func _flashback_reveal_transform(cue_id: String, fallback: Transform3D) -> Transform3D:
+	if trail == null or Game.player == null:
+		return fallback
+	var progress := trail.offset_of(Game.player.global_position) - trail.player_start_offset
+	var maximum_progress := maxf(trail.length - trail.player_start_offset - 8.0, 0.0)
+	var reveal_progress := clampf(progress + 13.0, 0.0, maximum_progress)
+	var side := -10.0 if cue_id in ["sisters", "window"] else 10.0
+	return _anchor(reveal_progress, side)
+
+
 func _build_sister_spires() -> Node3D:
-	var root := _landscape_root("Flashback_Sisters", 22.0, -33.0)
+	var root := _memory_site_root("Flashback_Sisters", "sisters")
 	root.set_meta("insight_focus_height", 4.4)
 	var retreat := _add_web_scene(root, "TwoSistersByTheFrozenPond", WEB_FROZEN_RETREAT, Vector3.ZERO, Vector3.ONE * 1.05, Vector3(0.0, -0.42, 0.0))
 	if retreat == null:
@@ -224,7 +273,7 @@ func _build_sister_spires() -> Node3D:
 
 
 func _build_thread_memory() -> Node3D:
-	var root := _landscape_root("Flashback_AriadneThread", 36.0, 34.0)
+	var root := _memory_site_root("Flashback_AriadneThread", "thread")
 	root.set_meta("insight_focus_height", 13.0)
 	var lighthouse := _add_web_scene(root, "TheLightThatFindsTheWayBack", WEB_LIGHTHOUSE, Vector3.ZERO, Vector3.ONE * 0.48, Vector3(0.0, 0.62, 0.0))
 	if lighthouse == null:
@@ -240,7 +289,7 @@ func _build_thread_memory() -> Node3D:
 
 
 func _build_watching_window() -> Node3D:
-	var root := _landscape_root("Flashback_WatchingWindow", 51.0, -33.0)
+	var root := _memory_site_root("Flashback_WatchingWindow", "window")
 	root.set_meta("insight_focus_height", 4.0)
 	var camp := _add_web_scene(root, "WarmthBeyondTheTrees", WEB_CAMP, Vector3.ZERO, Vector3.ONE * 1.25, Vector3(0.0, -0.3, 0.0))
 	if camp == null:
@@ -316,10 +365,15 @@ func _landscape_root(name: String, route_offset: float, side_offset: float) -> N
 	return root
 
 
+func _memory_site_root(name: String, site: String) -> Node3D:
+	var anchor: Vector2 = MEMORY_SITES[site]
+	return _landscape_root(name, anchor.x, anchor.y)
+
+
 func _build_lighthouse_memory() -> void:
 	# A fully textured station becomes a beacon island, visible across the storm
 	# but well outside the route's walkable corridor.
-	var root := _landscape_root("Flashback_Lighthouse", 20.0, -42.0)
+	var root := _memory_site_root("Flashback_Lighthouse", "lighthouse")
 	var web_station := _add_web_scene(root, "LightStationAndRockyPoint", WEB_LIGHTHOUSE, Vector3.ZERO, Vector3.ONE * 0.78, Vector3(0.0, 0.28, 0.0))
 	var beacon_position := Vector3(10.88, 18.0, 4.1)
 	if web_station == null:
@@ -362,7 +416,7 @@ func _build_lighthouse_memory() -> void:
 func _build_cabin_memory() -> void:
 	# Mathilda's house hangs beyond the field, turned slightly away as if the
 	# memory refuses to be entered.
-	var root := _landscape_root("Flashback_Cabin", 35.0, 50.0)
+	var root := _memory_site_root("Flashback_Cabin", "cabin")
 	if _add_web_scene(root, "SnowboundForestCamp", WEB_CAMP, Vector3.ZERO, Vector3.ONE * 1.55, Vector3(0.0, 0.7, 0.0)) == null:
 		_add_memory_ground(root, Vector2(14.0, 12.0), Color("171822"))
 		_build_fallback_cabin(root)
@@ -379,7 +433,7 @@ func _build_cabin_memory() -> void:
 func _build_doorway_horizon_memory() -> void:
 	# A complete frozen retreat hangs beyond the path, a home-sized place
 	# distorted into a far-off threshold.
-	var root := _landscape_root("Flashback_DoorwayHorizon", 50.0, 48.0)
+	var root := _memory_site_root("Flashback_DoorwayHorizon", "doorway")
 	if _add_web_scene(root, "FrozenLakeRetreat", WEB_FROZEN_RETREAT, Vector3.ZERO, Vector3.ONE * 1.25, Vector3(0.0, 1.15, 0.0)) == null:
 		root.global_position += Vector3.UP * 2.2
 		_add_memory_ground(root, Vector2(20.0, 18.0), Color("101824"))

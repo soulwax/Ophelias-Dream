@@ -430,7 +430,6 @@ func _build_animation_preview() -> void:
 	_animation_player.root_node = NodePath("..")
 	var paths := {
 		"": "res://assets/characters/styloo_elf/elf_animations.res",
-		"Feminine": "res://assets/characters/styloo_elf/feminine/elf_feminine.res",
 	}
 	for library_name: String in paths:
 		var source := load(paths[library_name]) as AnimationLibrary
@@ -770,7 +769,7 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	column.add_child(_name_edit)
 	_creator_label(column, "HAIRSTYLE")
 	_hair_select = OptionButton.new()
-	for name: String in ["Long • original", "Frost bob", "Gathered bun", "Twin braids"]:
+	for name: String in CHARACTER.HAIR_LABELS:
 		_hair_select.add_item(name)
 	_hair_select.item_selected.connect(func(index: int) -> void: _change_component("hair", CHARACTER.HAIRS[index]))
 	column.add_child(_hair_select)

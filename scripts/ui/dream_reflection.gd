@@ -2,6 +2,7 @@ extends CanvasLayer
 
 var memory := ""
 var mathilda := false
+var outcome := "complete"
 var _line: Label
 var _armed := false
 var _elapsed := 0.0
@@ -81,7 +82,14 @@ func _layout_echo() -> void:
 
 
 func _reflection_text() -> String:
-	var branch := STORY.branch_for(STORY.load_data(), memory)
+	var story := STORY.load_data()
+	if outcome == "ruptured":
+		var ruptured: Dictionary = story.get("ruptured", {})
+		return str(ruptured.get("mathilda" if mathilda else "ophelia", "The conversation closed before the warning could be heard."))
+	if outcome == "unresolved":
+		var unresolved: Dictionary = story.get("unresolved", {})
+		return str(unresolved.get("mathilda" if mathilda else "ophelia", "The dream kept its warning behind a closed door."))
+	var branch := STORY.branch_for(story, memory)
 	if branch.is_empty():
 		return "The dream follows Mathilda into the afternoon." if mathilda else "The dream stays with Ophelia."
 	return str(branch.get("mathilda" if mathilda else "ophelia", ""))

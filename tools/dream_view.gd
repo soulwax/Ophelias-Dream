@@ -40,6 +40,7 @@ func _run() -> void:
 		return
 	experience.set("_camera_choreography_enabled", false)
 	await _capture_entry(route, "entry")
+	await _capture_figure_apparition(experience)
 	await _capture_lantern(route, experience, "lantern")
 	await _capture_fold_reveal(route, experience, "fold_reveal")
 	await _capture_fold_return(route, experience, "fold_return")
@@ -52,12 +53,18 @@ func _run() -> void:
 	await _capture_queued_flashback(route, experience, "sisters", 13.0, "insight_sisters")
 	await _capture_queued_flashback(route, experience, "thread", 29.0, "insight_thread")
 	await _capture_queued_flashback(route, experience, "window", 44.0, "insight_window")
+	await _capture_dream_door(route, "sisters", 15.0, "door_sisters_open")
+	await _capture_dream_journal(experience, "journal")
 	await _capture_story_motion(experience, 9.0, "cut_tree", 0, "motion_cut_trees")
 	await _capture_story_motion(experience, 20.0, "delayed_steps", 1, "motion_delayed_steps")
 	await _capture_story_motion(experience, 34.0, "lantern_witness", 2, "motion_lantern_witness")
 	await _capture_story_motion(experience, 50.0, "tracks_stop", 3, "motion_tracks_stop")
 	await _capture_clearing(route, experience, "clearing")
 	await _capture_choice(route, experience, "answer")
+	experience.set("_conversation_round", 3)
+	experience.call("_build_small_talk_choices")
+	await _settle()
+	await _save_frame("approach_clue")
 	await _capture_warning(experience, "warning")
 	print("Dream visual review captures saved under build/dream/")
 	get_tree().quit()
@@ -112,6 +119,29 @@ func _capture_entry(route: Node3D, name: String) -> void:
 	_place_player(1.0)
 	_aim(1.0, 0.48, -3.35, 1.62, 1.25)
 	await _save_frame(name)
+
+
+func _capture_figure_apparition(experience: Node) -> void:
+	await get_tree().create_timer(1.7).timeout
+	var figure := experience.get("_figure") as Node3D
+	if figure == null:
+		push_error("Dream apparition figure was not built")
+		return
+	experience.call("_set_caption", "")
+	var toward := (figure.global_position - Game.player.global_position).normalized()
+	var side := Vector3.UP.cross(toward).normalized()
+	_camera.global_position = figure.global_position + side * 3.3 + Vector3.UP * 1.55
+	_camera.look_at(figure.global_position + Vector3.UP * 1.05, Vector3.UP)
+	_camera.make_current()
+	experience.call("_begin_figure_departure")
+	await get_tree().create_timer(0.25).timeout
+	await _save_frame("mathilda_leaving")
+	await get_tree().create_timer(3.6).timeout
+	await _save_frame("mathilda_returning")
+	await get_tree().create_timer(0.48).timeout
+	await _save_frame("mathilda_reforming")
+	await get_tree().create_timer(0.8).timeout
+	await _save_frame("mathilda_returned")
 
 
 func _capture_lantern(route: Node3D, experience: Node, name: String) -> void:
@@ -182,11 +212,11 @@ func _capture_flashback(route: Node3D, cue_id: String, route_offset: float, land
 
 
 func _capture_queued_flashback(route: Node3D, experience: Node, cue_id: String, route_offset: float, output_name: String) -> void:
+	_place_player(route_offset)
 	var flashback := route.call("play_flashback", cue_id) as Node3D
 	if flashback == null:
 		push_error("Dream insight vignette was not built: %s" % cue_id)
 		return
-	_place_player(route_offset)
 	var original_fov := _camera.fov
 	_camera.fov = 68.0
 	var frame := Game.trail.frame_at(Game.trail.player_start_offset + route_offset)
@@ -196,6 +226,50 @@ func _capture_queued_flashback(route: Node3D, experience: Node, cue_id: String, 
 	experience.call("_pulse_effect", 0.96, "insight", flashback)
 	await _save_frame(output_name)
 	_camera.fov = original_fov
+
+
+func _capture_dream_door(route: Node3D, door_id: String, route_offset: float, output_name: String) -> void:
+	var doors: Array = route.call("dream_doors")
+	var door: Node3D
+	for candidate in doors:
+		if str(candidate.get("door_id")) == door_id:
+			door = candidate as Node3D
+			break
+	if door == null:
+		push_error("Dream threshold was not built: %s" % door_id)
+		return
+	_place_player(route_offset - 3.0)
+	var frame := Game.trail.frame_at(Game.trail.player_start_offset + route_offset - 3.0)
+	var ahead := Game.trail.frame_at(Game.trail.player_start_offset + route_offset - 2.0).origin - frame.origin
+	ahead.y = 0.0
+	ahead = ahead.normalized()
+	var across := frame.basis.x
+	across.y = 0.0
+	across = across.normalized()
+	_camera.fov = 58.0
+	_camera.global_position = Game.player.global_position + across * 2.4 - ahead * 1.2 + Vector3.UP * 1.7
+	_camera.look_at(door.global_position + Vector3.UP * 1.4, Vector3.UP)
+	_camera.make_current()
+	door.call("interact")
+	await get_tree().create_timer(1.2).timeout
+	await _save_frame(output_name)
+
+
+func _capture_dream_journal(experience: Node, output_name: String) -> void:
+	var story: Dictionary = experience.get("_story")
+	for beat in story.get("beats", []):
+		experience.call("_record_dream_entry", beat.get("journal", {}))
+	var doors: Array = story.get("doors", [])
+	if not doors.is_empty():
+		experience.call("_record_dream_entry", doors[0].get("journal", {}))
+	var talk_rounds: Array = story.get("small_talk", [])
+	if not talk_rounds.is_empty():
+		var first_choices: Array = talk_rounds[0].get("choices", [])
+		if not first_choices.is_empty():
+			experience.call("_record_dream_entry", first_choices[0].get("journal", {}))
+	experience.call("_open_dream_journal")
+	await _save_frame(output_name)
+	experience.call("_close_dream_journal")
 
 
 func _capture_story_motion(experience: Node, route_offset: float, cue: String, beat_index: int, output_name: String) -> void:

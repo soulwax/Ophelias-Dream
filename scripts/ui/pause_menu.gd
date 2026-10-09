@@ -881,7 +881,7 @@ func _build_sidebar() -> Control:
 	_title_hidden.append(session_gap)
 	box.add_child(session_gap)
 	# The forest pack's author and page are still to be supplied (see its README).
-	var credit := UiChrome.term_label("Her walk and jog: Bandai Namco Research Motion Dataset, Bandai Namco Research Inc., CC BY-NC 4.0, adapted. Green woods: \"Fir forest in the mountains\", Sketchfab, Standard licence, adapted.", 10, Color(UiChrome.ASH, 0.8))
+	var credit := UiChrome.term_label("Legacy motion assets: Bandai Namco Research Motion Dataset, Bandai Namco Research Inc., CC BY-NC 4.0, adapted. Green woods: \"Fir forest in the mountains\", Sketchfab, Standard licence, adapted.", 10, Color(UiChrome.ASH, 0.8))
 	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit.custom_minimum_size.x = 220
 	_title_hidden.append(credit)

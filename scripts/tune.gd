@@ -57,7 +57,7 @@ const PIVOT_SPEED := 0.9
 const FACE_RATE_WALK := 7.5
 const FACE_RATE_SPRINT := 10.0
 # Natural ground speed of the movement clips at playback 1.
-const STRIDE_WALK := 0.986 # Bandai Walk, measured at PLAYER_MODEL_SCALE.
+const STRIDE_WALK := 0.986 # Neutral walk pace at PLAYER_MODEL_SCALE.
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
 # Her carriage over the clips (Grace), in radians unless noted.
