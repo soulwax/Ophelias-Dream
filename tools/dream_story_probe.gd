@@ -4,11 +4,7 @@ const STORY := preload("res://scripts/world/dream_story.gd")
 const EXPERIENCE := preload("res://scripts/world/dream_experience.gd")
 const REFLECTION := preload("res://scripts/ui/dream_reflection.gd")
 const MENU := preload("res://scripts/ui/dream_menu.gd")
-const DREAM_LANDMARK_SCENES := [
-	"res://assets/dream/web/godot/lighthouse_rocky_coast.glb",
-	"res://assets/dream/web/godot/snowbound_forest_camp.glb",
-	"res://assets/dream/web/godot/frozen_lake_retreat.glb",
-]
+const DREAM_ROUTE := preload("res://scripts/world/dream_route.gd")
 
 
 func _ready() -> void:
@@ -36,8 +32,7 @@ func _ready() -> void:
 	assert(reflection._reflection_text() == story["ruptured"]["mathilda"], "a closed conversation should have a distinct Mathilda waking")
 	reflection.outcome = "complete"
 	assert(EXPERIENCE != null, "the playable dream scene script should parse")
-	for asset_path in DREAM_LANDMARK_SCENES:
-		assert(load(asset_path) is PackedScene, "dream landmark should import as an instantiable scene: %s" % asset_path)
+	assert(DREAM_ROUTE != null, "the dream route event hook should parse without scene assets")
 	assert(not STORY.has_branch("missing_branch"), "unknown saved choices should be discarded")
 	var experience = EXPERIENCE.new()
 	add_child(experience)
@@ -83,9 +78,9 @@ func _ready() -> void:
 	assert(not menu._settings_terminal.visible, "the terminal should return to the main menu")
 	menu._stop_music()
 	menu.free()
-	experience._opened_memory_doors = {"window": true, "sisters": true}
+	experience._seen_story_cues = {"window": true, "sisters": true}
 	experience._conversation_strain = 0
-	assert(experience._ending_text() == story["ending"], "the warm window and one other door should complete the warning")
+	assert(experience._ending_text() == story["ending"], "the warm window cue and one other event should complete the warning")
 	Game.dream_mode = true
 	Game.dream_memory = story["branches"][0]["id"]
 	experience._show_standalone_waking()
@@ -94,9 +89,9 @@ func _ready() -> void:
 	assert(experience._caption.text == story["ending"], "standalone dream should hold the final warning")
 	assert(experience._choice_title.text.contains("RETURN TO THE THRESHOLD"), "standalone dream should show its return action in the world")
 	assert(Game.phase == Game.Phase.DIALOGUE, "the closing card should wait for the player's return")
-	experience._opened_memory_doors.clear()
+	experience._seen_story_cues.clear()
 	experience._conversation_strain = 0
-	assert(experience._ending_text() == story["unresolved"]["response"], "passing the clue doors should lead to the unresolved wakeup")
+	assert(experience._ending_text() == story["unresolved"]["response"], "missing the route clues should lead to the unresolved wakeup")
 	experience._conversation_strain = 4
 	assert(experience._ending_text() == story["ruptured"]["response"], "repeatedly pressing after repair chances should rupture the conversation")
 	experience._conversation_strain = 2

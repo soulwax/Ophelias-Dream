@@ -5,7 +5,6 @@ extends Node3D
 const STEP_PATH := "res://assets/audio/steps/"
 const STEP_COUNT := 24
 const STEP_LEVEL := 48.0
-
 var _voices: Array[AudioStreamPlayer3D] = []
 var _last_clip := -1
 var _next_pair := 5.5

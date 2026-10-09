@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "opening": "Three doors lie along the path. The warm window keeps the clearest piece; open it and one other if you want the whole warning. If a place stays with you, press J. I will not look.",
+  "opening": "Three moments wait along the trail. Stay with what she offers. If a detail stays with you, press J. I will not look.",
   "journal_cue": {
     "id": "moved_threshold",
     "title": "A moved threshold",
@@ -53,9 +53,10 @@
       "text": "Three sets of tracks enter the clearing. Only two return. Orpheus was told not to turn, so the song blames his looking, not the hand that let go."
     }
   ],
-  "doors": [
+  "events": [
     {
       "id": "sisters",
+      "offset": 15.0,
       "line": "Three sisters, all called duty: leave, follow, freeze. They make a maze when someone else chooses the walls.",
       "journal": {
         "id": "three_sisters",
@@ -66,7 +67,9 @@
     },
     {
       "id": "thread",
-      "line": "The red thread leads back out. I thought that meant I had to follow it. A way out is still a choice.",
+      "offset": 31.0,
+      "motion": "tower_gaze",
+      "line": "Ariadne lays a thread through the dark. The path keeps climbing after the trees end. Sorry. I meant: stay where I can see you.",
       "journal": {
         "id": "red_thread",
         "title": "The red thread",
@@ -76,7 +79,9 @@
     },
     {
       "id": "window",
-      "line": "The warm window caught the axe below it. The snow had not covered the handle yet. He had been close.",
+      "offset": 46.0,
+      "motion": "window_gaze",
+      "line": "The warm window caught the axe below it. The snow had not covered the handle yet. He had been close. I can tell you more if you want.",
       "journal": {
         "id": "warm_window",
         "title": "A warm window",
@@ -85,6 +90,10 @@
       }
     }
   ],
+  "event_talk": {
+    "thread": 0,
+    "window": 1
+  },
   "arrival": "The trees are empty. The lantern is still turned toward them.",
   "small_talk": [
     {
@@ -271,13 +280,13 @@
   "ending": "I'm sorry I'm still being so vague. The one who cut the trees is still out there. I saw his axe by the path. Please don't take the path alone.",
   "unresolved": {
     "response": "I'm sorry. I gave you fragments and still couldn't say what they meant. The warning has no name yet.",
-    "ophelia": "The forest opened three doors. She passed the warm window. Morning brings her home with no answer.",
+    "ophelia": "The trail offered three moments. She passed the warm window without finding another clue. Morning brings her home with no answer.",
     "mathilda": "She woke with a cold feeling and no picture she could hold. By morning, even the warning had lost its words.",
     "journal": {
       "id": "unresolved_warning",
       "title": "A warning without its words",
       "text": "The warm window held the clearest memory. It stayed unopened, and the fragments never became an answer.",
-      "approach": "Return to the warm window and one other door. A fragment is not a failure; the path is still there."
+      "approach": "Follow the trail and let the warm-window clue settle beside one other moment. A fragment is not a failure."
     }
   },
   "ruptured": {

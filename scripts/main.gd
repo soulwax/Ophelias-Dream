@@ -183,22 +183,23 @@ func _ready() -> void:
 		Game.weather.settle()
 	trail.adopt_markers()
 	await _loading_stage(0.88, "PLACING WHAT WAS LEFT BEHIND")
-	var bow_pickup := BOW_PICKUP.new()
-	var bow_at := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET)
-	var bow_ahead := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET + 1.0)
-	var bow_side := (bow_ahead - bow_at).cross(Vector3.UP).normalized()
-	bow_pickup.position = trail.on_ground(bow_at + bow_side * 1.1) + Vector3.UP * 1.15
-	add_child(bow_pickup)
-	for index in Tune.ARROW_PICKUP_OFFSETS.size():
-		var offset: float = Tune.ARROW_PICKUP_OFFSETS[index]
-		var at := trail.position_at(trail.player_start_offset + offset)
-		var ahead := trail.position_at(trail.player_start_offset + offset + 1.0)
-		var side := (ahead - at).cross(Vector3.UP).normalized()
-		var supply := ARROW_SUPPLY.new()
-		supply.supply_id = "trail_arrows_%d" % index
-		supply.quantity = Tune.ARROW_PICKUP_QUANTITIES[index]
-		supply.position = trail.on_ground(at + side * (1.2 if index % 2 == 0 else -1.2)) + Vector3.UP * 0.38
-		add_child(supply)
+	if not Game.dream_mode:
+		var bow_pickup := BOW_PICKUP.new()
+		var bow_at := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET)
+		var bow_ahead := trail.position_at(trail.player_start_offset + Tune.BOW_TRAIL_OFFSET + 1.0)
+		var bow_side := (bow_ahead - bow_at).cross(Vector3.UP).normalized()
+		bow_pickup.position = trail.on_ground(bow_at + bow_side * 1.1) + Vector3.UP * 1.15
+		add_child(bow_pickup)
+		for index in Tune.ARROW_PICKUP_OFFSETS.size():
+			var offset: float = Tune.ARROW_PICKUP_OFFSETS[index]
+			var at := trail.position_at(trail.player_start_offset + offset)
+			var ahead := trail.position_at(trail.player_start_offset + offset + 1.0)
+			var side := (ahead - at).cross(Vector3.UP).normalized()
+			var supply := ARROW_SUPPLY.new()
+			supply.supply_id = "trail_arrows_%d" % index
+			supply.quantity = Tune.ARROW_PICKUP_QUANTITIES[index]
+			supply.position = trail.on_ground(at + side * (1.2 if index % 2 == 0 else -1.2)) + Vector3.UP * 0.38
+			add_child(supply)
 	await _loading_stage(0.96, "THE THRESHOLD IS READY")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# Back to the lookout: no menu and no intro card, she is simply there again.

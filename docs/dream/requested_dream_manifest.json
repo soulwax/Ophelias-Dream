@@ -1,7 +1,7 @@
 {
   "source": "Owner-supplied central asset bank: Leartes Studios, Stylized Medieval Town Forward",
   "destination": "assets/vendor/requested_dream/stylized_medieval_town/Art",
-  "note": "Only optional supporting details are still used in the web-sourced dream scenes. Redistribution rights have not been verified, so these owner-supplied files stay ignored under assets/vendor/requested_dream/. The complete locations are the portable CC0 GLBs recorded in assets/dream/web/manifest.json.",
+  "note": "These owner-supplied files are no longer instantiated by the dream. Redistribution rights have not been verified, so the local source pack remains ignored under assets/vendor/requested_dream/. Listed roles describe the former scene implementation.",
   "assets": [
     {
       "role": "three sister silhouettes around the frozen retreat memory",

@@ -1,5 +1,7 @@
 # The dream: a playable prologue
 
+The current atmosphere direction is specified in [Dream atmosphere without staged memory scenes](DREAM_ATMOSPHERE_PLAN.md). The live dream uses route-cued story events, six answers, four conversation rounds, and three outcomes. This original design below retains earlier mechanics for reference.
+
 ## Intent
 
 The dream begins with ordinary winter unease and slowly approaches the psychological terror of living after sexual violence: hypervigilance, freezing, guarded space, broken recall and difficulty speaking. The player first shares small talk, then offers distance, time and a way back before the shadow chooses whether to say more. The assault itself is never shown. In the authorial story, a lumberjack raped Mathilda and she remains traumatized; the dream's last image warns that he is still nearby. Mathilda apologizes for being vague, never for surviving. The woman in the snow stays an indistinct female shadow; what she is to the dreamer remains unresolved.

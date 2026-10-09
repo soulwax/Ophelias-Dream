@@ -5,7 +5,7 @@ const PATH := "res://assets/dialogue/dream.json"
 const BEAT_COUNT := 4
 const SMALL_TALK_MAX_ROUNDS := 4
 const ID_PATTERN := "^[a-z][a-z0-9_-]{0,31}$"
-const MOTION_CUES := ["cut_tree", "delayed_steps", "lantern_witness", "tracks_stop"]
+const MOTION_CUES := ["cut_tree", "delayed_steps", "lantern_witness", "tracks_stop", "tower_gaze", "window_gaze"]
 
 
 static func load_data() -> Dictionary:
@@ -19,15 +19,15 @@ static func load_data() -> Dictionary:
 	var beats: Variant = parsed.get("beats", [])
 	var branches: Variant = parsed.get("branches", [])
 	var small_talk: Variant = parsed.get("small_talk", [])
-	var doors: Variant = parsed.get("doors", [])
+	var events: Variant = parsed.get("events", [])
 	var repair: Variant = parsed.get("repair", {})
 	var ruptured: Variant = parsed.get("ruptured", {})
 	if typeof(beats) != TYPE_ARRAY or beats.size() != BEAT_COUNT or typeof(branches) != TYPE_ARRAY or not (2 <= branches.size() and branches.size() <= 8):
 		push_error("Dream story needs four approach beats and at least two branches")
 		return {}
 	var unresolved: Variant = parsed.get("unresolved", {})
-	if not _valid_journal_entry(parsed.get("journal_cue", {})) or str(parsed.get("question_guidance", "")).strip_edges().is_empty() or typeof(doors) != TYPE_ARRAY or doors.size() != 3:
-		push_error("Dream story needs an opening journal cue and three memory doors")
+	if not _valid_journal_entry(parsed.get("journal_cue", {})) or str(parsed.get("question_guidance", "")).strip_edges().is_empty() or typeof(events) != TYPE_ARRAY or events.size() != 3:
+		push_error("Dream story needs an opening journal cue and three trail events")
 		return {}
 	if typeof(unresolved) != TYPE_DICTIONARY or str(unresolved.get("response", "")).strip_edges().is_empty() or str(unresolved.get("ophelia", "")).strip_edges().is_empty() or str(unresolved.get("mathilda", "")).strip_edges().is_empty() or not _valid_journal_entry(unresolved.get("journal", {})):
 		push_error("Dream story needs an unresolved wakeup and reflection for each character")
@@ -64,11 +64,29 @@ static func load_data() -> Dictionary:
 			return {}
 		ids[beat["id"]] = true
 	ids.clear()
-	for door in doors:
-		if typeof(door) != TYPE_DICTIONARY or id_regex.search(str(door.get("id", ""))) == null or ids.has(door["id"]) or str(door.get("line", "")).strip_edges().is_empty() or not _valid_journal_entry(door.get("journal", {})):
-			push_error("Dream story has an invalid or duplicate door journal cue")
+	var previous_event_offset := -1.0
+	for event in events:
+		if typeof(event) != TYPE_DICTIONARY or id_regex.search(str(event.get("id", ""))) == null or ids.has(event["id"]) or str(event.get("line", "")).strip_edges().is_empty() or not _valid_journal_entry(event.get("journal", {})):
+			push_error("Dream story has an invalid or duplicate trail event cue")
 			return {}
-		ids[door["id"]] = true
+		var offset := float(event.get("offset", -1.0))
+		if offset < 0.0 or offset < previous_event_offset or offset > 1000.0:
+			push_error("Dream event %s has an invalid or unordered route offset" % event["id"])
+			return {}
+		previous_event_offset = offset
+		if event.has("motion") and not MOTION_CUES.has(str(event.get("motion", ""))):
+			push_error("Dream event %s has an unknown movement cue" % event["id"])
+			return {}
+		ids[event["id"]] = true
+	var event_talk: Variant = parsed.get("event_talk", {})
+	if typeof(event_talk) != TYPE_DICTIONARY:
+		push_error("Dream event talk must map trail events to small-talk rounds")
+		return {}
+	for event_id in event_talk:
+		var round_number := float(event_talk[event_id])
+		if not ids.has(str(event_id)) or not is_equal_approx(round_number, round(round_number)) or round_number < 0.0 or round_number >= small_talk.size():
+			push_error("Dream event talk references an unknown event or round")
+			return {}
 	ids.clear()
 	for branch in branches:
 		if typeof(branch) != TYPE_DICTIONARY or id_regex.search(str(branch.get("id", ""))) == null or ids.has(branch["id"]):
@@ -110,10 +128,10 @@ static func branch_for(story: Dictionary, branch_id: String) -> Dictionary:
 	return {}
 
 
-static func door_for(story: Dictionary, door_id: String) -> Dictionary:
-	for door in story.get("doors", []):
-		if door is Dictionary and str(door.get("id", "")) == door_id:
-			return door
+static func event_for(story: Dictionary, event_id: String) -> Dictionary:
+	for event in story.get("events", []):
+		if event is Dictionary and str(event.get("id", "")) == event_id:
+			return event
 	return {}
 
 

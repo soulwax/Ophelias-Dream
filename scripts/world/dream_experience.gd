@@ -6,15 +6,9 @@ const FIGURE_SCENE := preload("res://assets/characters/quaternius_modular_women/
 const FIGURE_OFFSETS := [9.0, 20.0, 34.0, 50.0, 67.0]
 const SCENE_CAMERA_DISTANCE := [4.8, 4.5, 4.2, 3.9]
 const SCENE_CAMERA_HEIGHT := [1.65, 1.58, 1.5, 1.42]
-# Each memory takes her for one full reveal, then gives her back on the path.
 const APPARITION_DISSOLVE := 0.38
 const APPARITION_FADE_SECONDS := 1.1
 const APPARITION_MEMORY_SECONDS := 3.85
-const FLASHBACK_CUES := [
-	{"offset": 13.0, "id": "sisters"},
-	{"offset": 29.0, "id": "thread"},
-	{"offset": 44.0, "id": "window"},
-]
 const STORY := preload("res://scripts/world/dream_story.gd")
 const DREAM_ROUTE_SCRIPT := preload("res://scripts/world/dream_route.gd")
 const DREAM_SOUNDSCAPE_SCRIPT := preload("res://scripts/audio/dream_soundscape.gd")
@@ -79,6 +73,11 @@ var _choice_time := 0.0
 var _answer_open := false
 var _conversation_intro_waiting := false
 var _conversation_round := 0
+var _station_dialogue_active := false
+var _station_round_index := -1
+var _station_after_line := -1
+var _station_choice_effect := ""
+var _completed_talk_rounds: Dictionary = {}
 var _conversation_waiting := false
 var _conversation_strain := 0
 var _repair_menu_attempts := 0
@@ -107,10 +106,8 @@ var _effect_target := 0.0
 var _effect_hold := 0.0
 var _effect_cue := "doubt"
 var _effect_focus: Node3D
-var _flashback_cue_index := 0
-var _flashback_cooldown := 0.0
-var _flashback_seen: Dictionary = {}
-var _opened_memory_doors: Dictionary = {}
+var _story_event_cue_index := 0
+var _seen_story_cues: Dictionary = {}
 var _dream_understood := false
 var _story: Dictionary
 var _dream_journal_entries: Array[Dictionary] = []
@@ -146,8 +143,7 @@ func _ready() -> void:
 func _start() -> void:
 	if Game.player == null or Game.trail == null:
 		return
-	# Begin outside the cabin, where the player can look back at the lit house
-	# before the figure draws them onto the path.
+	# Begin on the winter trail; dialogue and journals introduce the story events.
 	var step_position: Vector3 = _dream_route.call("world_position", "step")
 	Game.player.global_position = step_position + Vector3.UP * 0.15
 	Game.player.velocity = Vector3.ZERO
@@ -172,11 +168,6 @@ func _build_dream_route() -> void:
 	_dream_route.name = "DreamRoute"
 	add_child(_dream_route)
 	_dream_route.call("build", Game.trail)
-	var doors: Array = _dream_route.call("dream_doors")
-	for door_variant in doors:
-		var door := door_variant as Node
-		if door:
-			door.connect("opened", _on_dream_door_opened)
 
 
 func _build_figure() -> void:
@@ -426,14 +417,14 @@ func _record_dream_entry(raw_entry: Variant) -> void:
 
 
 func _refresh_dream_journal_hint() -> void:
-	var door_count := _opened_memory_doors.size()
-	var progress := "OPEN THE WARM WINDOW + ONE OTHER"
-	if _opened_memory_doors.has("window") and door_count >= 2:
+	var cue_count := _seen_story_cues.size()
+	var progress := "FOLLOW THE TRAIL · FIND THE WARM WINDOW + ONE OTHER"
+	if _seen_story_cues.has("window") and cue_count >= 2:
 		progress = "WARNING REMEMBERED  ·  2/2"
-	elif _opened_memory_doors.has("window"):
-		progress = "WARM WINDOW FOUND  ·  %d/1 OTHER" % maxi(door_count - 1, 0)
-	elif door_count > 0:
-		progress = "WARM WINDOW STILL NEEDED  ·  %d/2" % door_count
+	elif _seen_story_cues.has("window"):
+		progress = "WARM WINDOW CLUE  ·  %d/1 OTHER" % maxi(cue_count - 1, 0)
+	elif cue_count > 0:
+		progress = "WARM WINDOW CLUE STILL AHEAD  ·  %d/2" % cue_count
 	_dream_journal_hint.text = "%s  DREAM JOURNAL  ·  %d  |  %s" % [Game.settings.key_label("journal"), _dream_journal_entries.size(), progress]
 
 
@@ -481,22 +472,16 @@ func _close_dream_journal() -> void:
 		Game.player.dialogue_locked = _story_line_active or _conversation_camera_active or _conversation_camera_returning or _conversation_waiting or _conversation_intro_waiting or _answer_open
 
 
-func _on_dream_door_opened(door_id: String, flashback_id: String) -> void:
-	if _opened_memory_doors.has(door_id):
+func _cue_story_event(event: Dictionary) -> void:
+	var cue_id := str(event.get("id", ""))
+	if cue_id.is_empty() or _seen_story_cues.has(cue_id):
 		return
-	_opened_memory_doors[door_id] = true
-	var threshold := STORY.door_for(_story, door_id)
-	if threshold.is_empty():
-		return
-	var entry: Dictionary = threshold.get("journal", {})
-	_record_dream_entry(entry)
-	if not _flashback_seen.has(flashback_id):
-		var flashback := _dream_route.call("play_flashback", flashback_id) as Node3D if _dream_route else null
-		if flashback:
-			_flashback_seen[flashback_id] = true
-			_begin_figure_departure()
-			_pulse_effect(0.96, "insight", flashback)
-	_queue_story_line(str(threshold.get("line", "")))
+	_seen_story_cues[cue_id] = true
+	if _dream_route and _dream_route.has_method("cue_event"):
+		_dream_route.call("cue_event", cue_id, float(event.get("offset", -1.0)))
+	_record_dream_entry(event.get("journal", {}))
+	var event_talk: Dictionary = _story.get("event_talk", {})
+	_queue_story_line(str(event.get("line", "")), str(event.get("motion", "")), {}, int(event_talk.get(cue_id, -1)))
 
 
 func _layout_caption() -> void:
@@ -549,7 +534,7 @@ func _process(delta: float) -> void:
 	_update_figure(delta)
 	_update_lantern(delta)
 	var route_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
-	_update_flashback_cues(delta, route_progress)
+	_update_story_event_cues(route_progress)
 	var beats: Array = _story.get("beats", [])
 	if _stage < beats.size() and _apparition_state == ApparitionState.PRESENT and route_progress >= FIGURE_OFFSETS[_stage] - 2.5:
 		_stage += 1
@@ -568,31 +553,20 @@ func _process(delta: float) -> void:
 			_finish_dream()
 
 
-func _update_flashback_cues(delta: float, route_progress: float) -> void:
-	_flashback_cooldown = maxf(_flashback_cooldown - delta, 0.0)
-	if _apparition_state != ApparitionState.PRESENT or _flashback_cooldown > 0.0 or _flashback_cue_index >= FLASHBACK_CUES.size():
-		return
-	while _flashback_cue_index < FLASHBACK_CUES.size() and _flashback_seen.has(str(FLASHBACK_CUES[_flashback_cue_index]["id"])):
-		_flashback_cue_index += 1
-	if _flashback_cue_index >= FLASHBACK_CUES.size():
-		return
-	var cue: Dictionary = FLASHBACK_CUES[_flashback_cue_index]
-	if route_progress < float(cue["offset"]):
-		return
-	_flashback_cue_index += 1
-	var flashback := _dream_route.call("play_flashback", str(cue["id"])) as Node3D if _dream_route else null
-	if flashback == null:
-		return
-	_flashback_seen[str(cue["id"])] = true
-	_flashback_cooldown = 1.2
-	_begin_figure_departure()
-	_pulse_effect(0.96, "insight", flashback)
+func _update_story_event_cues(route_progress: float) -> void:
+	var events: Array = _story.get("events", [])
+	while _story_event_cue_index < events.size():
+		var event: Dictionary = events[_story_event_cue_index]
+		if route_progress < float(event.get("offset", 0.0)):
+			return
+		_story_event_cue_index += 1
+		_cue_story_event(event)
 
 
-func _queue_story_line(line: String, motion: String = "", journal_entry: Dictionary = {}) -> void:
+func _queue_story_line(line: String, motion: String = "", journal_entry: Dictionary = {}, station_round: int = -1) -> void:
 	if line.strip_edges().is_empty():
 		return
-	_story_line_queue.append({"text": line, "motion": motion, "journal": journal_entry})
+	_story_line_queue.append({"text": line, "motion": motion, "journal": journal_entry, "station_round": station_round})
 	if not _story_line_active and _story_gap_remaining <= 0.0 and _apparition_state == ApparitionState.PRESENT:
 		_show_next_story_line()
 
@@ -602,6 +576,7 @@ func _show_next_story_line() -> void:
 		return
 	_begin_character_conversation(true)
 	var beat: Dictionary = _story_line_queue.pop_front()
+	_station_after_line = int(beat.get("station_round", -1))
 	var line := str(beat.get("text", ""))
 	_record_dream_entry(beat.get("journal", {}))
 	_play_story_choreography(str(beat.get("motion", "")))
@@ -655,6 +630,16 @@ func _play_story_choreography(cue: String) -> void:
 			second_duration = 0.72
 			pause = 0.55
 			gaze_side = 2.0
+		"tower_gaze":
+			# She takes one step to the stair, then watches its upper landing.
+			first_stop = start + 0.55
+			first_duration = 0.82
+			gaze_side = -1.0
+		"window_gaze":
+			# She keeps her distance from the sill and looks through the glass.
+			first_stop = start + 0.35
+			first_duration = 0.7
+			gaze_side = 1.0
 		_:
 			_story_motion_tween.kill()
 			return
@@ -721,6 +706,9 @@ func _update_story_lines(delta: float) -> void:
 				_story_line_active = false
 				_restore_character_conversation()
 				_story_gap_remaining = 1.2 if not _story_line_queue.is_empty() else 0.0
+				if _station_after_line >= 0:
+					_start_station_dialogue(_station_after_line)
+					_station_after_line = -1
 	elif _story_gap_remaining > 0.0:
 		_story_gap_remaining = maxf(_story_gap_remaining - delta, 0.0)
 		if _story_gap_remaining <= 0.0:
@@ -775,7 +763,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				elif _conversation_response_ready:
 					_conversation_response_ready = false
 					_conversation_waiting = false
-					if _memory_chosen:
+					if _station_dialogue_active:
+						_continue_station_dialogue()
+					elif _memory_chosen:
 						_continue_memory_dialogue()
 					elif _conversation_choice_advances:
 						_conversation_round += 1
@@ -1228,6 +1218,7 @@ func _finish_dream() -> void:
 	_answer_open = true
 	_conversation_intro_waiting = true
 	_conversation_round = 0
+	_advance_unseen_talk_round()
 	_conversation_waiting = false
 	_set_figure_moving(false)
 	_begin_character_conversation()
@@ -1368,13 +1359,24 @@ func _build_small_talk_choices() -> void:
 		_choice_panel.show()
 		return
 	_repair_menu_active = false
-	if _conversation_round >= rounds.size():
+	var round_index := _station_round_index if _station_dialogue_active else _conversation_round
+	if not _station_dialogue_active:
+		_advance_unseen_talk_round()
+		round_index = _conversation_round
+	if round_index >= rounds.size():
+		if _station_dialogue_active:
+			_station_dialogue_active = false
+			_station_round_index = -1
+			_answer_open = false
+			_choice_panel.hide()
+			_restore_character_conversation()
+			return
 		_conversation_waiting = false
 		_set_caption("")
 		_build_choices()
 		return
 	_set_caption("")
-	var round_data: Dictionary = rounds[_conversation_round]
+	var round_data: Dictionary = rounds[round_index]
 	var choices: Array = round_data.get("choices", [])
 	var labels: Array[String] = []
 	for choice in choices:
@@ -1386,6 +1388,41 @@ func _build_small_talk_choices() -> void:
 	_choice_index = 0
 	_refresh_conversation_choices(choices)
 	_choice_panel.show()
+
+
+func _start_station_dialogue(round_index: int) -> void:
+	var rounds: Array = _story.get("small_talk", [])
+	if round_index < 0 or round_index >= rounds.size() or _completed_talk_rounds.has(round_index):
+		return
+	_station_dialogue_active = true
+	_station_round_index = round_index
+	_station_choice_effect = ""
+	_answer_open = true
+	_conversation_waiting = false
+	_conversation_intro_waiting = false
+	_begin_character_conversation()
+	_build_small_talk_choices()
+	if Game.player:
+		Game.player.dialogue_locked = true
+
+
+func _continue_station_dialogue() -> void:
+	if _station_choice_effect == "push" or _station_choice_effect == "escalate" or _station_choice_effect == "repair":
+		_build_small_talk_choices()
+		return
+	_completed_talk_rounds[_station_round_index] = true
+	_station_dialogue_active = false
+	_station_round_index = -1
+	_station_choice_effect = ""
+	_answer_open = false
+	_choice_panel.hide()
+	_restore_character_conversation()
+
+
+func _advance_unseen_talk_round() -> void:
+	var rounds: Array = _story.get("small_talk", [])
+	while _conversation_round < rounds.size() and _completed_talk_rounds.has(_conversation_round):
+		_conversation_round += 1
 
 
 func _build_choice_panel() -> void:
@@ -1465,6 +1502,7 @@ func _choose_small_talk(index: int) -> void:
 		return
 	var choice: Dictionary = choices[index]
 	var effect := str(choice.get("effect", ""))
+	_station_choice_effect = effect
 	if effect == "push" or effect == "escalate":
 		_conversation_strain += 2
 	elif effect == "repair":
@@ -1542,8 +1580,9 @@ func _refresh_choices() -> void:
 		_refresh_conversation_choices(repair.get("choices", []))
 		return
 	var rounds: Array = _story.get("small_talk", [])
-	if _answer_open and not _conversation_waiting and _conversation_round < rounds.size():
-		var round_data: Dictionary = rounds[_conversation_round]
+	var round_index := _station_round_index if _station_dialogue_active else _conversation_round
+	if _answer_open and not _conversation_waiting and round_index < rounds.size():
+		var round_data: Dictionary = rounds[round_index]
 		_refresh_conversation_choices(round_data.get("choices", []))
 		return
 	var branches: Array = _story.get("branches", [])
@@ -1553,7 +1592,8 @@ func _refresh_choices() -> void:
 
 func _choose_focused_memory() -> void:
 	var rounds: Array = _story.get("small_talk", [])
-	if _answer_open and _conversation_round < rounds.size():
+	var round_index := _station_round_index if _station_dialogue_active else _conversation_round
+	if _answer_open and round_index < rounds.size():
 		_choose_small_talk(_choice_index)
 		return
 	var branches: Array = _story.get("branches", [])
@@ -1648,7 +1688,7 @@ func _ending_text() -> String:
 		var ruptured: Dictionary = _story.get("ruptured", {})
 		_record_dream_entry(ruptured.get("journal", {}))
 		return str(ruptured.get("response", _story.get("arrival", "")))
-	_dream_understood = _opened_memory_doors.has("window") and _opened_memory_doors.size() >= 2
+	_dream_understood = _seen_story_cues.has("window") and _seen_story_cues.size() >= 2
 	if _dream_understood:
 		_dream_outcome = "complete"
 		return str(_story.get("ending", _story.get("arrival", "")))
