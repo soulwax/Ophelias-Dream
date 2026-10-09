@@ -68,10 +68,11 @@ func _ready() -> void:
 	Game.dream_memory = story["branches"][0]["id"]
 	experience._show_standalone_waking()
 	var waking_box := experience._choice_panel.get_child(0) as VBoxContainer
-	assert(waking_box.get_child_count() == 4, "standalone dream should show both echoes and a return action")
-	assert((waking_box.get_child(1) as Label).text.ends_with(story["branches"][0]["ophelia"]), "standalone dream should show Ophelia's echo")
-	assert((waking_box.get_child(2) as Label).text.ends_with(story["branches"][0]["mathilda"]), "standalone dream should show Mathilda's echo")
-	assert(Game.phase == Game.Phase.DIALOGUE, "the waking card should lock dream movement")
+	assert(waking_box.get_child_count() == 3, "standalone dream should close on one image and a return action")
+	assert((waking_box.get_child(0) as Label).text == "THE LIGHT REMAINS", "standalone dream should keep its final image")
+	assert((waking_box.get_child(1) as Label).text == story["arrival"], "standalone dream should not reveal future chapter echoes")
+	assert((waking_box.get_child(2) as Button).text == "Return to the threshold", "standalone dream should offer a return")
+	assert(Game.phase == Game.Phase.DIALOGUE, "the closing card should wait for the player's return")
 	Game.dream_mode = false
 	Game.dream_memory = ""
 	Game.set_phase(Game.Phase.BOOT)

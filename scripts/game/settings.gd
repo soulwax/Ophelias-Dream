@@ -113,9 +113,16 @@ var screen_effects: float = DEFAULTS.screen_effects
 # action -> the events it shipped with, for resetting the keys.
 var _default_keys := {}
 var _focused := true
+var _save_timer: Timer
 
 
 func _ready() -> void:
+	_save_timer = Timer.new()
+	_save_timer.name = "SettingsSaveDebounce"
+	_save_timer.one_shot = true
+	_save_timer.wait_time = 0.4
+	_save_timer.timeout.connect(save)
+	add_child(_save_timer)
 	for bus in BUSES:
 		_bus(bus, "Master")
 	_build_mix()
@@ -129,15 +136,20 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_FOCUS_IN:
 		_focused = what == NOTIFICATION_APPLICATION_FOCUS_IN
 		apply_audio()
+		if not _focused:
+			save()
+	elif what == NOTIFICATION_WM_CLOSE_REQUEST:
+		save()
 
 
-# Sets one value and applies it. Sliders call this on every step, so saving
-# waits until the menu closes (Game.toggle_pause, restart, quit).
+# Sets one value, applies it, and queues a machine-local save. Slider movement
+# is debounced so dragging a control does not write the config on every tick.
 func change(key: String, value: Variant) -> void:
 	if not DEFAULTS.has(key):
 		return
 	set(key, value)
 	apply()
+	_queue_save()
 
 
 func reset(keys: Array) -> void:
@@ -176,6 +188,8 @@ func load_saved() -> void:
 
 
 func save() -> void:
+	if _save_timer and not _save_timer.is_stopped():
+		_save_timer.stop()
 	var file := ConfigFile.new()
 	for key in DEFAULTS:
 		file.set_value("settings", key, get(key))
@@ -186,7 +200,16 @@ func save() -> void:
 			if code != "":
 				codes.append(code)
 		file.set_value("keys", pair[0], codes)
-	file.save(PATH)
+	var error := file.save(PATH)
+	if error != OK:
+		push_warning("Could not save machine-local settings (%s): %s" % [PATH, error_string(error)])
+
+
+func _queue_save() -> void:
+	if _save_timer:
+		_save_timer.start()
+	else:
+		save()
 
 
 # --- Keys ---------------------------------------------------------------

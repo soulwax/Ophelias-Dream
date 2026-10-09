@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "opening": "WASD to walk · mouse to look\nThe snow remembers a shape. Follow it.",
+  "opening": "The snow remembers a shape. Follow it.",
   "beats": [
     {
       "id": "tree_line",
@@ -20,35 +20,35 @@
     }
   ],
   "arrival": "The trees are empty. The house light still waits behind you.",
-  "question": "Before you wake, what do you ask her?",
+  "question": "Why did you come after me?",
   "branches": [
     {
       "id": "name",
-      "label": "Who are you?",
-      "response": "The figure leans toward you. The answer follows you into waking.\nPress E to wake.",
-      "ophelia": "The name from the dream returns as Ophelia wakes: Mathilda.",
-      "mathilda": "Mathilda wakes with a name on her lips: Ophelia."
+      "label": "I wanted to know who I was following.",
+      "response": "The figure turns. For a breath, recognition seems possible.",
+      "ophelia": "At the first bend, a name waits just behind the one on her tongue.",
+      "mathilda": "For an instant, the cup across the fire seems already warm."
     },
     {
       "id": "waiting",
-      "label": "Why were you waiting?",
-      "response": "The figure looks past you, toward the house.\nPress E to wake.",
-      "ophelia": "Ophelia wakes with the feeling that someone is waiting for her.",
-      "mathilda": "Mathilda remembers waiting in the snow, unsure who she was waiting for."
+      "label": "I thought you might want me to wait.",
+      "response": "She takes one step nearer, then stops again.",
+      "ophelia": "She remembers the lamp left burning, though no one asked her to.",
+      "mathilda": "The second cup sits beside the fire. She leaves it there."
     },
     {
       "id": "remember",
-      "label": "Do I know you?",
-      "response": "The figure almost answers. The snow moves between you.\nPress E to wake.",
-      "ophelia": "Ophelia wakes certain she has met that woman before.",
-      "mathilda": "A face half-remembered follows Mathilda into the afternoon."
+      "label": "I was afraid you would not come back.",
+      "response": "Your tracks meet hers. Snow softens the place they touch.",
+      "ophelia": "The empty step returns the old fear: no one will come back.",
+      "mathilda": "The window light looks farther away than it should."
     },
     {
       "id": "silence",
       "label": "Say nothing.",
-      "response": "The figure waits. You let the silence answer.\nPress E to wake.",
-      "ophelia": "Ophelia keeps the dream to herself, but its shape stays with her.",
-      "mathilda": "Mathilda keeps the dream to herself, but its shape stays with her."
+      "response": "She looks toward the house. Its light is still there.",
+      "ophelia": "At the first bend, she lets the unsaid sentence remain unsaid.",
+      "mathilda": "By the tent, the pause beside the spare cup belongs to her."
     }
   ]
 }

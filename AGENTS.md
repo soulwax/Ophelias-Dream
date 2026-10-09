@@ -24,36 +24,36 @@ Ophelia's Dream is a third-person winter horror game using Godot 4.7, Forward+ r
 
 ## Build, Test, and Development Commands
 
-Run these from the repository root with Godot 4.7 on PATH:
+Run these from the repository root in PowerShell. This workstation's Godot executable is `C:\Users\soulwax\scoop\apps\godot-mono\current\godot-mono.console.exe` (Godot 4.7.2 Mono); `$env:GODOT_BIN` points to it. Use `& $env:GODOT_BIN` to invoke it. Do not assume `godot` is on PATH.
 
 ```powershell
-godot --path .                  # Run the game
-godot --path . -e               # Open the editor
-godot --headless --path . --import # Import assets/register new classes
-godot --headless --path . tools/journal_probe.tscn # Journal rules and UI
-godot --headless --path . tools/voice_probe.tscn # Voice rules; PROBE_CLIPS=1 checks clips
+& $env:GODOT_BIN --path .                  # Run the game
+& $env:GODOT_BIN --path . -e               # Open the editor
+& $env:GODOT_BIN --headless --path . --import # Import assets/register new classes
+& $env:GODOT_BIN --headless --path . tools/journal_probe.tscn # Journal rules and UI
+& $env:GODOT_BIN --headless --path . tools/voice_probe.tscn # Voice rules; PROBE_CLIPS=1 checks clips
 python tools/voice_status.py                       # every line: final, draft, missing, owed
 python tools/studio/server.py                      # Story Studio in the browser (docs/STORY_STUDIO.md)
 python tools/bake_meeting.py --check               # meeting script coherent, lines/timing current
-godot --headless --path . tools/meeting_probe.tscn # Mathilda meets Ophelia at the door (docs/DIALOGUE.md)
-godot --headless --path . -s tools/probe.gd # Inspect meshes/animations
-godot --headless --path . -s tools/retarget_elf.gd # Rebuild elf movement clips
-godot --headless --path . -s tools/leap_math_probe.gd # Running-leap math checks
-godot --headless --path . tools/leap_probe.tscn # Running leap on the real player
-godot --path . -s tools/leap_sheet.gd # Leap contact sheet (needs a window)
-godot --headless --path . tools/biome_probe.tscn # Snow weight, thaw bands, seams, world edge
-godot --headless --path . tools/flora_probe.tscn # Woods by biome (also with RUN_GRAPHICS=full)
-godot --headless --path . tools/biome_effects_probe.tscn # Grass/thaw steps, prints, snowfall over green
-godot --path . tools/terrain_view.tscn # Overview shots + FPS into build/terrain/ (needs a window)
+& $env:GODOT_BIN --headless --path . tools/meeting_probe.tscn # Mathilda meets Ophelia at the door (docs/DIALOGUE.md)
+& $env:GODOT_BIN --headless --path . -s tools/probe.gd # Inspect meshes/animations
+& $env:GODOT_BIN --headless --path . -s tools/retarget_elf.gd # Rebuild elf movement clips
+& $env:GODOT_BIN --headless --path . -s tools/leap_math_probe.gd # Running-leap math checks
+& $env:GODOT_BIN --headless --path . tools/leap_probe.tscn # Running leap on the real player
+& $env:GODOT_BIN --path . -s tools/leap_sheet.gd # Leap contact sheet (needs a window)
+& $env:GODOT_BIN --headless --path . tools/biome_probe.tscn # Snow weight, thaw bands, seams, world edge
+& $env:GODOT_BIN --headless --path . tools/flora_probe.tscn # Woods by biome (also with RUN_GRAPHICS=full)
+& $env:GODOT_BIN --headless --path . tools/biome_effects_probe.tscn # Grass/thaw steps, prints, snowfall over green
+& $env:GODOT_BIN --path . tools/terrain_view.tscn # Overview shots + FPS into build/terrain/ (needs a window)
 python tools/curate_camp_assets.py   # Camp props from the owner's asset bank (ignored)
-godot --path . tools/camp_view.tscn  # Camp shots into build/camp/ (RUN_HOUR=19.5 for night)
+& $env:GODOT_BIN --path . tools/camp_view.tscn  # Camp shots into build/camp/ (RUN_HOUR=19.5 for night)
 ./tools/run_blackbox.ps1         # Run with logs in build/blackbox/
 ```
 
 For a Windows release, install matching export templates, create `build/windows/`, then run:
 
 ```powershell
-godot --headless --path . --export-release "Windows Desktop" "build/windows/Ophelia's Dream.exe"
+& $env:GODOT_BIN --headless --path . --export-release "Windows Desktop" "build/windows/Ophelia's Dream.exe"
 ```
 
 ## Coding Style & Naming Conventions
@@ -71,7 +71,7 @@ For a screenshot smoke test:
 ```powershell
 $env:RUN_CAPTURE = "1"
 $env:RUN_SHOT = "$PWD/shot.png"
-godot --path .
+& $env:GODOT_BIN --path .
 Remove-Item Env:RUN_CAPTURE, Env:RUN_SHOT
 ```
 

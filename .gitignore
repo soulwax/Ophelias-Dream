@@ -24,3 +24,5 @@ decrypt.key
 
 # Music downloader settings hold a session cookie: keep them out of git (the licensed tracks themselves are tracked).
 assets/audio/music/*.config.json
+AGENTS.md
+CLAUDE.md
