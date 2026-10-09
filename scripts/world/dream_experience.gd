@@ -4,13 +4,19 @@ extends Node3D
 ## kept deliberately unreadable by a translucent, unlit silhouette material.
 const FIGURE_SCENE := preload("res://assets/characters/quaternius_modular_women/animated_woman_a.glb")
 const FIGURE_OFFSETS := [9.0, 20.0, 34.0, 50.0, 67.0]
-const SCENE_CAMERA_DISTANCE := [6.8, 6.2, 5.7, 5.2]
-const SCENE_CAMERA_HEIGHT := [1.9, 1.8, 1.7, 1.6]
+const SCENE_CAMERA_DISTANCE := [4.8, 4.5, 4.2, 3.9]
+const SCENE_CAMERA_HEIGHT := [1.65, 1.58, 1.5, 1.42]
+const FLASHBACK_CUES := [
+	{"offset": 13.0, "id": "sisters"},
+	{"offset": 29.0, "id": "thread"},
+	{"offset": 44.0, "id": "window"},
+]
 const STORY := preload("res://scripts/world/dream_story.gd")
 const DREAM_ROUTE_SCRIPT := preload("res://scripts/world/dream_route.gd")
+const DREAM_SOUNDSCAPE_SCRIPT := preload("res://scripts/audio/dream_soundscape.gd")
 
 var _dream_route: Node3D
-var _dream_soundscape: DreamSoundscape
+var _dream_soundscape: Node3D
 var _warning_prop: Node3D
 var _figure: Node3D
 var _animation: AnimationPlayer
@@ -18,19 +24,21 @@ var _walk_animation := ""
 var _idle_animation := ""
 var _figure_offset := 0.0
 var _figure_moving := false
+var _figure_rambling := false
+var _rambling_gaze_target := Vector3.ZERO
 var _silhouette: ShaderMaterial
 var _boundary_shadow: MeshInstance3D
 var _boundary_material: ShaderMaterial
 var _boundary_strength := 0.0
 var _post_material: ShaderMaterial
 var _post_rect: ColorRect
-var _dialogue_canvas: CanvasLayer
-var _dialogue_plate: PanelContainer
-var _dialogue_box_style: StyleBoxFlat
-var _narration_box_style: StyleBoxEmpty
+var _speech_view: SubViewport
+var _speech_sprite: Sprite3D
+var _speech_panel: PanelContainer
 var _speaker_label: Label
 var _caption: Label
-var _lantern_prompt: Label
+var _speech_target: Node3D
+var _lantern_prompt: Label3D
 var _lantern: Node3D
 var _lantern_light: OmniLight3D
 var _lantern_flame: MeshInstance3D
@@ -42,8 +50,10 @@ var _lantern_left_once := false
 var _lantern_returned := false
 var _dream_quiet := 0.0
 var _dream_quiet_after_response := 0.0
-var _choice_panel: PanelContainer
-var _choice_buttons: Array[Button] = []
+var _choice_panel: Node3D
+var _choice_title: Label3D
+var _choice_hint: Label3D
+var _choice_buttons: Array[Label3D] = []
 var _conversation_camera: Camera3D
 var _return_camera: Camera3D
 var _conversation_camera_active := false
@@ -55,6 +65,7 @@ var _conversation_response_pending := false
 var _conversation_response_ready := false
 var _conversation_response_timer := 0.0
 var _choice_index := 0
+var _choice_time := 0.0
 var _answer_open := false
 var _conversation_intro_waiting := false
 var _conversation_round := 0
@@ -62,15 +73,16 @@ var _conversation_waiting := false
 var _ending_warning_shown := false
 var _waking_card := false
 var _dialogue_ui_hidden_for_pause := false
-var _pause_dialogue_plate_visible := false
+var _pause_speech_visible := false
 var _pause_choice_panel_visible := false
 var _pause_lantern_prompt_visible := false
 var _caption_tween: Tween
-var _story_line_queue: Array[String] = []
+var _story_line_queue: Array[Dictionary] = []
 var _story_line_active := false
 var _story_line_hold := 0.0
 var _story_gap_remaining := 0.0
 var _story_finish_pending := false
+var _story_motion_tween: Tween
 var _stage := 0
 var _finished := false
 var _memory_chosen := false
@@ -79,6 +91,9 @@ var _effect_strength := 0.0
 var _effect_target := 0.0
 var _effect_hold := 0.0
 var _effect_cue := "doubt"
+var _effect_focus: Node3D
+var _flashback_cue_index := 0
+var _flashback_cooldown := 0.0
 var _story: Dictionary
 
 
@@ -92,7 +107,7 @@ func _ready() -> void:
 	_build_figure()
 	_build_warning_prop()
 	_build_post_effect()
-	_dream_soundscape = DreamSoundscape.new()
+	_dream_soundscape = DREAM_SOUNDSCAPE_SCRIPT.new()
 	_dream_soundscape.name = "DreamSoundscape"
 	add_child(_dream_soundscape)
 	_start.call_deferred()
@@ -219,70 +234,87 @@ func _build_post_effect() -> void:
 
 
 func _build_caption() -> void:
-	_dialogue_canvas = CanvasLayer.new()
-	_dialogue_canvas.layer = 24
-	add_child(_dialogue_canvas)
-	_dialogue_plate = PanelContainer.new()
-	_dialogue_plate.name = "DialogueHud"
-	_dialogue_plate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_dialogue_box_style = StyleBoxFlat.new()
-	_dialogue_box_style.bg_color = Color(0.015, 0.02, 0.032, 0.88)
-	_dialogue_box_style.border_color = Color(0.64, 0.51, 0.29, 0.62)
-	_dialogue_box_style.set_border_width_all(1)
-	_dialogue_box_style.set_corner_radius_all(3)
-	_dialogue_box_style.set_content_margin_all(16)
-	_narration_box_style = StyleBoxEmpty.new()
-	_dialogue_plate.add_theme_stylebox_override("panel", _narration_box_style)
-	_dialogue_canvas.add_child(_dialogue_plate)
+	_speech_view = SubViewport.new()
+	_speech_view.name = "DreamSpeechViewport"
+	_speech_view.size = Vector2i(960, 200)
+	_speech_view.transparent_bg = true
+	_speech_view.disable_3d = true
+	_speech_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(_speech_view)
+	_speech_sprite = Sprite3D.new()
+	_speech_sprite.name = "InWorldSpeech"
+	_speech_sprite.texture = _speech_view.get_texture()
+	_speech_sprite.pixel_size = 0.0023
+	_speech_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_speech_sprite.no_depth_test = true
+	_speech_sprite.shaded = false
+	_speech_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	_speech_sprite.position = Vector3.UP * 2.4
+	_speech_sprite.visible = false
+	add_child(_speech_sprite)
+	_speech_panel = PanelContainer.new()
+	_speech_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var speech_style := StyleBoxFlat.new()
+	speech_style.bg_color = Color(0.014, 0.018, 0.03, 0.91)
+	speech_style.border_color = Color(0.68, 0.57, 0.37, 0.48)
+	speech_style.set_border_width_all(1)
+	speech_style.set_corner_radius_all(11)
+	speech_style.set_content_margin_all(22)
+	speech_style.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
+	speech_style.shadow_size = 10
+	_speech_panel.add_theme_stylebox_override("panel", speech_style)
+	_speech_view.add_child(_speech_panel)
 	var dialogue_column := VBoxContainer.new()
-	dialogue_column.add_theme_constant_override("separation", 4)
-	_dialogue_plate.add_child(dialogue_column)
-	_speaker_label = UiChrome.label("", 14, Color("d5b779"))
-	_speaker_label.add_theme_color_override("font_outline_color", Color(0.01, 0.012, 0.018, 0.9))
-	_speaker_label.add_theme_constant_override("outline_size", 2)
+	dialogue_column.add_theme_constant_override("separation", 6)
+	_speech_panel.add_child(dialogue_column)
+	_speaker_label = UiChrome.label("", 24, Color("d5b779"))
+	_speaker_label.add_theme_color_override("font_outline_color", Color(0.01, 0.012, 0.018, 0.96))
+	_speaker_label.add_theme_constant_override("outline_size", 3)
 	dialogue_column.add_child(_speaker_label)
-	var subtitle_size: int = Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)]
+	var subtitle_size: int = maxi(24, Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)])
 	_caption = UiChrome.label("", subtitle_size, Color("e4e0df"))
 	_caption.add_theme_color_override("font_outline_color", Color(0.015, 0.022, 0.035, 0.96))
-	_caption.add_theme_constant_override("outline_size", 3)
+	_caption.add_theme_constant_override("outline_size", 2)
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_column.add_child(_caption)
-	_lantern_prompt = UiChrome.label("", 15, Color("e3c99c"))
-	_lantern_prompt.add_theme_color_override("font_outline_color", Color(0.015, 0.022, 0.035, 0.96))
-	_lantern_prompt.add_theme_constant_override("outline_size", 2)
-	_lantern_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_lantern_prompt.offset_top = -206
-	_lantern_prompt.offset_bottom = -174
+	_lantern_prompt = Label3D.new()
+	_lantern_prompt.name = "InWorldLanternPrompt"
+	_lantern_prompt.font_size = 24
+	_lantern_prompt.pixel_size = 0.0045
+	_lantern_prompt.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_lantern_prompt.no_depth_test = true
+	_lantern_prompt.modulate = Color("e3c99c")
+	_lantern_prompt.outline_size = 12
+	_lantern_prompt.outline_modulate = Color(0.012, 0.016, 0.024, 0.96)
 	_lantern_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lantern_prompt.modulate.a = 0.0
+	_lantern_prompt.position = Vector3.UP * 1.0
 	_lantern_prompt.visible = false
-	_dialogue_canvas.add_child(_lantern_prompt)
-	get_viewport().size_changed.connect(_layout_caption)
-	_layout_caption()
+	add_child(_lantern_prompt)
+	_build_choice_panel()
 
 
 func _layout_caption() -> void:
-	var viewport_width: float = get_viewport().get_visible_rect().size.x
-	var dialogue_width := minf(960.0, maxf(280.0, viewport_width - 32.0))
-	if _dialogue_plate:
-		_dialogue_plate.offset_left = -dialogue_width * 0.5
-		_dialogue_plate.offset_right = dialogue_width * 0.5
-		var dialogue_bottom := -36.0
-		if _choice_panel and is_instance_valid(_choice_panel) and _choice_panel.visible:
-			dialogue_bottom = _choice_panel.offset_top - 10.0
-		_dialogue_plate.offset_bottom = dialogue_bottom
-		_dialogue_plate.offset_top = dialogue_bottom - 204.0
-	if _lantern_prompt:
-		var prompt_width := minf(720.0, maxf(240.0, viewport_width - 32.0))
-		_lantern_prompt.offset_left = -prompt_width * 0.5
-		_lantern_prompt.offset_right = prompt_width * 0.5
+	if _speech_sprite and _speech_target and is_instance_valid(_speech_target):
+		_speech_sprite.global_position = _speech_target.global_position + Vector3.UP * 2.25
+	if _lantern_prompt and _lantern:
+		_lantern_prompt.global_position = _lantern.global_position + Vector3.UP * 1.25
+	if _choice_panel and _figure and is_instance_valid(_figure):
+		_choice_panel.global_position = _figure.global_position + Vector3.UP * 0.4
 
 
 func _process(delta: float) -> void:
 	if Game.player == null:
 		return
+	_layout_caption()
+	_update_choice_positions()
+	if _choice_panel and _choice_panel.visible:
+		_choice_time += delta
+		if _choice_index >= 0 and _choice_index < _choice_buttons.size():
+			var selected_label := _choice_buttons[_choice_index]
+			var breath := 1.06 + sin(_choice_time * 2.4) * 0.025
+			selected_label.scale = Vector3.ONE * breath
 	_update_post_effect(delta)
 	if Game.phase != Game.Phase.DREAM:
 		return
@@ -299,8 +331,8 @@ func _process(delta: float) -> void:
 	if _finished:
 		return
 	if _answer_open:
-		if Input.mouse_mode != Input.MOUSE_MODE_VISIBLE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
 	_update_story_lines(delta)
 	if _story_line_active or _conversation_camera_returning:
@@ -308,11 +340,12 @@ func _process(delta: float) -> void:
 	_update_figure(delta)
 	_update_lantern(delta)
 	var route_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
+	_update_flashback_cues(delta, route_progress)
 	var beats: Array = _story.get("beats", [])
 	if _stage < beats.size() and route_progress >= FIGURE_OFFSETS[_stage] - 2.5:
 		_stage += 1
 		var beat: Dictionary = beats[_stage - 1]
-		_queue_story_line(str(beat.get("text", "")))
+		_queue_story_line(str(beat.get("text", "")), str(beat.get("motion", "")))
 		var cue := "footstep"
 		match str(beat.get("id", "")):
 			"lantern":
@@ -326,10 +359,25 @@ func _process(delta: float) -> void:
 			_finish_dream()
 
 
-func _queue_story_line(line: String) -> void:
+func _update_flashback_cues(delta: float, route_progress: float) -> void:
+	_flashback_cooldown = maxf(_flashback_cooldown - delta, 0.0)
+	if _flashback_cooldown > 0.0 or _flashback_cue_index >= FLASHBACK_CUES.size():
+		return
+	var cue: Dictionary = FLASHBACK_CUES[_flashback_cue_index]
+	if route_progress < float(cue["offset"]):
+		return
+	_flashback_cue_index += 1
+	var flashback := _dream_route.call("play_flashback", str(cue["id"])) as Node3D if _dream_route else null
+	if flashback == null:
+		return
+	_flashback_cooldown = 1.2
+	_pulse_effect(0.96, "insight", flashback)
+
+
+func _queue_story_line(line: String, motion: String = "") -> void:
 	if line.strip_edges().is_empty():
 		return
-	_story_line_queue.append(line)
+	_story_line_queue.append({"text": line, "motion": motion})
 	if not _story_line_active and _story_gap_remaining <= 0.0:
 		_show_next_story_line()
 
@@ -337,28 +385,121 @@ func _queue_story_line(line: String) -> void:
 func _show_next_story_line() -> void:
 	if _story_line_queue.is_empty():
 		return
-	_begin_character_conversation()
-	var line: String = _story_line_queue.pop_front()
-	_caption.text = line
-	_set_speaker("MATHILDA")
-	_dialogue_plate.show()
-	_caption.modulate.a = 0.0
+	_begin_character_conversation(true)
+	var beat: Dictionary = _story_line_queue.pop_front()
+	var line := str(beat.get("text", ""))
+	_play_story_choreography(str(beat.get("motion", "")))
+	_set_caption(line, "MATHILDA")
 	_caption_time = 0.0
-	if _caption_tween and _caption_tween.is_running():
-		_caption_tween.kill()
-	_caption_tween = create_tween()
-	_caption_tween.tween_property(_caption, "modulate:a", 1.0, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_story_line_active = true
 	var words := line.split(" ", false).size()
 	_story_line_hold = clampf(float(words) / 2.6, 4.5, 8.0)
+
+
+func _play_story_choreography(cue: String) -> void:
+	if cue.is_empty() or _figure == null or Game.trail == null:
+		return
+	if _story_motion_tween and _story_motion_tween.is_running():
+		_story_motion_tween.kill()
+	_story_motion_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var start := _figure_offset
+	var first_stop := start
+	var final_stop := start
+	var first_duration := 0.0
+	var second_duration := 0.0
+	var pause := 0.0
+	var gaze_side := 0.0
+	match cue:
+		"cut_tree":
+			# She advances a few measured steps, then looks into the cut tree line.
+			first_stop = start + 1.2
+			first_duration = 1.35
+			gaze_side = -1.0
+		"delayed_steps":
+			# Two short approaches with a held beat between them, echoing the
+			# heavier steps that answer only after Ophelia has stopped.
+			first_stop = start + 0.7
+			final_stop = start + 1.45
+			first_duration = 0.82
+			second_duration = 0.9
+			pause = 0.62
+			gaze_side = 0.0
+		"lantern_witness":
+			# She draws level with the turned lantern and lets the light pull her
+			# attention toward the trees.
+			first_stop = start + 0.8
+			first_duration = 0.95
+			gaze_side = 1.0
+		"tracks_stop":
+			# A measured approach, a hesitation, then one last step that ends
+			# before the clearing can become a way out.
+			first_stop = start + 1.05
+			final_stop = start + 1.65
+			first_duration = 1.1
+			second_duration = 0.72
+			pause = 0.55
+			gaze_side = 2.0
+		_:
+			_story_motion_tween.kill()
+			return
+	if gaze_side != 0.0:
+		_set_rambling_gaze_from_route(gaze_side)
+	_set_figure_moving(true)
+	_story_motion_tween.tween_method(_set_figure_route_offset, start, first_stop, first_duration)
+	if pause > 0.0:
+		_story_motion_tween.tween_callback(_set_figure_moving.bind(false))
+		_story_motion_tween.tween_interval(pause)
+		_story_motion_tween.tween_callback(_set_figure_moving.bind(true))
+		_story_motion_tween.tween_method(_set_figure_route_offset, first_stop, final_stop, second_duration)
+	_story_motion_tween.tween_callback(_set_figure_moving.bind(false))
+	if gaze_side == 0.0:
+		_story_motion_tween.tween_callback(_turn_figure_toward_player)
+	else:
+		_story_motion_tween.tween_callback(_turn_figure_toward_rambling_gaze)
+
+
+func _set_figure_route_offset(along: float) -> void:
+	_figure_offset = along
+	_place_figure(along)
+
+
+func _set_rambling_gaze_from_route(side_sign: float) -> void:
+	var frame := Game.trail.frame_at(_figure_offset)
+	var gaze_direction := -frame.basis.z * 5.0 if absf(side_sign) > 1.0 else frame.basis.x * side_sign * 5.0
+	_rambling_gaze_target = frame.origin + gaze_direction + Vector3.UP * 1.3
+
+
+func _turn_figure_toward_player() -> void:
+	if _figure == null or Game.player == null:
+		return
+	var direction := Game.player.global_position - _figure.global_position
+	direction.y = 0.0
+	if direction.length_squared() <= 0.01:
+		return
+	var target_yaw := atan2(-direction.x, -direction.z)
+	var turn := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	turn.tween_property(_figure, "rotation:y", target_yaw, 0.55)
+
+
+func _turn_figure_toward_rambling_gaze() -> void:
+	if _figure == null:
+		return
+	var direction := _rambling_gaze_target - _figure.global_position
+	direction.y = 0.0
+	if direction.length_squared() <= 0.01:
+		return
+	var target_yaw := atan2(-direction.x, -direction.z)
+	var turn := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	turn.tween_property(_figure, "rotation:y", target_yaw, 0.65)
 
 
 func _update_story_lines(delta: float) -> void:
 	if _story_line_active:
 		_caption_time += delta
 		if _caption_time >= _story_line_hold:
-			_caption.modulate.a = move_toward(_caption.modulate.a, 0.0, delta * 0.8)
-			if _caption.modulate.a <= 0.01:
+			_speech_sprite.modulate.a = move_toward(_speech_sprite.modulate.a, 0.0, delta * 1.2)
+			if _speech_sprite.modulate.a <= 0.01:
+				_speech_sprite.hide()
 				_story_line_active = false
 				_restore_character_conversation()
 				_story_gap_remaining = 1.2 if not _story_line_queue.is_empty() else 0.0
@@ -371,6 +512,15 @@ func _update_story_lines(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _waking_card and Game.phase == Game.Phase.DIALOGUE:
+		if event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
+			_return_to_menu()
+			get_viewport().set_input_as_handled()
+			return
+		if event.is_action_pressed("pause"):
+			Game.toggle_pause()
+			get_viewport().set_input_as_handled()
+			return
 	if (_answer_open or _conversation_waiting or _conversation_intro_waiting) and Game.phase == Game.Phase.DREAM:
 		if event.is_action_pressed("pause"):
 			Game.toggle_pause()
@@ -488,7 +638,7 @@ func _place_figure(along: float, delta: float = 0.0) -> void:
 	var frame := Game.trail.frame_at(along)
 	var across := frame.basis.x * 0.9
 	_figure.global_position = Game.trail.on_ground(frame.origin + across) + Vector3.UP * 0.02
-	var toward := Game.player.global_position - _figure.global_position if Game.player else -frame.basis.z
+	var toward := _rambling_gaze_target - _figure.global_position if _figure_rambling else (Game.player.global_position - _figure.global_position if Game.player else -frame.basis.z)
 	if _figure_moving:
 		var ahead := Game.trail.frame_at(minf(along + 1.0, Game.trail.length)).origin
 		toward = ahead + frame.basis.x * 0.9 - _figure.global_position
@@ -774,10 +924,21 @@ func _finish_dream() -> void:
 	_pulse_effect(0.72, "merge")
 	_set_caption("%s\n\n%s TO CONTINUE" % [str(_story.get("arrival", "")), Game.settings.key_label("interact")], "MATHILDA")
 	_layout_caption()
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
-func _begin_character_conversation() -> void:
+func _begin_character_conversation(rambling := false) -> void:
+	_figure_rambling = rambling
+	if rambling:
+		_set_figure_moving(false)
+		if Game.player and Game.trail and _figure:
+			var player_offset := Game.trail.offset_of(Game.player.global_position)
+			var glance_offset := clampf(player_offset + 9.0 + float(posmod(_stage, 3)) * 3.5, 0.0, Game.trail.length)
+			var glance_frame := Game.trail.frame_at(glance_offset)
+			var away_side := -1.0 if posmod(_stage, 2) == 0 else 1.0
+			var lifted := 4.0 if posmod(_stage, 2) == 0 else 1.2
+			_rambling_gaze_target = glance_frame.origin + glance_frame.basis.x * away_side * 8.0 + Vector3.UP * lifted
+		return
 	if not _camera_choreography_enabled or Game.player == null or _figure == null:
 		return
 	if _conversation_camera_returning:
@@ -821,7 +982,7 @@ func _update_conversation_camera(delta: float) -> void:
 	if (_figure.global_position - Game.player.global_position).dot(side) >= 0.0:
 		side = -side
 	var shot_index := clampi(_stage - 1, 0, SCENE_CAMERA_DISTANCE.size() - 1)
-	var target_position := midpoint + side * SCENE_CAMERA_DISTANCE[shot_index] + Vector3.UP * SCENE_CAMERA_HEIGHT[shot_index]
+	var target_position: Vector3 = midpoint + side * SCENE_CAMERA_DISTANCE[shot_index] + Vector3.UP * SCENE_CAMERA_HEIGHT[shot_index]
 	var look_target := midpoint + Vector3.UP * 1.0
 	var weight := 1.0 - exp(-delta * 2.8)
 	_conversation_camera.global_position = _conversation_camera.global_position.lerp(target_position, weight)
@@ -831,6 +992,7 @@ func _update_conversation_camera(delta: float) -> void:
 
 func _restore_character_conversation(immediate := false) -> void:
 	_conversation_camera_active = false
+	_figure_rambling = false
 	if not immediate and _conversation_camera and is_instance_valid(_conversation_camera) and _return_camera and is_instance_valid(_return_camera):
 		_conversation_camera_returning = true
 		_conversation_camera_return_time = 0.42
@@ -863,21 +1025,15 @@ func _complete_character_conversation() -> void:
 
 
 func _build_choices() -> void:
-	_dialogue_plate.hide()
-	var box := _prepare_choice_panel(str(_story.get("question", "")))
-	_add_choice_speaker(box, "YOU")
+	_set_caption("")
 	var branches: Array = _story.get("branches", [])
-	for index in range(branches.size()):
-		var choice: Dictionary = branches[index]
-		var button := _add_choice_button(box, str(choice.get("label", "")), index)
-		button.pressed.connect(_choose_memory.bind(str(choice.get("id", ""))))
-	_add_choice_hint(box, "↑ / ↓   ·   Click / %s   ·   Esc to pause" % Game.settings.key_label("interact"))
+	var labels: Array[String] = []
+	for branch in branches:
+		labels.append(str(branch.get("label", "")))
+	_set_choice_rows(str(_story.get("question", "")), labels)
 	_choice_panel.show()
 	_choice_index = 0
 	_refresh_choices()
-	_layout_choices()
-	if not _choice_buttons.is_empty():
-		_choice_buttons[0].grab_focus.call_deferred()
 
 
 func _build_small_talk_choices() -> void:
@@ -887,97 +1043,75 @@ func _build_small_talk_choices() -> void:
 		_set_caption("")
 		_build_choices()
 		return
-	_dialogue_plate.hide()
+	_set_caption("")
 	var round_data: Dictionary = rounds[_conversation_round]
-	var box := _prepare_choice_panel(str(round_data.get("prompt", "")))
-	_add_choice_speaker(box, "YOU")
 	var choices: Array = round_data.get("choices", [])
-	for index in range(choices.size()):
-		var choice: Dictionary = choices[index]
-		var button := _add_choice_button(box, str(choice.get("label", "")), index)
-		button.pressed.connect(_choose_small_talk.bind(index))
-	_add_choice_hint(box, "↑ / ↓   ·   Click / %s" % Game.settings.key_label("interact"))
+	var labels: Array[String] = []
+	for choice in choices:
+		labels.append(str(choice.get("label", "")))
+	_set_choice_rows(str(round_data.get("prompt", "")), labels)
 	_choice_index = 0
 	_refresh_conversation_choices(choices)
 	_choice_panel.show()
-	_layout_choices()
-	if not _choice_buttons.is_empty():
-		_choice_buttons[0].grab_focus.call_deferred()
 
 
-func _prepare_choice_panel(title: String) -> VBoxContainer:
-	if _choice_panel == null or not is_instance_valid(_choice_panel):
-		_choice_panel = PanelContainer.new()
-		_choice_panel.name = "CharacterDialogueChoices"
-		_choice_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-		_choice_panel.offset_left = -390
-		_choice_panel.offset_right = 390
-		_choice_panel.offset_top = -378
-		_choice_panel.offset_bottom = -132
-		get_viewport().size_changed.connect(_layout_choices)
-		var plate := StyleBoxFlat.new()
-		plate.bg_color = Color(0.015, 0.02, 0.032, 0.9)
-		plate.set_corner_radius_all(3)
-		plate.set_content_margin_all(18)
-		plate.border_color = Color(0.64, 0.51, 0.29, 0.62)
-		plate.set_border_width_all(1)
-		plate.shadow_color = Color(0.0, 0.0, 0.0, 0.24)
-		plate.shadow_size = 14
-		_choice_panel.add_theme_stylebox_override("panel", plate)
-		var new_box := VBoxContainer.new()
-		new_box.name = "ConversationChoices"
-		new_box.add_theme_constant_override("separation", 7)
-		_choice_panel.add_child(new_box)
-		_dialogue_canvas.add_child(_choice_panel)
-	var box := _choice_panel.get_child(0) as VBoxContainer
-	for child in box.get_children():
-		box.remove_child(child)
-		child.queue_free()
+func _build_choice_panel() -> void:
+	_choice_panel = Node3D.new()
+	_choice_panel.name = "InWorldConversationChoices"
+	_choice_panel.visible = false
+	add_child(_choice_panel)
+	_choice_title = _new_choice_label(22)
+	_choice_title.modulate = Color("d5b779")
+	_choice_title.position = Vector3(0.0, 0.68, 0.0)
+	_choice_panel.add_child(_choice_title)
+	_choice_hint = _new_choice_label(18)
+	_choice_hint.modulate = Color("b6b0a6")
+	_choice_hint.position = Vector3(0.0, -0.68, 0.0)
+	_choice_panel.add_child(_choice_hint)
+
+
+func _new_choice_label(size: int) -> Label3D:
+	var label := Label3D.new()
+	label.font_size = size
+	label.pixel_size = 0.0048
+	label.fixed_size = false
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.outline_size = 12
+	label.outline_modulate = Color(0.012, 0.016, 0.024, 0.97)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return label
+
+
+func _set_choice_rows(title: String, labels: Array[String]) -> void:
+	for child in _choice_panel.get_children():
+		if child != _choice_title and child != _choice_hint:
+			_choice_panel.remove_child(child)
+			child.queue_free()
 	_choice_buttons.clear()
-	var speaker := UiChrome.label("MATHILDA", 13, Color("d5b779"))
-	speaker.add_theme_color_override("font_outline_color", Color(0.01, 0.012, 0.018, 0.9))
-	speaker.add_theme_constant_override("outline_size", 2)
-	box.add_child(speaker)
-	var heading := UiChrome.label(title, 18, Color("e4e0df"))
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(heading)
-	var divider := HSeparator.new()
-	var divider_style := StyleBoxLine.new()
-	divider_style.color = Color(0.64, 0.51, 0.29, 0.4)
-	divider_style.thickness = 1
-	divider.add_theme_stylebox_override("separator", divider_style)
-	box.add_child(divider)
-	return box
+	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
+	_choice_hint.text = (
+		"PRESS %s TO RETURN" % Game.settings.key_label("interact")
+		if _waking_card else "YOUR REPLY  ·  ↑ / ↓  ·  %s  ·  ESC TO PAUSE" % Game.settings.key_label("interact")
+	)
+	for index in range(labels.size()):
+		var choice_label := _new_choice_label(25)
+		choice_label.position = Vector3(0.0, 0.28 - float(index) * 0.31, 0.0)
+		choice_label.text = labels[index]
+		_choice_panel.add_child(choice_label)
+		_choice_buttons.append(choice_label)
+	_update_choice_positions()
 
 
-func _add_choice_button(box: VBoxContainer, label: String, index: int) -> Button:
-	var button := Button.new()
-	button.flat = true
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	button.custom_minimum_size.y = 40.0
-	button.focus_mode = Control.FOCUS_ALL
-	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	button.text = label
-	button.add_theme_font_size_override("font_size", 16)
-	button.mouse_entered.connect(_set_choice_index.bind(index))
-	button.focus_entered.connect(_set_choice_index.bind(index))
-	box.add_child(button)
-	_choice_buttons.append(button)
-	return button
-
-
-func _add_choice_speaker(box: VBoxContainer, speaker: String) -> void:
-	var label := UiChrome.label(speaker, 11, Color("a99b7d"))
-	label.add_theme_color_override("font_outline_color", Color(0.01, 0.012, 0.018, 0.9))
-	label.add_theme_constant_override("outline_size", 1)
-	box.add_child(label)
-
-
-func _add_choice_hint(box: VBoxContainer, text: String) -> void:
-	var hint := UiChrome.label(text, 13, Color("9c9ba1"))
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(hint)
+func _update_choice_positions() -> void:
+	if not is_instance_valid(_choice_panel) or not _choice_panel.visible or Game.player == null:
+		return
+	var speaker := _figure if _figure and is_instance_valid(_figure) else Game.player
+	_choice_panel.global_position = speaker.global_position + Vector3.UP * 1.4
+	var camera := get_viewport().get_camera_3d()
+	if camera:
+		_choice_panel.look_at(camera.global_position, Vector3.UP)
 
 
 func _choose_small_talk(index: int) -> void:
@@ -990,6 +1124,7 @@ func _choose_small_talk(index: int) -> void:
 		return
 	var choice: Dictionary = choices[index]
 	_choice_panel.hide()
+	_set_caption("")
 	_begin_dialogue_exchange(str(choice.get("label", "")), str(choice.get("response", "")))
 	_lantern_prompt.hide()
 	_layout_caption()
@@ -999,7 +1134,7 @@ func _begin_dialogue_exchange(player_line: String, mathilda_line: String) -> voi
 	_conversation_waiting = true
 	_conversation_response_pending = true
 	_conversation_response_ready = false
-	_conversation_response_timer = 0.8
+	_conversation_response_timer = 1.2
 	_conversation_response = mathilda_line
 	_set_caption(player_line, "YOU")
 
@@ -1027,48 +1162,29 @@ func _continue_memory_dialogue() -> void:
 
 func _refresh_conversation_choices(choices: Array) -> void:
 	for index in range(mini(_choice_buttons.size(), choices.size())):
-		var button := _choice_buttons[index]
-		var selected := index == _choice_index
-		button.text = ("›  " if selected else "   ") + str(choices[index].get("label", ""))
-		button.add_theme_color_override("font_color", Color("f0dfbd") if selected else Color("b4b2b4"))
-		button.add_theme_color_override("font_hover_color", Color("f0dfbd"))
-
-
-func _layout_choices() -> void:
-	if _choice_panel == null or not is_instance_valid(_choice_panel):
-		return
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	var viewport_width: float = viewport_size.x
-	var panel_width := minf(880.0, maxf(280.0, viewport_width - 32.0))
-	_choice_panel.offset_left = -panel_width * 0.5
-	_choice_panel.offset_right = panel_width * 0.5
-	var bottom_margin: float
-	var panel_height: float
-	if _waking_card:
-		bottom_margin = minf(90.0, viewport_size.y * 0.18)
-		panel_height = minf(182.0, maxf(150.0, viewport_size.y - bottom_margin - 24.0))
-	else:
-		bottom_margin = minf(96.0, maxf(20.0, viewport_size.y * 0.12))
-		panel_height = minf(360.0, maxf(240.0, viewport_size.y - bottom_margin - 24.0))
-	_choice_panel.offset_bottom = -bottom_margin
-	_choice_panel.offset_top = -bottom_margin - panel_height
-	_layout_caption()
-	var text_scale := clampf(panel_width / 780.0, 0.76, 1.0)
-	for button in _choice_buttons:
-		button.add_theme_font_size_override("font_size", roundi(16.0 * text_scale))
+		_style_choice(index, str(choices[index].get("label", "")))
 
 
 func _focus_choice(direction: int) -> void:
 	if _choice_buttons.is_empty():
 		return
 	_choice_index = posmod(_choice_index + direction, _choice_buttons.size())
-	_choice_buttons[_choice_index].grab_focus()
 	_refresh_choices()
 
 
 func _set_choice_index(index: int) -> void:
 	_choice_index = index
 	_refresh_choices()
+
+
+func _style_choice(index: int, text: String) -> void:
+	if index < 0 or index >= _choice_buttons.size():
+		return
+	var label := _choice_buttons[index]
+	var selected := index == _choice_index
+	label.text = ("◆  " if selected else "◇  ") + text
+	label.modulate = Color("f0dfbd") if selected else Color("c5c3c3")
+	label.scale = Vector3.ONE * (1.08 if selected else 1.0)
 
 
 func _refresh_choices() -> void:
@@ -1079,11 +1195,7 @@ func _refresh_choices() -> void:
 		return
 	var branches: Array = _story.get("branches", [])
 	for index in range(mini(_choice_buttons.size(), branches.size())):
-		var button := _choice_buttons[index]
-		var selected := index == _choice_index
-		button.text = ("›  " if selected else "   ") + str(branches[index].get("label", ""))
-		button.add_theme_color_override("font_color", Color("f0dfbd") if selected else Color("b4b2b4"))
-		button.add_theme_color_override("font_hover_color", Color("f0dfbd"))
+		_style_choice(index, str(branches[index].get("label", "")))
 
 
 func _choose_focused_memory() -> void:
@@ -1166,42 +1278,12 @@ func _wake() -> void:
 func _show_standalone_waking() -> void:
 	_waking_card = true
 	_show_warning_prop()
-	_caption.hide()
-	_dialogue_plate.hide()
+	_set_caption(str(_story.get("ending", _story.get("arrival", ""))), "MATHILDA")
 	_lantern_prompt.hide()
-	var card_style := StyleBoxFlat.new()
-	card_style.bg_color = Color(0.025, 0.03, 0.045, 0.9)
-	card_style.border_color = Color(0.72, 0.7, 0.66, 0.16)
-	card_style.set_border_width_all(1)
-	card_style.set_corner_radius_all(8)
-	card_style.set_content_margin_all(20)
-	card_style.shadow_color = Color(0.0, 0.0, 0.0, 0.3)
-	card_style.shadow_size = 16
-	_choice_panel.add_theme_stylebox_override("panel", card_style)
-	var box := _choice_panel.get_child(0) as VBoxContainer
-	for child in box.get_children():
-		box.remove_child(child)
-		child.queue_free()
-	_choice_buttons.clear()
-	var heading := UiChrome.label("THE LIGHT REMAINS", 22, Color("e4e0df"))
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(heading)
-	var speaker := UiChrome.label("MATHILDA", 12, Color("d5b779"))
-	speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(speaker)
-	var closing := UiChrome.label(str(_story.get("ending", _story.get("arrival", ""))), 16, Color("c9c0c0"))
-	closing.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	closing.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(closing)
-	var return_button := UiChrome.text_button("Return to the threshold")
-	return_button.focus_mode = Control.FOCUS_ALL
-	return_button.pressed.connect(_return_to_menu)
-	box.add_child(return_button)
+	_set_choice_rows("THE LIGHT REMAINS\n\nRETURN TO THE THRESHOLD  ·  %s" % Game.settings.key_label("interact"), [])
 	Game.set_phase(Game.Phase.DIALOGUE)
-	_layout_choices()
 	_choice_panel.show()
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	return_button.grab_focus.call_deferred()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _return_to_menu() -> void:
@@ -1219,36 +1301,37 @@ func _set_caption(line: String, speaker := "") -> void:
 	_story_gap_remaining = 0.0
 	_set_speaker(speaker)
 	_caption.text = line
-	_dialogue_plate.visible = not line.is_empty()
-	_caption.modulate.a = 0.0
+	_speech_sprite.visible = not line.is_empty()
+	_speech_sprite.modulate.a = 0.0
 	_caption_time = 0.0
 	if _caption_tween and _caption_tween.is_running():
 		_caption_tween.kill()
-	_caption_tween = create_tween()
-	_caption_tween.tween_property(_caption, "modulate:a", 1.0, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if not line.is_empty():
+		_caption_tween = create_tween()
+		_caption_tween.tween_property(_speech_sprite, "modulate:a", 1.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_layout_caption()
 
 
 func _set_speaker(speaker: String) -> void:
 	_speaker_label.text = speaker.to_upper()
 	_speaker_label.visible = not speaker.is_empty()
-	if speaker.is_empty():
-		_dialogue_plate.add_theme_stylebox_override("panel", _narration_box_style)
-		_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	if speaker == "YOU":
+		_speech_target = Game.player
 	else:
-		_dialogue_plate.add_theme_stylebox_override("panel", _dialogue_box_style)
-		_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		_speech_target = _figure if _figure and is_instance_valid(_figure) else Game.player
+	_layout_caption()
 
 
 func _on_game_phase_changed(next: Game.Phase) -> void:
 	if next == Game.Phase.PAUSED:
 		if _dialogue_ui_hidden_for_pause:
 			return
-		_pause_dialogue_plate_visible = is_instance_valid(_dialogue_plate) and _dialogue_plate.visible
+		_pause_speech_visible = is_instance_valid(_speech_sprite) and _speech_sprite.visible
 		_pause_choice_panel_visible = is_instance_valid(_choice_panel) and _choice_panel.visible
 		_pause_lantern_prompt_visible = is_instance_valid(_lantern_prompt) and _lantern_prompt.visible
-		if is_instance_valid(_dialogue_plate):
-			_dialogue_plate.hide()
+		if is_instance_valid(_speech_sprite):
+			_speech_sprite.hide()
 		if is_instance_valid(_choice_panel):
 			_choice_panel.hide()
 		if is_instance_valid(_lantern_prompt):
@@ -1259,25 +1342,27 @@ func _on_game_phase_changed(next: Game.Phase) -> void:
 		return
 	_dialogue_ui_hidden_for_pause = false
 	if next == Game.Phase.DREAM or next == Game.Phase.DIALOGUE:
-		if is_instance_valid(_dialogue_plate):
-			_dialogue_plate.visible = _pause_dialogue_plate_visible
+		if is_instance_valid(_speech_sprite):
+			_speech_sprite.visible = _pause_speech_visible
 		if is_instance_valid(_choice_panel):
 			_choice_panel.visible = _pause_choice_panel_visible
 		if is_instance_valid(_lantern_prompt):
 			_lantern_prompt.visible = _pause_lantern_prompt_visible
 
 
-func _pulse_effect(strength: float, cue := "doubt") -> void:
+func _pulse_effect(strength: float, cue := "doubt", focus: Node3D = null) -> void:
 	_effect_target = strength
-	_effect_hold = 1.4
+	_effect_hold = 0.2 if cue == "insight" else 1.4
 	_effect_cue = cue
+	_effect_focus = focus
 
 
 func _update_post_effect(delta: float) -> void:
 	_effect_hold = maxf(_effect_hold - delta, 0.0)
 	if _effect_hold <= 0.0:
 		_effect_target = 0.0
-	_effect_strength = move_toward(_effect_strength, _effect_target, delta * (1.15 if _effect_target > _effect_strength else 0.24))
+	var effect_rate := 6.0 if _effect_cue == "insight" and _effect_target > _effect_strength else 2.7 if _effect_cue == "insight" else 1.15 if _effect_target > _effect_strength else 0.24
+	_effect_strength = move_toward(_effect_strength, _effect_target, delta * effect_rate)
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
 	var visible_strength := _effect_strength * screen_effects
 	if _post_rect:
@@ -1288,8 +1373,10 @@ func _update_post_effect(delta: float) -> void:
 		var viewport_size := get_viewport().get_visible_rect().size.max(Vector2.ONE)
 		_post_material.set_shader_parameter("aspect", viewport_size.x / viewport_size.y)
 		var camera := get_viewport().get_camera_3d()
-		if camera and _figure and _figure.visible:
-			var focus := _figure.global_position + Vector3.UP * 1.1
+		var focus_node := _effect_focus if is_instance_valid(_effect_focus) and _effect_focus.visible else _figure
+		if camera and focus_node and focus_node.visible:
+			var focus_height := 1.1 if focus_node == _figure else float(focus_node.get_meta("insight_focus_height", 3.0))
+			var focus := focus_node.global_position + Vector3.UP * focus_height
 			var point := camera.unproject_position(focus)
 			var on_screen := not camera.is_position_behind(focus) and Rect2(Vector2.ZERO, viewport_size).has_point(point)
 			if on_screen:
@@ -1310,4 +1397,6 @@ func _cue_value(cue: String) -> int:
 			return 3
 		"release":
 			return 4
+		"insight":
+			return 5
 	return 0

@@ -1,0 +1,32 @@
+{
+  "source": "Owner-supplied central asset bank: Leartes Studios, Stylized Medieval Town Forward",
+  "destination": "assets/vendor/requested_dream/stylized_medieval_town/Art",
+  "note": "Only optional supporting details are still used in the web-sourced dream scenes. Redistribution rights have not been verified, so these owner-supplied files stay ignored under assets/vendor/requested_dream/. The complete locations are the portable CC0 GLBs recorded in assets/dream/web/manifest.json.",
+  "assets": [
+    {
+      "role": "three sister silhouettes around the frozen retreat memory",
+      "files": [
+        "Meshes/SM_Tower_02.gltf",
+        "Meshes/SM_Tower_02.bin",
+        "Textures/T_Brick_2_N.png",
+        "Textures/T_SSS_M.png",
+        "Textures/T_Stylized_Roof_N.png",
+        "Textures/T_Fill_M.png",
+        "Textures/T_Stylized_Roof_B.png",
+        "Textures/T_Trimsheet_N.png",
+        "Textures/T_Trimsheet03_B.png",
+        "Textures/T_Rooftiles_N.png",
+        "Textures/T_Rooftiles02_B.png"
+      ]
+    },
+    {
+      "role": "impossible windows above the forest camp during the watching insight",
+      "files": [
+        "Meshes/SM_Window_01.gltf",
+        "Meshes/SM_Window_01.bin",
+        "Textures/T_Trimsheet_N.png",
+        "Textures/T_Trimsheet03_B.png"
+      ]
+    }
+  ]
+}

@@ -4,6 +4,11 @@ const STORY := preload("res://scripts/world/dream_story.gd")
 const EXPERIENCE := preload("res://scripts/world/dream_experience.gd")
 const REFLECTION := preload("res://scripts/ui/dream_reflection.gd")
 const MENU := preload("res://scripts/ui/dream_menu.gd")
+const DREAM_LANDMARK_SCENES := [
+	"res://assets/dream/web/godot/lighthouse_rocky_coast.glb",
+	"res://assets/dream/web/godot/snowbound_forest_camp.glb",
+	"res://assets/dream/web/godot/frozen_lake_retreat.glb",
+]
 
 
 func _ready() -> void:
@@ -24,12 +29,19 @@ func _ready() -> void:
 	reflection.mathilda = true
 	assert(reflection._reflection_text() == STORY.branch_for(story, "name")["mathilda"], "Mathilda should wake into her branch text")
 	assert(EXPERIENCE != null, "the playable dream scene script should parse")
+	for asset_path in DREAM_LANDMARK_SCENES:
+		assert(load(asset_path) is PackedScene, "dream landmark should import as an instantiable scene: %s" % asset_path)
 	assert(not STORY.has_branch("missing_branch"), "unknown saved choices should be discarded")
 	var experience = EXPERIENCE.new()
 	add_child(experience)
 	experience._build_choices()
-	assert(experience._choice_panel.get_child(0).get_child_count() == story["branches"].size() + 1,
-		"the playable dream should display every authored branch")
+	assert(experience._choice_title.text.begins_with("MATHILDA ·"),
+		"the in-world choice prompt should make it clear that Mathilda spoke first")
+	assert(experience._choice_buttons.size() == story["branches"].size(),
+		"the playable dream should create one choice for every authored branch")
+	for index in range(story["branches"].size()):
+		assert(experience._choice_buttons[index].text.ends_with(story["branches"][index]["label"]),
+			"the playable dream should keep each authored response visible")
 	var menu = MENU.new()
 	add_child(menu)
 	assert(menu._buttons.size() == 6, "the main menu should offer three modes, settings, credits, and quit")
@@ -67,11 +79,10 @@ func _ready() -> void:
 	Game.dream_mode = true
 	Game.dream_memory = story["branches"][0]["id"]
 	experience._show_standalone_waking()
-	var waking_box := experience._choice_panel.get_child(0) as VBoxContainer
-	assert(waking_box.get_child_count() == 3, "standalone dream should close on one image and a return action")
-	assert((waking_box.get_child(0) as Label).text == "THE LIGHT REMAINS", "standalone dream should keep its final image")
-	assert((waking_box.get_child(1) as Label).text == story["arrival"], "standalone dream should not reveal future chapter echoes")
-	assert((waking_box.get_child(2) as Button).text == "Return to the threshold", "standalone dream should offer a return")
+	assert(experience._speech_sprite.visible, "Mathilda's final words should remain attached to her in the world")
+	assert(experience._speaker_label.text == "MATHILDA", "the final warning should retain its speaker")
+	assert(experience._caption.text == story["ending"], "standalone dream should hold the final warning")
+	assert(experience._choice_title.text.contains("RETURN TO THE THRESHOLD"), "standalone dream should show its return action in the world")
 	assert(Game.phase == Game.Phase.DIALOGUE, "the closing card should wait for the player's return")
 	Game.dream_mode = false
 	Game.dream_memory = ""

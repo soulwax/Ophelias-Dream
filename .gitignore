@@ -11,6 +11,8 @@ decrypt.key
 # Owner-supplied commercial house downloads and their derived resource scenes.
 /assets/vendor/requested_house/
 /assets/derived/requested_house/
+# Owner-supplied dream landmark meshes from the central asset bank.
+/assets/vendor/requested_dream/
 # Mathilda's camp props from the same asset bank (tools/curate_camp_assets.py).
 /assets/vendor/requested_camp/
 

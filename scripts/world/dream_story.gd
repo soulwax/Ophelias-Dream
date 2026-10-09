@@ -4,6 +4,7 @@ extends RefCounted
 const PATH := "res://assets/dialogue/dream.json"
 const BEAT_COUNT := 4
 const ID_PATTERN := "^[a-z][a-z0-9_-]{0,31}$"
+const MOTION_CUES := ["cut_tree", "delayed_steps", "lantern_witness", "tracks_stop"]
 
 
 static func load_data() -> Dictionary:
@@ -29,6 +30,9 @@ static func load_data() -> Dictionary:
 	for beat in beats:
 		if typeof(beat) != TYPE_DICTIONARY or id_regex.search(str(beat.get("id", ""))) == null or ids.has(beat["id"]) or str(beat.get("text", "")).strip_edges().is_empty():
 			push_error("Dream story has an invalid or duplicate beat id")
+			return {}
+		if not MOTION_CUES.has(str(beat.get("motion", ""))):
+			push_error("Dream beat %s has no recognized movement cue" % beat["id"])
 			return {}
 		ids[beat["id"]] = true
 	ids.clear()

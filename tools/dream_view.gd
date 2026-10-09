@@ -43,8 +43,22 @@ func _run() -> void:
 	await _capture_lantern(route, experience, "lantern")
 	await _capture_fold_reveal(route, experience, "fold_reveal")
 	await _capture_fold_return(route, experience, "fold_return")
+	await _capture_landscape(route, "Flashback_Lighthouse", 20.0, 21.0, "lighthouse")
+	await _capture_landscape(route, "Flashback_Cabin", 35.0, 5.2, "cabin")
+	await _capture_landscape(route, "Flashback_DoorwayHorizon", 50.0, 4.5, "doorway_horizon")
+	await _capture_flashback(route, "sisters", 13.0, "Flashback_Sisters", "sisters")
+	await _capture_flashback(route, "thread", 29.0, "Flashback_AriadneThread", "thread")
+	await _capture_flashback(route, "window", 44.0, "Flashback_WatchingWindow", "watching_window")
+	await _capture_queued_flashback(route, experience, "sisters", 13.0, "insight_sisters")
+	await _capture_queued_flashback(route, experience, "thread", 29.0, "insight_thread")
+	await _capture_queued_flashback(route, experience, "window", 44.0, "insight_window")
+	await _capture_story_motion(experience, 9.0, "cut_tree", 0, "motion_cut_trees")
+	await _capture_story_motion(experience, 20.0, "delayed_steps", 1, "motion_delayed_steps")
+	await _capture_story_motion(experience, 34.0, "lantern_witness", 2, "motion_lantern_witness")
+	await _capture_story_motion(experience, 50.0, "tracks_stop", 3, "motion_tracks_stop")
 	await _capture_clearing(route, experience, "clearing")
 	await _capture_choice(route, experience, "answer")
+	await _capture_warning(experience, "warning")
 	print("Dream visual review captures saved under build/dream/")
 	get_tree().quit()
 
@@ -134,6 +148,78 @@ func _capture_fold_return(route: Node3D, experience: Node, name: String) -> void
 	await _save_frame(name)
 
 
+func _capture_landscape(route: Node3D, name: String, route_offset: float, focus_height: float, output_name: String) -> void:
+	var landmark := route.get_node_or_null(name) as Node3D
+	if landmark == null:
+		push_error("Dream landmark was not built: %s" % name)
+		return
+	_place_player(route_offset)
+	var original_fov := _camera.fov
+	_camera.fov = 68.0
+	var frame := Game.trail.frame_at(Game.trail.player_start_offset + route_offset)
+	_camera.global_position = Game.trail.on_ground(frame.origin) + Vector3.UP * 12.0
+	_camera.look_at(landmark.global_position + Vector3.UP * focus_height, Vector3.UP)
+	await _save_frame(output_name)
+	_camera.fov = original_fov
+
+
+func _capture_flashback(route: Node3D, cue_id: String, route_offset: float, landmark_name: String, output_name: String) -> void:
+	var landmark := route.get_node_or_null(landmark_name) as Node3D
+	if landmark == null:
+		push_error("Dream flashback was not built: %s" % landmark_name)
+		return
+	_place_player(route_offset)
+	var frame := Game.trail.frame_at(Game.trail.player_start_offset + route_offset)
+	var across := frame.basis.x
+	across.y = 0.0
+	across = across.normalized()
+	var focus_height := float(landmark.get_meta("insight_focus_height", 8.0))
+	_camera.global_position = Game.player.global_position + across * 4.2 + Vector3.UP * 1.8
+	_camera.look_at(landmark.global_position + Vector3.UP * focus_height, Vector3.UP)
+	_camera.fov = 60.0
+	route.call("play_flashback", cue_id)
+	await _save_frame(output_name)
+
+
+func _capture_queued_flashback(route: Node3D, experience: Node, cue_id: String, route_offset: float, output_name: String) -> void:
+	var flashback := route.call("play_flashback", cue_id) as Node3D
+	if flashback == null:
+		push_error("Dream insight vignette was not built: %s" % cue_id)
+		return
+	_place_player(route_offset)
+	var original_fov := _camera.fov
+	_camera.fov = 68.0
+	var frame := Game.trail.frame_at(Game.trail.player_start_offset + route_offset)
+	_camera.global_position = Game.trail.on_ground(frame.origin) + Vector3.UP * 12.0
+	var focus_height := float(flashback.get_meta("insight_focus_height", 3.0))
+	_camera.look_at(flashback.global_position + Vector3.UP * focus_height, Vector3.UP)
+	experience.call("_pulse_effect", 0.96, "insight", flashback)
+	await _save_frame(output_name)
+	_camera.fov = original_fov
+
+
+func _capture_story_motion(experience: Node, route_offset: float, cue: String, beat_index: int, output_name: String) -> void:
+	_place_player(maxf(route_offset - 2.5, 0.0))
+	experience.set("_stage", beat_index)
+	experience.set("_figure_offset", Game.trail.player_start_offset + route_offset)
+	experience.call("_set_figure_moving", false)
+	experience.call("_place_figure", Game.trail.player_start_offset + route_offset)
+	experience.call("_begin_character_conversation", true)
+	var beats: Array = experience.get("_story").get("beats", [])
+	if beat_index < beats.size():
+		experience.call("_set_caption", str(beats[beat_index].get("text", "")), "MATHILDA")
+	_camera.make_current()
+	var figure := experience.get("_figure") as Node3D
+	var frame := Game.trail.frame_at(experience.get("_figure_offset"))
+	_camera.global_position = figure.global_position + frame.basis.x * 0.4 + frame.basis.z * 3.6 + Vector3.UP * 1.8
+	_camera.look_at(figure.global_position + Vector3.UP * 1.05, Vector3.UP)
+	experience.call("_play_story_choreography", cue)
+	await get_tree().create_timer(0.65).timeout
+	await _save_frame(output_name + "_moving")
+	await get_tree().create_timer(2.3).timeout
+	await _save_frame(output_name + "_settled")
+
+
 func _capture_clearing(route: Node3D, experience: Node, name: String) -> void:
 	_place_player(58.0)
 	experience.set("_stage", 4)
@@ -151,11 +237,23 @@ func _capture_choice(route: Node3D, experience: Node, name: String) -> void:
 	experience.set("_stage", 4)
 	experience.set("_figure_offset", Game.trail.player_start_offset + 67.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 67.0)
-	_aim(65.0, 0.48, -3.35, 1.62, 1.1)
+	experience.set("_camera_choreography_enabled", true)
 	experience.call("_finish_dream")
 	experience.set("_conversation_intro_waiting", false)
 	experience.call("_build_small_talk_choices")
 	await _settle()
+	await _save_frame(name)
+
+
+func _capture_warning(experience: Node, name: String) -> void:
+	experience.call("_complete_character_conversation")
+	experience.set("_camera_choreography_enabled", false)
+	_camera.make_current()
+	_place_player(70.0)
+	experience.get("_choice_panel").hide()
+	experience.call("_show_warning_prop")
+	experience.call("_set_caption", "The axe waits beside the old stump.", "MATHILDA")
+	_aim_between(71.0, 67.0, -1.8, 1.25)
 	await _save_frame(name)
 
 

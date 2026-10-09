@@ -48,7 +48,7 @@ func _ready() -> void:
 	add_child(_music)
 	if Game.phase == Game.Phase.BOOT and not Game.dream_mode and not Game.mathilda_pov and not Game.character_selected:
 		Game.settings.apply_audio()
-		_music.play()
+		_music.play(7.0)
 		_fade_music_in()
 
 	var background := ColorRect.new()
@@ -344,7 +344,7 @@ func _settings_closed() -> void:
 func _fade_music_in() -> void:
 	if _music.playing:
 		var fade := create_tween()
-		fade.tween_property(_music, "volume_db", -12.0, 6.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		fade.tween_property(_music, "volume_db", -12.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _stop_music() -> void:

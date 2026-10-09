@@ -1,0 +1,41 @@
+{
+  "project": "Ophelia's Dream",
+  "purpose": "Distant dreamscape landmarks and queued insight flashbacks",
+  "license": "CC0 1.0 Universal",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "credit_required": false,
+  "source_archive": "sources_cc0.zip",
+  "conversion": "Blender 5.2, tools/convert_glb_for_godot.py",
+  "assets": [
+    {
+      "name": "Light Station and Rocky Point",
+      "source_page": "https://3dassets.dev/assets/lighthouse-and-rocky-coast-light-station-944f3072-starter-scene",
+      "cdn_source": "https://cdn.3dassets.dev/assets/36636/v1/model.glb",
+      "local_file": "godot/lighthouse_rocky_coast.glb",
+      "dimensions_m": [54.149, 27.98, 36.225],
+      "triangles": 18912,
+      "roles": ["distant lighthouse landmark", "Ariadne thread insight"],
+      "notes": "Source GLB re-exported through Blender 5.2 so Godot 4.7 can import its quantized meshes; embedded textures and scene transforms are retained."
+    },
+    {
+      "name": "Snowbound Forest Camp",
+      "source_page": "https://3dassets.dev/assets/alpine-snow-village-snowbound-forest-camp-2bb868c7",
+      "cdn_source": "https://cdn.3dassets.dev/assets/19852/v1/model.glb",
+      "local_file": "godot/snowbound_forest_camp.glb",
+      "dimensions_m": [16, 5.37, 16],
+      "triangles": 30150,
+      "roles": ["cabin memory", "watching window insight"],
+      "notes": "Source GLB re-exported through Blender 5.2 so Godot 4.7 can import its quantized meshes; embedded textures and scene transforms are retained."
+    },
+    {
+      "name": "Frozen Lake Retreat",
+      "source_page": "https://3dassets.dev/assets/alpine-snow-village-frozen-lake-retreat-0a32c8c3",
+      "cdn_source": "https://cdn.3dassets.dev/assets/19851/v1/model.glb",
+      "local_file": "godot/frozen_lake_retreat.glb",
+      "dimensions_m": [24, 6.82, 20],
+      "triangles": 54242,
+      "roles": ["doorway horizon memory", "two sisters insight"],
+      "notes": "Source GLB re-exported through Blender 5.2 so Godot 4.7 can import its quantized meshes; embedded textures and scene transforms are retained. Its opaque static ice has no gameplay collision."
+    }
+  ]
+}

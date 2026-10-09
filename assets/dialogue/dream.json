@@ -4,18 +4,22 @@
   "beats": [
     {
       "id": "tree_line",
+      "motion": "cut_tree",
       "text": "The trees are cut at doorway height. A tree is a house that learned to stand. The axe thinks strength means permission; the rings remember every blow and call the remembering a season."
     },
     {
       "id": "footsteps",
+      "motion": "delayed_steps",
       "text": "You stop. The heavier steps stop a moment later. Three sisters spin the road: leave, follow, freeze. Old stories call the frozen one faithless. Old stories are told by the living."
     },
     {
       "id": "lantern",
+      "motion": "lantern_witness",
       "text": "Someone turned the lantern toward the woods. Prometheus stole a flame and they called it crime. A man takes what is not given and names the silence afterward peace. The lantern knows."
     },
     {
       "id": "empty_path",
+      "motion": "tracks_stop",
       "text": "Three sets of tracks enter the clearing. Only two return. Orpheus was told not to turn, so the song blames his looking, not the hand that let go."
     }
   ],

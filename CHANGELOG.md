@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.6.0 — 2026-10-09
+
+- Begin the title music at second seven and fade to its menu level by second eight.
+- Move the dream's speech and choices into the world: Mathilda's subtitle box follows her, answers gather around her, and each line names its speaker.
+- Keep the characters facing each other through direct dialogue; Mathilda looks toward the woods during her symbolic monologues while the player can keep moving.
+- Choreograph Mathilda's steps to her four dream monologues: a look into the cut trees, a delayed approach, a turn toward the lantern, and a halt at the clearing.
+- Add a lighthouse, a snowbound camp, and a frozen retreat as brief, memory-like landmarks along the dream route.
+- Pulse three symbolic landscape flashbacks in sequence, with procedural fallbacks when optional owner-supplied meshes are absent.
+- Flatten the dream's dark pools onto the snow and include the flashbacks, movement cues, in-world choices, and final warning in the visual review.
+
 ## 0.2.5.0 — 2026-10-08
 
 - The title waits before opening the world; a loading interval now marks the crossing into play.
