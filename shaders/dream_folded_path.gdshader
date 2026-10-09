@@ -22,13 +22,13 @@ void fragment() {
 	float distant = smoothstep(0.16, 0.9, UV.y);
 	float frost = soft_noise(vec2(UV.x * 7.0, UV.y * 31.0));
 	float broken_edge = soft_noise(vec2(UV.y * 19.0, UV.x * 5.0) + 23.0);
-	vec3 near_snow = vec3(0.48, 0.55, 0.63);
-	vec3 folded_snow = vec3(0.22, 0.28, 0.39);
+	vec3 near_snow = vec3(0.40, 0.47, 0.55);
+	vec3 folded_snow = vec3(0.14, 0.18, 0.27);
 	ALBEDO = mix(near_snow, folded_snow, distant * (0.58 + frost * 0.18));
 	ROUGHNESS = mix(0.82, 0.48, distant);
 	SPECULAR = 0.34;
-	EMISSION = vec3(0.012, 0.018, 0.035) * distant;
-	float emergence = smoothstep(UV.y * 0.7 - 0.08, UV.y * 0.7 + 0.18, reveal);
+	EMISSION = vec3(0.006, 0.01, 0.022) * distant;
+	float emergence = smoothstep(UV.y * 0.92 - 0.05, UV.y * 0.92 + 0.16, reveal);
 	float end_fade = 1.0 - smoothstep(0.86, 1.0, UV.y);
 	ALPHA = soft_edge * emergence * mix(0.78, 1.0, broken_edge) * mix(1.0, end_fade, distant);
 }

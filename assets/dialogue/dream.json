@@ -1,54 +1,108 @@
 {
   "version": 1,
-  "opening": "The snow remembers a shape. Follow it.",
+  "opening": "The forest has moved the threshold again.",
   "beats": [
     {
       "id": "tree_line",
-      "text": "It is waiting where the trees begin."
+      "text": "The trees are cut at doorway height. A tree is a house that learned to stand. The axe thinks strength means permission; the rings remember every blow and call the remembering a season."
     },
     {
       "id": "footsteps",
-      "text": "You hear your own steps arriving ahead of you."
+      "text": "You stop. The heavier steps stop a moment later. Three sisters spin the road: leave, follow, freeze. Old stories call the frozen one faithless. Old stories are told by the living."
     },
     {
       "id": "lantern",
-      "text": "The lantern catches a hand, then loses it."
+      "text": "Someone turned the lantern toward the woods. Prometheus stole a flame and they called it crime. A man takes what is not given and names the silence afterward peace. The lantern knows."
     },
     {
       "id": "empty_path",
-      "text": "The path ends where the snow has no tracks."
+      "text": "Three sets of tracks enter the clearing. Only two return. Orpheus was told not to turn, so the song blames his looking, not the hand that let go."
     }
   ],
-  "arrival": "The trees are empty. The house light still waits behind you.",
-  "question": "Why did you come after me?",
+  "arrival": "The trees are empty. The lantern is still turned toward them.",
+  "small_talk": [
+    {
+      "prompt": "The snow keeps changing the path.",
+      "choices": [
+        {
+          "label": "Cold night.",
+          "response": "Hestia had one coal. Or it was Vesta. The gods change names when you cross a mountain. I keep forgetting which mountain this is."
+        },
+        {
+          "label": "I thought the path went farther.",
+          "response": "Ariadne gives the hero a thread. Nobody asks who taught the maze to hunger, or why she has to stay behind and hold the other end."
+        },
+        {
+          "label": "We can wait a while.",
+          "response": "Cronos ate his children. Winter does it with names, very slowly. I was trying to say the snow is pretty."
+        }
+      ]
+    },
+    {
+      "prompt": "The path sounds longer from here.",
+      "choices": [
+        {
+          "label": "We don't have to talk about anything.",
+          "response": "The Fates knot the thread when a hand is afraid. I thought the knot meant I had chosen to stay."
+        },
+        {
+          "label": "Would you like me to stand nearer?",
+          "response": "That distance is all right. The wolf in the old tale waits outside the ring of fire. Please don't come up behind me."
+        },
+        {
+          "label": "We can go back together.",
+          "response": "I still listen for him when the trees go quiet. The forest has learned his footstep by heart."
+        }
+      ]
+    },
+    {
+      "prompt": "I'm sorry. I keep giving you a maze instead of an answer. Will you stay and talk with me a little longer?",
+      "choices": [
+        {
+          "label": "Yes. Take your time.",
+          "response": "Thank you. The lantern remembers him; I only need to name what I saw."
+        },
+        {
+          "label": "We can stop whenever you want.",
+          "response": "I know. Knowing is a door; believing it is another room."
+        },
+        {
+          "label": "We can go back together.",
+          "response": "Not yet. The path behind us is full of footprints facing the wrong way."
+        }
+      ]
+    }
+  ],
+  "question": "What do you wish someone understood?",
   "branches": [
     {
       "id": "name",
-      "label": "I wanted to know who I was following.",
-      "response": "The figure turns. For a breath, recognition seems possible.",
-      "ophelia": "At the first bend, a name waits just behind the one on her tongue.",
-      "mathilda": "For an instant, the cup across the fire seems already warm."
+      "label": "I said no.",
+      "response": "You said it. I heard you. The word can stay here without becoming a whole story.",
+      "ophelia": "At the first bend, she remembers that no is a complete sentence.",
+      "mathilda": "By the cups, she remembers she does not owe anyone an explanation."
     },
     {
       "id": "waiting",
-      "label": "I thought you might want me to wait.",
-      "response": "She takes one step nearer, then stops again.",
-      "ophelia": "She remembers the lamp left burning, though no one asked her to.",
-      "mathilda": "The second cup sits beside the fire. She leaves it there."
+      "label": "I went still. That wasn't yes.",
+      "response": "You went still. I believe you. You don't have to prove what your body did to survive.",
+      "ophelia": "She leaves the lamp where it is and does not ask why the door stayed shut.",
+      "mathilda": "She sits by the fire until her hands remember they are her own."
     },
     {
       "id": "remember",
-      "label": "I was afraid you would not come back.",
-      "response": "Your tracks meet hers. Snow softens the place they touch.",
-      "ophelia": "The empty step returns the old fear: no one will come back.",
-      "mathilda": "The window light looks farther away than it should."
+      "label": "I was trying to get away.",
+      "response": "You were trying to get away. The way back can belong to you now.",
+      "ophelia": "The house is not a debt. She can leave it and return by choice.",
+      "mathilda": "The path past the tent is hers to take, or not take."
     },
     {
       "id": "silence",
-      "label": "Say nothing.",
-      "response": "She looks toward the house. Its light is still there.",
-      "ophelia": "At the first bend, she lets the unsaid sentence remain unsaid.",
-      "mathilda": "By the tent, the pause beside the spare cup belongs to her."
+      "label": "I can't say it yet.",
+      "response": "Then we can leave it there. I can sit with you without asking again.",
+      "ophelia": "At the first bend, the unsaid sentence can stay unsaid.",
+      "mathilda": "By the spare cup, there is room for a pause."
     }
-  ]
+  ],
+  "ending": "I'm sorry I'm still being so vague. The one who cut the trees is still out there. I saw his axe by the path. Please don't take the path alone."
 }

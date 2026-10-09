@@ -62,7 +62,7 @@ Godot build provides separate standard and Mono commands.
 | Story Studio | `python tools/studio/server.py` | Start the browser-based narrative authoring tool; see [docs/STORY_STUDIO.md](docs/STORY_STUDIO.md). |
 | Terrain showcase | `godot-mono --path . tools/terrain_view.tscn` | Capture terrain overview images under `build/terrain/`. |
 | Camp showcase | `godot-mono --path . tools/camp_view.tscn` | Capture camp views under `build/camp/`. |
-| Dream visual review | `godot-mono --path . tools/dream_view.tscn` | Capture the dream entry, lantern, clearing, and answer compositions under `build/dream/`. |
+| Dream visual review | `godot-mono --path . tools/dream_view.tscn` | Capture the dream entry, lantern, folded-space reveal, clearing, and answer compositions under `build/dream/`. |
 
 The character studio supports browsing with the arrow keys, orbiting with left
 mouse drag, and zooming with the wheel. Its creator panel can save designs to

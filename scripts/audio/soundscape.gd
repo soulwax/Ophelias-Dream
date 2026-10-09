@@ -33,21 +33,25 @@ var _snap_clip: AudioStream
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_drone = _loop("drone.wav", -22.0, "Dread")
-	_heart = _flat("heart.wav", -8.0, "Dread")
-	_slide_hiss = _loop("storm_hiss.wav", -20.0, "Effects")
-	_slide_hiss.stop()
-	_sting = _flat("sting.wav", -2.0, "Dread")
+	# The dream has its own quiet, spatial cues. Keep ordinary movement sounds,
+	# but leave the chapter's dread bed and stings out of this phase.
+	if not Game.dream_mode:
+		_drone = _loop("drone.wav", -22.0, "Dread")
+		_heart = _flat("heart.wav", -8.0, "Dread")
+		_slide_hiss = _loop("storm_hiss.wav", -20.0, "Effects")
+		_slide_hiss.stop()
+		_sting = _flat("sting.wav", -2.0, "Dread")
 	for surface in ["snow", "wood", "stone", "creak", "grass"]:
 		_sets[surface] = _load_set(surface)
 	for _i in 8:
 		var voice := Loudness.voice(Loudness.SNOW_STEP, "Effects")
 		add_child(voice)
 		_steps.append(voice)
-	_snap = Loudness.voice(Loudness.BRANCH_SNAP, "Dread", true)
-	add_child(_snap)
-	if ResourceLoader.exists("res://assets/audio/snap.wav"):
-		_snap_clip = load("res://assets/audio/snap.wav")
+	if not Game.dream_mode:
+		_snap = Loudness.voice(Loudness.BRANCH_SNAP, "Dread", true)
+		add_child(_snap)
+		if ResourceLoader.exists("res://assets/audio/snap.wav"):
+			_snap_clip = load("res://assets/audio/snap.wav")
 	Game.soundscape = self
 	Game.closeness_changed.connect(_on_closeness)
 	# After the authored level is laid over the built one, so the zones sit

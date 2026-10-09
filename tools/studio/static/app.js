@@ -608,7 +608,7 @@ async function loadDreamStory() {
 		state.dreamRevision = result.revision;
 		state.dreamStoryDirty = false;
 		renderDreamStory();
-		status.textContent = "Story loaded from assets/dialogue/dream.json. Four path beats lead into its answer branches.";
+		status.textContent = "Story loaded from assets/dialogue/dream.json. Path beats and small talk lead into the answer.";
 		renderNav();
 	} catch (error) {
 		status.textContent = error.message;
@@ -635,14 +635,28 @@ function renderDreamStory() {
 	$("#dream-opening").value = story.opening;
 	$("#dream-arrival").value = story.arrival;
 	$("#dream-question").value = story.question;
+	$("#dream-ending").value = story.ending;
 	$("#dream-beats").replaceChildren(...story.beats.map((beat, index) =>
 		dreamTextarea(`${String(index + 1).padStart(2, "0")} · ${beat.id.replaceAll("_", " ")}`,
 			beat.text, (value) => { beat.text = value; markDreamStoryDirty(); }, 240)));
+	$("#dream-small-talk").replaceChildren(...story.small_talk.map((round, roundIndex) => {
+		const card = el("fieldset", { className: "dream-small-talk-round" });
+		card.append(el("legend", { textContent: `Turn ${roundIndex + 1}` }),
+			dreamTextarea("Her opening", round.prompt, (value) => { round.prompt = value; markDreamStoryDirty(); }, 180));
+		for (const [choiceIndex, choice] of round.choices.entries()) {
+			card.append(dreamTextarea(`Your reply ${choiceIndex + 1}`, choice.label,
+				(value) => { choice.label = value; markDreamStoryDirty(); }, 120),
+			dreamTextarea(`What she says next ${choiceIndex + 1}`, choice.response,
+				(value) => { choice.response = value; markDreamStoryDirty(); }, 240));
+		}
+		return card;
+	}));
 	renderDreamBranches();
 	$("#dream-story-save").disabled = !state.dreamStoryDirty;
 	$("#dream-opening").oninput = () => { story.opening = $("#dream-opening").value; markDreamStoryDirty(); };
 	$("#dream-arrival").oninput = () => { story.arrival = $("#dream-arrival").value; markDreamStoryDirty(); };
 	$("#dream-question").oninput = () => { story.question = $("#dream-question").value; markDreamStoryDirty(); };
+	$("#dream-ending").oninput = () => { story.ending = $("#dream-ending").value; markDreamStoryDirty(); };
 	$("#dream-story-editor").querySelectorAll("textarea[maxlength]").forEach(updateDreamCharCount);
 }
 

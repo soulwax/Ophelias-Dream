@@ -153,7 +153,7 @@
     </section>
     <section id="dream-story-view" hidden>
       <h1>Dream story</h1>
-      <p class="muted">A separate branching script for the playable dream. Edit its approach, choice and aftermath here; the game reads the same story file. These words stay outside the voiced line catalogue.</p>
+      <p class="muted">A separate subtitle script for the playable dream. Edit its approach, gentle small talk, choice and aftermath here; these words stay outside the voiced line catalogue.</p>
       <div class="dream-story-editor" id="dream-story-editor" aria-busy="false">
         <p id="dream-story-status" class="runtime muted" role="status" aria-live="polite">Loading the dream story…</p>
         <label>Opening caption
@@ -167,6 +167,11 @@
         <label>Arrival caption
           <textarea id="dream-arrival" rows="2" maxlength="240"></textarea>
         </label>
+          <div class="dream-beats">
+            <h2>Small talk before the harder question</h2>
+            <p class="muted">Up to three short turns let the player build trust. Each reply stays optional and no choice forces disclosure.</p>
+            <div id="dream-small-talk"></div>
+          </div>
         <label>What she asks
           <textarea id="dream-question" rows="2" maxlength="180"></textarea>
         </label>
@@ -175,6 +180,9 @@
           <div class="dream-branch-tools"><small id="dream-branch-count" class="dream-branch-count">— of 8 answer branches</small><button id="dream-add-branch" class="ghost">Add answer branch</button></div>
         </div>
         <div id="dream-branches" class="dream-branches"></div>
+        <label>Closing apology and warning
+          <textarea id="dream-ending" rows="3" maxlength="360"></textarea>
+        </label>
         <div class="dream-story-actions">
           <button id="dream-story-reload" class="ghost">Reload from file</button>
           <button id="dream-story-save" class="primary" disabled>Save dream story</button>

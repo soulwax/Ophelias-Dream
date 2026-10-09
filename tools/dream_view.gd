@@ -38,8 +38,11 @@ func _run() -> void:
 		push_error("Dream route helpers were not built")
 		get_tree().quit(1)
 		return
+	experience.set("_camera_choreography_enabled", false)
 	await _capture_entry(route, "entry")
 	await _capture_lantern(route, experience, "lantern")
+	await _capture_fold_reveal(route, experience, "fold_reveal")
+	await _capture_fold_return(route, experience, "fold_return")
 	await _capture_clearing(route, experience, "clearing")
 	await _capture_choice(route, experience, "answer")
 	print("Dream visual review captures saved under build/dream/")
@@ -66,6 +69,31 @@ func _aim(offset: float, from_across: float, from_ahead: float, height: float, l
 	_camera.look_at(target, Vector3.UP)
 
 
+func _aim_between(camera_offset: float, target_offset: float, target_across: float, target_height: float) -> void:
+	var camera_frame := Game.trail.frame_at(Game.trail.player_start_offset + camera_offset)
+	var camera_ahead := Game.trail.frame_at(Game.trail.player_start_offset + camera_offset + 1.0).origin - camera_frame.origin
+	camera_ahead.y = 0.0
+	camera_ahead = camera_ahead.normalized()
+	var camera_across := camera_frame.basis.x
+	camera_across.y = 0.0
+	camera_across = camera_across.normalized()
+	var target_frame := Game.trail.frame_at(Game.trail.player_start_offset + target_offset)
+	var target_side := target_frame.basis.x
+	target_side.y = 0.0
+	target_side = target_side.normalized()
+	var camera_ground := Game.trail.on_ground(camera_frame.origin)
+	var target := Game.trail.on_ground(target_frame.origin + target_side * target_across) + Vector3.UP * target_height
+	_camera.global_position = camera_ground + camera_across * 3.4 - camera_ahead * 4.8 + Vector3.UP * 2.15
+	_camera.look_at(target, Vector3.UP)
+
+
+func _set_fold_reveal(route: Node3D, amount: float) -> void:
+	route.set("_fold_reveal", amount)
+	var folded_path := route.get_node_or_null("FoldedSnowPath") as MeshInstance3D
+	if folded_path and folded_path.material_override is ShaderMaterial:
+		(folded_path.material_override as ShaderMaterial).set_shader_parameter("reveal", amount)
+
+
 func _capture_entry(route: Node3D, name: String) -> void:
 	_place_player(1.0)
 	_aim(1.0, 0.48, -3.35, 1.62, 1.25)
@@ -79,6 +107,30 @@ func _capture_lantern(route: Node3D, experience: Node, name: String) -> void:
 	experience.set("_figure_offset", Game.trail.player_start_offset + 34.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 34.0)
 	_aim(33.0, 0.48, -3.35, 1.62, 1.0)
+	await _save_frame(name)
+
+
+func _capture_fold_reveal(route: Node3D, experience: Node, name: String) -> void:
+	_place_player(42.0)
+	experience.set("_stage", 3)
+	experience.call("_set_figure_moving", false)
+	experience.set("_figure_offset", Game.trail.player_start_offset + 50.0)
+	experience.call("_place_figure", Game.trail.player_start_offset + 50.0)
+	experience.call("_set_caption", "")
+	_set_fold_reveal(route, 0.48)
+	_aim_between(42.0, 52.0, -8.5, 2.5)
+	await _save_frame(name)
+
+
+func _capture_fold_return(route: Node3D, experience: Node, name: String) -> void:
+	_place_player(53.0)
+	experience.set("_stage", 4)
+	experience.call("_set_figure_moving", false)
+	experience.set("_figure_offset", Game.trail.player_start_offset + 61.0)
+	experience.call("_place_figure", Game.trail.player_start_offset + 61.0)
+	experience.call("_set_caption", "")
+	_set_fold_reveal(route, 1.0)
+	_aim_between(51.0, 58.0, -9.0, 4.2)
 	await _save_frame(name)
 
 
@@ -101,6 +153,8 @@ func _capture_choice(route: Node3D, experience: Node, name: String) -> void:
 	experience.call("_place_figure", Game.trail.player_start_offset + 67.0)
 	_aim(65.0, 0.48, -3.35, 1.62, 1.1)
 	experience.call("_finish_dream")
+	experience.set("_conversation_intro_waiting", false)
+	experience.call("_build_small_talk_choices")
 	await _settle()
 	await _save_frame(name)
 

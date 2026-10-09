@@ -7,14 +7,20 @@ const CLEARING_WIDTH := 8.5
 const CLEARING_LENGTH := 13.0
 const GRID_ACROSS := 32
 const GRID_ALONG := 48
+const DARK_PATCHES := [
+	{"offset": 14.0, "side": -1.5, "size": Vector2(6.8, 8.4)},
+	{"offset": 27.0, "side": 1.6, "size": Vector2(5.8, 7.4)},
+	{"offset": 42.0, "side": -1.7, "size": Vector2(7.2, 9.2)},
+	{"offset": 58.0, "side": 1.2, "size": Vector2(6.2, 8.0)},
+]
 
 # The impossible path begins as ordinary ground, then rises and returns over
 # its own horizontal footprint. Keep these together as art-direction controls.
-const FOLD_SIDE_OFFSET := -7.2
-const FOLD_WIDTH := 2.65
-const FOLD_LENGTH := 28.0
-const FOLD_RETURN := 12.0
-const FOLD_HEIGHT := 11.5
+const FOLD_SIDE_OFFSET := -12.5
+const FOLD_WIDTH := 1.85
+const FOLD_LENGTH := 26.0
+const FOLD_RETURN := 12.5
+const FOLD_HEIGHT := 6.5
 const FOLD_SEGMENTS := 52
 const FOLD_REVEAL_OFFSET := 18.0
 const FOLD_FULL_OFFSET := 42.0
@@ -36,6 +42,7 @@ func build(source: Trail) -> void:
 		"answer": _anchor(67.0, 0.0),
 	}
 	_build_clearing()
+	_build_dark_patches()
 	_build_folded_path()
 
 
@@ -140,6 +147,27 @@ func _build_clearing() -> void:
 	add_child(surface)
 
 
+func _build_dark_patches() -> void:
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://shaders/dream_dark_patch.gdshader")
+	for index in range(DARK_PATCHES.size()):
+		var patch_data: Dictionary = DARK_PATCHES[index]
+		var patch_offset: float = patch_data["offset"]
+		var patch_side: float = patch_data["side"]
+		var patch_size: Vector2 = patch_data["size"]
+		var frame := _anchor(patch_offset, patch_side)
+		var patch := MeshInstance3D.new()
+		patch.name = "SilenceShadow_%02d" % (index + 1)
+		var plane := PlaneMesh.new()
+		plane.size = patch_size
+		patch.mesh = plane
+		patch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		patch.material_override = material
+		var ground := trail.on_ground(frame.origin) + Vector3.UP * 0.085
+		patch.global_transform = Transform3D(frame.basis * Basis(Vector3.RIGHT, -PI * 0.5), ground)
+		add_child(patch)
+
+
 func _build_folded_path() -> void:
 	var frame := anchor("clearing")
 	var ahead := anchor("answer").origin - frame.origin
@@ -172,13 +200,9 @@ func _build_folded_path() -> void:
 		var previous := centers[maxi(index - 1, 0)]
 		var following := centers[mini(index + 1, FOLD_SEGMENTS)]
 		var tangent := (following - previous).normalized()
-		var width_axis := tangent.cross(Vector3.UP)
-		if width_axis.length_squared() < 0.001:
-			width_axis = across
-		else:
-			width_axis = width_axis.normalized()
-		if width_axis.dot(across) < 0.0:
-			width_axis = -width_axis
+		# The fold bends in the route's forward/up plane. A stable across axis
+		# avoids the ribbon twisting when its forward direction reverses.
+		var width_axis := across
 		var normal := width_axis.cross(tangent).normalized()
 		if normal.y < 0.0:
 			normal = -normal

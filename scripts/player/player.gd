@@ -30,6 +30,7 @@ var visual: Node3D
 var animation_player: AnimationPlayer
 
 var stamina: float = Tune.STAMINA_MAX
+var dialogue_locked := false
 var _yaw: float = 0.0
 var _pitch: float = -0.18
 var exhaust_left: float = 0.0
@@ -142,6 +143,10 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if dialogue_locked:
+		if event.is_action_pressed("draw_bow") or event.is_action_pressed("shoot_arrow"):
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("draw_bow") and toggle_bow():
 		get_viewport().set_input_as_handled()
 		return
@@ -158,7 +163,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			else:
 				_interact_buffer = Tune.INTERACT_BUFFER
-	if event is InputEventMouseButton and event.pressed and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM]:
+	if event is InputEventMouseButton and event.pressed and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and not dialogue_locked:
 		# A click uses only what is under the reticle, never a guess around it.
 		var click := (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
 		if click and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -171,7 +176,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	# Look goes straight to the camera every frame. screen_relative is in real
 	# pixels, so the window size or stretch never changes the sensitivity.
-	if event is InputEventMouseMotion and not Game.locks_look() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if event is InputEventMouseMotion and not dialogue_locked and not Game.locks_look() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var turn := (event as InputEventMouseMotion).screen_relative * Tune.MOUSE_SENS * Game.settings.mouse_sensitivity
 		_yaw -= -turn.x if Game.settings.invert_x else turn.x
 		_pitch = clampf(_pitch + (turn.y if Game.settings.invert_y else -turn.y), Tune.PITCH_DOWN, Tune.PITCH_UP)
@@ -210,6 +215,21 @@ func _physics_process(delta: float) -> void:
 		_interact_buffer -= delta
 		if Game.phase == Game.Phase.PLAYING and _try_interact():
 			_interact_buffer = 0.0
+	if dialogue_locked:
+		if sliding:
+			_end_slide()
+		_glide = Vector3.ZERO
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if not is_on_floor():
+			velocity.y -= Tune.GRAVITY * delta
+		move_and_slide()
+		_sway = 0.0
+		if stride:
+			stride.update(0.0)
+		_breathe(delta, false)
+		_carry(delta, false)
+		return
 	if Game.locks_movement():
 		if sliding:
 			_end_slide()
@@ -258,6 +278,11 @@ func _physics_process(delta: float) -> void:
 
 	var moving := wish.length() > 0.05
 	var on_floor := is_on_floor()
+	var dream_unlimited_stamina := Game.phase == Game.Phase.DREAM
+	# Keep dream movement free of exhaustion without changing chapter balance.
+	if dream_unlimited_stamina:
+		stamina = Tune.STAMINA_MAX
+		exhaust_left = 0.0
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
 	var slow := hoisting or (Input.is_action_pressed("walk_slow") and _autopilot == "")
@@ -275,12 +300,15 @@ func _physics_process(delta: float) -> void:
 		speed = Tune.SPRINT_SPEED
 		if bow_hoist and bow_hoist.IsDrawn:
 			speed *= Tune.BOW_COMBAT_SPEED
-		stamina = maxf(stamina - delta, 0.0)
-		if stamina <= 0.0:
-			exhaust_left = Tune.EXHAUST_LOCK
-			_sprinting = false
-			_stumble()
-			exhausted.emit()
+		if dream_unlimited_stamina:
+			stamina = Tune.STAMINA_MAX
+		else:
+			stamina = maxf(stamina - delta, 0.0)
+			if stamina <= 0.0:
+				exhaust_left = Tune.EXHAUST_LOCK
+				_sprinting = false
+				_stumble()
+				exhausted.emit()
 	elif exhaust_left <= 0.0 and not sliding:
 		stamina = minf(stamina + delta * Tune.STAMINA_REGEN, Tune.STAMINA_MAX)
 	if on_floor:
@@ -917,6 +945,12 @@ func _drop_below() -> float:
 
 
 func _breathe(delta: float, sprinting: bool) -> void:
+	if Game.phase == Game.Phase.DREAM:
+		var dream_breath := 0.16 if sprinting else 0.0
+		strain = move_toward(strain, dream_breath, delta * 0.8)
+		if breath:
+			breath.strain = strain
+		return
 	var spent := 1.0 - stamina / Tune.STAMINA_MAX
 	var target := spent * 0.55
 	if sprinting:
@@ -991,6 +1025,16 @@ func _can_reach_note(page: FieldNote) -> bool:
 ## The page, door or switch a press would use now.
 func viewed_target() -> Node3D:
 	return aim.target
+
+
+func face_toward(target: Vector3) -> void:
+	var direction := target - global_position
+	direction.y = 0.0
+	if direction.length_squared() < 0.01:
+		return
+	_facing = atan2(-direction.x, -direction.z)
+	if visual:
+		visual.rotation.y = _facing - _yaw
 
 
 func _on_phase(next: Game.Phase) -> void:

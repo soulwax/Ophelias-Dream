@@ -16,8 +16,12 @@ static func load_data() -> Dictionary:
 		return {}
 	var beats: Variant = parsed.get("beats", [])
 	var branches: Variant = parsed.get("branches", [])
+	var small_talk: Variant = parsed.get("small_talk", [])
 	if typeof(beats) != TYPE_ARRAY or beats.size() != BEAT_COUNT or typeof(branches) != TYPE_ARRAY or not (2 <= branches.size() and branches.size() <= 8):
 		push_error("Dream story needs four approach beats and at least two branches")
+		return {}
+	if typeof(small_talk) != TYPE_ARRAY or small_talk.size() > 3:
+		push_error("Dream story small talk must contain at most three rounds")
 		return {}
 	var id_regex := RegEx.new()
 	id_regex.compile(ID_PATTERN)
@@ -37,6 +41,18 @@ static func load_data() -> Dictionary:
 				push_error("Dream story branch %s is missing %s" % [branch["id"], field])
 				return {}
 		ids[branch["id"]] = true
+	for round_data in small_talk:
+		if typeof(round_data) != TYPE_DICTIONARY or str(round_data.get("prompt", "")).strip_edges().is_empty():
+			push_error("Dream story contains an invalid small-talk round")
+			return {}
+		var options: Variant = round_data.get("choices", [])
+		if typeof(options) != TYPE_ARRAY or not (2 <= options.size() and options.size() <= 4):
+			push_error("Dream story small talk needs between two and four choices per round")
+			return {}
+		for option in options:
+			if typeof(option) != TYPE_DICTIONARY or str(option.get("label", "")).strip_edges().is_empty() or str(option.get("response", "")).strip_edges().is_empty():
+				push_error("Dream story contains an incomplete small-talk choice")
+				return {}
 	return parsed
 
 

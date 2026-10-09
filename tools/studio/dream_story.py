@@ -47,6 +47,28 @@ def normalize(payload):
             raise ValueError(f"beat {index} needs a unique lowercase id")
         beat_ids.add(ident)
         beats.append({"id": ident, "text": _text(beat.get("text"), f"beat {index}", 240)})
+    raw_small_talk = payload.get("small_talk", [])
+    if not isinstance(raw_small_talk, list) or len(raw_small_talk) > 3:
+        raise ValueError("dream story small talk needs at most 3 rounds")
+    small_talk = []
+    for round_index, round_data in enumerate(raw_small_talk, 1):
+        if not isinstance(round_data, dict):
+            raise ValueError(f"small-talk round {round_index} is invalid")
+        raw_choices = round_data.get("choices")
+        if not isinstance(raw_choices, list) or not 2 <= len(raw_choices) <= 4:
+            raise ValueError(f"small-talk round {round_index} needs 2 to 4 choices")
+        choices = []
+        for choice_index, choice in enumerate(raw_choices, 1):
+            if not isinstance(choice, dict):
+                raise ValueError(f"small-talk choice {choice_index} in round {round_index} is invalid")
+            choices.append({
+                "label": _text(choice.get("label"), f"small-talk round {round_index} choice {choice_index}", 120),
+                "response": _text(choice.get("response"), f"small-talk round {round_index} reply {choice_index}", 240),
+            })
+        small_talk.append({
+            "prompt": _text(round_data.get("prompt"), f"small-talk round {round_index} prompt", 180),
+            "choices": choices,
+        })
     raw_branches = payload.get("branches")
     if not isinstance(raw_branches, list) or not 2 <= len(raw_branches) <= 8:
         raise ValueError("dream story needs between 2 and 8 answer branches")
@@ -70,8 +92,10 @@ def normalize(payload):
         "opening": opening,
         "beats": beats,
         "arrival": _text(payload.get("arrival"), "arrival", 240),
+        "small_talk": small_talk,
         "question": _text(payload.get("question"), "choice prompt", 180),
         "branches": branches,
+        "ending": _text(payload.get("ending", payload.get("arrival")), "ending", 360),
     }
 
 

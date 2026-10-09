@@ -4,6 +4,10 @@
 
 Mathilda waits at the tent beyond the pines, about 98 metres down the trail. It is a windbreak, not a secret lair. She took the pack after the argument, stopped where the house light is still a point of reference, and kept two cups because leaving was never the same as wanting Ophelia gone. She wants to be chosen, heard and allowed to return without being made small again.
 
+### Authorial history: survivor, not a reveal
+
+Before this chapter, a lumberjack raped Mathilda. She is still traumatized. This informs her vigilance around footsteps, blocked paths, distance and people approaching from behind. Her chapter does not reenact the assault or require her to recount it. She remains funny, decisive, tender and capable of wanting ordinary things. No line should imply that she caused the violence, owes anyone a disclosure, or needs Ophelia to rescue or validate her.
+
 Her chapter is subjective: it does not prove that there are two physical women. It gives the apparent other woman agency, a distinct voice, anger, tenderness and a choice. The contradictory prints, engine and changing note remain contradictions. Ophelia hears only her own projections in the original chapter; Mathilda speaks directly only in this POV.
 
 ## Brief playable chapter

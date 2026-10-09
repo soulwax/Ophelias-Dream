@@ -26,6 +26,8 @@ The game never says what the two women are to each other, or whether Mathilda is
 
 The short companion chapter is documented in [Mathilda: the other side of the afternoon](MATHILDA_POV.md). She waits at the tent with two cups, the gloves and a note. Her distinct voice belongs to that chapter; in Ophelia’s chapter, the trees still answer only in Ophelia’s voice. Her decision is human—return or wait—and does not settle the original story’s ambiguity.
 
+One part of Mathilda’s history is settled in the author’s canon: a lumberjack raped her before the events of either chapter. She survived and remains traumatized. This is never staged or described graphically. It shapes her hypervigilance, her need to choose distance and exits, and the difficulty of finding words; it does not define her whole character or make her responsible for explaining the assault. The playable dream begins with ordinary wrongness, allows low-pressure small talk, and ends with a brief warning that the lumberjack is still nearby. Mathilda apologizes for having difficulty speaking, never for what was done to her.
+
 ## When they pass each other
 
 Whoever is played, the other one is out there too, walking her own afternoon. Ophelia sees Mathilda on the trail, by the tent, at the posts; Mathilda sees Ophelia on the porch, or halfway down the path toward the tent, stopping, going back. Neither is following the other. Their paths cross by chance, rarely, and at most three times.

@@ -57,7 +57,7 @@ func _exit_tree() -> void:
 
 ## intensity and gust from Weather (0..1), the wind it blows, and how far
 ## she is inside (0 in the open .. 1 behind the walls).
-func apply(intensity: float, gust: float, wind: Vector3, shelter: float, whiteout: float = 0.0) -> void:
+func apply(intensity: float, gust: float, wind: Vector3, shelter: float, whiteout: float = 0.0, dream_quiet: float = 0.0) -> void:
 	var listener := get_viewport().get_audio_listener_3d()
 	var camera := get_viewport().get_camera_3d()
 	var ears := listener.global_position if listener else (camera.global_position if camera else global_position)
@@ -65,7 +65,8 @@ func apply(intensity: float, gust: float, wind: Vector3, shelter: float, whiteou
 	var cellar := 1.0 if Game.house and House.is_cellar(Game.house.room_at(ears)) else 0.0
 	var through := Loudness.WALLS * shelter + Loudness.CELLAR * cellar
 	var storm := smoothstep(0.22, 0.85, intensity + whiteout * 0.2)
-	var bed := lerpf(Loudness.WIND_CALM - 2.0, Loudness.WIND_STORM + 2.5, clampf((intensity - 0.18) / 0.78, 0.0, 1.0)) + gust * 4.5 + whiteout * 2.0
+	var quiet_db := -26.0 * clampf(dream_quiet, 0.0, 1.0)
+	var bed := lerpf(Loudness.WIND_CALM - 2.0, Loudness.WIND_STORM + 2.5, clampf((intensity - 0.18) / 0.78, 0.0, 1.0)) + gust * 4.5 + whiteout * 2.0 + quiet_db
 	var upwind := Vector3(-wind.x, 0.0, -wind.z)
 	upwind = upwind.normalized() if upwind.length() > 0.1 else Vector3.FORWARD
 	# Four uncorrelated beds add up to the whole: 6 dB less each, biased slightly upwind.
@@ -80,17 +81,17 @@ func apply(intensity: float, gust: float, wind: Vector3, shelter: float, whiteou
 	if _howl:
 		_howl.position = upwind * RING + Vector3.UP * 1.5
 		var howl_drive := smoothstep(0.12, 0.88, clampf(gust * 0.8 + whiteout * 0.35, 0.0, 1.0))
-		_howl.volume_db = Loudness.volume(lerpf(Loudness.GUST - 26.0, Loudness.GUST + 1.5, howl_drive) - through)
+		_howl.volume_db = Loudness.volume(lerpf(Loudness.GUST - 26.0, Loudness.GUST + 1.5, howl_drive) - through + quiet_db)
 		_howl.pitch_scale = lerpf(0.91, 1.08, clampf(gust * 0.75 + whiteout * 0.25, 0.0, 1.0))
 	if Game.settings:
 		Game.settings.set_walls(lerpf(20000.0, 650.0, shelter) * lerpf(1.0, 0.55, cellar))
-	_place_whistles(ears, upwind, intensity, gust, shelter, whiteout)
-	_place_door_leak(ears, intensity, gust, shelter)
+	_place_whistles(ears, upwind, intensity, gust, shelter, whiteout, quiet_db)
+	_place_door_leak(ears, intensity, gust, shelter, quiet_db)
 
 
 ## The opening admits a local wind source while the room still muffles the distant storm.
 ## Use physical leaf angle: a requested opening stalled against a body stays nearly shut.
-func _place_door_leak(ears: Vector3, intensity: float, gust: float, shelter: float) -> void:
+func _place_door_leak(ears: Vector3, intensity: float, gust: float, shelter: float, quiet_db: float) -> void:
 	if _door_leak == null:
 		return
 	var target := -80.0
@@ -107,11 +108,11 @@ func _place_door_leak(ears: Vector3, intensity: float, gust: float, shelter: flo
 				var blocked := not get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 				var level := lerpf(Loudness.WIND_CALM-5,Loudness.WIND_STORM-8,intensity)+gust*4
 				target = Loudness.volume(level)+linear_to_db(maxf(opening*shelter,.001))-(Loudness.WALLS if blocked else 0.0)
-	_door_leak.volume_db = lerpf(_door_leak.volume_db,target,.12)
+	_door_leak.volume_db = lerpf(_door_leak.volume_db, target + quiet_db, .12)
 
 
 # At the two windows nearest her among those that face into the wind.
-func _place_whistles(ears: Vector3, upwind: Vector3, intensity: float, gust: float, shelter: float, whiteout: float) -> void:
+func _place_whistles(ears: Vector3, upwind: Vector3, intensity: float, gust: float, shelter: float, whiteout: float, quiet_db: float) -> void:
 	var windward := []
 	if Game.house and shelter > 0.01:
 		for window in Game.house.windows():
@@ -125,7 +126,7 @@ func _place_whistles(ears: Vector3, upwind: Vector3, intensity: float, gust: flo
 			continue
 		whistle.global_position = windward[i][0]
 		var level := Loudness.WINDOW_WHISTLE + lerpf(-9.0, 1.5, intensity) + gust * 8.5 + whiteout * 2.0 - (1.0 - shelter) * 30.0
-		whistle.volume_db = Loudness.volume(level)
+		whistle.volume_db = Loudness.volume(level) + quiet_db
 		whistle.pitch_scale = lerpf(0.96, 1.07, clampf(gust * 0.8 + whiteout * 0.2, 0.0, 1.0))
 
 

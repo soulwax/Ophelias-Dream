@@ -344,6 +344,10 @@ table.lines { border-collapse: separate; border-spacing: 0; }
 .dream-beats h2, .dream-branch-heading h2 { margin: 0 0 5px; }
 .dream-beats > p, .dream-branch-heading p { margin: 0; font-size: 11px; }
 #dream-beats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.dream-small-talk-round { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 0; padding: 12px; border: 1px solid #33434a; border-radius: 9px; background: #10181c; }
+.dream-small-talk-round legend { grid-column: 1 / -1; color: var(--lantern); font-size: 12px; font-weight: 700; }
+.dream-small-talk-round > label { display: flex; flex-direction: column; gap: 6px; color: #c0ccca; font-size: 11px; font-weight: 600; }
+.dream-small-talk-round > label:first-of-type { grid-column: 1 / -1; }
 .dream-branch-heading, .dream-branch-top, .dream-story-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .dream-branch-tools { display: flex; align-items: center; gap: 12px; }
 .dream-branch-count { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -418,7 +422,7 @@ table.lines { border-collapse: separate; border-spacing: 0; }
 	#conversation-run { width: 100%; }
 	.variant-result li { align-items: flex-start; }
 	.variant-result li span { overflow-wrap: anywhere; }
-	#dream-beats, .dream-echoes { grid-template-columns: 1fr; }
+	#dream-beats, .dream-echoes, .dream-small-talk-round { grid-template-columns: 1fr; }
 	.dream-story-editor { padding: 12px; }
 	.dream-branch-heading { align-items: flex-start; flex-direction: column; }
 	.dream-branch-tools { width: 100%; justify-content: space-between; }

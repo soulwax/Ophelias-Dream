@@ -21,6 +21,7 @@ var shelter := 0.0
 # 0..1, smoothed: how much snow falls here. Over green land (Ground.snow_at
 # under the camera) the snowfall thins away; the wind keeps blowing.
 var snow_scale := 1.0
+var dream_quiet := 0.0
 
 var _heading := 0.72
 var _heading_target := 0.72
@@ -95,6 +96,10 @@ func cycle_regime() -> void:
 	_pinned_regime = true
 	var next := ((int(regime) + 1) % 4) as Regime
 	set_regime(next, false)
+
+
+func set_dream_quiet(amount: float) -> void:
+	dream_quiet = clampf(amount, 0.0, 1.0) if Game.dream_mode else 0.0
 
 
 func set_regime(next: Regime, immediate: bool = false) -> void:
@@ -178,7 +183,7 @@ func settle() -> void:
 		_atmosphere.snow_cover = snow_scale
 		_atmosphere.apply_weather(intensity, gust, whiteout, flurry, wind, wind_scroll, _ground_focus_y())
 	if _audio:
-		_audio.apply(intensity, gust, wind, shelter, whiteout)
+		_audio.apply(intensity, gust, wind, shelter, whiteout, dream_quiet if Game.dream_mode else 0.0)
 
 
 func _process(delta: float) -> void:
@@ -201,7 +206,7 @@ func _process(delta: float) -> void:
 		_atmosphere.snow_cover = snow_scale
 		_atmosphere.apply_weather(intensity, gust, whiteout, flurry, wind, wind_scroll, _ground_focus_y())
 	if _audio:
-		_audio.apply(intensity, gust, wind, shelter, whiteout)
+		_audio.apply(intensity, gust, wind, shelter, whiteout, dream_quiet if Game.dream_mode else 0.0)
 
 
 # The snow weight under the camera: snow falls where the snow lies.
