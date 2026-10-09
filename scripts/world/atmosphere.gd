@@ -251,9 +251,12 @@ func _update_veil(
 ) -> void:
 	if mat == null:
 		return
-	mat.set_shader_parameter("base_density", base_d * snow_cover)
-	mat.set_shader_parameter("squall_density", squall_d * snow_cover)
-	mat.set_shader_parameter("spindrift_density", spindrift_d * snow_cover)
+	# Keep the dream's snow moving, but leave enough air between the flakes to
+	# read Mathilda, the path and the landmarks through the storm.
+	var veil_scale := 0.2 if Game.dream_mode else 1.0
+	mat.set_shader_parameter("base_density", base_d * snow_cover * veil_scale)
+	mat.set_shader_parameter("squall_density", squall_d * snow_cover * veil_scale)
+	mat.set_shader_parameter("spindrift_density", spindrift_d * snow_cover * veil_scale)
 	mat.set_shader_parameter("ground_level", ground_y)
 	mat.set_shader_parameter("weather_intensity", intensity)
 	mat.set_shader_parameter("gust_strength", gust)

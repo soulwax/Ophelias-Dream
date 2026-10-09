@@ -129,6 +129,12 @@ func set_regime(next: Regime, immediate: bool = false) -> void:
 			_whiteout_target = randf_range(0.82, 0.96)
 			_flurry_target = 1.0
 			_regime_clock = randf_range(10.0, 16.0)
+	# The dream can turn the forest strange without erasing it. Keep its storm
+	# readable even when a debug override or a transition requests a whiteout.
+	if Game.dream_mode:
+		_intensity_target = minf(_intensity_target, 0.68)
+		_gust_target = minf(_gust_target, 0.62)
+		_whiteout_target = minf(_whiteout_target, 0.18)
 	_heading_target += randf_range(-0.48, 0.48)
 	if immediate:
 		intensity = _intensity_target
@@ -254,6 +260,18 @@ func _advance(delta: float) -> void:
 
 
 func _pick_next_regime() -> void:
+	if Game.dream_mode:
+		var dream_roll := randf()
+		var dream_next := Regime.DRIFT
+		match regime:
+			Regime.CLEARING:
+				dream_next = Regime.DRIFT if dream_roll < 0.78 else Regime.SQUALL
+			Regime.DRIFT:
+				dream_next = Regime.CLEARING if dream_roll < 0.34 else Regime.SQUALL
+			_:
+				dream_next = Regime.DRIFT if dream_roll < 0.72 else Regime.CLEARING
+		set_regime(dream_next, false)
+		return
 	var pressure := clampf(Game.threat() + (0.25 if Game.hunt_started else 0.0), 0.0, 1.0)
 	var roll := randf()
 	var next := Regime.DRIFT

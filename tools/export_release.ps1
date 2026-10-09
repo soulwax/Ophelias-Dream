@@ -1,22 +1,16 @@
 <#
 .SYNOPSIS
-    Automates encrypted Windows release exports for Ophelia's Dream.
+    Exports a Windows Mono release build for Ophelia's Dream.
 
 .DESCRIPTION
-    1. Ensures a 256-bit AES key (64 hex chars) exists in godot.gdkey and syncs
-       it to .godot/export_credentials.cfg.
-    2. Ensures a custom Godot release export template compiled with
-       SCRIPT_AES256_ENCRYPTION_KEY is cached in build/templates/ (automatically
-       cloning Godot and building with SCons when missing or when the key changes).
-    3. Synchronizes application and export versions between project.godot and
-       export_presets.cfg.
-    4. Configures export_presets.cfg for PCK encryption and runs headless Godot
-       with GODOT_SCRIPT_ENCRYPTION_KEY set to produce build/windows/Ophelia's Dream.exe.
+    Uses the installed Godot Mono 4.7.2 export template so C# scripts run in the
+    release. The PCK is unencrypted because the locally built custom template
+    lacks Mono support. Synchronizes versions and excludes local asset packs and
+    build outputs before exporting build/windows/Ophelia's Dream.exe.
 
 .EXAMPLE
     ./tools/export_release.ps1
     ./tools/export_release.ps1 -Version 0.0.15
-    ./tools/export_release.ps1 -RotateKey
 #>
 [CmdletBinding()]
 param(
@@ -26,11 +20,14 @@ param(
 	[string]$GodotTag = "",
 	[switch]$RebuildTemplate,
 	[switch]$RotateKey,
-	[switch]$Unencrypted
+	[switch]$Unencrypted = $true
 )
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path "$PSScriptRoot\..").Path
+if (-not $Unencrypted) {
+	throw "Encrypted exports require a Godot Mono template built with the matching script key. This project uses the installed Mono template; use the default unencrypted export."
+}
 
 function Get-GodotExecutable {
 	foreach ($name in @("godot", "godot-mono", "godot4")) {
@@ -244,4 +241,4 @@ if (-not (Test-Path $outExe)) {
 }
 
 $sizeMb = [math]::Round((Get-Item $outExe).Length / 1MB, 2)
-Write-Host "Release export complete: $outExe ($sizeMb MB, v$resolvedVersion, encrypted=$(-not $Unencrypted))"
+Write-Host "Release export complete: $outExe ($sizeMb MB, v$resolvedVersion, Mono, encrypted=$(-not $Unencrypted))"

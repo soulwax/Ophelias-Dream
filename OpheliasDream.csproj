@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
     <LangVersion>12</LangVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Release worktrees are copied under build/ and must not be compiled twice. -->
+    <Compile Remove="build/**/*.cs" />
+  </ItemGroup>
 </Project>

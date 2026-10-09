@@ -12,6 +12,9 @@ const APPARITION_MEMORY_SECONDS := 3.85
 const STORY := preload("res://scripts/world/dream_story.gd")
 const DREAM_ROUTE_SCRIPT := preload("res://scripts/world/dream_route.gd")
 const DREAM_SOUNDSCAPE_SCRIPT := preload("res://scripts/audio/dream_soundscape.gd")
+const CAPTION_REFERENCE_HEIGHT := 0.105
+const CAPTION_MIN_PIXEL_SIZE := 0.0036
+const CAPTION_MAX_PIXEL_SIZE := 0.025
 
 var _dream_route: Node3D
 var _dream_soundscape: Node3D
@@ -479,14 +482,21 @@ func _cue_story_event(event: Dictionary) -> void:
 	_seen_story_cues[cue_id] = true
 	if _dream_route and _dream_route.has_method("cue_event"):
 		_dream_route.call("cue_event", cue_id, float(event.get("offset", -1.0)))
-	_record_dream_entry(event.get("journal", {}))
 	var event_talk: Dictionary = _story.get("event_talk", {})
-	_queue_story_line(str(event.get("line", "")), str(event.get("motion", "")), {}, int(event_talk.get(cue_id, -1)))
+	var journal_entry: Dictionary = event.get("journal", {})
+	_queue_story_line(str(event.get("line", "")), str(event.get("motion", "")), journal_entry, int(event_talk.get(cue_id, -1)))
 
 
 func _layout_caption() -> void:
 	if _speech_sprite and _speech_target and is_instance_valid(_speech_target):
 		_speech_sprite.global_position = _speech_target.global_position + Vector3.UP * 2.25
+		var camera := get_viewport().get_camera_3d()
+		var viewport_height := get_viewport().get_visible_rect().size.y
+		if camera and viewport_height > 1.0:
+			var distance := camera.global_position.distance_to(_speech_sprite.global_position)
+			var view_height := 2.0 * distance * tan(deg_to_rad(camera.fov * 0.5))
+			var needed_pixel_size := view_height * CAPTION_REFERENCE_HEIGHT / float(_speech_view.size.y)
+			_speech_sprite.pixel_size = clampf(needed_pixel_size, CAPTION_MIN_PIXEL_SIZE, CAPTION_MAX_PIXEL_SIZE)
 	if _lantern_prompt and _lantern:
 		_lantern_prompt.global_position = _lantern.global_position + Vector3.UP * 1.25
 	if _choice_panel and _figure and is_instance_valid(_figure):

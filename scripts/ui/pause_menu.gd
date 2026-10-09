@@ -43,6 +43,7 @@ const PAGE_KEYS := {
 const LABEL_WIDTH := 280
 const FRAME_MAX := Vector2(1220.0, 760.0)
 const ARM_SECONDS := 3.0
+const TETRIS_JOKE_SCRIPT = preload("res://scripts/ui/tetris_joke.gd")
 
 var _page := "Controls"
 var _tabs := {}
@@ -68,6 +69,7 @@ var _subject_label: Label
 var _session_heading: Label
 var _resume_action: Button
 var _lookout_action: Button
+var _tetris
 var _title_hidden: Array[Control] = []
 var _open_tween: Tween
 var _title_mode := false
@@ -114,6 +116,8 @@ func _on_phase(next: Game.Phase) -> void:
 		_resume_action.text = str(_resume_action.get_meta("text", "▸  RESUME"))
 		_restore_session_controls()
 	visible = open
+	if not open and _tetris:
+		_tetris.close_game()
 
 
 # Deferred, so a page opened in the same frame (RUN_MENU) is the one focused.
@@ -218,6 +222,10 @@ func _resume_action_pressed() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not visible:
+		return
+	if _tetris and _tetris.is_open():
+		if _tetris.handle_input(event):
+			get_viewport().set_input_as_handled()
 		return
 	# Listening for a new binding comes before anything else sees the input,
 	# so the key pressed is never also acted on.
@@ -751,6 +759,8 @@ func _build() -> void:
 	glass.shader = load("res://shaders/menu_crt.gdshader") as Shader
 	_crt.material = glass
 	add_child(_crt)
+	_tetris = TETRIS_JOKE_SCRIPT.new()
+	add_child(_tetris)
 	_fit()
 
 
@@ -865,6 +875,10 @@ func _build_sidebar() -> Control:
 	box.add_child(_gap(4))
 	_resume_action = _action("Resume", _resume_action_pressed)
 	box.add_child(_resume_action)
+	var tetris := _action("Tetris (for the record)", func() -> void: _tetris.open_game())
+	tetris.tooltip_text = "A completely unofficial diagnostic distraction."
+	_title_hidden.append(tetris)
+	box.add_child(tetris)
 	# Once she has reached the lookout she can go back there with what she had.
 	_lookout_action = _action("Back to the lookout", func() -> void: Game.restart(true), true)
 	_lookout_action.visible = not Game.checkpoint.is_empty()

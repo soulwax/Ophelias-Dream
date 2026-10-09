@@ -25,7 +25,7 @@ Direction updated 2026-10-09. The dream does not instantiate flashback scenes or
 | Remove staged scenes and assets | Implemented | Route builders, door props, under-ice scene shader, memory sound clips, and scene capture references are removed. |
 | Trail event cues | Implemented | `dream.json` stores three route offsets and authored lines. Runtime emits `DreamRoute.cue_requested` for future optional listeners. |
 | Dialogue distribution | Implemented | Thread/window rounds are event-driven, remain sequential, and are skipped at the close only after they were actually completed. |
-| Visual and route review | In progress | The folded path remains; verify the normal player camera, reduced effects, journal/pause, and all wakeup outcomes in a complete run. |
+| Visual and route review | Verified for release | Reduced only the dream's volumetric veil, capped its worst storm transitions, and scaled Mathilda's in-world speech with camera distance. The visual review covers entry, all four choreographed beats, the folded path, journal, choice, warning, apparition, and station dialogue under a forced whiteout. `dream_story_probe.tscn` checks complete, unresolved, and ruptured wakeups. |
 
 ## Review gates
 
