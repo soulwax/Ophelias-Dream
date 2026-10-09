@@ -1,8 +1,10 @@
 extends Node3D
 
 const CATALOG := "res://assets/characters/presentation_catalog.json"
+const LOCAL_ASSET_BANK_CATALOG := "res://assets/characters/asset_bank/presentation_catalog.local.json"
 const CHARACTER := preload("res://scripts/player/creator_character.gd")
 const SAVES := "user://characters"
+const STAGE_TOP := 0.06
 const KENNEY_PREVIEW_PALETTES := [
 	{"outfit": "536c7b", "head": "c99e7b"},
 	{"outfit": "6d536b", "head": "d5ad8b"},
@@ -29,10 +31,16 @@ var _distance: float = 3.8
 var _animation_player: AnimationPlayer
 var _skeleton: Skeleton3D
 var _clips: Array[String] = []
+var _collection_select: OptionButton
+var _collection_values: Array[String] = []
+var _visible_indices: Array[int] = []
+var _active_collection: String = ""
 var _clip_index: int = 0
 var _use_embedded_animations: bool = false
 var _rest_pose: bool = false
 var _animation_label: Label
+var _pose_button: Button
+var _hint: Label
 var _working_configuration: Dictionary = CHARACTER.DEFAULT.duplicate()
 var _hair_select: OptionButton
 var _outfit_select: OptionButton
@@ -48,6 +56,8 @@ func _ready() -> void:
 	_build_stage()
 	_build_ui()
 	_load_catalog()
+	_load_local_asset_bank_catalog()
+	_build_collection_filter()
 	var start := OS.get_environment("RUN_PRESENTATION_INDEX")
 	var default_index: int = 0
 	for index: int in variants.size():
@@ -89,6 +99,26 @@ func _load_catalog() -> void:
 					variants.append(saved)
 
 
+func _load_local_asset_bank_catalog() -> void:
+	# Owner-supplied packs remain local and ignored by Git. Their optional catalog lets
+	# the showcase include them on this machine without publishing paths or metadata.
+	if not FileAccess.file_exists(LOCAL_ASSET_BANK_CATALOG):
+		return
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(LOCAL_ASSET_BANK_CATALOG))
+	if not parsed is Array:
+		push_warning("Local character asset-bank catalog must be a JSON array.")
+		return
+	for entry: Variant in parsed:
+		if not entry is Dictionary:
+			push_warning("Skipping invalid local character catalog entry.")
+			continue
+		var path := str(entry.get("scene", ""))
+		if not path.begins_with("res://") or not ResourceLoader.exists(path) or not load(path) is PackedScene:
+			push_warning("Skipping missing local character scene: " + path)
+			continue
+		variants.append(entry)
+
+
 func show_variant(index: int) -> void:
 	_animation_player = null
 	_skeleton = null
@@ -98,8 +128,8 @@ func show_variant(index: int) -> void:
 		_display.remove_child(_model)
 		_model.queue_free()
 		_model = null
-	_previous.disabled = variants.size() < 2
-	_next.disabled = variants.size() < 2
+	_previous.disabled = _visible_indices.size() < 2
+	_next.disabled = _visible_indices.size() < 2
 	if variants.is_empty():
 		_title.text = "No characters to present"
 		_description.text = "Add a character scene to the presentation catalog."
@@ -142,16 +172,23 @@ func show_variant(index: int) -> void:
 		(node as GeometryInstance3D).visible = true
 	_display.add_child(_model)
 	_apply_preview_materials(entry)
+	var creator_supported := _supports_creator(entry)
+	_creator_panel.visible = creator_supported
+	_camera.h_offset = 0.33 if creator_supported else 0.0
 	_turn = 0.0
 	_display.rotation.y = 0.0
 	_frame_model()
 	_title.text = str(entry.get("name", "Unnamed character"))
 	_description.text = str(entry.get("description", ""))
-	_counter.text = "%d / %d" % [selected + 1, variants.size()]
-	var creator_supported := _supports_creator(entry)
-	_creator_panel.visible = creator_supported
+	_update_counter()
 	_heading.text = "MATHILDA  /  CHARACTER STUDIO" if creator_supported else "CHARACTER COLLECTION  /  MODEL PREVIEW"
 	_build_animation_preview()
+	_pose_button.visible = _supports_t_pose()
+	_pose_button.disabled = not _pose_button.visible
+	if _pose_button.visible:
+		_hint.text = "← / → Characters   •   ↑ / ↓ Animations   •   X T pose   •   Drag to turn   •   Wheel to zoom   •   Home reset   •   Esc close"
+	else:
+		_hint.text = "← / → Characters   •   ↑ / ↓ Animations   •   Drag to turn   •   Wheel to zoom   •   Home reset   •   Esc close"
 	_sync_creator_controls()
 
 
@@ -160,6 +197,90 @@ func _supports_creator(entry: Dictionary) -> bool:
 		return true
 	var scene_path := str(entry.get("scene", ""))
 	return scene_path.begins_with("res://assets/characters/styloo_elf/") or scene_path.begins_with("res://assets/characters/variants/") or scene_path.begins_with("res://assets/characters/hairstyles/")
+
+
+func _entry_collection(entry: Dictionary) -> String:
+	if entry.has("collection"):
+		return str(entry["collection"])
+	if entry.get("configuration") is Dictionary:
+		return "Character Studio · Saved Designs"
+	var scene_path := str(entry.get("scene", ""))
+	if scene_path.begins_with("res://assets/characters/styloo_elf/presentation/"):
+		return "Styloo · Mage, Dwarf and Knight"
+	if scene_path.begins_with("res://assets/characters/styloo_elf/"):
+		return "Styloo · Elf"
+	if scene_path.begins_with("res://assets/characters/kenney_female/"):
+		return "Kenney · Mini Characters"
+	if scene_path.begins_with("res://assets/characters/quaternius_animated_women/"):
+		return "Quaternius · Animated Women"
+	if scene_path.begins_with("res://assets/characters/quaternius_modular_women/"):
+		return "Quaternius · Modular Women"
+	if scene_path.begins_with("res://assets/characters/variants/") or scene_path.begins_with("res://assets/characters/hairstyles/"):
+		return "Character Studio · Variants"
+	return "Project Characters"
+
+
+func _build_collection_filter() -> void:
+	if _collection_select == null:
+		return
+	var counts: Dictionary = {}
+	for entry: Dictionary in variants:
+		var collection := _entry_collection(entry)
+		counts[collection] = int(counts.get(collection, 0)) + 1
+	_collection_values.clear()
+	_collection_values.append("")
+	var labels: Array[String] = []
+	for value: Variant in counts.keys():
+		labels.append(str(value))
+	labels.sort()
+	_collection_values.append_array(labels)
+	_collection_select.clear()
+	_collection_select.add_item("All characters · %d" % variants.size())
+	_collection_select.set_item_metadata(0, "")
+	for collection: String in labels:
+		_collection_select.add_item("%s · %d" % [collection, int(counts[collection])])
+		_collection_select.set_item_metadata(_collection_select.item_count - 1, collection)
+	_collection_select.select(0)
+	_active_collection = ""
+	_refresh_visible_indices()
+
+
+func _on_collection_selected(option_index: int) -> void:
+	if option_index < 0 or option_index >= _collection_values.size():
+		return
+	_active_collection = _collection_values[option_index]
+	_refresh_visible_indices()
+	if not _visible_indices.is_empty():
+		show_variant(_visible_indices[0])
+
+
+func _refresh_visible_indices() -> void:
+	_visible_indices.clear()
+	for index: int in variants.size():
+		if _active_collection.is_empty() or _entry_collection(variants[index]) == _active_collection:
+			_visible_indices.append(index)
+	var only_one: bool = _visible_indices.size() < 2
+	if _previous != null:
+		_previous.disabled = only_one
+	if _next != null:
+		_next.disabled = only_one
+
+
+func _change_selection(step: int) -> void:
+	if _visible_indices.is_empty():
+		return
+	var visible_position := _visible_indices.find(selected)
+	if visible_position < 0:
+		visible_position = 0
+	show_variant(_visible_indices[posmod(visible_position + step, _visible_indices.size())])
+
+
+func _update_counter() -> void:
+	var visible_position := _visible_indices.find(selected)
+	if visible_position >= 0:
+		_counter.text = "%d / %d   ·   %d total" % [visible_position + 1, _visible_indices.size(), variants.size()]
+	else:
+		_counter.text = "%d / %d" % [selected + 1, variants.size()]
 
 
 func _apply_preview_materials(entry: Dictionary) -> void:
@@ -259,6 +380,8 @@ func _randomize_design() -> void:
 
 func _build_animation_preview() -> void:
 	_skeleton = _model.find_child("Skeleton3D", true, false) as Skeleton3D
+	_animation_select.clear()
+	_animation_select.disabled = true
 	if _skeleton == null:
 		_animation_label.text = "No character skeleton"
 		return
@@ -289,9 +412,13 @@ func _build_animation_preview() -> void:
 			return
 		for clip: String in _clips:
 			_animation_select.add_item(_embedded_animation_label(clip))
+		_animation_select.disabled = false
 		_clip_index = 0
 		_skeleton.reset_bone_poses()
 		show_animation(0)
+		return
+	if not _supports_creator(variants[selected]):
+		_animation_label.text = "No compatible character animations"
 		return
 	for node: Node in _model.find_children("*", "AnimationPlayer", true, false):
 		(node as AnimationPlayer).stop()
@@ -322,6 +449,7 @@ func _build_animation_preview() -> void:
 	_animation_select.clear()
 	for clip: String in _clips:
 		_animation_select.add_item(clip.replace("_", " "))
+	_animation_select.disabled = _clips.is_empty()
 	_skeleton.reset_bone_poses()
 	show_animation(0)
 
@@ -384,39 +512,54 @@ func _point_bone(name: String, child_name: String, direction: Vector3) -> void:
 
 
 func _frame_model() -> void:
+	# Let newly added skeletal meshes update their deformed bounds before fitting the camera.
+	await get_tree().process_frame
+	if not is_instance_valid(_model) or not is_instance_valid(_camera):
+		return
 	var bounds := AABB()
 	var found: bool = false
 	var inverse := _display.global_transform.affine_inverse()
-	for node: Node in _model.find_children("*", "MeshInstance3D", true, false):
-		var mesh := node as MeshInstance3D
-		var box: AABB = (inverse * mesh.global_transform) * mesh.get_aabb()
-		bounds = bounds.merge(box) if found else box
-		found = true
-	if _model is MeshInstance3D:
-		var mesh := _model as MeshInstance3D
-		var box: AABB = (inverse * mesh.global_transform) * mesh.get_aabb()
+	var geometry: Array[GeometryInstance3D] = []
+	if _model is GeometryInstance3D:
+		geometry.append(_model as GeometryInstance3D)
+	for node: Node in _model.find_children("*", "GeometryInstance3D", true, false):
+		geometry.append(node as GeometryInstance3D)
+	for instance: GeometryInstance3D in geometry:
+		var box: AABB = (inverse * instance.global_transform) * instance.get_aabb()
 		bounds = bounds.merge(box) if found else box
 		found = true
 	if not found:
 		return
-	_model.position -= Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
+	_model.position += Vector3(-bounds.get_center().x, STAGE_TOP - bounds.position.y, -bounds.get_center().z)
 	var height := maxf(bounds.size.y, 0.5)
 	var width := maxf(bounds.size.x, bounds.size.z)
+	# Skinned GLTF instances can report their bind-pose AABB as a nearly flat sliver.
+	# The Synty source body meshes are about 1.8 m tall; use that authored extent when
+	# the deformed-instance bounds are not usable, so the camera frames the full figure.
+	if bounds.size.y < 0.1 or width < 0.1:
+		height = maxf(float(variants[selected].get("preview_height", 1.8)), 0.5)
+		width = maxf(float(variants[selected].get("preview_width", 1.6)), 0.5)
 	var aspect := get_viewport().get_visible_rect().size.aspect()
 	var half_fov := deg_to_rad(_camera.fov * 0.5)
-	_distance = maxf(height * 0.7 / tan(half_fov), width * 0.7 / (tan(half_fov) * aspect))
-	_camera.position = Vector3(0.0, height * 0.55, _distance)
-	_camera.look_at(Vector3(0.0, height * 0.5, 0.0))
+	_distance = maxf(height * 0.76 / tan(half_fov), width * 0.76 / (tan(half_fov) * aspect))
+	_camera.position = Vector3(0.0, STAGE_TOP + height * 0.55, _distance)
+	_camera.look_at(Vector3(0.0, STAGE_TOP + height * 0.5, 0.0))
+
+
+func _supports_t_pose() -> bool:
+	if _skeleton == null:
+		return false
+	return _skeleton.find_bone("DEF-upper_arm.L") >= 0 and _skeleton.find_bone("DEF-forearm.L") >= 0
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_LEFT:
-				show_variant(selected - 1)
+				_change_selection(-1)
 				get_viewport().set_input_as_handled()
 			KEY_RIGHT:
-				show_variant(selected + 1)
+				_change_selection(1)
 				get_viewport().set_input_as_handled()
 			KEY_HOME:
 				show_variant(selected)
@@ -428,7 +571,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				show_animation(_clip_index - 1)
 				get_viewport().set_input_as_handled()
 			KEY_X:
-				_toggle_t_pose()
+				if _supports_t_pose():
+					_toggle_t_pose()
 				get_viewport().set_input_as_handled()
 			KEY_ESCAPE:
 				get_tree().quit()
@@ -444,37 +588,53 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _build_stage() -> void:
 	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("18232d")
+	var sky_material := ProceduralSkyMaterial.new()
+	sky_material.sky_top_color = Color("0d1822")
+	sky_material.sky_horizon_color = Color("304454")
+	sky_material.ground_bottom_color = Color("101922")
+	sky_material.ground_horizon_color = Color("273a49")
+	var sky := Sky.new()
+	sky.sky_material = sky_material
+	environment.background_mode = Environment.BG_SKY
+	environment.sky = sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("d8e6ef")
-	environment.ambient_light_energy = 0.42
+	environment.ambient_light_color = Color("b9c9d4")
+	environment.ambient_light_energy = 0.34
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	var world := WorldEnvironment.new()
 	world.environment = environment
 	add_child(world)
 	var key := DirectionalLight3D.new()
 	key.rotation_degrees = Vector3(-35.0, -30.0, 0.0)
-	key.light_energy = 1.1
+	key.light_energy = 0.92
 	key.shadow_enabled = true
 	add_child(key)
 	var fill := DirectionalLight3D.new()
 	fill.rotation_degrees = Vector3(-20.0, 145.0, 0.0)
 	fill.light_color = Color("b8d5ef")
-	fill.light_energy = 0.38
+	fill.light_energy = 0.3
 	add_child(fill)
-	var floor_mesh := CylinderMesh.new()
-	floor_mesh.top_radius = 1.8
-	floor_mesh.bottom_radius = 1.8
-	floor_mesh.height = 0.08
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color("344653")
-	material.roughness = 0.85
-	floor_mesh.material = material
-	var floor_node := MeshInstance3D.new()
-	floor_node.mesh = floor_mesh
-	floor_node.position.y = -0.04
-	add_child(floor_node)
+	var rim := DirectionalLight3D.new()
+	rim.rotation_degrees = Vector3(-12.0, 180.0, 0.0)
+	rim.light_color = Color("9ecde0")
+	rim.light_energy = 0.5
+	add_child(rim)
+	_add_stage_cylinder("PedestalBase", 1.42, 0.16, Vector3(0.0, -0.08, 0.0), Color("15232d"), 0.42, 0.38)
+	_add_stage_cylinder("FrostedStage", 1.24, 0.12, Vector3(0.0, -0.01, 0.0), Color("465a68"), 0.08, 0.72)
+	var ring_mesh := TorusMesh.new()
+	ring_mesh.inner_radius = 1.08
+	ring_mesh.outer_radius = 1.13
+	var ring_material := StandardMaterial3D.new()
+	ring_material.albedo_color = Color("80aebf")
+	ring_material.emission_enabled = true
+	ring_material.emission = Color("315c6a")
+	ring_material.emission_energy_multiplier = 0.34
+	ring_mesh.material = ring_material
+	var ring := MeshInstance3D.new()
+	ring.name = "StageLightRing"
+	ring.mesh = ring_mesh
+	ring.position.y = STAGE_TOP - 0.006
+	add_child(ring)
 	_display = Node3D.new()
 	_display.name = "DisplayedCharacter"
 	add_child(_display)
@@ -515,6 +675,23 @@ func _build_ui() -> void:
 	_animation_label = Label.new()
 	_animation_label.add_theme_color_override("font_color", Color("a9c5d8"))
 	column.add_child(_animation_label)
+	var motion_row := HBoxContainer.new()
+	motion_row.add_theme_constant_override("separation", 10)
+	column.add_child(motion_row)
+	_collection_select = OptionButton.new()
+	_collection_select.custom_minimum_size = Vector2(250.0, 38.0)
+	_collection_select.tooltip_text = "Filter the collection by source pack"
+	_collection_select.item_selected.connect(_on_collection_selected)
+	motion_row.add_child(_collection_select)
+	_animation_select = OptionButton.new()
+	_animation_select.custom_minimum_size = Vector2(220.0, 38.0)
+	_animation_select.item_selected.connect(show_animation)
+	motion_row.add_child(_animation_select)
+	_pose_button = Button.new()
+	_pose_button.text = "T pose"
+	_pose_button.custom_minimum_size = Vector2(92.0, 38.0)
+	_pose_button.pressed.connect(_toggle_t_pose)
+	motion_row.add_child(_pose_button)
 	var space := Control.new()
 	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -528,7 +705,7 @@ func _build_ui() -> void:
 	_previous.text = "← Previous"
 	_previous.focus_mode = Control.FOCUS_NONE
 	_previous.custom_minimum_size = Vector2(160.0, 48.0)
-	_previous.pressed.connect(func() -> void: show_variant(selected - 1))
+	_previous.pressed.connect(func() -> void: _change_selection(-1))
 	row.add_child(_previous)
 	_counter = Label.new()
 	_counter.custom_minimum_size.x = 90.0
@@ -538,13 +715,15 @@ func _build_ui() -> void:
 	_next.text = "Next →"
 	_next.focus_mode = Control.FOCUS_NONE
 	_next.custom_minimum_size = Vector2(160.0, 48.0)
-	_next.pressed.connect(func() -> void: show_variant(selected + 1))
+	_next.pressed.connect(func() -> void: _change_selection(1))
 	row.add_child(_next)
-	var hint := Label.new()
-	hint.text = "← / → Characters   •   ↑ / ↓ Animations   •   X T pose   •   Drag to turn   •   Wheel to zoom   •   Home reset   •   Esc close"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_color_override("font_color", Color("a9c5d8"))
-	column.add_child(hint)
+	_hint = Label.new()
+	_hint.text = "← / → Characters   •   ↑ / ↓ Animations   •   Drag to turn   •   Wheel to zoom   •   Home reset   •   Esc close"
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.add_theme_color_override("font_color", Color("c4d3dc"))
+	_hint.add_theme_color_override("font_outline_color", Color("101922"))
+	_hint.add_theme_constant_override("outline_size", 2)
+	column.add_child(_hint)
 	_build_creator_panel(layer)
 
 
@@ -621,14 +800,6 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 		row.add_child(picker)
 		_color_controls[key] = picker
 		column.add_child(row)
-	_creator_label(column, "MOTION PREVIEW")
-	_animation_select = OptionButton.new()
-	_animation_select.item_selected.connect(show_animation)
-	column.add_child(_animation_select)
-	var pose := Button.new()
-	pose.text = "X  •  Toggle T pose"
-	pose.pressed.connect(_toggle_t_pose)
-	column.add_child(pose)
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 14
 	column.add_child(spacer)
@@ -663,6 +834,23 @@ func _creator_label(column: VBoxContainer, text: String) -> void:
 	label.add_theme_font_size_override("font_size", 13)
 	label.add_theme_color_override("font_color", Color("91aabd"))
 	column.add_child(label)
+
+
+func _add_stage_cylinder(node_name: String, radius: float, height: float, at: Vector3, color: Color, metallic: float, roughness: float) -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = height
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.metallic = metallic
+	material.roughness = roughness
+	mesh.material = material
+	var instance := MeshInstance3D.new()
+	instance.name = node_name
+	instance.mesh = mesh
+	instance.position = at
+	add_child(instance)
 
 
 func _capture(path: String) -> void:

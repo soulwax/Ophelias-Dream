@@ -8,7 +8,9 @@ The reusable personal skill is `$run-away-character-customization`, installed in
 godot --path . scenes/character_presentation.tscn
 ```
 
-Left/right arrows or Previous/Next buttons cycle through characters and wrap around. Up/down arrows cycle through the baked and feminine animation libraries, starting in Idle whenever a character is selected. Preview clips loop and crossfade. X toggles a T pose and resumes the selected animation when pressed again; up/down also exits the T pose. Drag with the left mouse button to turn, use the wheel to zoom, Home to reset to idle and reset the view, and Escape to close.
+The collection selector filters by source pack; the counter shows the filtered position and full gallery size. Left/right arrows or Previous/Next buttons cycle through the visible characters and wrap around. Up/down arrows or the motion selector cycle through the selected model's embedded clips or the elf's baked and feminine libraries, starting in Idle whenever a character is selected. Preview clips loop and crossfade. On rigs with the Styloo arm bones, X or the T pose button toggles a T pose and resumes the selected animation when pressed again; up/down also exits the T pose. Drag with the left mouse button to turn, use the wheel to zoom, Home to reset to idle and reset the view, and Escape to close.
+
+The tracked catalog contains project-owned and redistributable characters. If a local, licensed character bank is installed under `assets/characters/asset_bank/`, the showcase also reads its optional `presentation_catalog.local.json` overlay. Keep that directory local; it is ignored by Git, so the overlay and imported models are not included in project pushes. Some entries are static models or authoring base meshes and therefore do not offer motion clips.
 
 The studio opens on the original costume with four hairstyles and independent hair, eye, cloth and trim colour controls. The earlier seven appearance/hair studies remain in the collection. The three generated alternative outfits have been scrapped. New garments follow the source-based [tailoring workflow](GARMENT_WORKFLOW.md), beginning with one garment and real deformation review.
 
@@ -25,6 +27,7 @@ Each catalog entry has:
 | `description` | Appearance/outfit notes |
 | `scale` | Additional display scale, default 1; base GLB uses 0.8 |
 | `yaw_degrees` | Additional facing correction, default 0 |
+| `preview_height`, `preview_width` | Optional authored bounds for skinned GLTFs whose runtime mesh bounds collapse |
 | `configuration` | Creator component IDs, name and hex colours; replaces the scene field for assembled characters |
 
 Use a wrapper `.tscn` when a variant needs external material overrides or additional clothing nodes. Include them in that scene so the presentation displays the completed character. The gallery previews raw clips on the elf skeleton, without gameplay's blend tree or procedural posture/contact layers; inspect transitions, movement and winter lighting in gameplay separately.

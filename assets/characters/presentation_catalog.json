@@ -1,192 +1,219 @@
 [
-  {
-    "name": "Mathilda — base elf",
-    "scene": "res://assets/characters/styloo_elf/elf.glb",
-    "description": "Styloo's prepared CC0 elf. The starting point for appearance and outfit variants.",
-    "scale": 0.8,
-    "yaw_degrees": 0.0
-  },
-  {
-    "name": "Anime Mage",
-    "scene": "res://assets/characters/styloo_elf/presentation/mage.glb",
-    "description": "A slender anime-style mage with a compatible Styloo skeleton. Previews the project's feminine locomotion and shared character motions.",
-    "scale": 0.8,
-    "yaw_degrees": 0.0
-  },
-  {
-    "name": "Anime Nain",
-    "scene": "res://assets/characters/styloo_elf/presentation/nain.glb",
-    "description": "A distinct anime-style adventurer with a compatible Styloo skeleton. Previews the project's feminine locomotion and shared character motions.",
-    "scale": 0.8,
-    "yaw_degrees": 0.0
-  },
-  {
-    "name": "Anime Knight",
-    "scene": "res://assets/characters/styloo_elf/presentation/knight.glb",
-    "description": "A lean anime-style knight with a compatible Styloo skeleton. Previews the project's feminine locomotion and shared character motions.",
-    "scale": 0.8,
-    "yaw_degrees": 0.0
-  },
-  {
-    "name": "Low-poly Female A",
-    "scene": "res://assets/characters/kenney_female/character-female-a.glb",
-    "description": "Kenney Mini Characters model A with its own rig and 32 embedded motions.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Low-poly Female B",
-    "scene": "res://assets/characters/kenney_female/character-female-b.glb",
-    "description": "Kenney Mini Characters model B with its own rig and 32 embedded motions.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Low-poly Female C",
-    "scene": "res://assets/characters/kenney_female/character-female-c.glb",
-    "description": "Kenney Mini Characters model C with its own rig and 32 embedded motions.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Low-poly Female D",
-    "scene": "res://assets/characters/kenney_female/character-female-d.glb",
-    "description": "Kenney Mini Characters model D with its own rig and 32 embedded motions.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Low-poly Female E",
-    "scene": "res://assets/characters/kenney_female/character-female-e.glb",
-    "description": "Kenney Mini Characters model E with its own rig and 32 embedded motions.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Low-poly Female F",
-    "scene": "res://assets/characters/kenney_female/character-female-f.glb",
-    "description": "Kenney Mini Characters model F with its own rig and 32 embedded motions.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Neutral Woman",
-    "scene": "res://assets/characters/quaternius_animated_women/woman.glb",
-    "description": "Quaternius's neutral human model with a 31-joint rig and 11 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman Casual",
-    "scene": "res://assets/characters/quaternius_animated_women/woman_casual.glb",
-    "description": "A casual, understated human model with a 31-joint rig and 11 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman in Dress",
-    "scene": "res://assets/characters/quaternius_animated_women/woman_in_dress.glb",
-    "description": "A simply dressed human model with a 31-joint rig and 11 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman in Tank Top",
-    "scene": "res://assets/characters/quaternius_animated_women/woman_in_tank_top.glb",
-    "description": "A neutral athletic look with a 31-joint rig and 11 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman Adventurer",
-    "scene": "res://assets/characters/quaternius_modular_women/adventurer.glb",
-    "description": "Quaternius humanoid character with a 62-joint rig and 24 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman in a Hood",
-    "scene": "res://assets/characters/quaternius_modular_women/hooded_adventurer.glb",
-    "description": "Quaternius hooded human character with a 62-joint rig and 24 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Animated Woman A",
-    "scene": "res://assets/characters/quaternius_modular_women/animated_woman_a.glb",
-    "description": "Quaternius neutral female character with a 62-joint rig and 24 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Animated Woman B",
-    "scene": "res://assets/characters/quaternius_modular_women/animated_woman_b.glb",
-    "description": "Quaternius neutral female character with a 62-joint rig and 24 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman Worker",
-    "scene": "res://assets/characters/quaternius_modular_women/worker.glb",
-    "description": "Quaternius worker character with a 62-joint rig and 24 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Woman in a Suit",
-    "scene": "res://assets/characters/quaternius_modular_women/suit.glb",
-    "description": "Quaternius professional outfit with a 62-joint rig and 24 embedded animations.",
-    "scale": 0.8,
-    "embedded_animations": true
-  },
-  {
-    "name": "Mathilda — Snowlight",
-    "scene": "res://assets/characters/variants/snowlight.tscn",
-    "description": "Silver hair, glacier-blue eyes, blue cloth and silver-toned ornament.",
-    "scale": 0.8
-  },
-  {
-    "name": "Mathilda — Ember",
-    "scene": "res://assets/characters/variants/ember.tscn",
-    "description": "Auburn hair, amber eyes, burgundy cloth and the original gold ornament.",
-    "scale": 0.8
-  },
-  {
-    "name": "Mathilda — Midnight",
-    "scene": "res://assets/characters/variants/midnight.tscn",
-    "description": "Dark hair, violet eyes, deep teal cloth and the original gold ornament.",
-    "scale": 0.8
-  },
-  {
-    "name": "Mathilda — Frost Bob",
-    "scene": "res://assets/characters/hairstyles/cropped_bob.tscn",
-    "description": "A cropped silver bob with a short jaw-length silhouette and glacier-blue eyes.",
-    "scale": 0.8
-  },
-  {
-    "name": "Mathilda — Ember Crown",
-    "scene": "res://assets/characters/hairstyles/high_bun.tscn",
-    "description": "Swept-up auburn hair crowned with a woven high bun, amber eyes and burgundy cloth.",
-    "scale": 0.8
-  },
-  {
-    "name": "Mathilda — Midnight Braids",
-    "scene": "res://assets/characters/hairstyles/twin_braids.tscn",
-    "description": "Twin dark braids with gold bindings, violet eyes and deep teal cloth.",
-    "scale": 0.8
-  },
-  {
-    "name": "Character studio",
-    "description": "Original costume with independent hair and colour controls.",
-    "scale": 0.8,
-    "configuration": {
-      "name": "Mathilda",
-      "hair": "bob",
-      "outfit": "elf",
-      "hair_color": "69402d",
-      "eye_color": "5b9fae",
-      "cloth_color": "344e66",
-      "trim_color": "bca57b"
-    }
-  }
+	{
+		"name": "Mathilda — base elf",
+		"scene": "res://assets/characters/styloo_elf/elf.glb",
+		"description": "Styloo's prepared CC0 elf. The starting point for appearance and outfit variants.",
+		"scale": 0.8,
+		"yaw_degrees": 0.0,
+		"collection": "Styloo · Elf"
+	},
+	{
+		"name": "Styloo Mage",
+		"scene": "res://assets/characters/styloo_elf/presentation/mage.glb",
+		"description": "Male-coded CC0 mage from Styloo's character set, using the compatible Styloo skeleton.",
+		"scale": 0.8,
+		"yaw_degrees": 0.0,
+		"collection": "Styloo · Mage, Dwarf and Knight"
+	},
+	{
+		"name": "Styloo Dwarf",
+		"scene": "res://assets/characters/styloo_elf/presentation/nain.glb",
+		"description": "Male-coded CC0 dwarf adventurer from Styloo's character set, using the compatible Styloo skeleton.",
+		"scale": 0.8,
+		"yaw_degrees": 0.0,
+		"collection": "Styloo · Mage, Dwarf and Knight"
+	},
+	{
+		"name": "Styloo Knight",
+		"scene": "res://assets/characters/styloo_elf/presentation/knight.glb",
+		"description": "Male-coded CC0 knight from Styloo's character set, using the compatible Styloo skeleton.",
+		"scale": 0.8,
+		"yaw_degrees": 0.0,
+		"collection": "Styloo · Mage, Dwarf and Knight"
+	},
+	{
+		"name": "Low-poly Female A",
+		"scene": "res://assets/characters/kenney_female/character-female-a.glb",
+		"description": "Kenney Mini Characters model A with its own rig and 32 embedded motions.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Kenney · Mini Characters"
+	},
+	{
+		"name": "Low-poly Female B",
+		"scene": "res://assets/characters/kenney_female/character-female-b.glb",
+		"description": "Kenney Mini Characters model B with its own rig and 32 embedded motions.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Kenney · Mini Characters"
+	},
+	{
+		"name": "Low-poly Female C",
+		"scene": "res://assets/characters/kenney_female/character-female-c.glb",
+		"description": "Kenney Mini Characters model C with its own rig and 32 embedded motions.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Kenney · Mini Characters"
+	},
+	{
+		"name": "Low-poly Female D",
+		"scene": "res://assets/characters/kenney_female/character-female-d.glb",
+		"description": "Kenney Mini Characters model D with its own rig and 32 embedded motions.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Kenney · Mini Characters"
+	},
+	{
+		"name": "Low-poly Female E",
+		"scene": "res://assets/characters/kenney_female/character-female-e.glb",
+		"description": "Kenney Mini Characters model E with its own rig and 32 embedded motions.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Kenney · Mini Characters"
+	},
+	{
+		"name": "Low-poly Female F",
+		"scene": "res://assets/characters/kenney_female/character-female-f.glb",
+		"description": "Kenney Mini Characters model F with its own rig and 32 embedded motions.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Kenney · Mini Characters"
+	},
+	{
+		"name": "Neutral Woman",
+		"scene": "res://assets/characters/quaternius_animated_women/woman.glb",
+		"description": "Quaternius's neutral human model with a 31-joint rig and 11 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Animated Women"
+	},
+	{
+		"name": "Woman Casual",
+		"scene": "res://assets/characters/quaternius_animated_women/woman_casual.glb",
+		"description": "A casual, understated human model with a 31-joint rig and 11 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Animated Women"
+	},
+	{
+		"name": "Woman in Dress",
+		"scene": "res://assets/characters/quaternius_animated_women/woman_in_dress.glb",
+		"description": "A simply dressed human model with a 31-joint rig and 11 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Animated Women"
+	},
+	{
+		"name": "Woman in Tank Top",
+		"scene": "res://assets/characters/quaternius_animated_women/woman_in_tank_top.glb",
+		"description": "A neutral athletic look with a 31-joint rig and 11 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Animated Women"
+	},
+	{
+		"name": "Woman Adventurer",
+		"scene": "res://assets/characters/quaternius_modular_women/adventurer.glb",
+		"description": "Quaternius humanoid character with a 62-joint rig and 24 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Modular Women"
+	},
+	{
+		"name": "Woman in a Hood",
+		"scene": "res://assets/characters/quaternius_modular_women/hooded_adventurer.glb",
+		"description": "Quaternius hooded human character with a 62-joint rig and 24 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Modular Women"
+	},
+	{
+		"name": "Animated Woman A",
+		"scene": "res://assets/characters/quaternius_modular_women/animated_woman_a.glb",
+		"description": "Quaternius neutral female character with a 62-joint rig and 24 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Modular Women"
+	},
+	{
+		"name": "Animated Woman B",
+		"scene": "res://assets/characters/quaternius_modular_women/animated_woman_b.glb",
+		"description": "Quaternius neutral female character with a 62-joint rig and 24 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Modular Women"
+	},
+	{
+		"name": "Woman Worker",
+		"scene": "res://assets/characters/quaternius_modular_women/worker.glb",
+		"description": "Quaternius worker character with a 62-joint rig and 24 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Modular Women"
+	},
+	{
+		"name": "Woman in a Suit",
+		"scene": "res://assets/characters/quaternius_modular_women/suit.glb",
+		"description": "Quaternius professional outfit with a 62-joint rig and 24 embedded animations.",
+		"scale": 0.8,
+		"embedded_animations": true,
+		"collection": "Quaternius · Modular Women"
+	},
+	{
+		"name": "Mathilda — Snowlight",
+		"scene": "res://assets/characters/variants/snowlight.tscn",
+		"description": "Silver hair, glacier-blue eyes, blue cloth and silver-toned ornament.",
+		"scale": 0.8,
+		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Mathilda — Ember",
+		"scene": "res://assets/characters/variants/ember.tscn",
+		"description": "Auburn hair, amber eyes, burgundy cloth and the original gold ornament.",
+		"scale": 0.8,
+		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Mathilda — Midnight",
+		"scene": "res://assets/characters/variants/midnight.tscn",
+		"description": "Dark hair, violet eyes, deep teal cloth and the original gold ornament.",
+		"scale": 0.8,
+		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Mathilda — Frost Bob",
+		"scene": "res://assets/characters/hairstyles/cropped_bob.tscn",
+		"description": "A cropped silver bob with a short jaw-length silhouette and glacier-blue eyes.",
+		"scale": 0.8,
+		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Mathilda — Ember Crown",
+		"scene": "res://assets/characters/hairstyles/high_bun.tscn",
+		"description": "Swept-up auburn hair crowned with a woven high bun, amber eyes and burgundy cloth.",
+		"scale": 0.8,
+		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Mathilda — Midnight Braids",
+		"scene": "res://assets/characters/hairstyles/twin_braids.tscn",
+		"description": "Twin dark braids with gold bindings, violet eyes and deep teal cloth.",
+		"scale": 0.8,
+		"collection": "Character Studio · Variants"
+	},
+	{
+		"name": "Character studio",
+		"description": "Original costume with independent hair and colour controls.",
+		"scale": 0.8,
+		"configuration": {
+			"name": "Mathilda",
+			"hair": "bob",
+			"outfit": "elf",
+			"hair_color": "69402d",
+			"eye_color": "5b9fae",
+			"cloth_color": "344e66",
+			"trim_color": "bca57b"
+		},
+		"collection": "Character Studio · Variants"
+	}
 ]
