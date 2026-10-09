@@ -55,6 +55,25 @@ Treat dream captions as perceptions, not objective exposition. Avoid naming eith
 
 ## Image and sound direction
 
+### Dreamscape unrealism — major visual subtask
+
+The dream follows a rule of **local truth and global impossibility**. Any single patch of snow, doorway, path segment or cluster of trees should look physically plausible when viewed nearby. Contradictions emerge only when the player relates two or more places: a route occupies more distance than the landscape can contain, a familiar light remains visible from the wrong side of a hill, or a path bends back above the ground without an obvious transition. The world is malfunctioning coherently rather than collapsing into surreal clutter.
+
+Use a small anomaly budget: one persistent spatial contradiction per composition and no more than one short optical accent at the same time. Preserve ordinary snow, trees and architecture around each anomaly so the eye has a stable reference. Prefer slow discovery through movement and parallax over sudden geometry changes. Nothing impossible may block the playable route, resemble a required objective, invert controls, change collision beneath the player or make the figure unreadable.
+
+The art-directable motif set is:
+
+| Motif | Local reading | Global contradiction | Reveal rule |
+| --- | --- | --- | --- |
+| **Folded path** | A narrow snow-covered continuation beside the clearing. | Its distant section rises, turns back over its own footprint and ends above a nearer point. | The grounded beginning reads first; elevation and reverse direction emerge through parallax after the lantern. |
+| **Wrong horizon light** | A warm house light seen through trees. | It remains visible from terrain that should fully occlude the house and appears at a subtly incorrect bearing. | Keep it small and steady; let player movement expose the bad relationship. |
+| **Repeated threshold** | An ordinary frame, pair of posts or tree gap. | The same proportions recur at incompatible scales and distances. | Limit repetition to two or three instances and avoid a decorative rhythm. |
+| **Layered clearing** | Snow, dark ice and a pale horizon form a readable basin. | Reflections or shadows imply a second orientation of the same space. | Reserve this for the boundary/answer beat; keep bodies and controls anchored to the real ground. |
+
+Art direction should expose semantic controls such as fold height, return distance, lateral offset, reveal amount, haze and repetition count. Full and lean graphics use the same geometry and composition; full graphics may add fog integration and restrained edge breakup. Screen-effects reduction removes optical doubling but never removes the spatial contradiction itself.
+
+The first implementation is the **folded path** owned by `scripts/world/dream_route.gd` with a dream-only material. It starts outside the walking line, conforms to terrain long enough to be mistaken for a second route, then lifts and doubles back without collision. Later passes may add the wrong horizon light and repeated threshold only after this motif is reviewed in motion; do not stack them merely to increase spectacle.
+
 Give the phase three strong compositions rather than a uniform filter:
 
 1. **Warm point / blue field.** The cabin window and lantern are the only amber anchors in a blue-black snowfield. Snow is fine and slow near the camera; the distant forest remains dark enough to silhouette the figure. Reuse the cabin, lantern, tree, ground and snow assets already in the project.
@@ -99,7 +118,7 @@ Each card is sized for an agent with this document and only its listed files. Th
 | --- | --- | --- | --- |
 | **D1 — Story and schema** | `assets/dialogue/dream.json`, `scripts/world/dream_story.gd`, `tools/studio/dream_story.py` | Keep v1 and four saved IDs. Author compact lines in route event order. If `lantern_variants` is needed, specify exact keys and validate them in both languages. | Runtime and editor can read/save the same complete story; old `dream.cfg` IDs resolve. Give D2 and D8 the field contract. |
 | **D2 — Story Studio** | `tools/studio/static/index.html`, `app.js`, `app.css`, `docs/STORY_STUDIO.md` | Consume D1's contract. Show stages, optional lantern variations, four answers, and separate chapter echoes in play order. Preserve dirty-state and stale-revision handling. | An author can preview order and save without losing fields. Do not edit runtime or story data. |
-| **D3 — Route and props** | `scripts/world/dream_route.gd`, `shaders/dream_clearing.gdshader` and dream-only resources | Expose `step`, `lantern`, `clearing` and answer anchors relative to `Game.trail`; `build(trail)` creates ground-conforming clearing geometry for D8. | Current slice establishes the route helper and ice surface. Surrounding composition, track placement and full/lean visual review remain. Do not edit normal `trail.gd`. |
+| **D3 — Route and props** | `scripts/world/dream_route.gd`, `shaders/dream_clearing.gdshader`, `shaders/dream_folded_path.gdshader` and dream-only resources | Expose `step`, `lantern`, `clearing` and answer anchors relative to `Game.trail`; `build(trail)` creates ground-conforming clearing geometry and the non-colliding folded path for D8. Keep fold height, return, width, lateral placement and reveal distances together as art-direction constants. | The ice surface and first impossible-space motif read on full and lean graphics. The fold looks like a plausible side path nearby and becomes globally impossible through movement; it never competes with the playable route. Wrong-horizon light, surrounding composition, track placement and visual review remain. Do not edit normal `trail.gd`. |
 | **D4 — Figure movement** | New `scripts/world/dream_figure.gd`; a figure-only animation resource if necessary | Expose `start(anchor)`, `move_to(anchor)`, `wait()`, `react(kind)` and `is_visible_to(camera)` or equivalent; D8 supplies anchors/state. Keep rig license. | Walking, stopping and gestures look human; no visible teleport or frozen walking; animation fallback permits completion. Do not edit `dream_experience.gd`. |
 | **D5 — Dream shading** | `shaders/dream_shadow.gdshader`, `shaders/dream_warp.gdshader`, new `scripts/world/dream_optics.gd` and any new dream-only shader | Expose named cues `doubt`, `footstep`, `lantern`, `merge`, `release` and `set_effects_level(value)`. Own the projected-shadow approach or documented simple fallback. | Each cue has full and reduced treatment; player, route and text stay readable; no off-screen focus artifact. No permanent player material replacement. |
 | **D6 — Dream sound** | New `scripts/audio/dream_soundscape.gd` and new dream-only audio resources if provenance permits | Expose the same cue vocabulary as D5, plus `set_lantern_sheltered(bool)` and `stop_all()`. D8 owns cue timing. | Footstep displacement, wind shelter and clearing silence work with game bus settings; no voice/music or figure-attached howl. |
@@ -116,6 +135,8 @@ Each card is sized for an agent with this document and only its listed files. Th
 - The figure remains female in posture and movement but cannot be identified by face, outfit or voice.
 - Stopping, following and returning are all supported; no timer or invisible trigger strands the player.
 - The dream contains at least three distinct visual compositions and two deliberate moments of near-silence. Its psychedelic cues grow from physical anomalies to one brief ego-boundary event, then the world settles. Disabling screen effects preserves the same meaning and route.
+- At least one spatial anomaly is plausible in a close view and impossible in a wider view. A player can discover the contradiction through ordinary movement and parallax; it does not depend on a caption, post effect, teleport or camera cut.
+- No composition contains more than one dominant geometric contradiction. Repetition, impossible scale and folded space remain sparse enough that the house light, figure and playable path retain their hierarchy.
 - All four memories produce a distinct closing response and an appropriate echo in both chapters, while the core story and endings remain ambiguous.
 - The dream remains playable on lean graphics and on both authored and generated routes, subtitle-only, and fully navigable with keyboard, mouse and controller. Large text, remapped interaction, muted sound, pause, exit and replay work without corrupting the saved choice.
 

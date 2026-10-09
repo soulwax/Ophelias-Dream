@@ -8,6 +8,11 @@ var _camera: Camera3D
 
 
 func _ready() -> void:
+	_run.call_deferred()
+
+
+func _run() -> void:
+	Game.lean_graphics = false
 	Game.dream_mode = true
 	Game.character_selected = true
 	var main := MAIN.instantiate()
@@ -27,8 +32,8 @@ func _ready() -> void:
 	_camera.far = 320.0
 	get_tree().root.add_child(_camera)
 	_camera.current = true
-	var route := main.find_child("DreamRoute", true, false) as DreamRoute
-	var experience := route.get_parent() if route else null
+	var route := main.find_child("DreamRoute", true, false) as Node3D
+	var experience: Node = route.get_parent() if route else null
 	if route == null or experience == null:
 		push_error("Dream route helpers were not built")
 		get_tree().quit(1)
@@ -61,40 +66,40 @@ func _aim(offset: float, from_across: float, from_ahead: float, height: float, l
 	_camera.look_at(target, Vector3.UP)
 
 
-func _capture_entry(route: DreamRoute, name: String) -> void:
+func _capture_entry(route: Node3D, name: String) -> void:
 	_place_player(1.0)
-	_aim(1.0, 9.0, -2.0, 3.0, 1.1)
+	_aim(1.0, 0.48, -3.35, 1.62, 1.25)
 	await _save_frame(name)
 
 
-func _capture_lantern(route: DreamRoute, experience: Node, name: String) -> void:
+func _capture_lantern(route: Node3D, experience: Node, name: String) -> void:
 	_place_player(33.0)
 	experience.set("_stage", 2)
 	experience.call("_set_figure_moving", false)
 	experience.set("_figure_offset", Game.trail.player_start_offset + 34.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 34.0)
-	_aim(33.0, 7.5, 1.5, 3.0, 0.5)
+	_aim(33.0, 0.48, -3.35, 1.62, 1.0)
 	await _save_frame(name)
 
 
-func _capture_clearing(route: DreamRoute, experience: Node, name: String) -> void:
+func _capture_clearing(route: Node3D, experience: Node, name: String) -> void:
 	_place_player(58.0)
 	experience.set("_stage", 4)
 	experience.call("_set_figure_moving", false)
 	experience.set("_figure_offset", Game.trail.player_start_offset + 61.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 61.0)
 	experience.call("_pulse_effect", 0.72, "merge")
-	_aim(DreamRoute.CLEARING_OFFSET, 9.0, 4.0, 6.0, 0.9)
+	_aim(58.0, 0.48, -3.35, 1.62, 1.1)
 	await _settle()
 	await _save_frame(name)
 
 
-func _capture_choice(route: DreamRoute, experience: Node, name: String) -> void:
+func _capture_choice(route: Node3D, experience: Node, name: String) -> void:
 	_place_player(65.0)
 	experience.set("_stage", 4)
 	experience.set("_figure_offset", Game.trail.player_start_offset + 67.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 67.0)
-	_aim(DreamRoute.CLEARING_OFFSET, 9.0, 4.0, 6.0, 0.9)
+	_aim(65.0, 0.48, -3.35, 1.62, 1.1)
 	experience.call("_finish_dream")
 	await _settle()
 	await _save_frame(name)

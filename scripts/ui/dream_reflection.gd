@@ -17,7 +17,7 @@ func _ready() -> void:
 		return
 	layer = 26
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var subtitle_size := Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)]
+	var subtitle_size: int = Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)]
 	_line = UiChrome.label(_reflection_text(), subtitle_size, Color("e4e0df"))
 	_line.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_line.offset_top = 92

@@ -7,7 +7,7 @@ const FIGURE_OFFSETS := [9.0, 20.0, 34.0, 50.0, 67.0]
 const STORY := preload("res://scripts/world/dream_story.gd")
 const DREAM_ROUTE_SCRIPT := preload("res://scripts/world/dream_route.gd")
 
-var _dream_route: DreamRoute
+var _dream_route: Node3D
 var _figure: Node3D
 var _animation: AnimationPlayer
 var _walk_animation := ""
@@ -61,7 +61,8 @@ func _start() -> void:
 		return
 	# Begin outside the cabin, where the player can look back at the lit house
 	# before the figure draws them onto the path.
-	Game.player.global_position = _dream_route.world_position("step") + Vector3.UP * 0.15
+	var step_position: Vector3 = _dream_route.call("world_position", "step")
+	Game.player.global_position = step_position + Vector3.UP * 0.15
 	Game.player.velocity = Vector3.ZERO
 	Game.player.reset_physics_interpolation()
 	_figure_offset = Game.trail.player_start_offset + FIGURE_OFFSETS[0]
@@ -78,10 +79,10 @@ func _start() -> void:
 func _build_dream_route() -> void:
 	if Game.trail == null:
 		return
-	_dream_route = DREAM_ROUTE_SCRIPT.new() as DreamRoute
+	_dream_route = DREAM_ROUTE_SCRIPT.new() as Node3D
 	_dream_route.name = "DreamRoute"
 	add_child(_dream_route)
-	_dream_route.build(Game.trail)
+	_dream_route.call("build", Game.trail)
 
 
 func _build_figure() -> void:
@@ -179,8 +180,10 @@ func _build_caption() -> void:
 	var canvas := CanvasLayer.new()
 	canvas.layer = 24
 	add_child(canvas)
-	var subtitle_size := Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)]
+	var subtitle_size: int = Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)]
 	_caption = UiChrome.label("", subtitle_size, Color("e4e0df"))
+	_caption.add_theme_color_override("font_outline_color", Color(0.015, 0.022, 0.035, 0.96))
+	_caption.add_theme_constant_override("outline_size", 3)
 	_caption.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_caption.offset_top = -118
 	_caption.offset_bottom = -54
@@ -188,6 +191,8 @@ func _build_caption() -> void:
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	canvas.add_child(_caption)
 	_lantern_prompt = UiChrome.label("", 15, Color("e3c99c"))
+	_lantern_prompt.add_theme_color_override("font_outline_color", Color(0.015, 0.022, 0.035, 0.96))
+	_lantern_prompt.add_theme_constant_override("outline_size", 2)
 	_lantern_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_lantern_prompt.offset_top = -206
 	_lantern_prompt.offset_bottom = -174
@@ -200,7 +205,7 @@ func _build_caption() -> void:
 
 
 func _layout_caption() -> void:
-	var viewport_width := get_viewport_rect().size.x
+	var viewport_width: float = get_viewport().get_visible_rect().size.x
 	var caption_width := minf(1080.0, maxf(240.0, viewport_width - 32.0))
 	if _caption:
 		_caption.offset_left = -caption_width * 0.5
@@ -280,7 +285,7 @@ func _update_figure(delta: float) -> void:
 		return
 	var player_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
 	var goal_index := mini(_stage, FIGURE_OFFSETS.size() - 1)
-	var authored_goal := Game.trail.player_start_offset + FIGURE_OFFSETS[goal_index]
+	var authored_goal: float = Game.trail.player_start_offset + FIGURE_OFFSETS[goal_index]
 	var soft_limit := Game.trail.player_start_offset + maxf(player_progress + 6.0, FIGURE_OFFSETS[0])
 	var target_offset := maxf(_figure_offset, minf(authored_goal, soft_limit))
 	var moving := target_offset - _figure_offset > 0.08
@@ -355,8 +360,8 @@ func _build_lantern() -> void:
 		return
 	_lantern = Node3D.new()
 	_lantern.name = "DreamLantern"
-	_lantern.global_position = _dream_route.world_position("lantern")
 	add_child(_lantern)
+	_lantern.global_position = _dream_route.call("world_position", "lantern")
 	var iron := StandardMaterial3D.new()
 	iron.albedo_color = Color("171b24")
 	iron.metallic = 0.72
@@ -514,6 +519,7 @@ func _build_choices() -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size.y = 40.0
 		button.focus_mode = Control.FOCUS_ALL
+		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		button.text = str(choice.get("label", ""))
 		button.add_theme_font_size_override("font_size", 16)
 		button.mouse_entered.connect(_set_choice_index.bind(index))
@@ -533,8 +539,8 @@ func _build_choices() -> void:
 func _layout_choices() -> void:
 	if _choice_panel == null or not is_instance_valid(_choice_panel):
 		return
-	var viewport_size := get_viewport_rect().size
-	var viewport_width := viewport_size.x
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var viewport_width: float = viewport_size.x
 	var panel_width := minf(780.0, maxf(320.0, viewport_width - 32.0))
 	_choice_panel.offset_left = -panel_width * 0.5
 	_choice_panel.offset_right = panel_width * 0.5
