@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.11.0 — 2026-10-12
+
+- Tie dream journal notes to their scene and restore useful context after loading.
+- Keep journal, reflections, and dialogue choices legible across viewport sizes and input devices.
+
+雪の道\
+言葉をたどり\
+灯はそこに
+
 ## 0.2.10.0 — 2026-10-11
 
 At the sill, the little house turns round;

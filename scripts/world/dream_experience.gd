@@ -98,6 +98,7 @@ var _conversation_response_ready := false
 var _conversation_response_timer := 0.0
 var _choice_index := 0
 var _choice_time := 0.0
+var _choice_axis_latched := false
 var _answer_open := false
 var _conversation_intro_waiting := false
 var _conversation_round := 0
@@ -273,6 +274,9 @@ func restore_after_load(state: Dictionary) -> void:
 	if _figure_turn_active:
 		var turn_distance := absf(wrapf(_figure_turn_target_yaw - _figure.rotation.y, -PI, PI))
 		_turn_figure_to_yaw(_figure_turn_target_yaw, maxf(turn_distance / 1.4, 0.18))
+	if _dream_journal_hint:
+		_dream_journal_hint.text = _dream_return_context()
+		_dream_journal_hint_time = 8.0
 
 
 func _build_dream_route() -> void:
@@ -506,10 +510,6 @@ func _build_dream_journal() -> void:
 	_dream_journal_hint_panel = PanelContainer.new()
 	_dream_journal_hint_panel.name = "DreamClueProgress"
 	_dream_journal_hint_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_dream_journal_hint_panel.offset_left = 24.0
-	_dream_journal_hint_panel.offset_top = -102.0
-	_dream_journal_hint_panel.offset_right = 480.0
-	_dream_journal_hint_panel.offset_bottom = -60.0
 	_dream_journal_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var hint_style := StyleBoxFlat.new()
 	hint_style.bg_color = Color(0.012, 0.018, 0.03, 0.78)
@@ -526,6 +526,7 @@ func _build_dream_journal() -> void:
 	_dream_journal_hint = UiChrome.label("", 17, Color("e2d3b6"))
 	_dream_journal_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dream_journal_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_dream_journal_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_dream_journal_hint_panel.add_child(_dream_journal_hint)
 	_dream_journal_scrim = ColorRect.new()
 	_dream_journal_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -535,10 +536,6 @@ func _build_dream_journal() -> void:
 	root.add_child(_dream_journal_scrim)
 	_dream_journal_panel = PanelContainer.new()
 	_dream_journal_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_dream_journal_panel.offset_left = -430.0
-	_dream_journal_panel.offset_top = -310.0
-	_dream_journal_panel.offset_right = 430.0
-	_dream_journal_panel.offset_bottom = 310.0
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.025, 0.03, 0.045, 0.97)
 	panel_style.border_color = Color("9c8a70", 0.54)
@@ -554,6 +551,8 @@ func _build_dream_journal() -> void:
 	var title := UiChrome.label("DREAM JOURNAL", 27, Color("d5b779"))
 	column.add_child(title)
 	var subtitle := UiChrome.label("Words kept from the path. %s toggles notes; %s closes." % [Game.settings.key_label("interact"), Game.settings.key_label("journal")], 15, Color("9e9aa0"))
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(subtitle)
 	var divider := HSeparator.new()
 	column.add_child(divider)
@@ -563,14 +562,46 @@ func _build_dream_journal() -> void:
 	column.add_child(_dream_journal_guidance_button)
 	_dream_journal_scroll = ScrollContainer.new()
 	_dream_journal_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_dream_journal_scroll.custom_minimum_size = Vector2(0.0, 440.0)
 	column.add_child(_dream_journal_scroll)
 	_dream_journal_rows = VBoxContainer.new()
 	_dream_journal_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_dream_journal_rows.add_theme_constant_override("separation", 14)
 	_dream_journal_scroll.add_child(_dream_journal_rows)
 	var foot := UiChrome.label("The field pages are gone here. Mathilda's words make the record.", 13, Color("7e8791"))
+	foot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	foot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(foot)
+	get_viewport().size_changed.connect(_layout_dream_journal)
+	_layout_dream_journal()
+
+
+func _layout_dream_journal() -> void:
+	if _dream_journal_panel == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var panel_width := minf(860.0, maxf(1.0, viewport_size.x - 32.0))
+	var panel_height := minf(620.0, maxf(1.0, viewport_size.y - 32.0))
+	_dream_journal_panel.offset_left = -panel_width * 0.5
+	_dream_journal_panel.offset_right = panel_width * 0.5
+	_dream_journal_panel.offset_top = -panel_height * 0.5
+	_dream_journal_panel.offset_bottom = panel_height * 0.5
+	var compact := viewport_size.x < 720.0 or viewport_size.y < 560.0
+	var margin := 14.0 if compact else 28.0
+	var panel_style := _dream_journal_panel.get_theme_stylebox("panel") as StyleBoxFlat
+	if panel_style:
+		panel_style.set_content_margin_all(margin)
+	var column := _dream_journal_panel.get_child(0) as VBoxContainer
+	if column:
+		column.add_theme_constant_override("separation", 8 if compact else 12)
+	if _dream_journal_rows:
+		_dream_journal_rows.add_theme_constant_override("separation", 10 if compact else 14)
+	if _dream_journal_scroll:
+		_dream_journal_scroll.custom_minimum_size.y = maxf(56.0 if compact else 80.0, panel_height - (204.0 if compact else 220.0))
+	var toast_width := minf(600.0, maxf(1.0, viewport_size.x - 32.0))
+	_dream_journal_hint_panel.offset_left = 16.0
+	_dream_journal_hint_panel.offset_right = 16.0 + toast_width
+	_dream_journal_hint_panel.offset_top = -136.0
+	_dream_journal_hint_panel.offset_bottom = -24.0
 
 
 func _record_dream_entry(raw_entry: Variant) -> void:
@@ -582,6 +613,8 @@ func _record_dream_entry(raw_entry: Variant) -> void:
 		return
 	if str(entry.get("title", "")).strip_edges().is_empty() or str(entry.get("text", "")).strip_edges().is_empty():
 		return
+	if str(entry.get("place", "")).strip_edges().is_empty():
+		entry["place"] = _dream_journal_place()
 	_dream_journal_seen[identifier] = true
 	_dream_journal_entries.append(entry)
 	_dream_journal_available = true
@@ -590,15 +623,64 @@ func _record_dream_entry(raw_entry: Variant) -> void:
 	_refresh_dream_journal()
 
 
+func _dream_journal_place() -> String:
+	if _waking_card:
+		return "AFTER THE WARNING"
+	if Game.trail and Game.player:
+		var progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
+		if progress >= 64.0:
+			return "THE CLEARING"
+		if progress >= 46.0:
+			return "THE WARM WINDOW"
+		if progress >= 31.0:
+			return "THE RED THREAD"
+		if progress >= 15.0:
+			return "THE THREE SISTERS"
+	return "THE THRESHOLD"
+
+
 func _refresh_dream_journal_hint() -> void:
-	_dream_journal_hint.text = "%s  ·  DREAM JOURNAL UPDATED" % Game.settings.key_label("journal")
+	var entry: Dictionary = _dream_journal_entries.back() if not _dream_journal_entries.is_empty() else {}
+	var title := str(entry.get("title", "AN OBSERVATION")).to_upper()
+	var place := str(entry.get("place", "THE WINTER PATH"))
+	_dream_journal_hint.text = "%s  ·  JOURNAL UPDATED\n%s  /  %s" % [Game.settings.key_label("journal"), place, title]
+
+
+func _dream_return_context() -> String:
+	var last_kept := "nothing written yet"
+	if not _dream_journal_entries.is_empty():
+		last_kept = str(_dream_journal_entries.back().get("title", "an observation"))
+	var situation := "near the cabin threshold"
+	if _waking_card:
+		situation = "at the waking card"
+	elif _dream_journal_open:
+		situation = "with the journal open"
+	elif _conversation_waiting:
+		if _conversation_response_pending:
+			situation = "your answer is still being heard"
+		elif _conversation_response_ready:
+			situation = "Mathilda has answered; the next turn is yours"
+		else:
+			situation = "the conversation is paused between turns"
+	elif _conversation_intro_waiting:
+		situation = "the clearing conversation is waiting for you"
+	elif _answer_open:
+		situation = "choosing how to answer Mathilda"
+	elif _seen_story_cues.has("window"):
+		situation = "beside the warm window"
+	elif _seen_story_cues.has("thread"):
+		situation = "beneath the lighthouse beam"
+	elif _seen_story_cues.has("sisters"):
+		situation = "past the cut trees"
+	return "RETURNED TO THE DREAM\nLAST KEPT: %s  ·  NOW: %s" % [last_kept, situation]
 
 
 func _update_dream_journal_hint(delta: float) -> void:
 	if _dream_journal_hint_panel == null:
 		return
 	var dialogue_visible := (_speech_sprite and _speech_sprite.visible) or (_choice_panel and _choice_panel.visible)
-	var can_show := Game.phase == Game.Phase.DREAM and not _dream_journal_open and not dialogue_visible
+	var toast_enabled := Game.settings == null or Game.settings.show_journal_toast
+	var can_show := toast_enabled and Game.phase == Game.Phase.DREAM and not _dream_journal_open and not dialogue_visible
 	_dream_journal_hint_panel.visible = can_show and _dream_journal_hint_time > 0.0
 	if can_show:
 		_dream_journal_hint_time = maxf(_dream_journal_hint_time - delta, 0.0)
@@ -613,6 +695,9 @@ func _refresh_dream_journal() -> void:
 		_dream_journal_rows.remove_child(child)
 		child.queue_free()
 	for entry in _dream_journal_entries:
+		var place := str(entry.get("place", "THE WINTER PATH"))
+		var source := UiChrome.label("KEPT AT  ·  " + place, 12, Color("8e969f"))
+		_dream_journal_rows.add_child(source)
 		var title := UiChrome.label(str(entry.get("title", "")), 19, Color("c8ad79"))
 		_dream_journal_rows.add_child(title)
 		var text := UiChrome.label(str(entry.get("text", "")), 16, Color("dedbd7"))
@@ -1118,7 +1203,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if _conversation_waiting:
-			if event.is_action_pressed("interact"):
+			if _is_dialogue_confirm(event):
 				if _conversation_response_pending:
 					_reveal_conversation_response()
 				elif _conversation_response_ready:
@@ -1139,13 +1224,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if not _answer_open:
 			return
-		if event.is_action_pressed("ui_up"):
+		if event is InputEventJoypadMotion and (event as InputEventJoypadMotion).axis == JOY_AXIS_LEFT_Y:
+			var stick_y := (event as InputEventJoypadMotion).axis_value
+			if absf(stick_y) < 0.28:
+				_choice_axis_latched = false
+			elif absf(stick_y) >= 0.68 and not _choice_axis_latched:
+				_choice_axis_latched = true
+				_focus_choice(1 if stick_y > 0.0 else -1)
+				get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("ui_up"):
 			_focus_choice(-1)
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("ui_down"):
 			_focus_choice(1)
 			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
+		elif _is_dialogue_confirm(event):
 			_choose_focused_memory()
 			get_viewport().set_input_as_handled()
 		return
@@ -1155,13 +1248,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_shelter_lantern()
 		get_viewport().set_input_as_handled()
 		return
-	if _story_line_active and Game.phase == Game.Phase.DREAM and event.is_action_pressed("interact"):
+	if _story_line_active and Game.phase == Game.Phase.DREAM and _is_dialogue_confirm(event):
 		if _caption_time >= 2.0:
 			_caption_time = _story_line_hold
 			_speech_sprite.modulate.a = 0.0
 		get_viewport().set_input_as_handled()
 		return
-	if _finished and _memory_chosen and Game.phase == Game.Phase.DREAM and event.is_action_pressed("interact"):
+	if _finished and _memory_chosen and Game.phase == Game.Phase.DREAM and _is_dialogue_confirm(event):
 		if Game.dream_mode:
 			_show_standalone_waking()
 		elif not _ending_warning_shown:
@@ -1171,6 +1264,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_wake()
 		get_viewport().set_input_as_handled()
+
+
+func _is_dialogue_confirm(event: InputEvent) -> bool:
+	return event.is_action_pressed("interact") or event.is_action_pressed("ui_accept")
 
 
 func _update_figure(delta: float) -> void:
@@ -1871,10 +1968,12 @@ func _build_choice_panel() -> void:
 	_dream_ui_root.add_child(_choice_panel)
 	_choice_title = _new_choice_label(19)
 	_choice_title.modulate = Color("d5b779")
+	_choice_title.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_choice_panel.add_child(_choice_title)
 	_choice_hint = _new_choice_label(16)
 	_choice_hint.modulate = Color("b6b0a6")
 	_choice_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_choice_hint.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_choice_panel.add_child(_choice_hint)
 
 
@@ -1898,8 +1997,8 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 	_choice_buttons.clear()
 	_choice_rows.clear()
 	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
-	var confirm_hint := "%s / A" % Game.settings.key_label("interact")
-	_choice_hint.text = "%s TO RETURN   ·   ESC TO PAUSE" % confirm_hint if _waking_card else "↑ / ↓ OR STICK TO CHOOSE   ·   %s TO SPEAK   ·   ESC TO PAUSE" % confirm_hint
+	var confirm_hint := "%s / X / A" % Game.settings.key_label("interact")
+	_choice_hint.text = "%s TO RETURN   ·   ESC TO PAUSE" % confirm_hint if _waking_card else "↑ / ↓ OR LEFT STICK TO CHOOSE   ·   %s TO SPEAK   ·   ESC TO PAUSE" % confirm_hint
 	_set_caption_action("Return" if _waking_card else "Say")
 	for index in range(labels.size()):
 		var row := PanelContainer.new()
@@ -1949,12 +2048,21 @@ func _update_choice_positions() -> void:
 		row_height = maxf(row_height, float(line_count) * 26.0 + 16.0)
 	var row_spacing := row_height + 8.0
 	var row_half_height := float(_choice_buttons.size()) * row_spacing * 0.5
-	var center_margin := minf(row_half_height + 72.0, viewport_size.y * 0.44)
-	var center_y := clampf(viewport_size.y * 0.55, center_margin, viewport_size.y - center_margin)
 	label_width = minf(label_width, viewport_size.x * 0.42)
-	_choice_title.size = Vector2(label_width, 30.0)
-	_choice_title.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - 66.0)
-	_choice_hint.size = Vector2(label_width, 44.0)
+	var title_characters_per_line := maxi(int((label_width - 16.0) / 11.5), 12)
+	var title_lines := maxi(1, ceili(float(_choice_title.text.length()) / float(title_characters_per_line)))
+	var title_height := maxf(30.0, float(title_lines) * 25.0)
+	var hint_characters_per_line := maxi(int((label_width - 12.0) / 9.5), 12)
+	var hint_lines := 0
+	for hint_part in _choice_hint.text.split("\n", false):
+		hint_lines += maxi(1, ceili(float(hint_part.length()) / float(hint_characters_per_line)))
+	var hint_height := maxf(24.0, float(hint_lines) * 22.0)
+	var center_margin := maxf(row_half_height + title_height + 20.0, row_half_height + hint_height + 24.0)
+	center_margin = minf(center_margin, viewport_size.y * 0.47)
+	var center_y := clampf(viewport_size.y * 0.55, center_margin, viewport_size.y - center_margin)
+	_choice_title.size = Vector2(label_width, title_height)
+	_choice_title.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - title_height - 12.0)
+	_choice_hint.size = Vector2(label_width, hint_height)
 	_choice_hint.position = Vector2(center_x - label_width * 0.5, center_y + row_half_height + 16.0)
 	for index in _choice_buttons.size():
 		var button := _choice_buttons[index]
