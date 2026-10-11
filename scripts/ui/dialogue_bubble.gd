@@ -1,17 +1,19 @@
 class_name DialogueBubble
 extends Node3D
 
-## A transparent UI texture on a real 3D plane. Topics use stable IDs;
-## callbacks may open the next turn after the previous one has closed.
+## A screen-space conversation panel anchored to a world character. Topics
+## use stable IDs; callbacks may open the next turn after the previous closes.
 signal response_selected(id: String)
 signal cancelled
 
 var _viewport: SubViewport
-var _surface: MeshInstance3D
+var _surface_layer: CanvasLayer
+var _surface: TextureRect
 var _panel: PanelContainer
 var _speaker: Label
 var _line: Label
 var _topics: VBoxContainer
+var _action_row: HBoxContainer
 var _hint: Label
 var _buttons: Array[Button] = []
 var _responses: Array[Dictionary] = []
@@ -53,23 +55,22 @@ func _ready() -> void:
 	_topics = VBoxContainer.new()
 	_topics.add_theme_constant_override("separation", 4)
 	box.add_child(_topics)
+	_action_row = UiChrome.key_row(Game.settings.key_label("interact"), "Respond")
+	box.add_child(_action_row)
 	_hint = UiChrome.term_label("", 12, UiChrome.ASH)
 	box.add_child(_hint)
-	_surface = MeshInstance3D.new()
-	var quad := QuadMesh.new()
-	quad.size = Vector2(1.5, 1.0)
-	_surface.mesh = quad
-	_surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.no_depth_test = true
-	material.albedo_texture = _viewport.get_texture()
-	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
-	_surface.material_override = material
-	add_child(_surface)
+	_surface_layer = CanvasLayer.new()
+	_surface_layer.name = "DialogueBubbleOverlay"
+	_surface_layer.layer = 22
+	add_child(_surface_layer)
+	_surface = TextureRect.new()
+	_surface.name = "DialogueBubbleSurface"
+	_surface.texture = _viewport.get_texture()
+	_surface.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_surface.stretch_mode = TextureRect.STRETCH_SCALE
+	_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_surface.hide()
+	_surface_layer.add_child(_surface)
 	Game.phase_changed.connect(_on_phase)
 
 
@@ -124,8 +125,10 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 	_selected = 0
 	while _buttons[_selected].disabled:
 		_selected += 1
-	_hint.text = "↑ / ↓  Choose   ·   %s / Enter  Respond   ·   Esc  Leave" % Game.settings.key_label("interact")
+	UiChrome.set_key(_action_row, Game.settings.key_label("interact"))
+	_hint.text = "↑ / ↓  Choose   ·   Esc  Leave"
 	_topics.show()
+	_action_row.show()
 	_hint.show()
 	_panel.size.y = 0
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -239,19 +242,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _forward_pointer(event: InputEventMouse) -> void:
-	var camera := get_viewport().get_camera_3d()
-	if camera == null:
+	if not _surface.visible or _surface.size.x <= 0.0 or _surface.size.y <= 0.0:
 		return
-	var origin := camera.project_ray_origin(event.position)
-	var direction := camera.project_ray_normal(event.position)
-	var normal := _surface.global_basis.z
-	var denominator := normal.dot(direction)
-	if absf(denominator) < 0.0001:
-		return
-	var distance := normal.dot(_surface.global_position - origin) / denominator
-	var point := _surface.to_local(origin + direction * distance)
-	var uv := Vector2(point.x / 1.5 + 0.5, 0.5 - point.y)
-	var inside := distance > 0 and Rect2(Vector2.ZERO, Vector2.ONE).has_point(uv)
+	var uv := (_surface.get_global_transform_with_canvas().affine_inverse() * event.position) / _surface.size
+	var inside := Rect2(Vector2.ZERO, Vector2.ONE).has_point(uv)
 	if inside and not _pointer_inside:
 		_viewport.notify_mouse_entered()
 	elif not inside and _pointer_inside:
@@ -278,6 +272,7 @@ func _process(delta: float) -> void:
 	var shown := _active or (spoken and Game.phase == Game.Phase.PLAYING)
 	if not _active:
 		_topics.hide()
+		_action_row.hide()
 		_hint.hide()
 		_speaker.text = Game.murmur_speaker.to_upper() if Game.murmur_speaker != "" else ("MATHILDA" if Game.mathilda_pov else "OPHELIA")
 		if _last_line != Game.murmur:
@@ -291,14 +286,18 @@ func _process(delta: float) -> void:
 	var screen := get_viewport().get_visible_rect().size
 	var anchor := screen * Vector2(0.62, 0.63)
 	if is_instance_valid(_target):
-		if camera.is_position_behind(_target.global_position):
-			close()
+		var target_position := _target.global_position + Vector3.UP * 1.7
+		if camera.is_position_behind(target_position):
+			var to_target := target_position - camera.global_position
+			to_target.y = 0.0
+			var camera_right := camera.global_basis.x
+			camera_right.y = 0.0
+			var target_is_left := to_target.dot(camera_right.normalized()) < 0.0
+			anchor = Vector2(screen.x * (0.28 if target_is_left else 0.72), screen.y * 0.63)
 		else:
-			anchor = camera.unproject_position(_target.global_position + Vector3.UP * 1.7)
+			anchor = camera.unproject_position(target_position)
 	anchor.x = clampf(anchor.x, screen.x * 0.28, screen.x * 0.72)
 	anchor.y = clampf(anchor.y, screen.y * 0.30, screen.y * 0.70)
-	# A shallow camera-facing plane preserves readability, stereo depth, and
-	# a stable footprint even when the camera changes FOV or enters a room.
-	_surface.global_transform = Transform3D(camera.global_basis, camera.project_position(anchor, 2.0))
-	var width := camera.project_position(Vector2(screen.x * 0.72, screen.y * 0.5), 2.0).distance_to(camera.project_position(Vector2(screen.x * 0.28, screen.y * 0.5), 2.0))
-	_surface.scale = Vector3.ONE * width / 1.5
+	# Keep the panel's footprint fixed in screen space, independent of target depth.
+	_surface.size = Vector2(screen.x * 0.44, screen.x * 0.44 / 1.5)
+	_surface.position = anchor - _surface.size * 0.5

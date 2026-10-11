@@ -48,15 +48,15 @@ func _ready() -> void:
 	add_child(menu)
 	assert(menu._buttons.size() == 6, "the main menu should offer three modes, settings, credits, and quit")
 	assert((menu._buttons[0] as Button).text.ends_with("DREAM"), "the dream must be the first mode")
-	assert((menu._buttons[3] as Button).text.ends_with("SETTINGS"), "settings should be part of the title menu")
+	assert((menu._buttons[4] as Button).text.ends_with("SETTINGS"), "settings should be part of the title menu")
 	var first_cell := (menu._buttons[0] as Button).get_parent() as VBoxContainer
 	assert((first_cell.get_child(0) as Label).text == "夢へ入る", "each title action should have its Japanese translation above it")
 	(menu._buttons[0] as Button).grab_focus()
 	assert((menu._buttons[0] as Button).text.begins_with("[ "), "the selected title action should be bracketed")
 	menu._choose("SETTINGS")
 	assert(menu._settings_terminal.is_title_settings_open(), "settings should open the terminal without leaving the title phase")
-	assert(menu._settings_terminal._crt.z_index < menu._settings_terminal._frame.z_index,
-		"the CRT glass should render behind readable settings controls")
+	assert(menu._settings_terminal._frame is Control and menu._settings_terminal._frame.visible,
+		"title settings should open a visible controls panel")
 	assert(menu._settings_terminal._frame.mouse_filter == Control.MOUSE_FILTER_PASS,
 		"the settings frame should pass mouse input to its controls")
 	await get_tree().create_timer(0.7).timeout
@@ -87,7 +87,9 @@ func _ready() -> void:
 	assert(experience._speech_sprite.visible, "Mathilda's final words should remain attached to her in the world")
 	assert(experience._speaker_label.text == "MATHILDA", "the final warning should retain its speaker")
 	assert(experience._caption.text == story["ending"], "standalone dream should hold the final warning")
-	assert(experience._choice_title.text.contains("RETURN TO THE THRESHOLD"), "standalone dream should show its return action in the world")
+	assert(experience._choice_title.text == "THE LIGHT REMAINS", "standalone dream should hold its waking card")
+	assert(experience._caption_action.visible and (experience._caption_action.get_child(1) as Label).text == "Return",
+		"standalone dream should show its return action beneath the words")
 	assert(Game.phase == Game.Phase.DIALOGUE, "the closing card should wait for the player's return")
 	experience._seen_story_cues.clear()
 	experience._conversation_strain = 0

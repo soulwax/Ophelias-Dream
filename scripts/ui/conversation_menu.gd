@@ -15,6 +15,7 @@ var selected := 0
 var _name: Label
 var _speaker: Label
 var _line: Label
+var _action_row: HBoxContainer
 var _topics: VBoxContainer
 var _hint: Label
 var _panel: PanelContainer
@@ -58,6 +59,9 @@ func _ready() -> void:
 	_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_line.custom_minimum_size = Vector2(0, 96)
 	column.add_child(_line)
+	_action_row = UiChrome.key_row(Game.settings.key_label("interact"), "Continue")
+	_action_row.visible = false
+	column.add_child(_action_row)
 	_topics = VBoxContainer.new()
 	_topics.add_theme_constant_override("separation", 2)
 	column.add_child(_topics)
@@ -86,7 +90,8 @@ func show_line(speaker_name: String, text: String, theirs: bool) -> void:
 	_speaker.text = "INBOUND // %s" % speaker_name.to_upper() if theirs else "OUTBOUND // %s" % speaker_name.to_upper()
 	_line.text = text if theirs else "“%s”" % text
 	_line.add_theme_color_override("font_color", UiChrome.INK if theirs else UiChrome.MUTED)
-	_hint.text = "%s  Skip   ·   Esc  Leave" % Game.settings.key_label("interact")
+	_set_action("Continue")
+	_hint.text = "Esc  Leave"
 
 
 ## Her topics; the last one leaves. A taken topic is dimmed, not removed.
@@ -118,7 +123,8 @@ func show_choices(topics: Array[Dictionary]) -> void:
 		_buttons.append(button)
 	choices_shown = true
 	_pointer_moved = false
-	_hint.text = "↑ / ↓  Choose   ·   %s / Enter  Say   ·   Esc  Leave" % Game.settings.key_label("interact")
+	_set_action("Say")
+	_hint.text = "↑ / ↓  Choose   ·   Esc  Leave"
 	select(0)
 
 
@@ -147,11 +153,18 @@ func step(direction: int) -> void:
 
 func _clear() -> void:
 	choices_shown = false
+	_action_row.visible = false
 	for button in _buttons:
 		_topics.remove_child(button)
 		button.queue_free()
 	_buttons.clear()
 	selected = 0
+
+
+func _set_action(caption: String) -> void:
+	UiChrome.set_key(_action_row, Game.settings.key_label("interact"))
+	(_action_row.get_child(1) as Label).text = caption
+	_action_row.visible = true
 
 
 func _topic_style(lit: bool) -> StyleBoxFlat:

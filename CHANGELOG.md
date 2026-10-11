@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.10.0 — 2026-10-11
+
+At the sill, the little house turns round;
+A hush keeps her first words underground.
+Fifteen paces wake the lantern’s tongue;
+Far off, its silver bell stays hung.
+
+Blue bruises bloom when old truths ache;
+Gold threads mend what the dawn can’t wake.
+Her words ride glass above the storm;
+The far face holds its size and form.
+
 ## 0.2.9.0 — 2026-10-11
 
 Save beneath the snow

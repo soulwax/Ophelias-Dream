@@ -30,6 +30,17 @@ func _run() -> void:
 	if not _require(experience != null, "live dream experience must exist"):
 		get_tree().quit(1)
 		return
+	var front_door: HouseDoor = Game.house.doors.get("front") as HouseDoor if Game.house else null
+	if not _require(front_door != null, "the dream threshold must have its house door"):
+		get_tree().quit(1)
+		return
+	for _shove in front_door.jam_shoves:
+		front_door.interact()
+	if not front_door.is_open:
+		front_door.interact()
+	if not _require(front_door.is_open, "the dream walk must pass through the opened house door"):
+		get_tree().quit(1)
+		return
 	experience.set("_camera_choreography_enabled", false)
 	var pace := OS.get_environment("RUN_DREAM_PACE")
 	if pace.is_empty():
@@ -48,8 +59,9 @@ func _run() -> void:
 	var last_stage := 0
 	var last_event := 0
 	var journal_and_pause_checked := false
-	for _frame in 12000:
+	for frame_index in 12000:
 		await get_tree().process_frame
+		_steer_along_dream_route()
 		furthest_offset = maxf(furthest_offset, Game.trail.offset_of(Game.player.global_position))
 		var stage: int = experience.get("_stage")
 		var event_index: int = experience.get("_story_event_cue_index")
@@ -79,7 +91,7 @@ func _run() -> void:
 					return
 				journal_and_pause_checked = true
 			experience.set("_caption_time", 100.0)
-			var speech := experience.get("_speech_sprite") as Sprite3D
+			var speech := experience.get("_speech_sprite") as TextureRect
 			speech.modulate.a = 0.0
 		if experience.get("_story_gap_remaining") > 0.0:
 			experience.set("_story_gap_remaining", 0.0)
@@ -98,6 +110,15 @@ func _run() -> void:
 				experience.call("_reveal_conversation_response")
 		if experience.get("_station_dialogue_active") and experience.get("_conversation_response_ready"):
 			experience.call("_continue_station_dialogue")
+		if not experience.get("_station_dialogue_active") and experience.get("_conversation_waiting"):
+			if experience.get("_conversation_response_pending"):
+				experience.call("_reveal_conversation_response")
+			elif experience.get("_conversation_response_ready"):
+				experience.set("_conversation_response_ready", false)
+				experience.set("_conversation_waiting", false)
+				if experience.get("_answer_open"):
+					experience.set("_conversation_round", int(experience.get("_conversation_round")) + 1)
+					experience.call("_build_small_talk_choices")
 		if experience.get("_conversation_intro_waiting"):
 			experience.set("_conversation_intro_waiting", false)
 			experience.call("_build_small_talk_choices")
@@ -212,3 +233,21 @@ func _require(condition: bool, message: String) -> bool:
 		return true
 	push_error(message)
 	return false
+
+
+func _steer_along_dream_route() -> void:
+	var trail: Trail = Game.trail
+	var player: Player = Game.player
+	var offset := trail.offset_of(player.global_position)
+	var nearest := trail.position_at(offset)
+	var cross_track := Vector2(player.global_position.x - nearest.x, player.global_position.z - nearest.z).length()
+	if offset < trail.player_start_offset - 1.0:
+		return
+	var heading_vector := nearest - player.global_position if cross_track > 4.0 else trail.position_at(minf(offset + 2.0, trail.length)) - nearest
+	heading_vector.y = 0.0
+	if heading_vector.length_squared() < 0.01:
+		return
+	var heading := atan2(-heading_vector.x, -heading_vector.z)
+	player.set("_yaw", heading)
+	player.set("_facing", heading)
+	player.call("_apply_look")

@@ -494,7 +494,8 @@ func _dream_state_keys() -> Array:
 		"_figure_offset", "_figure_moving", "_figure_rambling", "_rambling_gaze_target", "_apparition_state",
 		"_apparition_timer", "_apparition_dissolve", "_apparition_link_strength", "_boundary_strength",
 		"_lantern_time", "_lantern_wait", "_lantern_sheltered", "_lantern_seen", "_lantern_left_once", "_lantern_returned",
-		"_dream_quiet", "_dream_quiet_after_response", "_conversation_camera_active", "_conversation_camera_returning",
+		"_dream_quiet", "_dream_quiet_after_response", "_dream_elapsed", "_dream_voice_unlocked",
+		"_conversation_camera_active", "_conversation_camera_returning",
 		"_conversation_camera_return_time", "_camera_choreography_enabled", "_conversation_response",
 		"_conversation_response_pending", "_conversation_response_ready", "_conversation_response_timer", "_choice_index",
 		"_choice_time", "_answer_open", "_conversation_intro_waiting", "_conversation_round", "_station_dialogue_active",
@@ -532,7 +533,7 @@ func _capture_dream() -> Dictionary:
 		values["choice_visible"] = target.get("_choice_panel").visible
 		values["choice_title"] = str(target.get("_choice_title").text).trim_prefix("MATHILDA · ")
 		values["choice_hint"] = target.get("_choice_hint").text
-		values["choice_labels"] = target.get("_choice_buttons").map(func(label: Label3D) -> String: return label.text.trim_prefix("◆  ").trim_prefix("◇  "))
+		values["choice_labels"] = target.get("_choice_buttons").map(func(label: Label) -> String: return label.text.trim_prefix("◆  ").trim_prefix("◇  "))
 	if target and target.get("_lantern_prompt"):
 		values["lantern_prompt_visible"] = target.get("_lantern_prompt").visible
 	return values

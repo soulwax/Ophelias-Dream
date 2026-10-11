@@ -222,6 +222,17 @@ func spawn_facing() -> Vector3:
 	return spot[1] if not spot.is_empty() else global_transform.basis * Vector3(1.0, 0.0, 0.25).normalized()
 
 
+## A step inside the front exit, facing out toward the snow.
+func front_door_approach() -> Vector3:
+	return to_global(Vector3(0.0, 0.05, UPSTAIRS.end.y - 1.65))
+
+
+func front_door_facing() -> Vector3:
+	var facing := global_transform.basis.z
+	facing.y = 0.0
+	return facing.normalized() if facing.length_squared() > 0.001 else Vector3.BACK
+
+
 ## Dev hook (RUN_SPAWN): [world position, world facing] for a named spot, or
 ## an empty array. The Authoring/Spawns markers are those spots.
 func dev_spawn(where: String) -> Array:

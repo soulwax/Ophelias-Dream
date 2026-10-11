@@ -9,13 +9,12 @@ const SCENE_CAMERA_HEIGHT := [1.65, 1.58, 1.5, 1.42]
 const APPARITION_DISSOLVE := 0.38
 const APPARITION_FADE_SECONDS := 1.1
 const APPARITION_MEMORY_SECONDS := 3.85
+const MATHILDA_APPROACH_DISTANCE := 15.0
 const STORY := preload("res://scripts/world/dream_story.gd")
 const DREAM_ROUTE_SCRIPT := preload("res://scripts/world/dream_route.gd")
 const DREAM_ARCHITECTURE_SCRIPT := preload("res://scripts/world/dream_memory_architecture.gd")
 const DREAM_SOUNDSCAPE_SCRIPT := preload("res://scripts/audio/dream_soundscape.gd")
 const CAPTION_REFERENCE_HEIGHT := 0.16
-const CAPTION_MIN_PIXEL_SIZE := 0.0036
-const CAPTION_MAX_PIXEL_SIZE := 0.025
 
 var _dream_route: Node3D
 var _memory_architecture: DreamMemoryArchitecture
@@ -44,13 +43,22 @@ var _post_rect: ColorRect
 var _aura_material: ShaderMaterial
 var _aura_rect: ColorRect
 var _figure_aura_light: OmniLight3D
+var _figure_aura_shell: MeshInstance3D
+var _figure_aura_material: ShaderMaterial
+var _aura_mote_material: StandardMaterial3D
+var _figure_aura_color := Color("a87cff")
+var _figure_aura_time := 0.0
+var _figure_aura_pulse := 0.0
 var _speech_view: SubViewport
-var _speech_sprite: Sprite3D
+var _dream_ui_layer: CanvasLayer
+var _dream_ui_root: Control
+var _speech_sprite: TextureRect
 var _speech_panel: PanelContainer
 var _speaker_label: Label
 var _caption: Label
+var _caption_action: HBoxContainer
 var _speech_target: Node3D
-var _lantern_prompt: Label3D
+var _lantern_prompt: Label
 var _lantern: Node3D
 var _lantern_light: OmniLight3D
 var _lantern_flame: MeshInstance3D
@@ -62,10 +70,12 @@ var _lantern_left_once := false
 var _lantern_returned := false
 var _dream_quiet := 0.0
 var _dream_quiet_after_response := 0.0
-var _choice_panel: Node3D
-var _choice_title: Label3D
-var _choice_hint: Label3D
-var _choice_buttons: Array[Label3D] = []
+var _dream_elapsed := 0.0
+var _dream_voice_unlocked := false
+var _choice_panel: Control
+var _choice_title: Label
+var _choice_hint: Label
+var _choice_buttons: Array[Label] = []
 var _conversation_camera: Camera3D
 var _return_camera: Camera3D
 var _conversation_camera_active := false
@@ -156,11 +166,20 @@ func _ready() -> void:
 func _start() -> void:
 	if Game.player == null or Game.trail == null:
 		return
-	# Begin on the winter trail; dialogue and journals introduce the story events.
+	# The dream begins inside the house, one step before its exit. Mathilda waits
+	# beyond the door and remains silent until Ophelia comes within speaking range.
 	var step_position: Vector3 = _dream_route.call("world_position", "step")
-	Game.player.global_position = step_position + Vector3.UP * 0.15
+	Game.player.global_position = Game.house.front_door_approach() if Game.house else step_position + Vector3.UP * 0.15
+	if Game.house:
+		var facing := Game.house.front_door_facing()
+		var heading := atan2(-facing.x, -facing.z)
+		Game.player.set("_yaw", heading)
+		Game.player.set("_facing", heading)
+		Game.player.call("_apply_look")
 	Game.player.velocity = Vector3.ZERO
 	Game.player.reset_physics_interpolation()
+	_dream_elapsed = 0.0
+	_dream_voice_unlocked = false
 	_figure_offset = Game.trail.player_start_offset + FIGURE_OFFSETS[0]
 	_place_figure(_figure_offset)
 	_begin_figure_appearance(1.55)
@@ -169,12 +188,13 @@ func _start() -> void:
 	Game.set_phase(Game.Phase.DREAM)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	Game.settings.apply_audio()
-	_set_caption(str(_story.get("opening", "")), "MATHILDA")
 	_record_dream_entry(_story.get("journal_cue", {}))
 	_set_figure_moving(false)
 
 
 func restore_after_load(state: Dictionary) -> void:
+	if not state.has("_dream_voice_unlocked") and state.has("speech_visible"):
+		_dream_voice_unlocked = bool(state.get("speech_visible", false)) or _stage > 0 or _story_event_cue_index > 0 or _finished
 	if _caption and state.has("caption_text"):
 		_caption.text = str(state.caption_text)
 		_speaker_label.text = str(state.get("speaker_text", "MATHILDA"))
@@ -277,14 +297,31 @@ func _build_figure() -> void:
 		var mesh := mesh_node as MeshInstance3D
 		mesh.material_override = _silhouette
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_figure_aura_shell = MeshInstance3D.new()
+	_figure_aura_shell.name = "MoodAuraShell"
+	var shell_mesh := SphereMesh.new()
+	shell_mesh.radius = 1.0
+	shell_mesh.height = 2.0
+	shell_mesh.radial_segments = 48
+	shell_mesh.rings = 24
+	_figure_aura_shell.mesh = shell_mesh
+	_figure_aura_shell.position = Vector3.UP * 1.03
+	_figure_aura_shell.scale = Vector3(0.76, 1.2, 0.76)
+	_figure_aura_shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_figure_aura_material = ShaderMaterial.new()
+	_figure_aura_material.shader = preload("res://shaders/mathilda_dream_aura.gdshader")
+	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
+	_figure_aura_material.set_shader_parameter("intensity", 0.72)
+	_figure_aura_shell.material_override = _figure_aura_material
+	_figure.add_child(_figure_aura_shell)
 	_figure_aura_light = OmniLight3D.new()
-	_figure_aura_light.name = "MathildaVioletAura"
+	_figure_aura_light.name = "MathildaMoodAura"
 	_figure_aura_light.position = Vector3(0.0, 1.05, 0.0)
-	_figure_aura_light.light_color = Color("8d52d2")
-	_figure_aura_light.light_energy = 0.62
-	_figure_aura_light.omni_range = 3.8
+	_figure_aura_light.light_color = _figure_aura_color
+	_figure_aura_light.light_energy = 1.25
+	_figure_aura_light.omni_range = 4.4
 	_figure_aura_light.shadow_enabled = false
-	_figure_aura_light.light_volumetric_fog_energy = 0.22
+	_figure_aura_light.light_volumetric_fog_energy = 0.38
 	_figure.add_child(_figure_aura_light)
 	_animation = _figure.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _animation == null:
@@ -305,7 +342,7 @@ func _build_figure() -> void:
 			if _idle_animation == "" and (lowered.contains("idle") or lowered.contains("stand")):
 				_idle_animation = String(animation_name)
 	var particles := GPUParticles3D.new()
-	particles.amount = 36
+	particles.amount = 56
 	particles.lifetime = 2.4
 	particles.visibility_aabb = AABB(Vector3(-2, -1, -2), Vector3(4, 4, 4))
 	var process := ParticleProcessMaterial.new()
@@ -319,12 +356,15 @@ func _build_figure() -> void:
 	particles.process_material = process
 	var particle_mesh := QuadMesh.new()
 	particle_mesh.size = Vector2(0.16, 0.16)
-	var mote := StandardMaterial3D.new()
-	mote.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mote.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mote.albedo_color = Color(0.52, 0.39, 0.72, 0.34)
-	mote.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	particle_mesh.material = mote
+	_aura_mote_material = StandardMaterial3D.new()
+	_aura_mote_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_aura_mote_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.56)
+	_aura_mote_material.emission_enabled = true
+	_aura_mote_material.emission = _figure_aura_color
+	_aura_mote_material.emission_energy_multiplier = 1.8
+	_aura_mote_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	particle_mesh.material = _aura_mote_material
 	particles.draw_pass_1 = particle_mesh
 	_figure.add_child(particles)
 	if _walk_animation != "":
@@ -350,6 +390,7 @@ func _build_boundary_shadow() -> void:
 
 func _build_post_effect() -> void:
 	var canvas := CanvasLayer.new()
+	# Keep the screen-space post pass below every game UI canvas layer.
 	canvas.layer = 19
 	add_child(canvas)
 	_aura_rect = ColorRect.new()
@@ -373,65 +414,59 @@ func _build_post_effect() -> void:
 
 
 func _build_caption() -> void:
+	_dream_ui_layer = CanvasLayer.new()
+	_dream_ui_layer.name = "DreamInterface"
+	_dream_ui_layer.layer = 21
+	add_child(_dream_ui_layer)
+	_dream_ui_root = Control.new()
+	_dream_ui_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dream_ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dream_ui_layer.add_child(_dream_ui_root)
 	_speech_view = SubViewport.new()
 	_speech_view.name = "DreamSpeechViewport"
-	_speech_view.size = Vector2i(960, 200)
+	_speech_view.size = Vector2i(1152, 240)
 	_speech_view.transparent_bg = true
 	_speech_view.disable_3d = true
 	_speech_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(_speech_view)
-	_speech_sprite = Sprite3D.new()
-	_speech_sprite.name = "InWorldSpeech"
+	_speech_sprite = TextureRect.new()
+	_speech_sprite.name = "DreamCaptionOverlay"
 	_speech_sprite.texture = _speech_view.get_texture()
-	_speech_sprite.pixel_size = 0.0036
-	_speech_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_speech_sprite.no_depth_test = true
-	_speech_sprite.shaded = false
-	_speech_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	_speech_sprite.position = Vector3.UP * 2.4
+	_speech_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_speech_sprite.stretch_mode = TextureRect.STRETCH_SCALE
+	_speech_sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_speech_sprite.visible = false
-	add_child(_speech_sprite)
+	_dream_ui_root.add_child(_speech_sprite)
 	_speech_panel = PanelContainer.new()
 	_speech_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var speech_style := StyleBoxFlat.new()
-	speech_style.bg_color = Color(0.014, 0.018, 0.03, 0.91)
-	speech_style.border_color = Color(0.68, 0.57, 0.37, 0.48)
-	speech_style.set_border_width_all(1)
-	speech_style.set_corner_radius_all(11)
-	speech_style.set_content_margin_all(22)
-	speech_style.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
-	speech_style.shadow_size = 10
+	var speech_style := UiChrome.term_box(Color(UiChrome.VOID, 0.94), Color(UiChrome.SIGNAL, 0.58), 1, 18)
+	speech_style.border_width_left = 3
 	_speech_panel.add_theme_stylebox_override("panel", speech_style)
 	_speech_view.add_child(_speech_panel)
 	var dialogue_column := VBoxContainer.new()
 	dialogue_column.add_theme_constant_override("separation", 6)
 	_speech_panel.add_child(dialogue_column)
-	_speaker_label = UiChrome.label("", 24, Color("d5b779"))
-	_speaker_label.add_theme_color_override("font_outline_color", Color(0.01, 0.012, 0.018, 0.96))
-	_speaker_label.add_theme_constant_override("outline_size", 3)
+	_speaker_label = UiChrome.term_label("", 14, UiChrome.SIGNAL)
 	dialogue_column.add_child(_speaker_label)
 	var subtitle_size: int = maxi(24, Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)])
-	_caption = UiChrome.label("", subtitle_size, Color("e4e0df"))
-	_caption.add_theme_color_override("font_outline_color", Color(0.015, 0.022, 0.035, 0.96))
-	_caption.add_theme_constant_override("outline_size", 2)
+	_caption = UiChrome.term_label("", subtitle_size, UiChrome.BONE)
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_column.add_child(_caption)
-	_lantern_prompt = Label3D.new()
-	_lantern_prompt.name = "InWorldLanternPrompt"
-	_lantern_prompt.font_size = 18
-	_lantern_prompt.pixel_size = 0.0028
-	_lantern_prompt.fixed_size = true
-	_lantern_prompt.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_lantern_prompt.no_depth_test = true
-	_lantern_prompt.modulate = Color("e3c99c")
-	_lantern_prompt.outline_size = 12
-	_lantern_prompt.outline_modulate = Color(0.012, 0.016, 0.024, 0.96)
+	_caption_action = UiChrome.key_row(Game.settings.key_label("interact"), "Continue")
+	_caption_action.visible = false
+	dialogue_column.add_child(_caption_action)
+	_lantern_prompt = UiChrome.term_label("", 18, Color("e3c99c"))
+	_lantern_prompt.name = "DreamLanternPrompt"
+	_lantern_prompt.add_theme_color_override("font_outline_color", Color(0.012, 0.016, 0.024, 0.96))
+	_lantern_prompt.add_theme_constant_override("outline_size", 3)
 	_lantern_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lantern_prompt.position = Vector3.UP * 1.0
+	_lantern_prompt.custom_minimum_size = Vector2(0.0, 36.0)
+	_lantern_prompt.size = Vector2(440.0, 36.0)
+	_lantern_prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_lantern_prompt.visible = false
-	add_child(_lantern_prompt)
+	_dream_ui_root.add_child(_lantern_prompt)
 	_build_choice_panel()
 
 
@@ -621,31 +656,56 @@ func _cue_story_event(event: Dictionary) -> void:
 func _layout_caption() -> void:
 	if _speech_sprite and _speech_target and is_instance_valid(_speech_target):
 		var anchor := _speech_target.global_position + Vector3.UP * 2.25
-		_speech_sprite.global_position = anchor
 		var camera := get_viewport().get_camera_3d()
 		var viewport_size := get_viewport().get_visible_rect().size
 		if camera and viewport_size.y > 1.0:
-			var distance := camera.global_position.distance_to(anchor)
-			# A free camera may leave Mathilda outside the frame while her line is
-			# still playing. Keep the same in-world sprite legible at the edge.
 			var screen := camera.unproject_position(anchor)
-			var half_width := float(_speech_view.size.x) / float(_speech_view.size.y) * CAPTION_REFERENCE_HEIGHT * viewport_size.y * 0.5
+			var reference_height := CAPTION_REFERENCE_HEIGHT
+			var caption_size := Vector2(float(_speech_view.size.x) / float(_speech_view.size.y) * reference_height * viewport_size.y, reference_height * viewport_size.y)
+			_speech_sprite.size = caption_size
+			var half_width := caption_size.x * 0.5
 			var safe_x := half_width + 24.0
-			var safe_y := CAPTION_REFERENCE_HEIGHT * viewport_size.y * 0.5 + 28.0
+			var safe_y := caption_size.y * 0.5 + 28.0
 			var offscreen := camera.is_position_behind(anchor) or screen.x < safe_x or screen.x > viewport_size.x - safe_x or screen.y < safe_y or screen.y > viewport_size.y * 0.7
 			if offscreen:
+				reference_height *= 0.78
+				caption_size = Vector2(float(_speech_view.size.x) / float(_speech_view.size.y) * reference_height * viewport_size.y, reference_height * viewport_size.y)
+				_speech_sprite.size = caption_size
+				safe_x = caption_size.x * 0.5 + 24.0
+				safe_y = caption_size.y * 0.5 + 28.0
 				if camera.is_position_behind(anchor):
-					screen = Vector2(viewport_size.x * 0.5, viewport_size.y * 0.2)
+					var side := _dialogue_screen_side(camera, anchor, screen)
+					screen.x = safe_x if side < 0.0 else viewport_size.x - safe_x
+					screen.y = viewport_size.y * 0.2
 				screen.x = clampf(screen.x, safe_x, viewport_size.x - safe_x)
 				screen.y = clampf(screen.y, safe_y, viewport_size.y * 0.7)
-				_speech_sprite.global_position = camera.project_position(screen, clampf(distance, 4.0, 9.0))
-			var view_depth := maxf(0.5, -camera.global_transform.basis.z.dot(_speech_sprite.global_position - camera.global_position))
-			var view_height := 2.0 * view_depth * tan(deg_to_rad(camera.fov * 0.5))
-			var reference_height := CAPTION_REFERENCE_HEIGHT * (0.78 if offscreen else 1.0)
-			var needed_pixel_size := view_height * reference_height / float(_speech_view.size.y)
-			_speech_sprite.pixel_size = clampf(needed_pixel_size, CAPTION_MIN_PIXEL_SIZE, CAPTION_MAX_PIXEL_SIZE)
-	if _lantern_prompt and _lantern:
-		_lantern_prompt.global_position = _lantern.global_position + Vector3.UP * 1.25
+			_speech_sprite.position = screen - caption_size * 0.5
+	if _lantern_prompt and _lantern and is_instance_valid(_lantern):
+		var camera := get_viewport().get_camera_3d()
+		if camera:
+			var viewport_size := get_viewport().get_visible_rect().size
+			var prompt_at := _lantern.global_position + Vector3.UP * 1.25
+			var screen := camera.unproject_position(prompt_at)
+			_lantern_prompt.size.x = minf(440.0, viewport_size.x * 0.5)
+			if camera.is_position_behind(prompt_at):
+				var side := _dialogue_screen_side(camera, prompt_at, screen)
+				screen.x = viewport_size.x * (0.16 if side < 0.0 else 0.84)
+				screen.y = viewport_size.y * 0.6
+			screen.x = clampf(screen.x, _lantern_prompt.size.x * 0.5 + 12.0, viewport_size.x - _lantern_prompt.size.x * 0.5 - 12.0)
+			screen.y = clampf(screen.y, 24.0, viewport_size.y - 24.0)
+			_lantern_prompt.position = screen - _lantern_prompt.size * 0.5
+
+
+func _dialogue_screen_side(camera: Camera3D, world_position: Vector3, screen_position: Vector2) -> float:
+	if not camera.is_position_behind(world_position):
+		return -1.0 if screen_position.x < get_viewport().get_visible_rect().size.x * 0.5 else 1.0
+	var to_speaker := world_position - camera.global_position
+	to_speaker.y = 0.0
+	var camera_right := camera.global_basis.x
+	camera_right.y = 0.0
+	if camera_right.length_squared() > 0.0001:
+		camera_right = camera_right.normalized()
+	return -1.0 if to_speaker.dot(camera_right) < 0.0 else 1.0
 
 
 func _process(delta: float) -> void:
@@ -654,7 +714,7 @@ func _process(delta: float) -> void:
 		_aura_rect.visible = dream_active
 		if _aura_material:
 			var screen_effects := float(Game.settings.screen_effects) if Game.settings else 1.0
-			_aura_material.set_shader_parameter("intensity", 0.12 * clampf(screen_effects, 0.0, 1.0))
+			_aura_material.set_shader_parameter("intensity", 0.18 * clampf(screen_effects, 0.0, 1.0))
 	if Game.player == null:
 		return
 	_layout_caption()
@@ -664,10 +724,11 @@ func _process(delta: float) -> void:
 		if _choice_index >= 0 and _choice_index < _choice_buttons.size():
 			var selected_label := _choice_buttons[_choice_index]
 			var breath := 1.06 + sin(_choice_time * 2.4) * 0.025
-			selected_label.scale = Vector3.ONE * breath
+			selected_label.scale = Vector2.ONE * breath
 	_update_post_effect(delta)
 	if Game.phase != Game.Phase.DREAM:
 		return
+	_update_figure_aura(delta)
 	if _dream_journal_open:
 		if Game.player and not Game.player.dialogue_locked:
 			Game.player.dialogue_locked = true
@@ -685,6 +746,15 @@ func _process(delta: float) -> void:
 	_update_boundary_shadow(delta)
 	if _finished:
 		return
+	if not _dream_voice_unlocked:
+		if Game.player.global_position.distance_to(_figure.global_position) <= MATHILDA_APPROACH_DISTANCE:
+			_dream_voice_unlocked = true
+			_set_caption(str(_story.get("opening", "")), "MATHILDA")
+			_pulse_effect(0.52, "insight", _figure)
+		else:
+			_update_figure(delta)
+			_update_lantern(delta)
+			return
 	if _answer_open:
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -750,8 +820,7 @@ func _show_next_story_line() -> void:
 	var line := str(beat.get("text", ""))
 	_record_dream_entry(beat.get("journal", {}))
 	_play_story_choreography(str(beat.get("motion", "")))
-	_set_caption(line, "MATHILDA", true)
-	_speaker_label.text = "MATHILDA  ·  %s TO CONTINUE" % Game.settings.key_label("interact")
+	_set_caption(line, "MATHILDA", true, "Continue")
 	var visual_cue := str(beat.get("visual_cue", ""))
 	if not visual_cue.is_empty() and _memory_architecture:
 		_memory_architecture.queue_reveal(visual_cue)
@@ -990,7 +1059,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif not _ending_warning_shown:
 			_ending_warning_shown = true
 			_show_warning_prop()
-			_set_caption("%s\n%s TO WAKE" % [str(_story.get("ending", _story.get("arrival", ""))), Game.settings.key_label("interact")], "MATHILDA")
+			_set_caption(str(_story.get("ending", _story.get("arrival", ""))), "MATHILDA", false, "Wake")
 		else:
 			_wake()
 		get_viewport().set_input_as_handled()
@@ -1118,7 +1187,9 @@ func _set_figure_dissolve(value: float) -> void:
 		_silhouette.set_shader_parameter("dissolve", _apparition_dissolve)
 	if _figure_aura_light:
 		var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
-		_figure_aura_light.light_energy = 0.62 * reveal
+		_figure_aura_light.light_energy = 1.25 * reveal
+	if _figure_aura_material:
+		_figure_aura_material.set_shader_parameter("reveal", 1.0 - _apparition_dissolve / APPARITION_DISSOLVE)
 
 
 func _complete_figure_appearance() -> void:
@@ -1126,6 +1197,67 @@ func _complete_figure_appearance() -> void:
 	_apparition_tween = null
 	_apparition_link_strength = 0.0
 	_set_figure_dissolve(0.0)
+
+
+func _update_figure_aura(delta: float) -> void:
+	if _figure == null or _figure_aura_material == null:
+		return
+	_figure_aura_time += delta
+	_figure_aura_pulse = move_toward(_figure_aura_pulse, 0.0, delta * 0.78)
+	var target_color := _figure_aura_mood_color()
+	_figure_aura_color = _figure_aura_color.lerp(target_color, 1.0 - exp(-delta * 3.2))
+	var cue_pulse := maxf(_effect_strength, _figure_aura_pulse)
+	var breath := 0.91 + sin(_figure_aura_time * 2.1) * 0.07 + sin(_figure_aura_time * 3.7) * 0.02
+	var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
+	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
+	var aura_intensity := (0.7 + cue_pulse * 0.9) * breath * screen_effects
+	_figure_aura_shell.scale = Vector3(0.76, 1.2, 0.76) * (1.0 + cue_pulse * 0.075 + sin(_figure_aura_time * 1.4) * 0.018)
+	_figure_aura_shell.rotation.y += delta * (0.16 + cue_pulse * 0.48)
+	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
+	_figure_aura_material.set_shader_parameter("time", _figure_aura_time)
+	_figure_aura_material.set_shader_parameter("pulse", cue_pulse)
+	_figure_aura_material.set_shader_parameter("intensity", aura_intensity)
+	_figure_aura_material.set_shader_parameter("reveal", reveal)
+	_silhouette.set_shader_parameter("aura_tint", _figure_aura_color)
+	if _figure_aura_light:
+		_figure_aura_light.light_color = _figure_aura_color
+		_figure_aura_light.light_energy = (0.95 + cue_pulse * 1.8) * breath * reveal * screen_effects
+		_figure_aura_light.omni_range = 3.9 + cue_pulse * 1.6
+	if _aura_mote_material:
+		_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.4 + cue_pulse * 0.24)
+		_aura_mote_material.emission = _figure_aura_color
+		_aura_mote_material.emission_energy_multiplier = 1.2 + cue_pulse * 2.2
+
+
+func _figure_aura_mood_color() -> Color:
+	if _memory_chosen:
+		match Game.dream_memory:
+			"name":
+				return Color("ffe1a0")
+			"waiting":
+				return Color("a8dfff")
+			"remember":
+				return Color("f6a8c8")
+			"silence":
+				return Color("a5b8e8")
+	if _station_choice_effect == "escalate" or _conversation_strain >= 4:
+		return Color("ff435f")
+	if _station_choice_effect == "push" or _conversation_strain > 0:
+		return Color("f078a9")
+	if _station_choice_effect == "repair":
+		return Color("8ef2d1")
+	match _effect_cue:
+		"insight":
+			return Color("fff0b5")
+		"lantern":
+			return Color("ffc66e")
+		"merge":
+			return Color("f19ae8")
+		"release":
+			return Color("9ceaff")
+		"footstep":
+			return Color("9e92ff")
+	return Color("b58bff")
 
 
 func _place_figure(along: float, delta: float = 0.0) -> void:
@@ -1416,7 +1548,7 @@ func _finish_dream() -> void:
 	_begin_character_conversation()
 	_lantern_prompt.hide()
 	_pulse_effect(0.72, "merge")
-	_set_caption("%s\n\n%s TO CONTINUE" % [str(_story.get("arrival", "")), Game.settings.key_label("interact")], "MATHILDA")
+	_set_caption(str(_story.get("arrival", "")), "MATHILDA", false, "Continue")
 	_layout_caption()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -1619,33 +1751,29 @@ func _advance_unseen_talk_round() -> void:
 
 
 func _build_choice_panel() -> void:
-	_choice_panel = Node3D.new()
-	_choice_panel.name = "InWorldConversationChoices"
+	_choice_panel = Control.new()
+	_choice_panel.name = "DreamConversationChoices"
+	_choice_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_choice_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_choice_panel.visible = false
-	add_child(_choice_panel)
+	_dream_ui_root.add_child(_choice_panel)
 	_choice_title = _new_choice_label(19)
 	_choice_title.modulate = Color("d5b779")
-	_choice_title.position = Vector3(0.0, 0.68, 0.0)
 	_choice_panel.add_child(_choice_title)
 	_choice_hint = _new_choice_label(16)
 	_choice_hint.modulate = Color("b6b0a6")
-	_choice_hint.position = Vector3(0.0, -0.68, 0.0)
 	_choice_panel.add_child(_choice_hint)
 
 
-func _new_choice_label(size: int) -> Label3D:
-	var label := Label3D.new()
-	label.font_size = size
-	label.pixel_size = 0.0045
-	label.width = 560.0
+func _new_choice_label(font_size: int) -> Label:
+	var label := UiChrome.term_label("", font_size, UiChrome.BONE)
+	label.custom_minimum_size = Vector2(0.0, 28.0)
+	label.add_theme_color_override("font_outline_color", Color(0.012, 0.016, 0.024, 0.97))
+	label.add_theme_constant_override("outline_size", 3)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.fixed_size = false
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.no_depth_test = true
-	label.outline_size = 12
-	label.outline_modulate = Color(0.012, 0.016, 0.024, 0.97)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
 
@@ -1655,18 +1783,11 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 			_choice_panel.remove_child(child)
 			child.queue_free()
 	_choice_buttons.clear()
-	var row_spacing := 0.39 if labels.size() <= 4 else 0.34
-	var row_half_height := float(maxi(labels.size() - 1, 0)) * row_spacing * 0.5
-	_choice_title.position.y = row_half_height + 0.58
-	_choice_hint.position.y = -row_half_height - 0.61
 	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
-	_choice_hint.text = (
-		"PRESS %s TO RETURN" % Game.settings.key_label("interact")
-		if _waking_card else "YOUR REPLY  ·  ↑ / ↓  ·  %s  ·  ESC TO PAUSE" % Game.settings.key_label("interact")
-	)
+	_choice_hint.text = "ESC TO PAUSE" if _waking_card else "↑ / ↓ TO SELECT   ·   ESC TO PAUSE"
+	_set_caption_action("Return" if _waking_card else "Say")
 	for index in range(labels.size()):
 		var choice_label := _new_choice_label(20 if labels.size() <= 4 else 18)
-		choice_label.position = Vector3(0.0, row_half_height - float(index) * row_spacing, 0.0)
 		choice_label.text = labels[index]
 		_choice_panel.add_child(choice_label)
 		_choice_buttons.append(choice_label)
@@ -1683,7 +1804,7 @@ func _update_choice_positions() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	var speaker_at := speaker.global_position + Vector3.UP * 1.4
 	var speaker_screen := camera.unproject_position(speaker_at)
-	var side := 1.0 if camera.is_position_behind(speaker_at) or speaker_screen.x < viewport_size.x * 0.5 else -1.0
+	var side := -_dialogue_screen_side(camera, speaker_at, speaker_screen)
 	if is_instance_valid(_lantern) and _lantern.visible:
 		var lantern_at: Vector3 = _lantern.global_position + Vector3.UP * 0.9
 		var lantern_screen := camera.unproject_position(lantern_at)
@@ -1691,9 +1812,22 @@ func _update_choice_positions() -> void:
 		if not camera.is_position_behind(lantern_at) and same_band:
 			side = -1.0 if lantern_screen.x >= viewport_size.x * 0.5 else 1.0
 	var center_x := viewport_size.x * (0.17 if side < 0.0 else 0.83)
-	var center := Vector2(center_x, viewport_size.y * 0.54)
-	_choice_panel.global_position = camera.project_position(center, 5.2)
-	_choice_panel.look_at(camera.global_position, Vector3.UP)
+	var center_y := viewport_size.y * 0.54
+	var row_spacing := 48.0 if _choice_buttons.size() <= 4 else 42.0
+	var row_half_height := float(maxi(_choice_buttons.size() - 1, 0)) * row_spacing * 0.5
+	var label_width := minf(560.0, viewport_size.x * 0.32)
+	_choice_title.size = Vector2(label_width, 30.0)
+	_choice_title.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - 66.0)
+	var hint_lines := 0
+	for hint_part in _choice_hint.text.split("\n", false):
+		hint_lines += maxi(1, ceili(float(hint_part.length()) / maxf(label_width / 10.0, 1.0)))
+	_choice_hint.size = Vector2(label_width, maxf(28.0, float(hint_lines) * 22.0))
+	_choice_hint.position = Vector2(center_x - label_width * 0.5, center_y + row_half_height + 34.0)
+	for index in _choice_buttons.size():
+		var button := _choice_buttons[index]
+		button.size = Vector2(label_width, 32.0)
+		button.pivot_offset = button.size * 0.5
+		button.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height + float(index) * row_spacing)
 
 
 func _choose_small_talk(index: int) -> void:
@@ -1716,8 +1850,12 @@ func _choose_small_talk(index: int) -> void:
 		_memory_architecture.respond(effect)
 	if effect == "push" or effect == "escalate":
 		_conversation_strain += 2
+		_pulse_effect(0.88, "doubt", _figure)
 	elif effect == "repair":
 		_conversation_strain = 0
+		_pulse_effect(0.72, "release", _figure)
+	else:
+		_pulse_effect(0.34, "footstep", _figure)
 	_repair_menu_active = false
 	_conversation_choice_advances = bool(choice.get("advance", true))
 	_choice_panel.hide()
@@ -1744,7 +1882,7 @@ func _reveal_conversation_response() -> void:
 	_conversation_response_ready = true
 	if _memory_chosen:
 		_dream_quiet_after_response = 4.5
-	_set_caption("%s\n\n%s TO CONTINUE" % [_conversation_response, Game.settings.key_label("interact")], "MATHILDA")
+	_set_caption(_conversation_response, "MATHILDA", false, "Continue")
 
 
 func _continue_memory_dialogue() -> void:
@@ -1753,7 +1891,7 @@ func _continue_memory_dialogue() -> void:
 	elif not _ending_warning_shown:
 		_ending_warning_shown = true
 		_show_warning_prop()
-		_set_caption("%s\n\n%s TO WAKE" % [_ending_text(), Game.settings.key_label("interact")], "MATHILDA")
+		_set_caption(_ending_text(), "MATHILDA", false, "Wake")
 	else:
 		_wake()
 
@@ -1782,7 +1920,7 @@ func _style_choice(index: int, text: String) -> void:
 	var selected := index == _choice_index
 	label.text = ("◆  " if selected else "◇  ") + text
 	label.modulate = Color("f0dfbd") if selected else Color("c5c3c3")
-	label.scale = Vector3.ONE * (1.08 if selected else 1.0)
+	label.scale = Vector2.ONE * (1.08 if selected else 1.0)
 
 
 func _refresh_choices() -> void:
@@ -1886,7 +2024,7 @@ func _show_standalone_waking() -> void:
 	_show_warning_prop()
 	_set_caption(_ending_text(), "MATHILDA")
 	_lantern_prompt.hide()
-	_set_choice_rows("THE LIGHT REMAINS\n\nRETURN TO THE THRESHOLD  ·  %s" % Game.settings.key_label("interact"), [])
+	_set_choice_rows("THE LIGHT REMAINS", [])
 	Game.set_phase(Game.Phase.DIALOGUE)
 	_choice_panel.show()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -1927,13 +2065,14 @@ func _return_to_menu() -> void:
 	get_tree().reload_current_scene()
 
 
-func _set_caption(line: String, speaker := "", preserve_story_queue := false) -> void:
+func _set_caption(line: String, speaker := "", preserve_story_queue := false, action := "") -> void:
 	_story_line_active = false
 	if not preserve_story_queue and not _station_dialogue_active:
 		_story_line_queue.clear()
 	_story_gap_remaining = 0.0
 	_set_speaker(speaker)
 	_caption.text = line
+	_set_caption_action(action)
 	_speech_sprite.visible = not line.is_empty()
 	_speech_sprite.modulate.a = 0.0
 	_caption_time = 0.0
@@ -1943,6 +2082,16 @@ func _set_caption(line: String, speaker := "", preserve_story_queue := false) ->
 		_caption_tween = create_tween()
 		_caption_tween.tween_property(_speech_sprite, "modulate:a", 1.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_layout_caption()
+
+
+func _set_caption_action(caption: String) -> void:
+	if not is_instance_valid(_caption_action):
+		return
+	_caption_action.visible = not caption.is_empty()
+	if caption.is_empty():
+		return
+	UiChrome.set_key(_caption_action, Game.settings.key_label("interact"))
+	(_caption_action.get_child(1) as Label).text = caption
 
 
 func _set_speaker(speaker: String) -> void:
@@ -1996,6 +2145,7 @@ func _pulse_effect(strength: float, cue := "doubt", focus: Node3D = null) -> voi
 	_effect_hold = 0.2 if cue == "insight" else 1.4
 	_effect_cue = cue
 	_effect_focus = focus
+	_figure_aura_pulse = maxf(_figure_aura_pulse, strength)
 
 
 func _update_post_effect(delta: float) -> void:
@@ -2006,10 +2156,18 @@ func _update_post_effect(delta: float) -> void:
 	_effect_strength = move_toward(_effect_strength, _effect_target, delta * effect_rate)
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
 	var visible_strength := _effect_strength * screen_effects
+	var dream_active := Game.phase == Game.Phase.DREAM and not _dream_journal_open
+	if dream_active:
+		_dream_elapsed += delta
+	var dream_weight := 0.52 * screen_effects if dream_active else 0.0
+	var startup_spin := (1.0 - smoothstep(12.0, 30.0, _dream_elapsed)) * screen_effects if dream_active else 0.0
 	if _post_rect:
-		_post_rect.visible = false
+		_post_rect.visible = dream_weight > 0.001 or visible_strength > 0.015
 	if _post_material:
 		_post_material.set_shader_parameter("intensity", visible_strength)
+		_post_material.set_shader_parameter("dream_weight", dream_weight)
+		_post_material.set_shader_parameter("spin", startup_spin)
+		_post_material.set_shader_parameter("dream_clock", _dream_elapsed)
 		_post_material.set_shader_parameter("cue", _cue_value(_effect_cue))
 		var viewport_size := get_viewport().get_visible_rect().size.max(Vector2.ONE)
 		_post_material.set_shader_parameter("aspect", viewport_size.x / viewport_size.y)
@@ -2022,7 +2180,6 @@ func _update_post_effect(delta: float) -> void:
 			var on_screen := not camera.is_position_behind(focus) and Rect2(Vector2.ZERO, viewport_size).has_point(point)
 			if on_screen:
 				_post_material.set_shader_parameter("focus_point", point / viewport_size)
-				_post_rect.visible = visible_strength > 0.015
 	if _silhouette:
 		var dissolve := visible_strength * 0.06 if _effect_cue == "merge" else 0.0
 		_silhouette.set_shader_parameter("dissolve", dissolve)
