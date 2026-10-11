@@ -139,7 +139,7 @@ func _run() -> void:
 	if not _require(seen_markers == EXPECTED_MARKERS, "%s pace cue order: %s" % [pace, seen_markers]):
 		get_tree().quit(1)
 		return
-	if not _require(seen_stations == [0, 1], "station replies must follow their cues: %s" % [seen_stations]):
+	if not _require(seen_stations == [0, 1, 2], "threshold and trail exchanges must follow their cues: %s" % [seen_stations]):
 		get_tree().quit(1)
 		return
 	if not _require(experience.get("_story_line_queue").is_empty(), "no story line may be discarded"):
@@ -157,7 +157,7 @@ func _run() -> void:
 	if not await _exercise_standalone_exit(experience):
 		get_tree().quit(1)
 		return
-	print("Dream flow checked at %s pace: %.1f m traversed, ordered cues, two station replies, journal/pause, chosen memory saved, wake completed, title returned" % [pace, furthest_offset - starting_offset])
+	print("Dream flow checked at %s pace: %.1f m traversed, ordered cues, threshold and two trail replies, journal/pause, chosen memory saved, wake completed, title returned" % [pace, furthest_offset - starting_offset])
 	get_tree().quit()
 
 

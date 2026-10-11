@@ -14,7 +14,8 @@ const STORY := preload("res://scripts/world/dream_story.gd")
 const DREAM_ROUTE_SCRIPT := preload("res://scripts/world/dream_route.gd")
 const DREAM_ARCHITECTURE_SCRIPT := preload("res://scripts/world/dream_memory_architecture.gd")
 const DREAM_SOUNDSCAPE_SCRIPT := preload("res://scripts/audio/dream_soundscape.gd")
-const CAPTION_REFERENCE_HEIGHT := 0.16
+const CAPTION_VIEWPORT_WIDTH := 900
+const CAPTION_SCREEN_SCALE := 0.75
 
 var _dream_route: Node3D
 var _memory_architecture: DreamMemoryArchitecture
@@ -26,6 +27,13 @@ var _walk_animation := ""
 var _idle_animation := ""
 var _figure_offset := 0.0
 var _figure_moving := false
+var _figure_motion_active := false
+var _figure_motion_target_offset := 0.0
+var _figure_motion_look_at_player := false
+var _figure_motion_tween: Tween
+var _figure_turn_active := false
+var _figure_turn_target_yaw := 0.0
+var _figure_turn_tween: Tween
 var _figure_rambling := false
 var _rambling_gaze_target := Vector3.ZERO
 var _silhouette: ShaderMaterial
@@ -72,10 +80,12 @@ var _dream_quiet := 0.0
 var _dream_quiet_after_response := 0.0
 var _dream_elapsed := 0.0
 var _dream_voice_unlocked := false
+var _opening_station_pending := false
 var _choice_panel: Control
 var _choice_title: Label
 var _choice_hint: Label
 var _choice_buttons: Array[Label] = []
+var _choice_rows: Array[PanelContainer] = []
 var _conversation_camera: Camera3D
 var _return_camera: Camera3D
 var _conversation_camera_active := false
@@ -118,6 +128,9 @@ var _story_line_active := false
 var _story_line_hold := 0.0
 var _story_gap_remaining := 0.0
 var _story_finish_pending := false
+var _late_step_stop_time := 0.0
+var _late_step_dialogue_delay := -1.0
+var _late_step_ready := false
 var _story_motion_tween: Tween
 var _stage := 0
 var _finished := false
@@ -137,12 +150,15 @@ var _dream_journal_seen: Dictionary = {}
 var _dream_journal_layer: CanvasLayer
 var _dream_journal_hint: Label
 var _dream_journal_hint_panel: PanelContainer
+var _dream_journal_hint_time := 0.0
 var _dream_journal_scrim: ColorRect
 var _dream_journal_panel: PanelContainer
 var _dream_journal_scroll: ScrollContainer
 var _dream_journal_rows: VBoxContainer
+var _dream_journal_guidance_button: Button
 var _dream_journal_available := false
 var _dream_journal_open := false
+var _journal_guidance_visible := false
 
 
 func _ready() -> void:
@@ -199,6 +215,8 @@ func restore_after_load(state: Dictionary) -> void:
 		_caption.text = str(state.caption_text)
 		_speaker_label.text = str(state.get("speaker_text", "MATHILDA"))
 		_speaker_label.visible = not _speaker_label.text.is_empty()
+		_set_caption_action(str(state.get("caption_action_text", "")) if bool(state.get("caption_action_visible", false)) else "")
+		_resize_caption(_caption.text, _caption_action.visible)
 		_speech_sprite.visible = bool(state.get("speech_visible", not _caption.text.is_empty()))
 		_set_speaker(_speaker_label.text)
 		_layout_caption()
@@ -240,15 +258,21 @@ func restore_after_load(state: Dictionary) -> void:
 		_choice_panel.visible = bool(state.get("choice_visible", _choice_panel.visible))
 	if _lantern_prompt:
 		_lantern_prompt.visible = bool(state.get("lantern_prompt_visible", false))
+	_refresh_dream_journal()
 	if _dream_journal_open:
 		_dream_journal_scrim.show()
 		_dream_journal_panel.show()
-		_refresh_dream_journal()
 	if _conversation_camera_returning:
 		_complete_character_conversation()
 	elif _conversation_camera_active:
 		_conversation_camera_active = false
 		_begin_character_conversation(_figure_rambling)
+	if _figure_motion_active:
+		var remaining := maxf(absf(_figure_motion_target_offset - _figure_offset) / 0.8, 0.18)
+		_start_authored_figure_move(_figure_motion_target_offset, remaining, _figure_motion_look_at_player)
+	if _figure_turn_active:
+		var turn_distance := absf(wrapf(_figure_turn_target_yaw - _figure.rotation.y, -PI, PI))
+		_turn_figure_to_yaw(_figure_turn_target_yaw, maxf(turn_distance / 1.4, 0.18))
 
 
 func _build_dream_route() -> void:
@@ -306,7 +330,7 @@ func _build_figure() -> void:
 	shell_mesh.rings = 24
 	_figure_aura_shell.mesh = shell_mesh
 	_figure_aura_shell.position = Vector3.UP * 1.03
-	_figure_aura_shell.scale = Vector3(0.76, 1.2, 0.76)
+	_figure_aura_shell.scale = Vector3(0.58, 1.05, 0.58)
 	_figure_aura_shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_figure_aura_material = ShaderMaterial.new()
 	_figure_aura_material.shader = preload("res://shaders/mathilda_dream_aura.gdshader")
@@ -424,7 +448,7 @@ func _build_caption() -> void:
 	_dream_ui_layer.add_child(_dream_ui_root)
 	_speech_view = SubViewport.new()
 	_speech_view.name = "DreamSpeechViewport"
-	_speech_view.size = Vector2i(1152, 240)
+	_speech_view.size = Vector2i(CAPTION_VIEWPORT_WIDTH, 130)
 	_speech_view.transparent_bg = true
 	_speech_view.disable_3d = true
 	_speech_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -448,7 +472,7 @@ func _build_caption() -> void:
 	_speech_panel.add_child(dialogue_column)
 	_speaker_label = UiChrome.term_label("", 14, UiChrome.SIGNAL)
 	dialogue_column.add_child(_speaker_label)
-	var subtitle_size: int = maxi(24, Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)])
+	var subtitle_size: int = [24, 27, 32][clampi(Game.settings.subtitle_size, 0, 2)]
 	_caption = UiChrome.term_label("", subtitle_size, UiChrome.BONE)
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -483,9 +507,9 @@ func _build_dream_journal() -> void:
 	_dream_journal_hint_panel.name = "DreamClueProgress"
 	_dream_journal_hint_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_dream_journal_hint_panel.offset_left = 24.0
-	_dream_journal_hint_panel.offset_top = -56.0
-	_dream_journal_hint_panel.offset_right = 660.0
-	_dream_journal_hint_panel.offset_bottom = -14.0
+	_dream_journal_hint_panel.offset_top = -102.0
+	_dream_journal_hint_panel.offset_right = 480.0
+	_dream_journal_hint_panel.offset_bottom = -60.0
 	_dream_journal_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var hint_style := StyleBoxFlat.new()
 	hint_style.bg_color = Color(0.012, 0.018, 0.03, 0.78)
@@ -529,10 +553,14 @@ func _build_dream_journal() -> void:
 	_dream_journal_panel.add_child(column)
 	var title := UiChrome.label("DREAM JOURNAL", 27, Color("d5b779"))
 	column.add_child(title)
-	var subtitle := UiChrome.label("Words kept from the path. Press J or Esc to close.", 15, Color("9e9aa0"))
+	var subtitle := UiChrome.label("Words kept from the path. %s toggles notes; %s closes." % [Game.settings.key_label("interact"), Game.settings.key_label("journal")], 15, Color("9e9aa0"))
 	column.add_child(subtitle)
 	var divider := HSeparator.new()
 	column.add_child(divider)
+	_dream_journal_guidance_button = UiChrome.text_button("SHOW APPROACH NOTES")
+	_dream_journal_guidance_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_dream_journal_guidance_button.pressed.connect(_toggle_journal_guidance)
+	column.add_child(_dream_journal_guidance_button)
 	_dream_journal_scroll = ScrollContainer.new()
 	_dream_journal_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_dream_journal_scroll.custom_minimum_size = Vector2(0.0, 440.0)
@@ -558,25 +586,29 @@ func _record_dream_entry(raw_entry: Variant) -> void:
 	_dream_journal_entries.append(entry)
 	_dream_journal_available = true
 	_refresh_dream_journal_hint()
-	_dream_journal_hint_panel.show()
+	_dream_journal_hint_time = 4.5
 	_refresh_dream_journal()
 
 
 func _refresh_dream_journal_hint() -> void:
-	var cue_count := _seen_story_cues.size()
-	var progress := "FOLLOW THE TRAIL · FIND THE WARM WINDOW + ONE OTHER"
-	if _seen_story_cues.has("window") and cue_count >= 2:
-		progress = "WARNING REMEMBERED  ·  2/2"
-	elif _seen_story_cues.has("window"):
-		progress = "WARM WINDOW CLUE  ·  %d/1 OTHER" % maxi(cue_count - 1, 0)
-	elif cue_count > 0:
-		progress = "WARM WINDOW CLUE STILL AHEAD  ·  %d/2" % cue_count
-	_dream_journal_hint.text = "%s  DREAM JOURNAL  ·  %d  |  %s" % [Game.settings.key_label("journal"), _dream_journal_entries.size(), progress]
+	_dream_journal_hint.text = "%s  ·  DREAM JOURNAL UPDATED" % Game.settings.key_label("journal")
+
+
+func _update_dream_journal_hint(delta: float) -> void:
+	if _dream_journal_hint_panel == null:
+		return
+	var dialogue_visible := (_speech_sprite and _speech_sprite.visible) or (_choice_panel and _choice_panel.visible)
+	var can_show := Game.phase == Game.Phase.DREAM and not _dream_journal_open and not dialogue_visible
+	_dream_journal_hint_panel.visible = can_show and _dream_journal_hint_time > 0.0
+	if can_show:
+		_dream_journal_hint_time = maxf(_dream_journal_hint_time - delta, 0.0)
 
 
 func _refresh_dream_journal() -> void:
 	if _dream_journal_rows == null:
 		return
+	if _dream_journal_guidance_button:
+		_dream_journal_guidance_button.text = "HIDE APPROACH NOTES" if _journal_guidance_visible else "SHOW APPROACH NOTES"
 	for child in _dream_journal_rows.get_children():
 		_dream_journal_rows.remove_child(child)
 		child.queue_free()
@@ -588,13 +620,18 @@ func _refresh_dream_journal() -> void:
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_dream_journal_rows.add_child(text)
 		var approach := str(entry.get("approach", "")).strip_edges()
-		if not approach.is_empty():
+		if _journal_guidance_visible and not approach.is_empty():
 			var guidance := UiChrome.label("A WAY THROUGH  ·  " + approach, 14, Color("a9b0b8"))
 			guidance.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			guidance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_dream_journal_rows.add_child(guidance)
 		var divider := HSeparator.new()
 		_dream_journal_rows.add_child(divider)
+
+
+func _toggle_journal_guidance() -> void:
+	_journal_guidance_visible = not _journal_guidance_visible
+	_refresh_dream_journal()
 
 
 func _open_dream_journal() -> void:
@@ -660,16 +697,15 @@ func _layout_caption() -> void:
 		var viewport_size := get_viewport().get_visible_rect().size
 		if camera and viewport_size.y > 1.0:
 			var screen := camera.unproject_position(anchor)
-			var reference_height := CAPTION_REFERENCE_HEIGHT
-			var caption_size := Vector2(float(_speech_view.size.x) / float(_speech_view.size.y) * reference_height * viewport_size.y, reference_height * viewport_size.y)
+			var ui_scale := minf(viewport_size.y / 900.0 * CAPTION_SCREEN_SCALE, (viewport_size.x - 48.0) / float(CAPTION_VIEWPORT_WIDTH))
+			var caption_size := Vector2(_speech_view.size) * ui_scale
 			_speech_sprite.size = caption_size
 			var half_width := caption_size.x * 0.5
 			var safe_x := half_width + 24.0
 			var safe_y := caption_size.y * 0.5 + 28.0
 			var offscreen := camera.is_position_behind(anchor) or screen.x < safe_x or screen.x > viewport_size.x - safe_x or screen.y < safe_y or screen.y > viewport_size.y * 0.7
 			if offscreen:
-				reference_height *= 0.78
-				caption_size = Vector2(float(_speech_view.size.x) / float(_speech_view.size.y) * reference_height * viewport_size.y, reference_height * viewport_size.y)
+				caption_size *= 0.86
 				_speech_sprite.size = caption_size
 				safe_x = caption_size.x * 0.5 + 24.0
 				safe_y = caption_size.y * 0.5 + 28.0
@@ -679,6 +715,7 @@ func _layout_caption() -> void:
 					screen.y = viewport_size.y * 0.2
 				screen.x = clampf(screen.x, safe_x, viewport_size.x - safe_x)
 				screen.y = clampf(screen.y, safe_y, viewport_size.y * 0.7)
+			screen.y = clampf(screen.y - caption_size.y * 0.5 - 12.0, safe_y, viewport_size.y * 0.7)
 			_speech_sprite.position = screen - caption_size * 0.5
 	if _lantern_prompt and _lantern and is_instance_valid(_lantern):
 		var camera := get_viewport().get_camera_3d()
@@ -708,7 +745,16 @@ func _dialogue_screen_side(camera: Camera3D, world_position: Vector3, screen_pos
 	return -1.0 if to_speaker.dot(camera_right) < 0.0 else 1.0
 
 
+func _player_crossed_dream_threshold() -> bool:
+	if Game.house == null:
+		return true
+	var facing := Game.house.front_door_facing()
+	var doorway := Game.house.front_door_approach() + facing * 1.65
+	return (Game.player.global_position - doorway).dot(facing) >= 0.0
+
+
 func _process(delta: float) -> void:
+	_update_dream_journal_hint(delta)
 	if _aura_rect:
 		var dream_active := Game.phase == Game.Phase.DREAM and not _dream_journal_open
 		_aura_rect.visible = dream_active
@@ -722,9 +768,8 @@ func _process(delta: float) -> void:
 	if _choice_panel and _choice_panel.visible:
 		_choice_time += delta
 		if _choice_index >= 0 and _choice_index < _choice_buttons.size():
-			var selected_label := _choice_buttons[_choice_index]
-			var breath := 1.06 + sin(_choice_time * 2.4) * 0.025
-			selected_label.scale = Vector2.ONE * breath
+			var selected_row := _choice_rows[_choice_index]
+			selected_row.modulate.a = 0.94 + sin(_choice_time * 2.0) * 0.035
 	_update_post_effect(delta)
 	if Game.phase != Game.Phase.DREAM:
 		return
@@ -747,10 +792,12 @@ func _process(delta: float) -> void:
 	if _finished:
 		return
 	if not _dream_voice_unlocked:
-		if Game.player.global_position.distance_to(_figure.global_position) <= MATHILDA_APPROACH_DISTANCE:
+		if _apparition_state == ApparitionState.PRESENT and _player_crossed_dream_threshold() and Game.player.global_position.distance_to(_figure.global_position) <= MATHILDA_APPROACH_DISTANCE:
 			_dream_voice_unlocked = true
+			_opening_station_pending = true
 			_set_caption(str(_story.get("opening", "")), "MATHILDA")
-			_pulse_effect(0.52, "insight", _figure)
+			_story_line_active = true
+			_story_line_hold = 6.5
 		else:
 			_update_figure(delta)
 			_update_lantern(delta)
@@ -765,6 +812,7 @@ func _process(delta: float) -> void:
 	_update_figure(delta)
 	_update_lantern(delta)
 	var route_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
+	_update_late_step_scene(delta, route_progress)
 	_queue_reached_story_marker(route_progress)
 	var beats: Array = _story.get("beats", [])
 	var events: Array = _story.get("events", [])
@@ -787,6 +835,8 @@ func _queue_reached_story_marker(route_progress: float) -> void:
 		var event: Dictionary = events[_story_event_cue_index]
 		event_offset = float(event.get("offset", 0.0))
 	if beat_offset <= event_offset and route_progress >= beat_offset:
+		if str(beats[_stage].get("id", "")) == "footsteps" and not _late_step_ready:
+			return
 		var beat: Dictionary = beats[_stage]
 		_stage += 1
 		_queue_story_line(str(beat.get("text", "")), str(beat.get("motion", "")), beat.get("journal", {}))
@@ -801,6 +851,34 @@ func _queue_reached_story_marker(route_progress: float) -> void:
 		var event: Dictionary = events[_story_event_cue_index]
 		_story_event_cue_index += 1
 		_cue_story_event(event)
+
+
+func _update_late_step_scene(delta: float, route_progress: float) -> void:
+	var beats: Array = _story.get("beats", [])
+	if _stage >= beats.size() or str(beats[_stage].get("id", "")) != "footsteps" or _late_step_ready:
+		return
+	var cue_offset := FIGURE_OFFSETS[_stage] - 2.5
+	if route_progress < cue_offset:
+		return
+	var speed := Vector2(Game.player.velocity.x, Game.player.velocity.z).length()
+	if _late_step_dialogue_delay >= 0.0:
+		_late_step_dialogue_delay = maxf(_late_step_dialogue_delay - delta, 0.0)
+		if _late_step_dialogue_delay <= 0.0:
+			_late_step_ready = true
+		return
+	if route_progress >= cue_offset + 5.0:
+		_late_step_ready = true
+		return
+	if speed <= 0.28:
+		_late_step_stop_time += delta
+		if _late_step_stop_time >= 0.55:
+			var player_offset := Game.trail.offset_of(Game.player.global_position)
+			var step_frame := Game.trail.frame_at(maxf(Game.trail.player_start_offset, player_offset - 2.2))
+			var answer_frame := Game.trail.frame_at(maxf(Game.trail.player_start_offset, player_offset - 1.5))
+			_dream_soundscape.call("delayed_step_cue", Game.trail.on_ground(step_frame.origin), Game.trail.on_ground(answer_frame.origin))
+			_late_step_dialogue_delay = 0.82
+	else:
+		_late_step_stop_time = 0.0
 
 
 func _queue_story_line(line: String, motion: String = "", journal_entry: Dictionary = {}, station_round: int = -1, visual_cue: String = "") -> void:
@@ -916,6 +994,31 @@ func _set_figure_route_offset(along: float) -> void:
 	_place_figure(along)
 
 
+func _start_authored_figure_move(target_offset: float, duration: float, look_at_player := false) -> void:
+	if _figure == null or Game.trail == null:
+		return
+	if _figure_motion_tween and _figure_motion_tween.is_running():
+		_figure_motion_tween.kill()
+	_figure_motion_target_offset = clampf(target_offset, Game.trail.player_start_offset, Game.trail.length)
+	_figure_motion_look_at_player = look_at_player
+	_figure_motion_active = absf(_figure_motion_target_offset - _figure_offset) > 0.015
+	if not _figure_motion_active:
+		_finish_authored_figure_move()
+		return
+	_set_figure_moving(true)
+	_figure_motion_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_figure_motion_tween.tween_method(_set_figure_route_offset, _figure_offset, _figure_motion_target_offset, maxf(duration, 0.12))
+	_figure_motion_tween.tween_callback(_finish_authored_figure_move)
+
+
+func _finish_authored_figure_move() -> void:
+	_figure_motion_active = false
+	_set_figure_moving(false)
+	if _figure_motion_look_at_player and Game.player:
+		_turn_figure_toward_point(Game.player.global_position, 0.7)
+	_figure_motion_look_at_player = false
+
+
 func _set_rambling_gaze_from_route(side_sign: float) -> void:
 	var frame := Game.trail.frame_at(_figure_offset)
 	var gaze_direction := -frame.basis.z * 5.0 if absf(side_sign) > 1.0 else frame.basis.x * side_sign * 5.0
@@ -960,6 +1063,9 @@ func _update_story_lines(delta: float) -> void:
 				if _station_after_line >= 0:
 					_pending_station_rounds.append(_station_after_line)
 					_station_after_line = -1
+				if _opening_station_pending:
+					_pending_station_rounds.append(0)
+					_opening_station_pending = false
 				_story_gap_remaining = 1.2 if not _story_line_queue.is_empty() or not _pending_station_rounds.is_empty() else 0.0
 	elif _story_gap_remaining > 0.0:
 		_story_gap_remaining = maxf(_story_gap_remaining - delta, 0.0)
@@ -983,6 +1089,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _dream_journal_open:
 		if event.is_action_pressed("pause"):
 			_close_dream_journal()
+		elif event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
+			_toggle_journal_guidance()
 		elif event.is_action_pressed("ui_up"):
 			_dream_journal_scroll.scroll_vertical = maxi(_dream_journal_scroll.scroll_vertical - 120, 0)
 		elif event.is_action_pressed("ui_down"):
@@ -1211,7 +1319,7 @@ func _update_figure_aura(delta: float) -> void:
 	var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
 	var aura_intensity := (0.7 + cue_pulse * 0.9) * breath * screen_effects
-	_figure_aura_shell.scale = Vector3(0.76, 1.2, 0.76) * (1.0 + cue_pulse * 0.075 + sin(_figure_aura_time * 1.4) * 0.018)
+	_figure_aura_shell.scale = Vector3(0.58, 1.05, 0.58) * (1.0 + cue_pulse * 0.075 + sin(_figure_aura_time * 1.4) * 0.018)
 	_figure_aura_shell.rotation.y += delta * (0.16 + cue_pulse * 0.48)
 	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
 	_figure_aura_material.set_shader_parameter("time", _figure_aura_time)
@@ -1240,6 +1348,10 @@ func _figure_aura_mood_color() -> Color:
 				return Color("f6a8c8")
 			"silence":
 				return Color("a5b8e8")
+			"walk_beside":
+				return Color("b5e5cb")
+			"present_need":
+				return Color("ffd79a")
 	if _station_choice_effect == "escalate" or _conversation_strain >= 4:
 		return Color("ff435f")
 	if _station_choice_effect == "push" or _conversation_strain > 0:
@@ -1762,6 +1874,7 @@ func _build_choice_panel() -> void:
 	_choice_panel.add_child(_choice_title)
 	_choice_hint = _new_choice_label(16)
 	_choice_hint.modulate = Color("b6b0a6")
+	_choice_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_choice_panel.add_child(_choice_hint)
 
 
@@ -1771,7 +1884,7 @@ func _new_choice_label(font_size: int) -> Label:
 	label.add_theme_color_override("font_outline_color", Color(0.012, 0.016, 0.024, 0.97))
 	label.add_theme_constant_override("outline_size", 3)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
@@ -1783,13 +1896,25 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 			_choice_panel.remove_child(child)
 			child.queue_free()
 	_choice_buttons.clear()
+	_choice_rows.clear()
 	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
-	_choice_hint.text = "ESC TO PAUSE" if _waking_card else "↑ / ↓ TO SELECT   ·   ESC TO PAUSE"
+	var confirm_hint := "%s / A" % Game.settings.key_label("interact")
+	_choice_hint.text = "%s TO RETURN   ·   ESC TO PAUSE" % confirm_hint if _waking_card else "↑ / ↓ OR STICK TO CHOOSE   ·   %s TO SPEAK   ·   ESC TO PAUSE" % confirm_hint
 	_set_caption_action("Return" if _waking_card else "Say")
 	for index in range(labels.size()):
+		var row := PanelContainer.new()
+		row.name = "DreamChoiceRow%d" % (index + 1)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_choice_panel.add_child(row)
 		var choice_label := _new_choice_label(20 if labels.size() <= 4 else 18)
 		choice_label.text = labels[index]
-		_choice_panel.add_child(choice_label)
+		choice_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		choice_label.offset_left = 14.0
+		choice_label.offset_right = -12.0
+		choice_label.offset_top = 5.0
+		choice_label.offset_bottom = -5.0
+		row.add_child(choice_label)
+		_choice_rows.append(row)
 		_choice_buttons.append(choice_label)
 	_update_choice_positions()
 
@@ -1802,32 +1927,40 @@ func _update_choice_positions() -> void:
 	if camera == null:
 		return
 	var viewport_size := get_viewport().get_visible_rect().size
-	var speaker_at := speaker.global_position + Vector3.UP * 1.4
+	var speaker_at := speaker.global_position + Vector3.UP * 1.55
 	var speaker_screen := camera.unproject_position(speaker_at)
-	var side := -_dialogue_screen_side(camera, speaker_at, speaker_screen)
+	var label_width := minf(540.0, viewport_size.x * 0.36)
+	var left_x := viewport_size.x * 0.23
+	var right_x := viewport_size.x * 0.77
+	var player_screen := camera.unproject_position(Game.player.global_position + Vector3.UP * 1.55)
+	var left_score := absf(speaker_screen.x - left_x) + absf(player_screen.x - left_x) * 0.55
+	var right_score := absf(speaker_screen.x - right_x) + absf(player_screen.x - right_x) * 0.55
 	if is_instance_valid(_lantern) and _lantern.visible:
-		var lantern_at: Vector3 = _lantern.global_position + Vector3.UP * 0.9
-		var lantern_screen := camera.unproject_position(lantern_at)
-		var same_band := absf(lantern_screen.y - viewport_size.y * 0.54) < viewport_size.y * 0.34
-		if not camera.is_position_behind(lantern_at) and same_band:
-			side = -1.0 if lantern_screen.x >= viewport_size.x * 0.5 else 1.0
-	var center_x := viewport_size.x * (0.17 if side < 0.0 else 0.83)
-	var center_y := viewport_size.y * 0.54
-	var row_spacing := 48.0 if _choice_buttons.size() <= 4 else 42.0
-	var row_half_height := float(maxi(_choice_buttons.size() - 1, 0)) * row_spacing * 0.5
-	var label_width := minf(560.0, viewport_size.x * 0.32)
+		var lantern_screen := camera.unproject_position(_lantern.global_position + Vector3.UP * 0.9)
+		if not camera.is_position_behind(_lantern.global_position + Vector3.UP * 0.9):
+			left_score += maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - left_x))
+			right_score += maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - right_x))
+	var side := -1.0 if left_score >= right_score else 1.0
+	var center_x := left_x if side < 0.0 else right_x
+	var row_height := 46.0
+	var characters_per_line := maxi(int((label_width - 38.0) / 12.5), 16)
+	for button in _choice_buttons:
+		var line_count := maxi(1, ceili(float(button.text.length()) / float(characters_per_line)))
+		row_height = maxf(row_height, float(line_count) * 26.0 + 16.0)
+	var row_spacing := row_height + 8.0
+	var row_half_height := float(_choice_buttons.size()) * row_spacing * 0.5
+	var center_margin := minf(row_half_height + 72.0, viewport_size.y * 0.44)
+	var center_y := clampf(viewport_size.y * 0.55, center_margin, viewport_size.y - center_margin)
+	label_width = minf(label_width, viewport_size.x * 0.42)
 	_choice_title.size = Vector2(label_width, 30.0)
 	_choice_title.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - 66.0)
-	var hint_lines := 0
-	for hint_part in _choice_hint.text.split("\n", false):
-		hint_lines += maxi(1, ceili(float(hint_part.length()) / maxf(label_width / 10.0, 1.0)))
-	_choice_hint.size = Vector2(label_width, maxf(28.0, float(hint_lines) * 22.0))
-	_choice_hint.position = Vector2(center_x - label_width * 0.5, center_y + row_half_height + 34.0)
+	_choice_hint.size = Vector2(label_width, 44.0)
+	_choice_hint.position = Vector2(center_x - label_width * 0.5, center_y + row_half_height + 16.0)
 	for index in _choice_buttons.size():
 		var button := _choice_buttons[index]
-		button.size = Vector2(label_width, 32.0)
-		button.pivot_offset = button.size * 0.5
-		button.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height + float(index) * row_spacing)
+		var row := _choice_rows[index]
+		row.size = Vector2(label_width, row_height)
+		row.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height + float(index) * row_spacing)
 
 
 func _choose_small_talk(index: int) -> void:
@@ -1914,13 +2047,24 @@ func _set_choice_index(index: int) -> void:
 
 
 func _style_choice(index: int, text: String) -> void:
-	if index < 0 or index >= _choice_buttons.size():
+	if index < 0 or index >= _choice_buttons.size() or index >= _choice_rows.size():
 		return
 	var label := _choice_buttons[index]
+	var row := _choice_rows[index]
 	var selected := index == _choice_index
 	label.text = ("◆  " if selected else "◇  ") + text
-	label.modulate = Color("f0dfbd") if selected else Color("c5c3c3")
-	label.scale = Vector2.ONE * (1.08 if selected else 1.0)
+	label.modulate = Color("f4e6ca") if selected else Color("b9bec4")
+	var border_color := UiChrome.SIGNAL if selected else Color("8b8580")
+	border_color.a = 0.76 if selected else 0.34
+	var style := UiChrome.term_box(
+		Color("17151a", 0.91 if selected else 0.72),
+		border_color,
+		2 if selected else 1,
+		8
+	)
+	style.border_width_left = 4 if selected else 1
+	row.add_theme_stylebox_override("panel", style)
+	row.modulate.a = 1.0
 
 
 func _refresh_choices() -> void:
@@ -1972,25 +2116,62 @@ func _choose_memory(memory: String) -> void:
 
 
 func _react_to_answer(memory: String) -> void:
-	if _figure == null:
+	if _figure == null or Game.player == null:
 		return
-	var reaction := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _story_motion_tween and _story_motion_tween.is_running():
+		_story_motion_tween.kill()
+	_set_figure_moving(false)
 	match memory:
 		"name":
-			reaction.tween_property(_figure, "rotation:y", _figure.rotation.y + deg_to_rad(9.0), 0.65)
+			_turn_figure_toward_point(Game.player.global_position, 0.7)
 		"waiting":
-			var toward_player := (Game.player.global_position - _figure.global_position).normalized()
-			reaction.tween_property(_figure, "global_position", _figure.global_position + toward_player * 0.38, 0.8)
+			# Stillness is accepted without drawing Mathilda closer.
+			_figure_aura_pulse = 0.12
+			_turn_figure_toward_point(Game.player.global_position, 0.8)
 		"remember":
-			reaction.tween_property(_figure, "scale:y", 0.92, 0.45)
-			reaction.tween_property(_figure, "scale:y", 1.0, 0.6)
+			var ahead := Game.trail.frame_at(minf(_figure_offset + 7.0, Game.trail.length)).origin if Game.trail else _figure.global_position + Vector3.FORWARD
+			_turn_figure_toward_point(ahead, 0.8)
 		"silence":
 			var house_point := Game.house.spawn_point() if Game.house else _figure.global_position + Vector3.BACK
-			var away := house_point - _figure.global_position
-			away.y = 0.0
-			if away.length_squared() > 0.01:
-				var yaw := atan2(-away.x, -away.z)
-				reaction.tween_property(_figure, "rotation:y", yaw, 0.8)
+			_turn_figure_toward_point(house_point, 0.8)
+		"walk_beside":
+			var player_offset := Game.trail.offset_of(Game.player.global_position) if Game.trail else _figure_offset
+			var beside_offset := minf(player_offset + 2.45, Game.trail.length) if Game.trail else _figure_offset
+			_start_authored_figure_move(beside_offset, 0.9, true)
+		"present_need":
+			var light_at := _lantern.global_position if is_instance_valid(_lantern) else _figure.global_position + Vector3.FORWARD
+			if not is_instance_valid(_lantern) and _memory_architecture:
+				light_at = _memory_architecture.cue_position("clearing")
+			_turn_figure_toward_point(light_at, 0.8)
+
+
+func _turn_figure_toward_point(point: Vector3, duration: float) -> void:
+	if _figure == null:
+		return
+	var direction := point - _figure.global_position
+	direction.y = 0.0
+	if direction.length_squared() <= 0.01:
+		return
+	var target_yaw := atan2(-direction.x, -direction.z)
+	_turn_figure_to_yaw(target_yaw, duration)
+
+
+func _turn_figure_to_yaw(target_yaw: float, duration: float) -> void:
+	if _figure == null:
+		return
+	if _figure_turn_tween and _figure_turn_tween.is_running():
+		_figure_turn_tween.kill()
+	_figure_turn_target_yaw = _figure.rotation.y + wrapf(target_yaw - _figure.rotation.y, -PI, PI)
+	_figure_turn_active = absf(_figure_turn_target_yaw - _figure.rotation.y) > 0.01
+	if not _figure_turn_active:
+		return
+	_figure_turn_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_figure_turn_tween.tween_property(_figure, "rotation:y", _figure_turn_target_yaw, maxf(duration, 0.12))
+	_figure_turn_tween.tween_callback(_finish_figure_turn)
+
+
+func _finish_figure_turn() -> void:
+	_figure_turn_active = false
 
 
 func _wake() -> void:
@@ -2050,7 +2231,28 @@ func _ending_text() -> String:
 			result = str(unresolved.get("response", _story.get("arrival", "")))
 	if _memory_architecture:
 		_memory_architecture.settle(_dream_outcome)
+	_compose_waking_scene()
 	return result
+
+
+func _compose_waking_scene() -> void:
+	if _figure == null or Game.player == null:
+		return
+	if _story_motion_tween and _story_motion_tween.is_running():
+		_story_motion_tween.kill()
+	_set_figure_moving(false)
+	match _dream_outcome:
+		"complete":
+			_turn_figure_toward_point(Game.player.global_position, 0.9)
+		"unresolved":
+			var window_at := _memory_architecture.cue_position("window") if _memory_architecture else _figure.global_position + Vector3.FORWARD
+			_turn_figure_toward_point(window_at, 0.9)
+		"ruptured":
+			# She turns out of the exchange and takes one measured step. The
+			# warning remains readable while she chooses to leave the conversation.
+			var exit_offset := minf(_figure_offset + 0.75, Game.trail.length) if Game.trail else _figure_offset
+			_start_authored_figure_move(exit_offset, 0.95)
+			_figure_aura_pulse = 0.28
 
 
 func _return_to_menu() -> void:
@@ -2073,6 +2275,7 @@ func _set_caption(line: String, speaker := "", preserve_story_queue := false, ac
 	_set_speaker(speaker)
 	_caption.text = line
 	_set_caption_action(action)
+	_resize_caption(line, not action.is_empty())
 	_speech_sprite.visible = not line.is_empty()
 	_speech_sprite.modulate.a = 0.0
 	_caption_time = 0.0
@@ -2082,6 +2285,13 @@ func _set_caption(line: String, speaker := "", preserve_story_queue := false, ac
 		_caption_tween = create_tween()
 		_caption_tween.tween_property(_speech_sprite, "modulate:a", 1.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_layout_caption()
+
+
+func _resize_caption(line: String, include_action: bool) -> void:
+	var font_size := _caption.get_theme_font_size("font_size")
+	var estimated_lines := maxi(1, ceili(float(line.length()) / (58.0 * 27.0 / float(font_size))))
+	var content_height := 54 + estimated_lines * ceili(38.0 * float(font_size) / 27.0) + (32 if include_action else 0)
+	_speech_view.size = Vector2i(CAPTION_VIEWPORT_WIDTH, clampi(content_height, 92, 320))
 
 
 func _set_caption_action(caption: String) -> void:
@@ -2160,13 +2370,11 @@ func _update_post_effect(delta: float) -> void:
 	if dream_active:
 		_dream_elapsed += delta
 	var dream_weight := 0.52 * screen_effects if dream_active else 0.0
-	var startup_spin := (1.0 - smoothstep(12.0, 30.0, _dream_elapsed)) * screen_effects if dream_active else 0.0
 	if _post_rect:
 		_post_rect.visible = dream_weight > 0.001 or visible_strength > 0.015
 	if _post_material:
 		_post_material.set_shader_parameter("intensity", visible_strength)
 		_post_material.set_shader_parameter("dream_weight", dream_weight)
-		_post_material.set_shader_parameter("spin", startup_spin)
 		_post_material.set_shader_parameter("dream_clock", _dream_elapsed)
 		_post_material.set_shader_parameter("cue", _cue_value(_effect_cue))
 		var viewport_size := get_viewport().get_visible_rect().size.max(Vector2.ONE)

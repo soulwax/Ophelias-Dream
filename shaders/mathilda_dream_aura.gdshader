@@ -17,7 +17,7 @@ void vertex() {
 void fragment() {
 	vec3 normal = normalize(NORMAL);
 	vec3 view_direction = normalize(VIEW);
-	float rim = pow(1.0 - abs(dot(normal, view_direction)), 2.0);
+	float rim = pow(1.0 - abs(dot(normal, view_direction)), 3.5);
 	float angle = atan(shell_position.z, shell_position.x);
 	float current_phase = shell_position.y * 7.5 - time * (1.4 + pulse * 1.8)
 		+ sin(angle * 3.0 + time * 0.8) * 0.8;
@@ -26,10 +26,10 @@ void fragment() {
 	float height_fade = smoothstep(-1.12, -0.48, shell_position.y)
 		* (1.0 - smoothstep(1.18, 1.72, shell_position.y));
 	float shimmer = 0.82 + 0.18 * sin(time * 4.2 + angle * 4.0 + shell_position.y * 8.0);
-	float wisps = (ribbons * 0.25 + drifting_threads * 0.16) * height_fade;
-	float aura_alpha = (rim * 0.54 + wisps) * intensity * shimmer * reveal;
+	float wisps = (ribbons * 0.15 + drifting_threads * 0.09) * height_fade;
+	float aura_alpha = (rim * 0.3 + wisps) * intensity * shimmer * reveal;
 	vec3 aura = mood_color.rgb * (1.25 + pulse * 1.8 + wisps * 1.7);
 	ALBEDO = aura;
 	EMISSION = aura;
-	ALPHA = clamp(aura_alpha, 0.0, 0.76);
+	ALPHA = clamp(aura_alpha, 0.0, 0.28);
 }

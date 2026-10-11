@@ -491,10 +491,12 @@ func _dream() -> Object:
 
 func _dream_state_keys() -> Array:
 	return [
-		"_figure_offset", "_figure_moving", "_figure_rambling", "_rambling_gaze_target", "_apparition_state",
+		"_figure_offset", "_figure_moving", "_figure_rambling", "_figure_motion_active", "_figure_motion_target_offset",
+		"_figure_motion_look_at_player", "_figure_turn_active", "_figure_turn_target_yaw",
+		"_rambling_gaze_target", "_apparition_state",
 		"_apparition_timer", "_apparition_dissolve", "_apparition_link_strength", "_boundary_strength",
 		"_lantern_time", "_lantern_wait", "_lantern_sheltered", "_lantern_seen", "_lantern_left_once", "_lantern_returned",
-		"_dream_quiet", "_dream_quiet_after_response", "_dream_elapsed", "_dream_voice_unlocked",
+		"_dream_quiet", "_dream_quiet_after_response", "_dream_elapsed", "_dream_voice_unlocked", "_opening_station_pending",
 		"_conversation_camera_active", "_conversation_camera_returning",
 		"_conversation_camera_return_time", "_camera_choreography_enabled", "_conversation_response",
 		"_conversation_response_pending", "_conversation_response_ready", "_conversation_response_timer", "_choice_index",
@@ -505,9 +507,11 @@ func _dream_state_keys() -> Array:
 		"_dialogue_ui_hidden_for_pause", "_pause_speech_visible", "_pause_choice_panel_visible", "_pause_lantern_prompt_visible",
 		"_journal_speech_visible", "_journal_choice_visible", "_journal_lantern_visible", "_story_line_queue",
 		"_pending_station_rounds", "_story_line_active", "_story_line_hold", "_story_gap_remaining", "_story_finish_pending",
+		"_late_step_stop_time", "_late_step_dialogue_delay", "_late_step_ready",
 		"_stage", "_finished", "_memory_chosen", "_caption_time", "_effect_strength", "_effect_target", "_effect_hold",
 		"_effect_cue", "_story_event_cue_index", "_seen_story_cues", "_dream_understood", "_dream_journal_entries",
-		"_dream_journal_seen", "_dream_journal_available", "_dream_journal_open"
+		"_dream_journal_seen", "_dream_journal_available", "_dream_journal_open", "_journal_guidance_visible",
+		"_dream_journal_hint_time"
 	]
 
 
@@ -518,6 +522,9 @@ func _capture_dream() -> Dictionary:
 		values["caption_text"] = target.get("_caption").text
 		values["speech_visible"] = target.get("_speech_sprite").visible
 		values["speaker_text"] = target.get("_speaker_label").text
+		var caption_action := target.get("_caption_action") as HBoxContainer
+		values["caption_action_visible"] = caption_action.visible
+		values["caption_action_text"] = (caption_action.get_child(1) as Label).text
 	if target and target.get("_figure"):
 		values["figure_transform"] = target.get("_figure").global_transform
 	if target and target.get("_lantern"):
@@ -555,12 +562,12 @@ func _dream_route() -> Object:
 
 
 func _capture_dream_architecture() -> Dictionary:
-	return _capture_properties(_dream_architecture(), ["_states", "_values", "_elapsed", "_queued_reveals", "_suspended", "_closing", "_pressure", "_pressure_target", "_time"])
+	return _capture_properties(_dream_architecture(), ["_states", "_values", "_elapsed", "_queued_reveals", "_suspended", "_closing", "_pressure", "_pressure_target", "_time", "_bearing_follow"])
 
 
 func _capture_dream_soundscape() -> Dictionary:
 	var target := _dream_soundscape()
-	var values := _capture_properties(target, ["_last_clip", "_next_pair", "_second_step_in", "_apparition_quiet_time", "_memory_target_db", "_memory_hold", "_suspended"])
+	var values := _capture_properties(target, ["_last_clip", "_next_pair", "_second_step_in", "_cued_step_in", "_cued_step_position", "_apparition_quiet_time", "_memory_target_db", "_memory_hold", "_suspended"])
 	if target and target.get("_memory_bed"):
 		var bed: AudioStreamPlayer3D = target.get("_memory_bed")
 		values["bed_playing"] = bed.playing

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "opening": "Three moments wait along the trail. Stay with what she offers. If a detail stays with you, press J. I will not look.",
+  "opening": "The latch sticks when it gets cold. I said I'd fix it yesterday. I keep saying that.",
   "journal_cue": {
     "id": "moved_threshold",
     "title": "A moved threshold",
@@ -28,7 +28,7 @@
         "text": "Your footsteps stop. The other set needs a moment to obey.",
         "approach": "Offer a choice, then let her decide whether to move, wait, or stop."
       },
-      "text": "You stop. The heavier steps stop a moment later. Three sisters spin the road: leave, follow, freeze. Old stories call the frozen one faithless. Old stories are told by the living."
+      "text": "The heavier steps are always late. When you stop, they take a moment to notice. Three sisters spin the road: leave, follow, freeze. Old stories call the frozen one faithless. Old stories are told by the living."
     },
     {
       "id": "lantern",
@@ -92,29 +92,29 @@
     }
   ],
   "event_talk": {
-    "thread": 0,
-    "window": 1
+    "thread": 1,
+    "window": 2
   },
   "arrival": "The trees are empty. The lantern is still turned toward them.",
   "small_talk": [
     {
-      "prompt": "The snow keeps changing the path.",
-      "guidance": "Begin with the ordinary. Let her choose how far to follow it.",
+      "prompt": "Sorry. That was a dull way to say hello. Did the cold catch you?",
+      "guidance": "Start with the ordinary. You can keep your distance, wait, or ask her to walk with you.",
       "choices": [
         {
-          "label": "Cold night.",
-          "response": "Hestia had one coal. Or it was Vesta. The gods change names when you cross a mountain. I keep forgetting which mountain this is.",
+          "label": "A little cold. I’ll be all right.",
+          "response": "Good. I brought the wrong gloves again. They look warm, which is not the same thing.",
           "journal": {"id": "weather_first", "title": "A little weather", "text": "You began with the cold. She answered the question you asked, then wandered where she wished.", "approach": "Small talk can be a safe beginning; let her decide whether to go deeper."}
         },
         {
-          "label": "I thought the path went farther.",
-          "response": "Ariadne gives the hero a thread. Nobody asks who taught the maze to hunger, or why she has to stay behind and hold the other end.",
-          "journal": {"id": "thread_without_pull", "title": "A thread without a pull", "text": "You noticed the path. She chose the maze inside the image.", "approach": "Notice what she brings into the conversation without demanding an explanation."}
+          "label": "I wanted to see you.",
+          "response": "Oh. I thought you might. We can stand here for a moment.",
+          "journal": {"id": "wanted_to_see", "title": "Wanted to see you", "text": "You said why you came. She chose to share the moment without closing the distance.", "approach": "Warmth does not require moving closer. Let her set the distance."}
         },
         {
-          "label": "We can wait a while.",
-          "response": "Cronos ate his children. Winter does it with names, very slowly. I was trying to say the snow is pretty.",
-          "journal": {"id": "shared_quiet", "title": "Shared quiet", "text": "You offered time without asking her to fill it.", "approach": "Being present can be enough; silence does not need fixing."}
+          "label": "Would you walk with me?",
+          "response": "Yes. Slowly, though. The snow is hiding the parts of the path I remember.",
+          "journal": {"id": "walk_together", "title": "A slower path", "text": "You asked to walk together. She agreed, and set the pace.", "approach": "Offer a choice, then let the other person set the pace."}
         }
       ]
     },
@@ -146,29 +146,29 @@
       ]
     },
     {
-      "prompt": "I'm sorry. I keep giving you a maze instead of an answer. Will you stay and talk with me a little longer?",
-      "guidance": "You can reassure her without asking her to explain the apology.",
+      "prompt": "I'm sorry. I keep offering the next part like a door you have to open. Would you rather stay here or step back toward the lantern?",
+      "guidance": "Choose the distance before asking about the memory. Her offer to tell you more is not a request to press.",
       "choices": [
         {
-          "label": "Yes. Take your time.",
-          "response": "Thank you. The lantern remembers him; I only need to name what I saw.",
-          "journal": {"id": "time_without_debt", "title": "Time without debt", "text": "You stayed without making her earn your patience.", "approach": "A gentle answer can reassure without asking for more."}
+          "label": "We can stay here. No more details needed.",
+          "response": "Thank you. The light is enough to find the path. I don't need to make it explain the room.",
+          "journal": {"id": "window_without_demand", "title": "The window can wait", "text": "You stayed without making her offer into a promise to disclose more.", "approach": "An invitation to listen is not an obligation to continue. Let her choose the next detail."}
         },
         {
-          "label": "We can stop whenever you want.",
-          "response": "I know. Knowing is a door; believing it is another room.",
-          "journal": {"id": "stop_is_allowed", "title": "Stopping is allowed", "text": "You made stopping an option before she needed to ask.", "approach": "Keep control of the conversation with the person sharing it."}
+          "label": "Would a little more distance help?",
+          "response": "Yes. There. I can see both the door and you. Please keep it that way for now.",
+          "journal": {"id": "door_and_distance", "title": "Door and distance", "text": "She named a place where she could see the exit and keep you in view.", "approach": "Treat the distance she asks for as the answer, not as a starting point for negotiation."}
         },
         {
-          "label": "We can go back together.",
-          "response": "Not yet. The path behind us is full of footprints facing the wrong way.",
-          "journal": {"id": "not_yet", "title": "Not yet", "text": "She chose to continue, for now. The way back remains open.", "approach": "Treat a yes as belonging to this moment, not every next moment."}
+          "label": "Let's step back toward the lantern.",
+          "response": "All right. Slowly, and where I can still see the window. I want to choose when it leaves our sight.",
+          "journal": {"id": "window_in_sight", "title": "The window in sight", "text": "She agreed to move, then chose what she wanted to keep visible.", "approach": "A practical offer can help when it leaves the pace and direction with her."}
         },
         {
-          "label": "You have to tell me what happened.",
-          "response": "Have to? The door shuts when you say it like that.",
+          "label": "What exactly did he do there?",
+          "response": "I said I could tell you more. I didn't say you could choose the part for me.",
           "effect": "push",
-          "journal": {"id": "the_door_shuts", "title": "The door shuts", "text": "The demand made the room smaller. You can still choose what to do next.", "approach": "A disclosure is hers to offer. Notice the boundary before asking again."}
+          "journal": {"id": "the_window_closes", "title": "The window closes", "text": "She had offered a choice about listening. The question took that choice away.", "approach": "Notice the boundary, acknowledge the pressure, and return control to her."}
         }
       ]
     },

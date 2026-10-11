@@ -26,6 +26,8 @@ func _run() -> void:
 		push_error("Dream view could not enter the playable phase")
 		get_tree().quit(1)
 		return
+	if OS.get_environment("RUN_DREAM_NO_SCREEN_EFFECTS") == "1":
+		Game.settings.screen_effects = 0.0
 	_camera = Camera3D.new()
 	_camera.name = "DreamReviewCamera"
 	_camera.fov = 52.0
@@ -38,8 +40,27 @@ func _run() -> void:
 		push_error("Dream route helpers were not built")
 		get_tree().quit(1)
 		return
+	if OS.get_environment("RUN_DREAM_NO_WARP") == "1":
+		var post := experience.get("_post_rect") as ColorRect
+		post.hide()
+		experience.set("_post_rect", null)
 	experience.set("_camera_choreography_enabled", false)
 	var focus := OS.get_environment("RUN_DREAM_FOCUS")
+	if focus == "opening":
+		var started_inside := not bool(experience.call("_player_crossed_dream_threshold"))
+		_place_player(1.0)
+		var crossed := bool(experience.call("_player_crossed_dream_threshold"))
+		print("Dream doorway: inside at start=%s, outside on route=%s" % [started_inside, crossed])
+		var figure := experience.get("_figure") as Node3D
+		_aim_player_at(figure.global_position + Vector3.UP * 1.2)
+		await get_tree().create_timer(1.7).timeout
+		await _save_frame("opening_player")
+		get_tree().quit()
+		return
+	if focus == "threshold":
+		await _capture_memory_architecture(experience)
+		get_tree().quit()
+		return
 	if focus == "station_flow":
 		await _capture_station_flow(experience)
 		get_tree().quit()
@@ -117,6 +138,7 @@ func _capture_memory_architecture(experience: Node) -> void:
 		{"cue": "sisters", "offset": 12.0, "name": "memory_threshold"},
 		{"cue": "sisters", "offset": 22.0, "name": "memory_corridor_lookback"},
 		{"cue": "thread", "offset": 28.0, "name": "memory_lighthouse"},
+		{"cue": "thread", "offset": 37.0, "name": "memory_lighthouse_lookback"},
 		{"cue": "window", "offset": 43.0, "name": "memory_window"},
 		{"cue": "clearing", "offset": 61.0, "name": "memory_clearing"},
 	]
@@ -146,6 +168,8 @@ func _capture_memory_architecture(experience: Node) -> void:
 			_camera.global_position = Game.player.global_position + across * 2.0 - frame.basis.z * 1.4 + Vector3.UP * 2.2
 			_camera.look_at(architecture.cue_position(cue) + Vector3.UP * (3.0 if cue == "thread" else 1.35), Vector3.UP)
 		await _save_frame(str(view["name"]) + "_wide")
+		if OS.get_environment("RUN_DREAM_FOCUS") == "threshold":
+			break
 	print("Dream memory architecture captures saved under build/dream/")
 
 
@@ -242,21 +266,25 @@ func _capture_station_flow(experience: Node) -> void:
 	_camera.make_current()
 	experience.call("_start_station_dialogue", 0)
 	await _settle()
-	await _save_frame("station_thread_choices")
+	await _save_frame("station_threshold_choices")
 	_exercise_station_choice(experience, 0)
 	experience.call("_start_station_dialogue", 1)
+	await _settle()
+	await _save_frame("station_thread_choices")
+	_exercise_station_choice(experience, 0)
+	experience.call("_start_station_dialogue", 2)
 	await _settle()
 	await _save_frame("station_window_choices")
 	_exercise_station_choice(experience, 0)
 	var completed: Dictionary = experience.get("_completed_talk_rounds")
-	assert(completed.has(0) and completed.has(1), "station exchanges should be recorded once each")
+	assert(completed.has(0) and completed.has(1) and completed.has(2), "threshold and trail exchanges should be recorded once each")
 	experience.call("_finish_dream")
 	experience.set("_conversation_intro_waiting", false)
 	experience.call("_build_small_talk_choices")
-	assert(experience.get("_conversation_round") == 2, "closing dialogue should continue at the first unplayed round")
+	assert(experience.get("_conversation_round") == 3, "closing dialogue should continue at the first unplayed round")
 	await _settle()
 	await _save_frame("station_flow_continues")
-	print("Station dialogue capture: chronological exchanges recorded; closing dialogue resumes at round 3")
+	print("Station dialogue capture: threshold, thread, and window exchanges recorded; closing dialogue resumes at round 4")
 
 
 func _exercise_station_choice(experience: Node, index: int) -> void:
@@ -408,7 +436,8 @@ func _save_frame(name: String) -> void:
 	await _settle()
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
-	var path := ProjectSettings.globalize_path(OUT + name + ".png")
+	var prefix := "no_effects_" if OS.get_environment("RUN_DREAM_NO_SCREEN_EFFECTS") == "1" else "no_warp_" if OS.get_environment("RUN_DREAM_NO_WARP") == "1" else ""
+	var path := ProjectSettings.globalize_path(OUT + prefix + name + ".png")
 	var error := image.save_png(path)
 	if error != OK:
 		push_error("Could not save dream review image %s: %s" % [path, error_string(error)])

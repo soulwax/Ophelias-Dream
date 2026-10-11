@@ -13,8 +13,9 @@ const STONE_TEXTURE := preload("res://assets/vendor/polyhaven/aerial_grass_rock/
 const ROOF_TEXTURE := preload("res://assets/vendor/polyhaven/roof_slates_02/roof_slates_02_diff_1k.jpg")
 const CUE_SPECS := {
 	"sisters": {"offset": 15.0, "side": -7.2, "approach": 8.0, "reveal_delay": 0.9, "hold": 11.0, "afterglow": 0.15, "quiet_at": 27.0},
-	"thread": {"offset": 31.0, "side": -9.0, "approach": 9.0, "reveal_delay": 1.2, "hold": 13.0, "afterglow": 0.17, "quiet_at": 42.0},
-	"window": {"offset": 46.0, "side": 7.2, "approach": 10.0, "reveal_delay": 1.5, "hold": 18.0, "afterglow": 0.28, "quiet_at": 58.0},
+	# These reveal delays land on the end of the corresponding approach gesture.
+	"thread": {"offset": 31.0, "side": -9.0, "approach": 9.0, "reveal_delay": 0.82, "hold": 13.0, "afterglow": 0.17, "quiet_at": 42.0},
+	"window": {"offset": 46.0, "side": 7.2, "approach": 10.0, "reveal_delay": 0.7, "hold": 18.0, "afterglow": 0.28, "quiet_at": 58.0},
 	"clearing": {"offset": 61.0, "side": -8.0, "approach": 6.0, "reveal_delay": 0.0, "hold": 30.0, "afterglow": 0.18, "quiet_at": 99.0},
 }
 
@@ -31,6 +32,7 @@ var _closing := false
 var _pressure := 0.0
 var _pressure_target := 0.0
 var _time := 0.0
+var _bearing_follow := 0.0
 var _lighthouse_beam: SpotLight3D
 var _beam_pivot: Node3D
 var _beam_material: ShaderMaterial
@@ -160,15 +162,34 @@ func _process(delta: float) -> void:
 			root.visible = amount > 0.015
 		for material in _cue_materials[cue_id]:
 			(material as ShaderMaterial).set_shader_parameter("reveal", amount)
-	_update_lights()
+	_update_lights(progress, delta)
 
 
-func _update_lights() -> void:
+func _update_lights(progress: float, delta: float) -> void:
 	var thread_amount := float(_values.get("thread", 0.0))
 	if _lighthouse_beam:
 		_lighthouse_beam.light_energy = thread_amount * (0.92 - _pressure * 0.25)
 	if _beam_pivot:
-		_beam_pivot.rotation.y = sin(_time * 0.19) * 0.42 - 0.18
+		var sweep_angle := sin(_time * 0.19) * 0.42 - 0.18
+		var home_angle := sweep_angle
+		var follow_target := 0.0
+		var camera := get_viewport().get_camera_3d()
+		if thread_amount > 0.3 and progress >= 34.0 and progress <= 45.0 and camera and _trail:
+			var home := _trail.frame_at(_trail.player_start_offset).origin
+			var to_home := home - camera.global_position
+			to_home.y = 0.0
+			var view_forward := -camera.global_basis.z
+			view_forward.y = 0.0
+			if to_home.length_squared() > 0.01 and view_forward.length_squared() > 0.01 and to_home.normalized().dot(view_forward.normalized()) > 0.56:
+				# From beyond the beacon, looking back makes its beam follow the
+				# house's bearing in the player's view. The ground and tower stay fixed.
+				var tower := _beam_pivot.get_parent() as Node3D
+				var local_bearing := tower.global_basis.inverse() * to_home.normalized()
+				home_angle = atan2(-local_bearing.x, -local_bearing.z)
+				follow_target = 1.0
+		_bearing_follow = move_toward(_bearing_follow, follow_target, delta * 0.9)
+		var desired_angle := lerp_angle(sweep_angle, home_angle, _bearing_follow)
+		_beam_pivot.rotation.y = lerp_angle(_beam_pivot.rotation.y, desired_angle, clampf(delta * 1.8, 0.0, 1.0))
 	if _beam_material:
 		_beam_material.set_shader_parameter("strength", thread_amount * (1.0 - _pressure * 0.35))
 	var window_amount := float(_values.get("window", 0.0))

@@ -11,6 +11,9 @@ The journal, the pages, the road, and Mathilda's absence carry the experience.
 The authoritative story and complete spoken script are in
 [docs/MATHILDA_STORY.md](docs/MATHILDA_STORY.md).
 
+The game-wide storytelling, presentation, and atmosphere roadmap is in
+[docs/NARRATIVE_PRESENTATION_ATMOSPHERE_PLAN.md](docs/NARRATIVE_PRESENTATION_ATMOSPHERE_PLAN.md).
+
 ## Play
 
 Open the project in Godot 4.7 and run `scenes/main.tscn`, or launch it from the

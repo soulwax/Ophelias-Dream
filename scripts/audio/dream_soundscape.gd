@@ -9,6 +9,8 @@ var _voices: Array[AudioStreamPlayer3D] = []
 var _last_clip := -1
 var _next_pair := 5.5
 var _second_step_in := -1.0
+var _cued_step_in := -1.0
+var _cued_step_position := Vector3.ZERO
 var _apparition_quiet_time := 0.0
 var _memory_bed: AudioStreamPlayer3D
 var _wood_creak: AudioStreamPlayer3D
@@ -55,6 +57,11 @@ func _process(delta: float) -> void:
 	_update_memory_bed(delta)
 	if Game.phase != Game.Phase.DREAM or Game.player == null or Game.trail == null:
 		return
+	if _cued_step_in >= 0.0:
+		_cued_step_in -= delta
+		if _cued_step_in <= 0.0:
+			_play_step_at(1, _cued_step_position, 0.86)
+			_cued_step_in = -1.0
 	_apparition_quiet_time = maxf(_apparition_quiet_time - delta, 0.0)
 	if _apparition_quiet_time > 0.0:
 		return
@@ -131,14 +138,31 @@ func _play_step(voice_index: int, behind: float) -> void:
 	var player_offset := Game.trail.offset_of(Game.player.global_position)
 	var step_offset := maxf(player_offset - behind, Game.trail.player_start_offset)
 	var at := Game.trail.on_ground(Game.trail.frame_at(step_offset).origin) + Vector3.UP * 0.08
+	_play_step_at(voice_index, at, randf_range(0.96, 1.04))
+
+
+func _play_step_at(voice_index: int, at: Vector3, pitch: float) -> void:
+	if voice_index < 0 or voice_index >= _voices.size():
+		return
 	var voice := _voices[voice_index]
+	if voice.playing:
+		voice.stop()
 	voice.stream = _pick_step()
 	if voice.stream == null:
 		return
 	voice.global_position = at
-	voice.pitch_scale = randf_range(0.96, 1.04)
+	voice.pitch_scale = pitch
 	Loudness.sound(voice, STEP_LEVEL, true)
 	voice.play()
+
+
+func delayed_step_cue(first_at: Vector3, second_at: Vector3) -> void:
+	if _voices.size() < 2:
+		return
+	_cued_step_position = second_at + Vector3.UP * 0.08
+	_play_step_at(0, first_at + Vector3.UP * 0.08, 0.92)
+	_cued_step_in = 0.62
+	_apparition_quiet_time = 1.25
 
 
 func apparition_footstep(at: Vector3, returning: bool) -> void:
