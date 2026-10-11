@@ -1128,7 +1128,7 @@ func _move_camera(delta: float) -> void:
 	var travel := Vector3(_glide.x, 0.0, _glide.z)
 	var lead_speed := clampf(travel.length() / Tune.WALK_SPEED, 0.0, 1.0)
 	var lead_target := travel.normalized() * CAMERA_LEAD * lead_speed * (1.0 - _glow) * (1.0 - smoothstep(0.0, 1.0, glance)) if lead_speed > 0.001 else Vector3.ZERO
-	_camera_lead = _camera_lead.lerp(lead_target, 1.0 - exp(-delta * 2.4))
+	_camera_lead = _camera_lead.lerp(lead_target, 1.0 - exp(-delta * 4.0))
 	# On a leap the camera trails her rise and fall by a hair.
 	var rise := clampf(velocity.y * 0.012, -0.05, 0.05) * leap_air * Game.settings.camera_shake
 	_rise_lag = lerpf(_rise_lag, rise, 1.0 - exp(-delta * 6.0))

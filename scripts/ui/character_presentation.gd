@@ -379,7 +379,13 @@ func _randomize_design() -> void:
 
 
 func _build_animation_preview() -> void:
+	# Imported glTF players may autostart their first clip; stop them before
+	# deciding whether this gallery entry should preview embedded motion.
+	for node: Node in _model.find_children("*", "AnimationPlayer", true, false):
+		(node as AnimationPlayer).stop()
 	_skeleton = _model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if _skeleton != null:
+		_skeleton.reset_bone_poses()
 	_animation_select.clear()
 	_animation_select.disabled = true
 	if _skeleton == null:

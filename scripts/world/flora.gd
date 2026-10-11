@@ -439,7 +439,7 @@ func _plant_clearings() -> void:
 			var size_roll := _rng.randf()
 			var yaw := _rng.randf() * TAU
 			z += step
-			if _ground.route_distance(px, pz) < 3.0 or _near_reserved(px, pz, 4.0) or _ground.slope_at(px, pz) > 40.0:
+			if _ground.route_distance(px, pz) < Tune.LANDSCAPE_CLEAR or _near_reserved(px, pz, 4.0) or _ground.slope_at(px, pz) > 40.0:
 				continue
 			var mask := _wood_mask(px, pz)
 			var snow := _ground.snow_at(px, pz)
@@ -456,7 +456,9 @@ func _plant_clearings() -> void:
 				elif mask < 0.3 and roll < 0.18:
 					model = MOUNDS[int(size_roll * MOUNDS.size()) % MOUNDS.size()]
 					scale = lerpf(0.7, 1.45, size_roll)
-				elif roll > 0.97 and _ground.route_distance(px, pz) > 6.0:
+				# Scatter stone at the woodland's edge, where erosion would leave it,
+				# instead of dotting otherwise empty snowfields with lone boulders.
+				elif roll > 0.97 and mask > 0.12 and _ground.route_distance(px, pz) > 6.0:
 					model = BOULDERS[int(size_roll * BOULDERS.size()) % BOULDERS.size()]
 					scale = lerpf(0.55, 1.45, size_roll)
 				else:

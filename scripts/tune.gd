@@ -19,7 +19,7 @@ const STRIDE_STOP_WALK := 9.0
 const STRIDE_STOP_SPRINT := 12.0
 const STRIDE_BRAKE := 20.0
 # From standing, the first tick of input already moves her this fast (m/s).
-const START_BURST := 0.55
+const START_BURST := 0.38
 # Indoors, pushing into the edge of a door frame slips her sideways into the
 # opening at up to this speed (m/s).
 const DOOR_ASSIST := 1.1
@@ -323,9 +323,9 @@ const RING_WIDTH := 80.0
 const CHUNK_SIZE := 60.0
 const CHUNK_NEAR := 100.0
 const CHUNK_MID := 260.0
-const CHUNK_CELL_NEAR := 1.5
-const CHUNK_CELL_MID := 3.0
-const CHUNK_CELL_FAR := 6.0
+const CHUNK_CELL_NEAR := 1.0
+const CHUNK_CELL_MID := 2.0
+const CHUNK_CELL_FAR := 4.0
 # Render batches are smaller than terrain/physics chunks for tighter culling.
 const FOREST_BATCH_SIZE := 20.0
 # A separate visual layer lets local lights omit the woods from their shadows.
@@ -342,6 +342,8 @@ const FOREST_RENDER_LAYER := 2
 # FOREST_DRAW (FOREST_DRAW_LEAN), undergrowth to UNDER_DRAW (UNDER_DRAW_LEAN).
 const FOREST_FREQ := 0.011
 const FOREST_CLEAR := 12.0
+# Keep small landscape props outside the main walking line.
+const LANDSCAPE_CLEAR := 5.0
 const FOREST_RESERVED := 25.0
 const FOREST_SLOPE := 35.0
 const FOREST_SPACING := 4.5
