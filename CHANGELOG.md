@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.12.0 — 2026-10-12
+
+愛
+
+- Give conversation replies a smooth camera and body handoff while preserving both characters' positions.
+- Let the walk from the warm window settle into six seconds of quiet travel, with pause, journal, and save/load support.
+- Keep Mathilda's purple presence restrained and cue focused.
+
 ## 0.2.11.0 — 2026-10-12
 
 - Tie dream journal notes to their scene and restore useful context after loading.

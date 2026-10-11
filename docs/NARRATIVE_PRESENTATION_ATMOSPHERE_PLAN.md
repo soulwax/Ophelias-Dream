@@ -135,6 +135,8 @@ Make the warm-window clue coincide with the line that gives it meaning. This is 
 
 Protect an interval between the window and clearing. No fresh revelation, mandatory choice, or competing journal toast. Let snow, footsteps, cloth movement, and the last sentence remain with the player. Mathilda's body language carries the tension: she begins to turn back, decides against it, and continues.
 
+The live transition now begins after the window exchange and lasts at least six seconds, continuing until the player reaches the clearing approach at route metre 61. Mathilda briefly stops and looks toward the window, then follows the path forward. Remembered footsteps and room tone recede while the player's movement and weather remain audible. Pause and journal access suspend the interval; the run snapshot preserves its progress. This transition introduces no additional story fields or changes to memory IDs.
+
 **Playable purpose:** choose a pace and absorb what happened. **Image:** two separated figures on one clear line through the dark.
 
 ### Scene F: the clearing — decide how to remain present
@@ -271,6 +273,8 @@ Use grounded winter materials and a consistent stylized character treatment. The
 
 Mathilda's shadow retains the dark purple aura already requested. Shape it as a low luminance rim and small local spill, with the core silhouette darker than the surrounding snow. Give it a different animation on approach, listening, rambling, and withdrawal. Avoid a persistent bright halo that makes her read as a magical collectible.
 
+The current visual pass keeps the persistent glow on her body silhouette, reserves the surrounding shell for brief cue accents, and replaces hard square motes with small soft flecks that fade over their lifetime. Lean graphics reduce their count; disabling screen effects removes the decorative spill and flecks while retaining the figure.
+
 Build an effect hierarchy:
 
 - **Persistent baseline:** material coherence, slow fine snow, atmospheric depth, restrained CRT marks, barely perceptible aura.
@@ -291,6 +295,10 @@ When Mathilda speaks directly, the two figures generally face one another. When 
 Apparition has a sequence: a plausible entrance or occlusion, a sound or light preparation, a stable silhouette, then a response to the player's attention. Disappearance has a direction, an emotional reason, and an aftermath. No visible relocation should occur because the player crossed an arbitrary distance while looking at her.
 
 For each scene, record a default player view, an alternate approach, a close conversation composition, and a lookback. The camera can offer a gentle composed hold during an accepted conversation, with a reversible transition and clear cancellation. Camera collision, sudden recentering, body clipping, and inappropriate FOV changes remain unacceptable during a dramatic handoff.
+
+Current reply handoffs preserve both actors' positions and ease their body turns without changing the player's camera heading. The composed camera is limited to partners within nine metres; more distant exchanges retain the ordinary player view and associated dialogue text. World geometry bounds camera movement during the hold and return, and snapshot restoration keeps the speaker in place.
+
+Camera acquisition waits briefly for the player's spring arm after spawning or restoring a run. Reply placement gives Mathilda's silhouette priority over the player's body, and offering company produces a measured step even when the two figures are far apart.
 
 Keep motion immediate and animation fluid. Evaluate starts, stops, reversals, low stick input, slope movement, and movement after leaving a conversation. Match the rig's foot speed to actual travel, especially if collision stops the body while its intended momentum remains high. Validate the recent start-impulse and camera-lead changes in motion before further tuning.
 

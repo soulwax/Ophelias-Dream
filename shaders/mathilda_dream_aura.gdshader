@@ -27,9 +27,9 @@ void fragment() {
 		* (1.0 - smoothstep(1.18, 1.72, shell_position.y));
 	float shimmer = 0.82 + 0.18 * sin(time * 4.2 + angle * 4.0 + shell_position.y * 8.0);
 	float wisps = (ribbons * 0.15 + drifting_threads * 0.09) * height_fade;
-	float aura_alpha = (rim * 0.3 + wisps) * intensity * shimmer * reveal;
-	vec3 aura = mood_color.rgb * (1.25 + pulse * 1.8 + wisps * 1.7);
+	float aura_alpha = (rim * 0.12 + wisps * 0.5) * intensity * shimmer * reveal;
+	vec3 aura = mood_color.rgb * (0.65 + pulse * 0.5 + wisps * 0.4);
 	ALBEDO = aura;
 	EMISSION = aura;
-	ALPHA = clamp(aura_alpha, 0.0, 0.28);
+	ALPHA = clamp(aura_alpha, 0.0, 0.08);
 }

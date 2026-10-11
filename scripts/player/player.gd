@@ -1029,12 +1029,13 @@ func viewed_target() -> Node3D:
 	return aim.target
 
 
-func face_toward(target: Vector3) -> void:
+func face_toward(target: Vector3, delta: float = 0.0) -> void:
 	var direction := target - global_position
 	direction.y = 0.0
 	if direction.length_squared() < 0.01:
 		return
-	_facing = atan2(-direction.x, -direction.z)
+	var desired_facing := atan2(-direction.x, -direction.z)
+	_facing = desired_facing if delta <= 0.0 else lerp_angle(_facing, desired_facing, 1.0 - exp(-delta * 4.5))
 	if visual:
 		visual.rotation.y = _facing - _yaw
 

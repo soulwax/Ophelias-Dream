@@ -46,6 +46,14 @@ func _run() -> void:
 		experience.set("_post_rect", null)
 	experience.set("_camera_choreography_enabled", false)
 	var focus := OS.get_environment("RUN_DREAM_FOCUS")
+	if focus == "conversation_handoff":
+		await _capture_conversation_handoff(experience)
+		get_tree().quit()
+		return
+	if focus == "quiet_travel":
+		await _capture_quiet_travel(experience)
+		get_tree().quit()
+		return
 	if focus == "opening":
 		var started_inside := not bool(experience.call("_player_crossed_dream_threshold"))
 		_place_player(1.0)
@@ -126,6 +134,78 @@ func _aim_player_at(target: Vector3) -> void:
 	Game.player.set("_pitch", clampf(atan2(toward.y, maxf(flat, 0.01)), -0.15, 0.15))
 	Game.player.call("_apply_look")
 	Game.player.camera.make_current()
+
+
+func _capture_quiet_travel(experience: Node) -> void:
+	await get_tree().create_timer(1.6).timeout
+	_place_player(53.0)
+	experience.set("_dream_voice_unlocked", true)
+	experience.set("_opening_station_pending", false)
+	experience.set("_stage", 3)
+	experience.set("_story_event_cue_index", 3)
+	experience.set("_story_line_active", false)
+	experience.set("_figure_offset", Game.trail.player_start_offset + 56.0)
+	experience.call("_place_figure", Game.trail.player_start_offset + 56.0)
+	experience.set("_apparition_state", 0)
+	var figure := experience.get("_figure") as Node3D
+	figure.show()
+	experience.get("_memory_architecture").reveal_cue("window")
+	experience.call("_begin_window_interval")
+	_aim_player_at(figure.global_position + Vector3.UP * 1.2)
+	experience.set("_window_interval_elapsed", 1.0)
+	await _save_frame("quiet_travel_lookback")
+	experience.set("_window_interval_elapsed", 2.6)
+	await _save_frame("quiet_travel_forward")
+	assert(not experience.get("_speech_sprite").visible and not experience.get("_dream_journal_hint_panel").visible, "quiet travel must remain free of dialogue and journal notices")
+
+
+func _capture_conversation_handoff(experience: Node) -> void:
+	await get_tree().create_timer(1.6).timeout
+	experience.set("_camera_choreography_enabled", true)
+	experience.set("_dream_voice_unlocked", true)
+	experience.set("_opening_station_pending", false)
+	experience.set("_stage", 3)
+	experience.set("_story_event_cue_index", 3)
+	experience.set("_story_line_active", false)
+	_place_player(46.0)
+	experience.set("_figure_offset", Game.trail.player_start_offset + 50.0)
+	experience.call("_place_figure", Game.trail.player_start_offset + 50.0)
+	var figure := experience.get("_figure") as Node3D
+	_aim_player_at(figure.global_position + Vector3.UP * 1.2)
+	var before := figure.global_position
+	var heading: float = Game.player.get("_yaw")
+	experience.call("_start_station_dialogue", 2)
+	assert(figure.global_position.is_equal_approx(before), "opening dialogue must preserve the speaker position")
+	await _save_frame("conversation_hold_start")
+	await get_tree().create_timer(0.8).timeout
+	await _save_frame("conversation_hold_settled")
+	var snapshot: Dictionary = RunSave._capture_dream()
+	experience.call("_complete_character_conversation")
+	RunSave._apply_properties(experience, snapshot)
+	experience.call("restore_after_load", snapshot)
+	assert(figure.global_position.is_equal_approx(before), "restoring dialogue must preserve the speaker position")
+	await _save_frame("conversation_hold_restored")
+	experience.set("_station_dialogue_active", false)
+	experience.set("_answer_open", false)
+	experience.set("_conversation_waiting", false)
+	experience.get("_choice_panel").hide()
+	experience.call("_set_caption", "")
+	experience.call("_restore_character_conversation")
+	await get_tree().create_timer(0.7).timeout
+	await _save_frame("conversation_walk_return")
+	assert(Game.player.camera.is_current() and not Game.player.dialogue_locked and is_equal_approx(float(Game.player.get("_yaw")), heading), "return must preserve the player's view and restore movement")
+	_place_player(84.0)
+	_aim_player_at(figure.global_position + Vector3.UP * 1.2)
+	before = figure.global_position
+	experience.call("_start_station_dialogue", 2)
+	assert(not experience.get("_conversation_camera_active") and figure.global_position.is_equal_approx(before), "distant dialogue must retain the view and actor position")
+	await _save_frame("conversation_far_reply")
+	var before_offset: float = experience.get("_figure_offset")
+	experience.call("_react_to_answer", "walk_beside")
+	assert(absf(float(experience.get("_figure_motion_target_offset")) - before_offset) <= 1.601, "a company gesture must remain a measured step even at a distance")
+	await get_tree().create_timer(2.1).timeout
+	await _save_frame("conversation_far_company_step")
+	print("Conversation handoff checked: actor positions preserved, reply restored, player heading retained, movement returned, distant camera fallback, bounded company gesture")
 
 
 func _capture_memory_architecture(experience: Node) -> void:

@@ -4,8 +4,11 @@ extends Node3D
 ## kept deliberately unreadable by a translucent, unlit silhouette material.
 const FIGURE_SCENE := preload("res://assets/characters/quaternius_modular_women/animated_woman_a.glb")
 const FIGURE_OFFSETS := [9.0, 20.0, 34.0, 50.0, 67.0]
+const WINDOW_INTERVAL_SECONDS := 6.0
+const CLEARING_APPROACH_OFFSET := 61.0
 const SCENE_CAMERA_DISTANCE := [4.8, 4.5, 4.2, 3.9]
 const SCENE_CAMERA_HEIGHT := [1.65, 1.58, 1.5, 1.42]
+const CONVERSATION_CAMERA_REACH := 9.0
 const APPARITION_DISSOLVE := 0.38
 const APPARITION_FADE_SECONDS := 1.1
 const APPARITION_MEMORY_SECONDS := 3.85
@@ -89,6 +92,7 @@ var _choice_rows: Array[PanelContainer] = []
 var _conversation_camera: Camera3D
 var _return_camera: Camera3D
 var _conversation_camera_active := false
+var _conversation_camera_warmup := 0.0
 var _conversation_camera_returning := false
 var _conversation_camera_return_time := 0.0
 var _camera_choreography_enabled := true
@@ -132,6 +136,8 @@ var _story_finish_pending := false
 var _late_step_stop_time := 0.0
 var _late_step_dialogue_delay := -1.0
 var _late_step_ready := false
+var _window_interval_elapsed := -1.0
+var _window_interval_complete := false
 var _story_motion_tween: Tween
 var _stage := 0
 var _finished := false
@@ -210,6 +216,10 @@ func _start() -> void:
 
 
 func restore_after_load(state: Dictionary) -> void:
+	if not state.has("_window_interval_complete"):
+		_window_interval_complete = _stage >= 4 or _finished or _memory_chosen
+		if _completed_talk_rounds.has(2) and not _window_interval_complete:
+			_begin_window_interval()
 	if not state.has("_dream_voice_unlocked") and state.has("speech_visible"):
 		_dream_voice_unlocked = bool(state.get("speech_visible", false)) or _stage > 0 or _story_event_cue_index > 0 or _finished
 	if _caption and state.has("caption_text"):
@@ -277,6 +287,10 @@ func restore_after_load(state: Dictionary) -> void:
 	if _dream_journal_hint:
 		_dream_journal_hint.text = _dream_return_context()
 		_dream_journal_hint_time = 8.0
+	if _dream_soundscape:
+		_dream_soundscape.call("set_travel_quiet", _window_interval_active())
+	if Game.player:
+		Game.player.dialogue_locked = _dream_journal_open or _conversation_camera_active or _conversation_camera_returning or _conversation_waiting or _conversation_intro_waiting or _answer_open
 
 
 func _build_dream_route() -> void:
@@ -339,7 +353,8 @@ func _build_figure() -> void:
 	_figure_aura_material = ShaderMaterial.new()
 	_figure_aura_material.shader = preload("res://shaders/mathilda_dream_aura.gdshader")
 	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
-	_figure_aura_material.set_shader_parameter("intensity", 0.72)
+	_figure_aura_material.set_shader_parameter("intensity", 0.0)
+	_figure_aura_shell.hide()
 	_figure_aura_shell.material_override = _figure_aura_material
 	_figure.add_child(_figure_aura_shell)
 	_figure_aura_light = OmniLight3D.new()
@@ -370,28 +385,50 @@ func _build_figure() -> void:
 			if _idle_animation == "" and (lowered.contains("idle") or lowered.contains("stand")):
 				_idle_animation = String(animation_name)
 	var particles := GPUParticles3D.new()
-	particles.amount = 56
-	particles.lifetime = 2.4
+	particles.amount = 12 if Game.lean_graphics else 24
+	particles.lifetime = 3.6
+	particles.position = Vector3.UP * 0.85
+	particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	particles.visibility_aabb = AABB(Vector3(-2, -1, -2), Vector3(4, 4, 4))
 	var process := ParticleProcessMaterial.new()
 	process.direction = Vector3(0, 1, 0)
-	process.spread = 180.0
-	process.initial_velocity_min = 0.08
-	process.initial_velocity_max = 0.35
-	process.gravity = Vector3(0, 0.12, 0)
-	process.scale_min = 0.035
-	process.scale_max = 0.12
+	process.spread = 35.0
+	process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	process.emission_sphere_radius = 0.32
+	process.initial_velocity_min = 0.03
+	process.initial_velocity_max = 0.12
+	process.gravity = Vector3(0, 0.02, 0)
+	process.scale_min = 0.12
+	process.scale_max = 0.35
+	var lifetime_gradient := Gradient.new()
+	lifetime_gradient.offsets = PackedFloat32Array([0.0, 0.2, 0.7, 1.0])
+	lifetime_gradient.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color(1, 1, 1, 0.5), Color(1, 1, 1, 0)])
+	var lifetime_texture := GradientTexture1D.new()
+	lifetime_texture.gradient = lifetime_gradient
+	process.color_ramp = lifetime_texture
 	particles.process_material = process
 	var particle_mesh := QuadMesh.new()
 	particle_mesh.size = Vector2(0.16, 0.16)
 	_aura_mote_material = StandardMaterial3D.new()
 	_aura_mote_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_aura_mote_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.56)
+	_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.14)
+	var mote_gradient := Gradient.new()
+	mote_gradient.offsets = PackedFloat32Array([0.0, 0.25, 0.7, 1.0])
+	mote_gradient.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0.65), Color(1, 1, 1, 0.08), Color(1, 1, 1, 0)])
+	var mote_texture := GradientTexture2D.new()
+	mote_texture.gradient = mote_gradient
+	mote_texture.width = 32
+	mote_texture.height = 32
+	mote_texture.fill = GradientTexture2D.FILL_RADIAL
+	mote_texture.fill_from = Vector2(0.5, 0.5)
+	mote_texture.fill_to = Vector2(1.0, 0.5)
+	_aura_mote_material.albedo_texture = mote_texture
 	_aura_mote_material.emission_enabled = true
 	_aura_mote_material.emission = _figure_aura_color
-	_aura_mote_material.emission_energy_multiplier = 1.8
-	_aura_mote_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	_aura_mote_material.emission_energy_multiplier = 0.4
+	_aura_mote_material.vertex_color_use_as_albedo = true
+	_aura_mote_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	particle_mesh.material = _aura_mote_material
 	particles.draw_pass_1 = particle_mesh
 	_figure.add_child(particles)
@@ -666,6 +703,8 @@ func _dream_return_context() -> String:
 		situation = "the clearing conversation is waiting for you"
 	elif _answer_open:
 		situation = "choosing how to answer Mathilda"
+	elif _window_interval_active():
+		situation = "walking from the window toward the clearing"
 	elif _seen_story_cues.has("window"):
 		situation = "beside the warm window"
 	elif _seen_story_cues.has("thread"):
@@ -680,7 +719,7 @@ func _update_dream_journal_hint(delta: float) -> void:
 		return
 	var dialogue_visible := (_speech_sprite and _speech_sprite.visible) or (_choice_panel and _choice_panel.visible)
 	var toast_enabled := Game.settings == null or Game.settings.show_journal_toast
-	var can_show := toast_enabled and Game.phase == Game.Phase.DREAM and not _dream_journal_open and not dialogue_visible
+	var can_show := toast_enabled and Game.phase == Game.Phase.DREAM and not _dream_journal_open and not dialogue_visible and not _window_interval_active()
 	_dream_journal_hint_panel.visible = can_show and _dream_journal_hint_time > 0.0
 	if can_show:
 		_dream_journal_hint_time = maxf(_dream_journal_hint_time - delta, 0.0)
@@ -872,6 +911,8 @@ func _process(delta: float) -> void:
 		_conversation_response_timer -= delta
 		if _conversation_response_timer <= 0.0:
 			_reveal_conversation_response()
+	if _figure and not _figure_rambling and (_answer_open or _conversation_waiting or _conversation_intro_waiting):
+		Game.player.face_toward(_figure.global_position, delta)
 	_update_figure_apparition(delta)
 	_update_boundary_shadow(delta)
 	if _finished:
@@ -894,6 +935,7 @@ func _process(delta: float) -> void:
 	_update_story_lines(delta)
 	if _story_line_active or _conversation_camera_returning:
 		return
+	_update_window_interval(delta)
 	_update_figure(delta)
 	_update_lantern(delta)
 	var route_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
@@ -908,13 +950,15 @@ func _process(delta: float) -> void:
 
 
 func _queue_reached_story_marker(route_progress: float) -> void:
-	if _apparition_state != ApparitionState.PRESENT or _story_line_active or not _story_line_queue.is_empty() or not _pending_station_rounds.is_empty() or _station_dialogue_active:
+	if _window_interval_active() or _apparition_state != ApparitionState.PRESENT or _story_line_active or not _story_line_queue.is_empty() or not _pending_station_rounds.is_empty() or _station_dialogue_active:
 		return
 	var beats: Array = _story.get("beats", [])
 	var events: Array = _story.get("events", [])
 	var beat_offset := INF
 	if _stage < beats.size() and _stage < FIGURE_OFFSETS.size() - 1:
 		beat_offset = FIGURE_OFFSETS[_stage] - 2.5
+		if str(beats[_stage].get("id", "")) == "empty_path":
+			beat_offset = maxf(beat_offset, CLEARING_APPROACH_OFFSET)
 	var event_offset := INF
 	if _story_event_cue_index < events.size():
 		var event: Dictionary = events[_story_event_cue_index]
@@ -942,7 +986,7 @@ func _update_late_step_scene(delta: float, route_progress: float) -> void:
 	var beats: Array = _story.get("beats", [])
 	if _stage >= beats.size() or str(beats[_stage].get("id", "")) != "footsteps" or _late_step_ready:
 		return
-	var cue_offset := FIGURE_OFFSETS[_stage] - 2.5
+	var cue_offset: float = FIGURE_OFFSETS[_stage] - 2.5
 	if route_progress < cue_offset:
 		return
 	var speed := Vector2(Game.player.velocity.x, Game.player.velocity.z).length()
@@ -1135,6 +1179,8 @@ func _turn_figure_toward_rambling_gaze() -> void:
 
 
 func _update_story_lines(delta: float) -> void:
+	if _window_interval_active() and not _story_line_active:
+		return
 	if not _story_line_active and _apparition_state != ApparitionState.PRESENT:
 		return
 	if _story_line_active:
@@ -1276,6 +1322,15 @@ func _update_figure(delta: float) -> void:
 	var player_progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
 	var goal_index := mini(_stage, FIGURE_OFFSETS.size() - 1)
 	var authored_goal: float = Game.trail.player_start_offset + FIGURE_OFFSETS[goal_index]
+	if _window_interval_active():
+		authored_goal = Game.trail.player_start_offset + CLEARING_APPROACH_OFFSET + 3.0
+		_figure_rambling = true
+		if _window_interval_elapsed >= 0.9 and _window_interval_elapsed < 2.4:
+			_rambling_gaze_target = _memory_architecture.cue_position("window") if _memory_architecture else Game.trail.position_at(Game.trail.player_start_offset + 46.0)
+			_set_figure_moving(false)
+			_place_figure(_figure_offset, delta)
+			return
+		_rambling_gaze_target = Game.trail.position_at(minf(_figure_offset + 6.0, Game.trail.length))
 	var soft_limit := Game.trail.player_start_offset + maxf(player_progress + 6.0, FIGURE_OFFSETS[0])
 	var target_offset := maxf(_figure_offset, minf(authored_goal, soft_limit))
 	var moving := target_offset - _figure_offset > 0.08
@@ -1415,7 +1470,8 @@ func _update_figure_aura(delta: float) -> void:
 	var breath := 0.91 + sin(_figure_aura_time * 2.1) * 0.07 + sin(_figure_aura_time * 3.7) * 0.02
 	var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
-	var aura_intensity := (0.7 + cue_pulse * 0.9) * breath * screen_effects
+	var aura_intensity := (0.025 + cue_pulse * 0.22) * breath * screen_effects
+	_figure_aura_shell.visible = aura_intensity > 0.045 and reveal > 0.01
 	_figure_aura_shell.scale = Vector3(0.58, 1.05, 0.58) * (1.0 + cue_pulse * 0.075 + sin(_figure_aura_time * 1.4) * 0.018)
 	_figure_aura_shell.rotation.y += delta * (0.16 + cue_pulse * 0.48)
 	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
@@ -1426,12 +1482,12 @@ func _update_figure_aura(delta: float) -> void:
 	_silhouette.set_shader_parameter("aura_tint", _figure_aura_color)
 	if _figure_aura_light:
 		_figure_aura_light.light_color = _figure_aura_color
-		_figure_aura_light.light_energy = (0.95 + cue_pulse * 1.8) * breath * reveal * screen_effects
-		_figure_aura_light.omni_range = 3.9 + cue_pulse * 1.6
+		_figure_aura_light.light_energy = (0.35 + cue_pulse * 0.6) * breath * reveal * screen_effects
+		_figure_aura_light.omni_range = 2.4 + cue_pulse * 1.2
 	if _aura_mote_material:
-		_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.4 + cue_pulse * 0.24)
+		_aura_mote_material.albedo_color = Color(_figure_aura_color, (0.14 + cue_pulse * 0.08) * reveal * screen_effects)
 		_aura_mote_material.emission = _figure_aura_color
-		_aura_mote_material.emission_energy_multiplier = 1.2 + cue_pulse * 2.2
+		_aura_mote_material.emission_energy_multiplier = 0.4 + cue_pulse * 0.6
 
 
 func _figure_aura_mood_color() -> Color:
@@ -1734,6 +1790,8 @@ func _update_dream_quiet(delta: float) -> void:
 	if Game.weather == null or Game.trail == null or Game.player == null:
 		return
 	var target := 0.0
+	if _window_interval_active():
+		target = 0.48
 	if _stage >= _story.get("beats", []).size() and not _memory_chosen:
 		target = 0.68
 	if _memory_chosen:
@@ -1774,23 +1832,19 @@ func _begin_character_conversation(rambling := false) -> void:
 			var lifted := 4.0 if posmod(_stage, 2) == 0 else 1.2
 			_rambling_gaze_target = glance_frame.origin + glance_frame.basis.x * away_side * 8.0 + Vector3.UP * lifted
 		return
-	if not _camera_choreography_enabled or Game.player == null or _figure == null:
+	if Game.player == null or _figure == null:
 		return
 	if _conversation_camera_returning:
 		_complete_character_conversation()
 	Game.player.dialogue_locked = true
 	_set_figure_moving(false)
-	_figure_offset = Game.trail.offset_of(Game.player.global_position) + 3.2 if Game.trail else _figure_offset
-	_place_figure(_figure_offset)
-	Game.player.face_toward(_figure.global_position)
 	_lantern_prompt.hide()
-	var toward_player := Game.player.global_position - _figure.global_position
-	toward_player.y = 0.0
-	if toward_player.length_squared() > 0.01:
-		_figure.rotation.y = atan2(-toward_player.x, -toward_player.z)
 	if _conversation_camera_active and _conversation_camera and is_instance_valid(_conversation_camera):
 		return
-	if Game.player.camera == null:
+	_turn_figure_toward_point(Game.player.global_position, 0.65)
+	if not _camera_choreography_enabled or Game.player.camera == null:
+		return
+	if Game.player.global_position.distance_to(_figure.global_position) > CONVERSATION_CAMERA_REACH:
 		return
 	_return_camera = Game.player.camera
 	_conversation_camera = Camera3D.new()
@@ -1800,12 +1854,20 @@ func _begin_character_conversation(rambling := false) -> void:
 	_conversation_camera.far = _return_camera.far
 	add_child(_conversation_camera)
 	_conversation_camera.global_transform = _return_camera.global_transform
-	_conversation_camera.make_current()
+	# Let the player's spring arm settle after spawning/loading before copying
+	# its view into a camera that no longer follows the player rig.
+	_conversation_camera_warmup = 0.18
 	_conversation_camera_active = true
 
 
 func _update_conversation_camera(delta: float) -> void:
 	if _conversation_camera == null or not is_instance_valid(_conversation_camera) or Game.player == null or _figure == null:
+		return
+	if _conversation_camera_warmup > 0.0:
+		_conversation_camera.global_transform = _return_camera.global_transform
+		_conversation_camera_warmup = maxf(0.0, _conversation_camera_warmup - delta)
+		if _conversation_camera_warmup <= 0.0:
+			_conversation_camera.make_current()
 		return
 	var midpoint := (Game.player.global_position + _figure.global_position) * 0.5
 	var frame := Game.trail.frame_at(Game.trail.offset_of(Game.player.global_position)) if Game.trail else Transform3D.IDENTITY
@@ -1820,14 +1882,37 @@ func _update_conversation_camera(delta: float) -> void:
 	var target_position: Vector3 = midpoint + side * SCENE_CAMERA_DISTANCE[shot_index] + Vector3.UP * SCENE_CAMERA_HEIGHT[shot_index]
 	var look_target := midpoint + Vector3.UP * 1.0
 	var weight := 1.0 - exp(-delta * 2.8)
-	_conversation_camera.global_position = _conversation_camera.global_position.lerp(target_position, weight)
+	var safe_target := _clip_conversation_camera(look_target, target_position)
+	if safe_target.distance_to(look_target) < 1.4:
+		safe_target = _conversation_camera.global_position
+	var next_position := _conversation_camera.global_position.lerp(safe_target, weight)
+	_conversation_camera.global_position = _clip_conversation_camera(_conversation_camera.global_position, next_position)
 	var target_basis := Basis.looking_at(look_target - _conversation_camera.global_position, Vector3.UP)
 	_conversation_camera.global_basis = _conversation_camera.global_basis.slerp(target_basis, weight)
+
+
+func _clip_conversation_camera(from: Vector3, to: Vector3) -> Vector3:
+	var travel := to - from
+	if travel.length_squared() < 0.0001:
+		return to
+	var available := travel.length()
+	var right := _conversation_camera.global_basis.x * 0.16 if _conversation_camera else Vector3.RIGHT * 0.16
+	for margin in [Vector3.ZERO, right, -right]:
+		var query := PhysicsRayQueryParameters3D.create(from + margin, to + margin, Tune.LAYER_WORLD)
+		if Game.player:
+			query.exclude = [Game.player.get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty():
+			available = minf(available, maxf(0.0, (Vector3(hit.position) - from - margin).length() - 0.25))
+	return from + travel.normalized() * available
 
 
 func _restore_character_conversation(immediate := false) -> void:
 	_conversation_camera_active = false
 	_figure_rambling = false
+	if _conversation_camera_warmup > 0.0:
+		_complete_character_conversation()
+		return
 	if not immediate and _conversation_camera and is_instance_valid(_conversation_camera) and _return_camera and is_instance_valid(_return_camera):
 		_conversation_camera_returning = true
 		_conversation_camera_return_time = 0.42
@@ -1840,7 +1925,8 @@ func _update_conversation_camera_return(delta: float) -> void:
 		_complete_character_conversation()
 		return
 	var blend := 1.0 - exp(-delta * 9.0)
-	_conversation_camera.global_position = _conversation_camera.global_position.lerp(_return_camera.global_position, blend)
+	var next_position := _conversation_camera.global_position.lerp(_return_camera.global_position, blend)
+	_conversation_camera.global_position = _clip_conversation_camera(_conversation_camera.global_position, next_position)
 	_conversation_camera.global_basis = _conversation_camera.global_basis.slerp(_return_camera.global_basis, blend)
 	_conversation_camera_return_time -= delta
 	if _conversation_camera_return_time <= 0.0:
@@ -1848,7 +1934,9 @@ func _update_conversation_camera_return(delta: float) -> void:
 
 
 func _complete_character_conversation() -> void:
+	_conversation_camera_active = false
 	_conversation_camera_returning = false
+	_conversation_camera_warmup = 0.0
 	if _return_camera and is_instance_valid(_return_camera):
 		_return_camera.make_current()
 	if _conversation_camera and is_instance_valid(_conversation_camera):
@@ -1943,7 +2031,8 @@ func _continue_station_dialogue() -> void:
 	if _station_choice_effect == "push" or _station_choice_effect == "escalate" or _station_choice_effect == "repair":
 		_build_small_talk_choices()
 		return
-	_completed_talk_rounds[_station_round_index] = true
+	var completed_round := _station_round_index
+	_completed_talk_rounds[completed_round] = true
 	_station_dialogue_active = false
 	_station_round_index = -1
 	_station_choice_effect = ""
@@ -1951,6 +2040,38 @@ func _continue_station_dialogue() -> void:
 	_choice_panel.hide()
 	_restore_character_conversation()
 	_story_gap_remaining = 0.7
+	if completed_round == 2:
+		_begin_window_interval()
+
+
+func _window_interval_active() -> bool:
+	return _window_interval_elapsed >= 0.0 and not _window_interval_complete
+
+
+func _begin_window_interval() -> void:
+	if _window_interval_active() or _window_interval_complete:
+		return
+	_window_interval_elapsed = 0.0
+	_conversation_waiting = false
+	_conversation_response_ready = false
+	_set_caption("")
+	if _dream_journal_hint_panel:
+		_dream_journal_hint_panel.hide()
+	if _dream_soundscape:
+		_dream_soundscape.call("set_travel_quiet", true)
+
+
+func _update_window_interval(delta: float) -> void:
+	if not _window_interval_active():
+		return
+	_window_interval_elapsed += delta
+	var progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
+	if _window_interval_elapsed < WINDOW_INTERVAL_SECONDS or progress < CLEARING_APPROACH_OFFSET:
+		return
+	_window_interval_complete = true
+	_figure_rambling = false
+	if _dream_soundscape:
+		_dream_soundscape.call("set_travel_quiet", false)
 
 
 func _advance_unseen_talk_round() -> void:
@@ -2034,11 +2155,17 @@ func _update_choice_positions() -> void:
 	var player_screen := camera.unproject_position(Game.player.global_position + Vector3.UP * 1.55)
 	var left_score := absf(speaker_screen.x - left_x) + absf(player_screen.x - left_x) * 0.55
 	var right_score := absf(speaker_screen.x - right_x) + absf(player_screen.x - right_x) * 0.55
+	if speaker != Game.player and not camera.is_position_behind(speaker_at):
+		# The speaker stays visible even when the player's side is the better
+		# home for a reply panel during the camera's approach or return.
+		var speaker_clearance := label_width * 0.5 + 64.0
+		left_score -= maxf(0.0, speaker_clearance - absf(speaker_screen.x - left_x)) * 4.0
+		right_score -= maxf(0.0, speaker_clearance - absf(speaker_screen.x - right_x)) * 4.0
 	if is_instance_valid(_lantern) and _lantern.visible:
 		var lantern_screen := camera.unproject_position(_lantern.global_position + Vector3.UP * 0.9)
 		if not camera.is_position_behind(_lantern.global_position + Vector3.UP * 0.9):
-			left_score += maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - left_x))
-			right_score += maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - right_x))
+			left_score -= maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - left_x))
+			right_score -= maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - right_x))
 	var side := -1.0 if left_score >= right_score else 1.0
 	var center_x := left_x if side < 0.0 else right_x
 	var row_height := 46.0
@@ -2245,7 +2372,10 @@ func _react_to_answer(memory: String) -> void:
 		"walk_beside":
 			var player_offset := Game.trail.offset_of(Game.player.global_position) if Game.trail else _figure_offset
 			var beside_offset := minf(player_offset + 2.45, Game.trail.length) if Game.trail else _figure_offset
-			_start_authored_figure_move(beside_offset, 0.9, true)
+			# Company does not require closing a distant gap in a single gesture.
+			beside_offset = clampf(beside_offset, _figure_offset - 1.6, _figure_offset + 1.6)
+			var duration := maxf(0.9, absf(beside_offset - _figure_offset) / 0.8)
+			_start_authored_figure_move(beside_offset, duration, true)
 		"present_need":
 			var light_at := _lantern.global_position if is_instance_valid(_lantern) else _figure.global_position + Vector3.FORWARD
 			if not is_instance_valid(_lantern) and _memory_architecture:

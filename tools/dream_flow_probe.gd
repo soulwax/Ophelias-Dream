@@ -41,7 +41,6 @@ func _run() -> void:
 	if not _require(front_door.is_open, "the dream walk must pass through the opened house door"):
 		get_tree().quit(1)
 		return
-	experience.set("_camera_choreography_enabled", false)
 	var pace := OS.get_environment("RUN_DREAM_PACE")
 	if pace.is_empty():
 		pace = "walk"
@@ -59,6 +58,9 @@ func _run() -> void:
 	var last_stage := 0
 	var last_event := 0
 	var journal_and_pause_checked := false
+	var window_interval_checked := false
+	var conversation_restore_checked := false
+	var previous_figure_position: Vector3 = experience.get("_figure").global_position
 	for frame_index in 12000:
 		await get_tree().process_frame
 		_steer_along_dream_route()
@@ -66,11 +68,23 @@ func _run() -> void:
 		var stage: int = experience.get("_stage")
 		var event_index: int = experience.get("_story_event_cue_index")
 		if stage > last_stage:
+			if str(beats[stage - 1].get("id", "")) == "empty_path" and not _require(experience.get("_window_interval_complete"), "the clearing monologue must follow the quiet walk"):
+				get_tree().quit(1)
+				return
 			seen_markers.append(str(beats[stage - 1].get("id", "")))
 			last_stage = stage
 		if event_index > last_event:
 			seen_markers.append(str(events[event_index - 1].get("id", "")))
 			last_event = event_index
+		if experience.call("_window_interval_active"):
+			if not _require(not experience.get("_speech_sprite").visible and not experience.get("_choice_panel").visible and not experience.get("_dream_journal_hint_panel").visible, "the window interval must keep speech, choices, and journal notices quiet"):
+				get_tree().quit(1)
+				return
+			if not window_interval_checked and not experience.get("_conversation_camera_returning"):
+				if not await _exercise_window_interval(experience):
+					get_tree().quit(1)
+					return
+				window_interval_checked = true
 		if experience.get("_story_line_active"):
 			if not journal_and_pause_checked:
 				experience.call("_open_dream_journal")
@@ -98,6 +112,14 @@ func _run() -> void:
 		if experience.get("_station_dialogue_active"):
 			var round_index: int = experience.get("_station_round_index")
 			if not seen_stations.has(round_index):
+				if not _require(experience.get("_figure").global_position.distance_to(previous_figure_position) < 0.35, "opening a trail reply must preserve Mathilda's position"):
+					get_tree().quit(1)
+					return
+				if not conversation_restore_checked:
+					if not await _exercise_conversation_handoff(experience):
+						get_tree().quit(1)
+						return
+					conversation_restore_checked = true
 				seen_stations.append(round_index)
 				if not _require(experience.get("_choice_buttons").size() == story["small_talk"][round_index]["choices"].size(), "station choices must match their own round"):
 					get_tree().quit(1)
@@ -133,6 +155,7 @@ func _run() -> void:
 			experience.call("_build_small_talk_choices")
 		if experience.get("_answer_open") and experience.get("_choice_buttons").size() == story["branches"].size() and experience.get("_conversation_round") >= story["small_talk"].size():
 			break
+		previous_figure_position = experience.get("_figure").global_position
 	if not _require(furthest_offset - starting_offset >= 60.0, "player must physically walk to the clearing: %.2f m" % (furthest_offset - starting_offset)):
 		get_tree().quit(1)
 		return
@@ -151,14 +174,76 @@ func _run() -> void:
 	if not _require(journal_and_pause_checked, "journal and pause must be exercised on a line"):
 		get_tree().quit(1)
 		return
+	if not _require(window_interval_checked, "the protected window-to-clearing walk must be exercised"):
+		get_tree().quit(1)
+		return
+	if not _require(conversation_restore_checked, "conversation framing and restoration must be exercised"):
+		get_tree().quit(1)
+		return
 	if not _exercise_endings(experience):
 		get_tree().quit(1)
 		return
 	if not await _exercise_standalone_exit(experience):
 		get_tree().quit(1)
 		return
-	print("Dream flow checked at %s pace: %.1f m traversed, ordered cues, threshold and two trail replies, journal/pause, chosen memory saved, wake completed, title returned" % [pace, furthest_offset - starting_offset])
+	print("Dream flow checked at %s pace: %.1f m traversed, ordered cues, quiet travel with journal/pause and snapshot restoration, threshold and two trail replies, chosen memory saved, wake completed, title returned" % [pace, furthest_offset - starting_offset])
 	get_tree().quit()
+
+
+func _exercise_window_interval(experience: Node) -> bool:
+	var snapshot: Dictionary = RunSave._capture_dream()
+	var elapsed: float = experience.get("_window_interval_elapsed")
+	if not _require(snapshot.has("_window_interval_elapsed") and snapshot.has("_window_interval_complete"), "the run snapshot must preserve the quiet interval"):
+		return false
+	experience.call("_open_dream_journal")
+	await get_tree().create_timer(0.2).timeout
+	if not _require(is_equal_approx(float(experience.get("_window_interval_elapsed")), elapsed), "the journal must suspend the quiet interval"):
+		return false
+	experience.call("_close_dream_journal")
+	Game.toggle_pause()
+	await get_tree().create_timer(0.2).timeout
+	if not _require(is_equal_approx(float(experience.get("_window_interval_elapsed")), elapsed), "pause must suspend the quiet interval"):
+		return false
+	Game.toggle_pause()
+	experience.set("_window_interval_elapsed", 9.0)
+	experience.set("_window_interval_complete", true)
+	RunSave._apply_properties(experience, snapshot)
+	experience.call("restore_after_load", snapshot)
+	if not _require(experience.call("_window_interval_active") and is_equal_approx(float(experience.get("_window_interval_elapsed")), elapsed), "restoration must resume the same quiet interval"):
+		return false
+	return _require(not Game.player.dialogue_locked and experience.get("_dream_soundscape").get("_travel_quiet"), "quiet travel must restore free movement and its sound perspective")
+
+
+func _exercise_conversation_handoff(experience: Node) -> bool:
+	var figure: Node3D = experience.get("_figure")
+	var at := figure.global_position
+	var camera_yaw: float = Game.player.get("_yaw")
+	var snapshot: Dictionary = RunSave._capture_dream()
+	experience.call("_complete_character_conversation")
+	if not _require(Game.player.camera.is_current() and not Game.player.dialogue_locked, "returning from dialogue must restore the player camera and movement"):
+		return false
+	RunSave._apply_properties(experience, snapshot)
+	experience.call("restore_after_load", snapshot)
+	if not _require(figure.global_position.is_equal_approx(at) and is_equal_approx(float(Game.player.get("_yaw")), camera_yaw) and Game.player.dialogue_locked, "restoring a reply must preserve actor position, camera heading, and the dialogue hold"):
+		return false
+	var separation := Game.player.global_position.distance_to(at)
+	if separation > 9.0 and not _require(not experience.get("_conversation_camera_active"), "distant dialogue must retain the player camera"):
+		return false
+	var blocker := StaticBody3D.new()
+	blocker.collision_layer = Tune.LAYER_WORLD
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(0.6, 2.0, 2.0)
+	shape.shape = box
+	blocker.add_child(shape)
+	get_tree().current_scene.add_child(blocker)
+	var from := Game.player.global_position + Vector3.UP * 20.0
+	blocker.global_position = from + Vector3.RIGHT * 2.5
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var clipped: Vector3 = experience.call("_clip_conversation_camera", from, from + Vector3.RIGHT * 5.0)
+	blocker.queue_free()
+	return _require(clipped.distance_to(from) < 2.5 and clipped.distance_to(from) > 0.5, "conversation camera travel must stop before world geometry")
 
 
 func _exercise_endings(experience: Node) -> bool:

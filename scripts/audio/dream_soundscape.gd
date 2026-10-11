@@ -17,6 +17,8 @@ var _wood_creak: AudioStreamPlayer3D
 var _memory_target_db := -80.0
 var _memory_hold := 0.0
 var _suspended := false
+var _travel_quiet := false
+var _travel_quiet_weight := 0.0
 
 
 func _ready() -> void:
@@ -56,6 +58,10 @@ func _process(delta: float) -> void:
 		return
 	_update_memory_bed(delta)
 	if Game.phase != Game.Phase.DREAM or Game.player == null or Game.trail == null:
+		return
+	if _travel_quiet:
+		_second_step_in = -1.0
+		_next_pair = maxf(_next_pair, 2.5)
 		return
 	if _cued_step_in >= 0.0:
 		_cued_step_in -= delta
@@ -106,6 +112,10 @@ func set_suspended(value: bool) -> void:
 	_suspended = value
 
 
+func set_travel_quiet(value: bool) -> void:
+	_travel_quiet = value
+
+
 func _repeat_memory_bed() -> void:
 	if _memory_bed and Game.dream_mode and _memory_target_db > -70.0:
 		_memory_bed.play()
@@ -114,6 +124,7 @@ func _repeat_memory_bed() -> void:
 func _update_memory_bed(delta: float) -> void:
 	if _memory_bed == null or Game.phase == Game.Phase.PAUSED:
 		return
+	_travel_quiet_weight = move_toward(_travel_quiet_weight, 1.0 if _travel_quiet else 0.0, delta * 0.45)
 	_memory_hold = maxf(_memory_hold - delta, 0.0)
 	if _memory_hold <= 0.0 or not Game.dream_mode:
 		_memory_target_db = -80.0
@@ -121,7 +132,7 @@ func _update_memory_bed(delta: float) -> void:
 	if Game.player and Game.trail:
 		var progress := Game.trail.offset_of(Game.player.global_position) - Game.trail.player_start_offset
 		quiet = _dark_patch_weight(progress)
-	var target := _memory_target_db - quiet * 30.0
+	var target := _memory_target_db - maxf(quiet, _travel_quiet_weight) * 30.0
 	_memory_bed.volume_db = move_toward(_memory_bed.volume_db, target, delta * 7.0)
 	if _memory_bed.volume_db <= -76.0 and _memory_target_db <= -76.0 and _memory_bed.playing:
 		_memory_bed.stop()

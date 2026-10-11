@@ -508,6 +508,7 @@ func _dream_state_keys() -> Array:
 		"_journal_speech_visible", "_journal_choice_visible", "_journal_lantern_visible", "_story_line_queue",
 		"_pending_station_rounds", "_story_line_active", "_story_line_hold", "_story_gap_remaining", "_story_finish_pending",
 		"_late_step_stop_time", "_late_step_dialogue_delay", "_late_step_ready",
+		"_window_interval_elapsed", "_window_interval_complete",
 		"_stage", "_finished", "_memory_chosen", "_caption_time", "_effect_strength", "_effect_target", "_effect_hold",
 		"_effect_cue", "_story_event_cue_index", "_seen_story_cues", "_dream_understood", "_dream_journal_entries",
 		"_dream_journal_seen", "_dream_journal_available", "_dream_journal_open", "_journal_guidance_visible",
@@ -567,7 +568,7 @@ func _capture_dream_architecture() -> Dictionary:
 
 func _capture_dream_soundscape() -> Dictionary:
 	var target := _dream_soundscape()
-	var values := _capture_properties(target, ["_last_clip", "_next_pair", "_second_step_in", "_cued_step_in", "_cued_step_position", "_apparition_quiet_time", "_memory_target_db", "_memory_hold", "_suspended"])
+	var values := _capture_properties(target, ["_last_clip", "_next_pair", "_second_step_in", "_cued_step_in", "_cued_step_position", "_apparition_quiet_time", "_memory_target_db", "_memory_hold", "_suspended", "_travel_quiet", "_travel_quiet_weight"])
 	if target and target.get("_memory_bed"):
 		var bed: AudioStreamPlayer3D = target.get("_memory_bed")
 		values["bed_playing"] = bed.playing
