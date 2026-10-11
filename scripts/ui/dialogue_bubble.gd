@@ -156,6 +156,47 @@ func close() -> void:
 		Game.set_phase(Game.Phase.PLAYING)
 
 
+func capture_run_state() -> Dictionary:
+	if not _active:
+		return {}
+	var callback_path := ""
+	var callback_object := _callback.get_object()
+	if callback_object is Node and is_instance_valid(callback_object):
+		callback_path = get_tree().current_scene.get_path_to(callback_object)
+	var target_path := ""
+	if _target and is_instance_valid(_target):
+		target_path = get_tree().current_scene.get_path_to(_target)
+	return {
+		"speaker": _speaker.text,
+		"line": _line.text,
+		"responses": _responses.duplicate(true),
+		"selected": _selected,
+		"target_path": target_path,
+		"callback_path": callback_path,
+		"callback_method": str(_callback.get_method()) if _callback.is_valid() else "",
+	}
+
+
+func restore_run_state(state: Dictionary) -> void:
+	var responses: Variant = state.get("responses", [])
+	if not responses is Array or responses.is_empty():
+		return
+	var target: Node3D
+	var target_path := str(state.get("target_path", ""))
+	if not target_path.is_empty():
+		target = get_tree().current_scene.get_node_or_null(target_path) as Node3D
+	var callback := Callable()
+	var callback_path := str(state.get("callback_path", ""))
+	var method := str(state.get("callback_method", ""))
+	if not callback_path.is_empty() and not method.is_empty():
+		var owner := get_tree().current_scene.get_node_or_null(callback_path)
+		if owner:
+			callback = Callable(owner, method)
+	open(str(state.get("speaker", "")), str(state.get("line", "")), responses, target, callback)
+	var selected := clampi(int(state.get("selected", 0)), 0, _buttons.size() - 1)
+	_select(selected)
+
+
 func _select(index: int) -> void:
 	if index < 0 or index >= _buttons.size() or _buttons[index].disabled:
 		return

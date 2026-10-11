@@ -39,6 +39,13 @@ still but leaves the world running. Pages use `{word}` smudges: reading pages,
 visiting places, and hearing events unlock their possible readings; selecting
 the intended reading deciphers the page.
 
+The Esc settings menu can save or load the current run, or return to the main
+menu. Runs autosave every 12 seconds while a story is active. Choose **Continue**
+on the title screen to restore the last save, including the selected story,
+world seed, player position and movement, journal, weather, and dream dialogue
+and choices. The rolling save lives in Godot's platform-specific `user://` data
+folder.
+
 Godot imports the project on its first run. On a constrained GPU, set
 `RUN_GRAPHICS=lean` before launching:
 

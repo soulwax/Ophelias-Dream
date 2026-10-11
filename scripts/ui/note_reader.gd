@@ -94,6 +94,21 @@ func show_entry(entry: NoteEntry) -> void:
 	_entry_tween.tween_property(_panel, "modulate:a", 1.0, 0.17)
 
 
+func capture_run_state() -> Dictionary:
+	if not visible or _entry == null:
+		return {}
+	return {"title": _entry.title, "visible_characters": _body.visible_characters, "scroll": _scroll.scroll_vertical}
+
+
+func restore_run_state(state: Dictionary) -> void:
+	var entry := NoteCatalog.find(str(state.get("title", "")))
+	if entry == null:
+		return
+	show_entry(entry)
+	_body.visible_characters = int(state.get("visible_characters", -1))
+	_scroll.scroll_vertical = int(state.get("scroll", 0))
+
+
 func _build() -> void:
 	var dim := ColorRect.new()
 	dim.color = Color(0.04, 0.05, 0.07, 0.45)

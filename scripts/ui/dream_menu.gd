@@ -2,10 +2,10 @@ extends Control
 
 const MENU_ENTRIES := [
 	{"id": "DREAM", "label": "ENTER DREAM", "japanese": "夢へ入る"},
+	{"id": "CONTINUE", "label": "CONTINUE", "japanese": "続きから"},
 	{"id": "OPHELIA", "label": "OPHELIA'S STORY", "japanese": "オフィーリアの物語"},
 	{"id": "MATHILDA", "label": "MATHILDA'S STORY", "japanese": "マチルダの物語"},
 	{"id": "SETTINGS", "label": "SETTINGS", "japanese": "設定"},
-	{"id": "CREDITS", "label": "CREDITS", "japanese": "クレジット"},
 	{"id": "QUIT", "label": "EXIT", "japanese": "終了"},
 ]
 
@@ -30,8 +30,6 @@ var _pointer_light := 0.45
 # Per-run phase for the idle micro-jitter, so each session's eye wanders its
 # own way rather than every launch ticking in lockstep.
 var _tremor_seed := 0.0
-var _panel: PanelContainer
-var _body: Label
 var _settings_terminal: PauseMenu
 var _settings_button: Button
 
@@ -135,6 +133,9 @@ func _ready() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cell.add_child(button)
 		_buttons.append(button)
+		if action == "CONTINUE":
+			button.visible = RunSave.has_save()
+			cell.visible = button.visible
 		if action == "SETTINGS":
 			_settings_button = button
 		button.mouse_entered.connect(button.grab_focus)
@@ -148,38 +149,6 @@ func _ready() -> void:
 	for i in _buttons.size():
 		_buttons[i].focus_neighbor_left = _buttons[i].get_path_to(_buttons[posmod(i - 1, _buttons.size())])
 		_buttons[i].focus_neighbor_right = _buttons[i].get_path_to(_buttons[(i + 1) % _buttons.size()])
-	var credit := UiChrome.term_label("OD-7  //  A GAME BY CHRISTIAN KLING", 11, Color("8f7775"))
-	credit.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	credit.offset_left = -400
-	credit.offset_right = 400
-	credit.offset_top = -55
-	credit.offset_bottom = -25
-	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	add_child(credit)
-	_panel = PanelContainer.new()
-	_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_panel.offset_left = -420
-	_panel.offset_right = 420
-	_panel.offset_top = -220
-	_panel.offset_bottom = 250
-	_panel.add_theme_stylebox_override("panel", UiChrome.plate(32, 12))
-	add_child(_panel)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 24)
-	_panel.add_child(box)
-	_body = UiChrome.term_label("", 17, UiChrome.BONE)
-	_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(_body)
-	var back := Button.new()
-	back.theme = button_theme
-	back.theme_type_variation = "TermAction"
-	back.text = "▸  RETURN TO TITLE"
-	back.add_theme_font_size_override("font_size", 13)
-	back.pressed.connect(_close)
-	box.add_child(back)
-	_panel.hide()
 	_settings_terminal = PauseMenu.new()
 	_settings_terminal.title_closed.connect(_settings_closed)
 	add_child(_settings_terminal)
@@ -258,7 +227,7 @@ func _layout_snow() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not visible or _panel.visible or not event is InputEventMouseMotion:
+	if not visible or not event is InputEventMouseMotion:
 		return
 	var pointer := (event as InputEventMouseMotion).position / size.max(Vector2.ONE)
 	_aim_at((event as InputEventMouseMotion).position)
@@ -305,6 +274,10 @@ func _sync_glitch() -> void:
 
 func _choose(caption: String) -> void:
 	match caption:
+		"CONTINUE":
+			if RunSave.queue_load():
+				_stop_music()
+				mode_selected.emit()
 		"DREAM":
 			_stop_music()
 			Game.character_selected = true
@@ -324,19 +297,9 @@ func _choose(caption: String) -> void:
 			_stop_music()
 			mode_selected.emit()
 		"SETTINGS":
-			_panel.hide()
 			_settings_terminal.open_title_settings()
-		"CREDITS":
-			_body.text = "Ophelia's Dream\n\nCreated by\nChristian Kling\n\nDanse Macabre — Kraak & Smaak\nBoogie Angst / Jalapeno Records\nPlayback loop and fade applied.\n\nAsset provenance and licenses accompany the game."
-			_panel.show()
-			(_panel.get_child(0).get_child(1) as Button).grab_focus()
 		"QUIT":
 			get_tree().quit()
-
-
-func _close() -> void:
-	_panel.hide()
-	_buttons[0].grab_focus()
 
 
 func _settings_closed() -> void:
@@ -359,6 +322,4 @@ func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed("pause"):
 		if _settings_terminal and _settings_terminal.is_title_settings_open():
 			_settings_terminal.close_title_settings()
-		elif _panel.visible:
-			_close()
 		get_viewport().set_input_as_handled()

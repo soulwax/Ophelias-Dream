@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.9.0 — 2026-10-11
+
+Save beneath the snow
+Two doors guard the sleeping road
+One eye keeps the dark
+
+Static leaves no map
+Names return through folded glass
+Footsteps find the shore
+
 ## 0.2.8.0 — 2026-10-11
 
 Glass hums under snow\

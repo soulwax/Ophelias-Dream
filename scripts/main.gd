@@ -38,10 +38,15 @@ func _ready() -> void:
 		return
 	if OS.get_environment("RUN_MATHILDA") == "1":
 		Game.mathilda_pov = true
+	var pending_run := RunSave.pending_snapshot()
+	if not pending_run.is_empty():
+		Game.mathilda_pov = bool(pending_run.get("mathilda_pov", false))
+		Game.dream_mode = bool(pending_run.get("dream_mode", false))
+		Game.character_selected = false
 	_capture = OS.get_environment("RUN_CAPTURE") == "1"
 	var repacking := OS.get_cmdline_user_args().has("--repack-editor-level")
 	var baking := repacking or OS.get_cmdline_user_args().has("--bake-editor-level")
-	var title_only := not Game.character_selected and not Game.resuming() and OS.get_environment("RUN_PLAY") != "1" and OS.get_environment("RUN_MATHILDA") != "1"
+	var title_only := pending_run.is_empty() and not Game.character_selected and not Game.resuming() and OS.get_environment("RUN_PLAY") != "1" and OS.get_environment("RUN_MATHILDA") != "1"
 	if title_only and not baking and (not _capture or OS.get_environment("RUN_TITLE") == "1"):
 		Game.reset()
 		_show_title_menu()
@@ -55,7 +60,7 @@ func _ready() -> void:
 			add_child(snapshot)
 	if snapshot is Node3D:
 		(snapshot as Node3D).visible = false
-	var chosen_seed := _resolve_seed(null if baking and not repacking else snapshot)
+	var chosen_seed := int(pending_run.get("world_seed", _resolve_seed(null if baking and not repacking else snapshot)))
 	Game.reset()
 	_loading_screen = Game.get_node_or_null("LoadingScreen")
 	await _loading_stage(0.08, "REMEMBERING THE SHAPE OF THE PLACE")
@@ -203,6 +208,13 @@ func _ready() -> void:
 			add_child(supply)
 	await _loading_stage(0.96, "THE THRESHOLD IS READY")
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if not pending_run.is_empty():
+		await get_tree().process_frame
+		RunSave.apply_pending()
+		if _loading_screen:
+			await _loading_screen.dismiss()
+			_loading_screen = null
+		return
 	# Back to the lookout: no menu and no intro card, she is simply there again.
 	if Game.resuming() and not Game.mathilda_pov and not _capture:
 		Game.resume_checkpoint()

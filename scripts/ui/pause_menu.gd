@@ -68,6 +68,7 @@ var _subject_label: Label
 var _session_heading: Label
 var _resume_action: Button
 var _lookout_action: Button
+var _load_run_action: Button
 var _tetris
 var _title_hidden: Array[Control] = []
 var _open_tween: Tween
@@ -114,6 +115,8 @@ func _on_phase(next: Game.Phase) -> void:
 		_session_heading.text = "SESSION"
 		_resume_action.text = str(_resume_action.get_meta("text", "▸  RESUME"))
 		_restore_session_controls()
+		if _load_run_action:
+			_load_run_action.disabled = not RunSave.has_save()
 	visible = open
 	if not open and _tetris:
 		_tetris.close_game()
@@ -868,18 +871,33 @@ func _build_sidebar() -> Control:
 	var restart := _action("Restart the run", func() -> void: Game.restart(), true)
 	_title_hidden.append(restart)
 	box.add_child(restart)
+	var save_run := _action("Save current run", func() -> void:
+		var saved := RunSave.save_now()
+		_status.text = RunSave.last_status
+		if saved and _load_run_action:
+			_load_run_action.disabled = false
+	)
+	_title_hidden.append(save_run)
+	box.add_child(save_run)
+	_load_run_action = _action("Load saved run", func() -> void:
+		if RunSave.queue_load():
+			get_tree().paused = false
+			get_tree().reload_current_scene()
+		else:
+			_status.text = RunSave.last_status
+	)
+	_load_run_action.disabled = not RunSave.has_save()
+	_title_hidden.append(_load_run_action)
+	box.add_child(_load_run_action)
+	var return_title := _action("Return to main menu", func() -> void: RunSave.return_to_title(), true)
+	_title_hidden.append(return_title)
+	box.add_child(return_title)
 	var quit := _action("Quit to desktop", func() -> void: Game.quit(), true)
 	_title_hidden.append(quit)
 	box.add_child(quit)
 	var session_gap := _gap(10)
 	_title_hidden.append(session_gap)
 	box.add_child(session_gap)
-	# The forest pack's author and page are still to be supplied (see its README).
-	var credit := UiChrome.term_label("Legacy motion assets: Bandai Namco Research Motion Dataset, Bandai Namco Research Inc., CC BY-NC 4.0, adapted. Green woods: \"Fir forest in the mountains\", Sketchfab, Standard licence, adapted.", 10, Color(UiChrome.ASH, 0.8))
-	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	credit.custom_minimum_size.x = 220
-	_title_hidden.append(credit)
-	box.add_child(credit)
 	return margin
 
 

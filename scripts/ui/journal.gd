@@ -66,6 +66,25 @@ func _kept(title: String) -> NoteEntry:
 	return null
 
 
+func capture_run_state() -> Dictionary:
+	return {
+		"selected_title": _selected.title if _selected else "",
+		"smudge": _smudge,
+		"order": _order.duplicate(true),
+		"wrong": _wrong.duplicate(true),
+	}
+
+
+func restore_run_state(state: Dictionary) -> void:
+	_order = state.get("order", {}).duplicate(true)
+	_wrong = state.get("wrong", {}).duplicate(true)
+	var selected := _kept(str(state.get("selected_title", "")))
+	if selected:
+		_select(selected)
+	_smudge = int(state.get("smudge", -1))
+	_refresh()
+
+
 func _select(entry: NoteEntry) -> void:
 	_selected = entry
 	_smudge = -1

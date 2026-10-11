@@ -174,6 +174,63 @@ func _start() -> void:
 	_set_figure_moving(false)
 
 
+func restore_after_load(state: Dictionary) -> void:
+	if _caption and state.has("caption_text"):
+		_caption.text = str(state.caption_text)
+		_speaker_label.text = str(state.get("speaker_text", "MATHILDA"))
+		_speaker_label.visible = not _speaker_label.text.is_empty()
+		_speech_sprite.visible = bool(state.get("speech_visible", not _caption.text.is_empty()))
+		_set_speaker(_speaker_label.text)
+		_layout_caption()
+	if _figure and state.has("figure_transform"):
+		_figure.global_transform = state.figure_transform
+	if _lantern and state.has("lantern_transform"):
+		_lantern.global_transform = state.lantern_transform
+		_lantern.visible = bool(state.get("lantern_visible", true))
+	if _lantern_light:
+		_lantern_light.light_energy = float(state.get("lantern_light_energy", _lantern_light.light_energy))
+	if _lantern_flame and state.has("lantern_flame_scale"):
+		_lantern_flame.scale = state.lantern_flame_scale
+	if _warning_prop:
+		_warning_prop.visible = bool(state.get("warning_prop_visible", _warning_prop.visible))
+	if _figure:
+		_figure.visible = int(_apparition_state) != ApparitionState.ABSENT
+		_set_figure_moving(_figure_moving)
+		_set_figure_dissolve(_apparition_dissolve)
+		if _apparition_tween and _apparition_tween.is_running():
+			_apparition_tween.kill()
+		if _apparition_state == ApparitionState.LEAVING:
+			var leave_time := APPARITION_FADE_SECONDS * (1.0 - _apparition_dissolve / APPARITION_DISSOLVE)
+			_apparition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			_apparition_tween.tween_method(_set_figure_dissolve, _apparition_dissolve, APPARITION_DISSOLVE, maxf(leave_time, 0.01))
+			_apparition_tween.tween_callback(_finish_figure_departure)
+		elif _apparition_state == ApparitionState.RETURNING:
+			var return_time := APPARITION_FADE_SECONDS * _apparition_dissolve / APPARITION_DISSOLVE
+			_apparition_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			_apparition_tween.tween_method(_set_figure_dissolve, _apparition_dissolve, 0.0, maxf(return_time, 0.01))
+			_apparition_tween.tween_callback(_complete_figure_appearance)
+	if _choice_panel:
+		var labels: Array[String] = []
+		for label: Variant in state.get("choice_labels", []):
+			labels.append(str(label))
+		if not labels.is_empty():
+			_set_choice_rows(str(state.get("choice_title", "")), labels)
+			_choice_hint.text = str(state.get("choice_hint", _choice_hint.text))
+			_refresh_choices()
+		_choice_panel.visible = bool(state.get("choice_visible", _choice_panel.visible))
+	if _lantern_prompt:
+		_lantern_prompt.visible = bool(state.get("lantern_prompt_visible", false))
+	if _dream_journal_open:
+		_dream_journal_scrim.show()
+		_dream_journal_panel.show()
+		_refresh_dream_journal()
+	if _conversation_camera_returning:
+		_complete_character_conversation()
+	elif _conversation_camera_active:
+		_conversation_camera_active = false
+		_begin_character_conversation(_figure_rambling)
+
+
 func _build_dream_route() -> void:
 	if Game.trail == null:
 		return

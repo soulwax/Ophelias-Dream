@@ -76,6 +76,16 @@ func _start() -> void:
 			_meeting.begin.call_deferred()
 
 
+func restore_after_load() -> void:
+	if _going_home and _ophelia == null:
+		_ophelia = OpheliaNpc.new()
+		_ophelia.name = "Ophelia"
+		add_child(_ophelia)
+		_ophelia.settle(Game.house.doorstep() + Game.house.global_basis.x.normalized() * 0.9)
+	if _chapter_finished and _caption:
+		_caption.hide()
+
+
 func _build_objects(frame: Transform3D) -> void:
 	# The camp lays her things out: cups on the crate, gloves on the stool,
 	# the note under the lantern. "fire" and "mend" are chores, not props: no
@@ -323,9 +333,7 @@ func _end(ending: String) -> void:
 
 
 func _menu() -> void:
-	Game.mathilda_pov = false
-	get_tree().paused = false
-	get_tree().reload_current_scene()
+	Game.toggle_pause()
 
 
 func _clip(line: Dictionary) -> AudioStream:
