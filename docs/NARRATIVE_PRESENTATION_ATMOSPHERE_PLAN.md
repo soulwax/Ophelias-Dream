@@ -147,6 +147,8 @@ The current final question invites a personal answer such as “I said no.” Ma
 
 Keep Mathilda's direct speech above her head. Place player reply choices near the player's side of the composition with a clear handoff. When she rambles, her gaze can drift into the folded path; when she asks a direct question, she returns to the other character. Strong psychedelic treatment recedes while the text and choice are active.
 
+The clearing now reveals a shallow crescent of seven faceted ice shards behind the figure. The arc gives the encounter a distant edge without enclosing the walkable snow or making the figure compete with a large structure. Its opacity follows the existing clearing cue, so the boundary arrives with the scene rather than appearing as unrelated set dressing. Keep later additions sparse; the next visual improvement should strengthen the house's impossible light or give the two figures a clearer shared shadow at the answer.
+
 **Playable purpose:** choose a present action, a personal answer, or privacy. **Image:** an impossible side path surrounds a dependable place to stand.
 
 ### Scene G: the warning and wake — finish through action
@@ -318,6 +320,8 @@ Give each mode an identifiable sound perspective. The dream relies on subtitles 
 | Lake | Ice, breath, the distance of the voice | A constant climax bed | Make standing still feel consequential. |
 
 Use sound absences as cues, but maintain an audible baseline so quiet does not resemble a broken audio system. Delayed steps and creaks need limited repeat rules. Suspense comes from uncertainty about the next recurrence.
+
+At the dream lantern, the live wind now responds to the player's choice and distance. The flame leans into the weather while exposed, steadies when sheltered, and holds a smaller warmth if the player leaves and returns. The existing storm bed eases down near a sheltered or revisited light, then opens again as the player walks away; this carries the action without a score or extra dialogue.
 
 Score conversation as a mix state: retain world presence, lower competing layers, protect chapter voice intelligibility, then recover gently. Pause, interruption, loading, and title return must restore the correct mix rather than stacking ducks.
 

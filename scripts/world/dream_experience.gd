@@ -6,6 +6,9 @@ const FIGURE_SCENE := preload("res://assets/characters/quaternius_modular_women/
 const FIGURE_OFFSETS := [9.0, 20.0, 34.0, 50.0, 67.0]
 const WINDOW_INTERVAL_SECONDS := 6.0
 const CLEARING_APPROACH_OFFSET := 61.0
+const LANTERN_WIND_REACH := 13.0
+const LANTERN_SHELTER_QUIET := 0.36
+const LANTERN_RETURN_QUIET := 0.13
 const SCENE_CAMERA_DISTANCE := [4.8, 4.5, 4.2, 3.9]
 const SCENE_CAMERA_HEIGHT := [1.65, 1.58, 1.5, 1.42]
 const CONVERSATION_CAMERA_REACH := 9.0
@@ -79,6 +82,7 @@ var _lantern_sheltered := false
 var _lantern_seen := false
 var _lantern_left_once := false
 var _lantern_returned := false
+var _lantern_wind_quiet := 0.0
 var _dream_quiet := 0.0
 var _dream_quiet_after_response := 0.0
 var _dream_elapsed := 0.0
@@ -289,6 +293,8 @@ func restore_after_load(state: Dictionary) -> void:
 		_dream_journal_hint_time = 8.0
 	if _dream_soundscape:
 		_dream_soundscape.call("set_travel_quiet", _window_interval_active())
+	if Game.weather:
+		Game.weather.set_dream_quiet(maxf(_dream_quiet, _lantern_wind_quiet))
 	if Game.player:
 		Game.player.dialogue_locked = _dream_journal_open or _conversation_camera_active or _conversation_camera_returning or _conversation_waiting or _conversation_intro_waiting or _answer_open
 
@@ -1776,6 +1782,14 @@ func _update_lantern(delta: float) -> void:
 	if _lantern_flame:
 		var breath := 1.0 if _lantern_sheltered else (0.98 + sin(_lantern_time * 3.8) * 0.02 if _lantern_returned else 0.96 + sin(_lantern_time * 3.8) * 0.04)
 		_lantern_flame.scale = Vector3(1.0, breath, 1.0)
+		var wind := Game.weather.wind if Game.weather else Vector3.ZERO
+		var local_wind := _lantern.global_basis.inverse() * wind.normalized() if wind.length_squared() > 0.001 else Vector3.ZERO
+		var exposure := 0.18 if _lantern_sheltered else (0.66 if _lantern_returned else 1.0)
+		var lean := clampf(wind.length() / 16.0, 0.0, 1.0) * exposure * 0.14
+		var target_rotation := Vector3(-local_wind.z * lean, 0.0, local_wind.x * lean)
+		var turn := 1.0 - exp(-delta * 4.0)
+		_lantern_flame.rotation.x = lerp_angle(_lantern_flame.rotation.x, target_rotation.x, turn)
+		_lantern_flame.rotation.z = lerp_angle(_lantern_flame.rotation.z, target_rotation.z, turn)
 
 
 func _shelter_lantern() -> void:
@@ -1789,6 +1803,13 @@ func _shelter_lantern() -> void:
 func _update_dream_quiet(delta: float) -> void:
 	if Game.weather == null or Game.trail == null or Game.player == null:
 		return
+	var lantern_quiet_target := 0.0
+	if _lantern_seen and _lantern:
+		var lantern_distance := Game.player.global_position.distance_to(_lantern.global_position)
+		var proximity := 1.0 - smoothstep(2.5, LANTERN_WIND_REACH, lantern_distance)
+		var care := LANTERN_SHELTER_QUIET if _lantern_sheltered else (LANTERN_RETURN_QUIET if _lantern_returned else 0.0)
+		lantern_quiet_target = care * proximity
+	_lantern_wind_quiet = move_toward(_lantern_wind_quiet, lantern_quiet_target, delta * 0.62)
 	var target := 0.0
 	if _window_interval_active():
 		target = 0.48
@@ -1798,7 +1819,7 @@ func _update_dream_quiet(delta: float) -> void:
 		_dream_quiet_after_response = maxf(_dream_quiet_after_response - delta, 0.0)
 		target = 0.84 if _conversation_response_pending or _dream_quiet_after_response > 0.0 else 0.12
 	_dream_quiet = move_toward(_dream_quiet, target, delta * (0.24 if target > _dream_quiet else 0.18))
-	Game.weather.set_dream_quiet(_dream_quiet)
+	Game.weather.set_dream_quiet(maxf(_dream_quiet, _lantern_wind_quiet))
 
 
 func _finish_dream() -> void:

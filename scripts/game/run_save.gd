@@ -495,7 +495,7 @@ func _dream_state_keys() -> Array:
 		"_figure_motion_look_at_player", "_figure_turn_active", "_figure_turn_target_yaw",
 		"_rambling_gaze_target", "_apparition_state",
 		"_apparition_timer", "_apparition_dissolve", "_apparition_link_strength", "_boundary_strength",
-		"_lantern_time", "_lantern_wait", "_lantern_sheltered", "_lantern_seen", "_lantern_left_once", "_lantern_returned",
+		"_lantern_time", "_lantern_wait", "_lantern_sheltered", "_lantern_seen", "_lantern_left_once", "_lantern_returned", "_lantern_wind_quiet",
 		"_dream_quiet", "_dream_quiet_after_response", "_dream_elapsed", "_dream_voice_unlocked", "_opening_station_pending",
 		"_conversation_camera_active", "_conversation_camera_returning",
 		"_conversation_camera_return_time", "_camera_choreography_enabled", "_conversation_response",

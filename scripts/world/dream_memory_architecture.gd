@@ -452,6 +452,7 @@ func _build_window() -> void:
 
 func _build_clearing() -> void:
 	var root := _root_at("clearing", 61.0, -8.0, "ClearingBearing")
+	_build_ice_horizon(root)
 	_clearing_light = OmniLight3D.new()
 	_clearing_light.name = "ClearingAfterimage"
 	_clearing_light.light_color = Color("c7d8e5")
@@ -460,3 +461,35 @@ func _build_clearing() -> void:
 	_clearing_light.shadow_enabled = false
 	_clearing_light.position = Vector3(0.0, 2.6, 1.0)
 	root.add_child(_clearing_light)
+
+
+func _build_ice_horizon(root: Node3D) -> void:
+	# A broken, shallow arc gives the conversation a distant boundary. Its center
+	# sits behind the figure; the gaps keep the snow line and silhouette legible.
+	var shards := [
+		{"x": -6.0, "z": 3.6, "height": 2.35, "radius": 0.34, "lean": -0.13},
+		{"x": -4.05, "z": 3.15, "height": 3.45, "radius": 0.39, "lean": 0.09},
+		{"x": -1.95, "z": 2.85, "height": 2.55, "radius": 0.31, "lean": -0.07},
+		{"x": 0.35, "z": 2.75, "height": 3.8, "radius": 0.37, "lean": 0.08},
+		{"x": 2.7, "z": 2.95, "height": 2.65, "radius": 0.32, "lean": -0.1},
+		{"x": 4.75, "z": 3.35, "height": 3.25, "radius": 0.4, "lean": 0.12},
+		{"x": 6.45, "z": 3.8, "height": 2.2, "radius": 0.3, "lean": -0.08},
+	]
+	var ice := _material("clearing", Color("8095a8"), Color("8298b1"), STONE_TEXTURE)
+	for index in range(shards.size()):
+		var shard: Dictionary = shards[index]
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 0.015
+		mesh.bottom_radius = float(shard["radius"])
+		mesh.height = float(shard["height"])
+		mesh.radial_segments = 5
+		mesh.rings = 1
+		var facet := MeshInstance3D.new()
+		facet.name = "IceHorizon_%02d" % (index + 1)
+		facet.mesh = mesh
+		facet.material_override = ice
+		facet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		facet.position = Vector3(float(shard["x"]), float(shard["height"]) * 0.5, float(shard["z"]))
+		facet.rotation.z = float(shard["lean"])
+		facet.rotation.y = float(index % 2) * 0.34
+		root.add_child(facet)
