@@ -94,7 +94,6 @@ func _run() -> void:
 		return
 	if focus == "clearing":
 		await _capture_clearing(route, experience, "clearing")
-		await _save_frame("clearing_memory")
 		get_tree().quit()
 		return
 	await _capture_entry(route, "entry")
@@ -470,16 +469,34 @@ func _capture_story_motion(experience: Node, route_offset: float, cue: String, b
 
 
 func _capture_clearing(route: Node3D, experience: Node, name: String) -> void:
+	var architecture := experience.get("_memory_architecture") as DreamMemoryArchitecture
+	if architecture:
+		architecture.enter_clearing()
 	_place_player(58.0)
 	experience.set("_stage", 4)
-	experience.call("_set_caption", "")
 	experience.call("_set_figure_moving", false)
 	experience.set("_figure_offset", Game.trail.player_start_offset + 61.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 61.0)
+	experience.call("_begin_figure_appearance", 0.4)
 	experience.call("_pulse_effect", 0.72, "merge")
-	_aim(58.0, 0.48, -3.35, 1.62, 1.1)
+	_aim_between(58.0, 61.0, 0.9, 1.25)
 	await _settle()
-	await _save_frame(name)
+	experience.set_process(false)
+	experience.set("_apparition_state", 0)
+	experience.call("_set_figure_dissolve", 0.0)
+	var figure := experience.get("_figure") as Node3D
+	if figure:
+		figure.show()
+	var speech := experience.get("_speech_sprite") as CanvasItem
+	if speech:
+		speech.hide()
+	var lantern_prompt := experience.get("_lantern_prompt") as CanvasItem
+	if lantern_prompt:
+		lantern_prompt.hide()
+	var journal_hint := experience.get("_dream_journal_hint_panel") as CanvasItem
+	if journal_hint:
+		journal_hint.hide()
+	await _save_frame(name, false)
 
 
 func _capture_choice(route: Node3D, experience: Node, name: String) -> void:
@@ -512,8 +529,9 @@ func _settle() -> void:
 		await get_tree().process_frame
 
 
-func _save_frame(name: String) -> void:
-	await _settle()
+func _save_frame(name: String, settle_first := true) -> void:
+	if settle_first:
+		await _settle()
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
 	var prefix := "no_effects_" if OS.get_environment("RUN_DREAM_NO_SCREEN_EFFECTS") == "1" else "no_warp_" if OS.get_environment("RUN_DREAM_NO_WARP") == "1" else ""

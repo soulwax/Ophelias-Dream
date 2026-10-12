@@ -38,6 +38,7 @@ var _beam_pivot: Node3D
 var _beam_material: ShaderMaterial
 var _window_light: OmniLight3D
 var _clearing_light: OmniLight3D
+var _wrong_horizon_light: OmniLight3D
 
 
 func build(source: Trail) -> void:
@@ -195,8 +196,12 @@ func _update_lights(progress: float, delta: float) -> void:
 	var window_amount := float(_values.get("window", 0.0))
 	if _window_light:
 		_window_light.light_energy = window_amount * (1.75 - _pressure * 0.65)
+	var clearing_amount := float(_values.get("clearing", 0.0))
 	if _clearing_light:
-		_clearing_light.light_energy = float(_values.get("clearing", 0.0)) * (0.55 - _pressure * 0.18)
+		_clearing_light.light_energy = clearing_amount * (0.55 - _pressure * 0.18)
+	if _wrong_horizon_light:
+		var slow_breath := 0.88 + sin(_time * 0.34) * 0.06
+		_wrong_horizon_light.light_energy = clearing_amount * slow_breath * (0.52 - _pressure * 0.12)
 
 
 func _root_at(cue_id: String, offset: float, side: float, name: String) -> Node3D:
@@ -453,6 +458,7 @@ func _build_window() -> void:
 func _build_clearing() -> void:
 	var root := _root_at("clearing", 61.0, -8.0, "ClearingBearing")
 	_build_ice_horizon(root)
+	_build_wrong_horizon_window(root)
 	_clearing_light = OmniLight3D.new()
 	_clearing_light.name = "ClearingAfterimage"
 	_clearing_light.light_color = Color("c7d8e5")
@@ -463,19 +469,49 @@ func _build_clearing() -> void:
 	root.add_child(_clearing_light)
 
 
+func _build_wrong_horizon_window(root: Node3D) -> void:
+	# The cabin's familiar two-pane light reappears beyond the clearing, on the
+	# wrong side of the walk. Keep it small so the figure remains the focal point.
+	var center := Vector3(1.0, 1.9, 2.84)
+	var pane := _material("clearing", Color("e3a875"), Color("ffc58d"), PLASTER_TEXTURE)
+	pane.set_shader_parameter("texture_strength", 0.0)
+	var glass := MeshInstance3D.new()
+	glass.name = "WrongHorizonWarmPanes"
+	var glass_mesh := QuadMesh.new()
+	glass_mesh.size = Vector2(0.58, 0.74)
+	glass.mesh = glass_mesh
+	glass.material_override = pane
+	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	glass.position = center + Vector3(0.0, 0.0, 0.025)
+	root.add_child(glass)
+	_box(root, "clearing", "WrongHorizonJambLeft", center + Vector3(-0.34, 0.0, 0.0), Vector3(0.06, 0.9, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonJambRight", center + Vector3(0.34, 0.0, 0.0), Vector3(0.06, 0.9, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonLintel", center + Vector3(0.0, 0.45, 0.0), Vector3(0.74, 0.06, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonSill", center + Vector3(0.0, -0.45, 0.0), Vector3(0.74, 0.06, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonMullion", center + Vector3(0.0, 0.0, -0.015), Vector3(0.04, 0.76, 0.09), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_wrong_horizon_light = OmniLight3D.new()
+	_wrong_horizon_light.name = "WarmLightBeyondTheIce"
+	_wrong_horizon_light.light_color = Color("ffc48e")
+	_wrong_horizon_light.light_energy = 0.0
+	_wrong_horizon_light.omni_range = 4.2
+	_wrong_horizon_light.shadow_enabled = false
+	_wrong_horizon_light.position = center + Vector3(0.0, 0.0, -0.08)
+	root.add_child(_wrong_horizon_light)
+
+
 func _build_ice_horizon(root: Node3D) -> void:
-	# A broken, shallow arc gives the conversation a distant boundary. Its center
-	# sits behind the figure; the gaps keep the snow line and silhouette legible.
+	# Low dark fins give the conversation a distant boundary without making a
+	# picket line. The central opening keeps the false window and figure distinct.
 	var shards := [
-		{"x": -6.0, "z": 3.6, "height": 2.35, "radius": 0.34, "lean": -0.13},
-		{"x": -4.05, "z": 3.15, "height": 3.45, "radius": 0.39, "lean": 0.09},
-		{"x": -1.95, "z": 2.85, "height": 2.55, "radius": 0.31, "lean": -0.07},
-		{"x": 0.35, "z": 2.75, "height": 3.8, "radius": 0.37, "lean": 0.08},
-		{"x": 2.7, "z": 2.95, "height": 2.65, "radius": 0.32, "lean": -0.1},
-		{"x": 4.75, "z": 3.35, "height": 3.25, "radius": 0.4, "lean": 0.12},
-		{"x": 6.45, "z": 3.8, "height": 2.2, "radius": 0.3, "lean": -0.08},
+		{"x": -5.8, "z": 3.7, "height": 1.95, "radius": 0.38, "lean": -0.19},
+		{"x": -3.75, "z": 3.25, "height": 2.45, "radius": 0.43, "lean": 0.16},
+		{"x": -1.55, "z": 2.95, "height": 1.65, "radius": 0.32, "lean": -0.2},
+		{"x": 2.55, "z": 3.0, "height": 1.85, "radius": 0.34, "lean": 0.18},
+		{"x": 4.65, "z": 3.4, "height": 2.55, "radius": 0.42, "lean": -0.14},
+		{"x": 6.45, "z": 3.85, "height": 1.8, "radius": 0.34, "lean": 0.17},
 	]
-	var ice := _material("clearing", Color("8095a8"), Color("8298b1"), STONE_TEXTURE)
+	var ice := _material("clearing", Color("4f6075"), Color("4b5c72"), STONE_TEXTURE)
+	ice.set_shader_parameter("texture_strength", 0.22)
 	for index in range(shards.size()):
 		var shard: Dictionary = shards[index]
 		var mesh := CylinderMesh.new()

@@ -26,14 +26,19 @@ void vertex() {
 void fragment() {
 	vec2 capsule = UV * 2.0 - 1.0;
 	float segment_end = max(1.0 - 1.0 / max(aspect, 1.0), 0.0);
-	float nearest_end = clamp(capsule.y, -segment_end, segment_end);
-	float distance_to_edge = length(vec2(capsule.x, (capsule.y - nearest_end) * aspect));
-	float body = 1.0 - smoothstep(0.76, 1.16, distance_to_edge);
+	float along = abs(capsule.y);
+	float middle_width = mix(0.2, 0.42, smoothstep(0.48, 0.92, along));
+	float connector = 1.0 - smoothstep(segment_end - 0.045, segment_end + 0.035, along);
+	connector *= 1.0 - smoothstep(middle_width, middle_width + 0.2, abs(capsule.x));
+	float end_radius = min(0.42, 0.9 / max(aspect, 1.0));
+	float near_lobe = 1.0 - smoothstep(0.68, 1.18, length(vec2(capsule.x / 0.62, (capsule.y + segment_end * 0.82) / end_radius)));
+	float far_lobe = 1.0 - smoothstep(0.68, 1.18, length(vec2(capsule.x / 0.62, (capsule.y - segment_end * 0.82) / end_radius)));
+	float body = max(connector * 0.58, max(near_lobe, far_lobe));
 	float grain = soft_noise(world_position.xz * 2.8 + vec2(TIME * 0.04, -TIME * 0.027));
 	float slow_breath = 0.94 + 0.06 * sin(TIME * 0.55 + world_position.x * 0.4);
 	float wisp = smoothstep(0.2, 0.82, grain);
 	float alpha = strength * body * mix(0.78, 1.0, wisp) * slow_breath;
-	float rim = 1.0 - smoothstep(0.62, 1.12, distance_to_edge);
+	float rim = smoothstep(0.04, 0.52, body) * (1.0 - smoothstep(0.76, 0.98, body));
 	ALBEDO = mix(vec3(0.018, 0.026, 0.057), vec3(0.07, 0.045, 0.12), rim * 0.45);
 	EMISSION = vec3(0.016, 0.022, 0.052) * rim;
 	ALPHA = alpha;
