@@ -470,11 +470,15 @@ func _build_clearing() -> void:
 
 
 func _build_wrong_horizon_window(root: Node3D) -> void:
-	# The cabin's familiar two-pane light reappears beyond the clearing, on the
-	# wrong side of the walk. Keep it small so the figure remains the focal point.
-	var center := Vector3(1.0, 1.9, 2.84)
+	# A small piece of the cabin's wall has surfaced through the far ice. The
+	# buried base makes the window feel attached to the landscape, not suspended.
+	var center := Vector3(1.0, 1.55, 2.84)
 	var pane := _material("clearing", Color("e3a875"), Color("ffc58d"), PLASTER_TEXTURE)
 	pane.set_shader_parameter("texture_strength", 0.0)
+	var backing := _box(root, "clearing", "BuriedWindowWall", Vector3(1.0, 1.0, 2.84), Vector3(1.72, 2.45, 0.38), Color("586575"), Color("17202e"), STONE_TEXTURE)
+	backing.rotation.z = -0.045
+	var snow_cap := _box(root, "clearing", "WindowWallIceCap", Vector3(0.98, 2.16, 2.84), Vector3(1.92, 0.12, 0.52), Color("9caeb8"), Color.BLACK, STONE_TEXTURE)
+	snow_cap.rotation.z = -0.045
 	var glass := MeshInstance3D.new()
 	glass.name = "WrongHorizonWarmPanes"
 	var glass_mesh := QuadMesh.new()
@@ -482,13 +486,13 @@ func _build_wrong_horizon_window(root: Node3D) -> void:
 	glass.mesh = glass_mesh
 	glass.material_override = pane
 	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	glass.position = center + Vector3(0.0, 0.0, 0.025)
+	glass.position = center + Vector3(0.0, 0.0, -0.205)
 	root.add_child(glass)
-	_box(root, "clearing", "WrongHorizonJambLeft", center + Vector3(-0.34, 0.0, 0.0), Vector3(0.06, 0.9, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
-	_box(root, "clearing", "WrongHorizonJambRight", center + Vector3(0.34, 0.0, 0.0), Vector3(0.06, 0.9, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
-	_box(root, "clearing", "WrongHorizonLintel", center + Vector3(0.0, 0.45, 0.0), Vector3(0.74, 0.06, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
-	_box(root, "clearing", "WrongHorizonSill", center + Vector3(0.0, -0.45, 0.0), Vector3(0.74, 0.06, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
-	_box(root, "clearing", "WrongHorizonMullion", center + Vector3(0.0, 0.0, -0.015), Vector3(0.04, 0.76, 0.09), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonJambLeft", center + Vector3(-0.34, 0.0, -0.23), Vector3(0.06, 0.9, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonJambRight", center + Vector3(0.34, 0.0, -0.23), Vector3(0.06, 0.9, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonLintel", center + Vector3(0.0, 0.45, -0.23), Vector3(0.74, 0.06, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonSill", center + Vector3(0.0, -0.45, -0.23), Vector3(0.74, 0.06, 0.08), Color("596573"), Color.BLACK, STONE_TEXTURE)
+	_box(root, "clearing", "WrongHorizonMullion", center + Vector3(0.0, 0.0, -0.23), Vector3(0.04, 0.76, 0.09), Color("596573"), Color.BLACK, STONE_TEXTURE)
 	_wrong_horizon_light = OmniLight3D.new()
 	_wrong_horizon_light.name = "WarmLightBeyondTheIce"
 	_wrong_horizon_light.light_color = Color("ffc48e")
@@ -500,32 +504,51 @@ func _build_wrong_horizon_window(root: Node3D) -> void:
 
 
 func _build_ice_horizon(root: Node3D) -> void:
-	# Low dark fins give the conversation a distant boundary without making a
-	# picket line. The central opening keeps the false window and figure distinct.
-	var shards := [
-		{"x": -5.8, "z": 3.7, "height": 1.95, "radius": 0.38, "lean": -0.19},
-		{"x": -3.75, "z": 3.25, "height": 2.45, "radius": 0.43, "lean": 0.16},
-		{"x": -1.55, "z": 2.95, "height": 1.65, "radius": 0.32, "lean": -0.2},
-		{"x": 2.55, "z": 3.0, "height": 1.85, "radius": 0.34, "lean": 0.18},
-		{"x": 4.65, "z": 3.4, "height": 2.55, "radius": 0.42, "lean": -0.14},
-		{"x": 6.45, "z": 3.85, "height": 1.8, "radius": 0.34, "lean": 0.17},
+	# One low, folded ridge reads as the edge of the frozen basin. Its changing
+	# depth makes the line plausible up close and subtly impossible at a distance.
+	var stations := [
+		{"x": -7.2, "z": 5.1, "height": 0.68},
+		{"x": -5.4, "z": 4.25, "height": 1.08},
+		{"x": -3.5, "z": 3.58, "height": 0.82},
+		{"x": -1.7, "z": 3.03, "height": 1.14},
+		{"x": 0.0, "z": 2.82, "height": 0.76},
+		{"x": 2.0, "z": 2.96, "height": 1.08},
+		{"x": 3.9, "z": 3.48, "height": 0.82},
+		{"x": 5.7, "z": 4.22, "height": 1.02},
+		{"x": 7.2, "z": 5.12, "height": 0.64},
 	]
 	var ice := _material("clearing", Color("4f6075"), Color("4b5c72"), STONE_TEXTURE)
-	ice.set_shader_parameter("texture_strength", 0.22)
-	for index in range(shards.size()):
-		var shard: Dictionary = shards[index]
-		var mesh := CylinderMesh.new()
-		mesh.top_radius = 0.015
-		mesh.bottom_radius = float(shard["radius"])
-		mesh.height = float(shard["height"])
-		mesh.radial_segments = 5
-		mesh.rings = 1
-		var facet := MeshInstance3D.new()
-		facet.name = "IceHorizon_%02d" % (index + 1)
-		facet.mesh = mesh
-		facet.material_override = ice
-		facet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		facet.position = Vector3(float(shard["x"]), float(shard["height"]) * 0.5, float(shard["z"]))
-		facet.rotation.z = float(shard["lean"])
-		facet.rotation.y = float(index % 2) * 0.34
-		root.add_child(facet)
+	ice.set_shader_parameter("texture_strength", 0.38)
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for index in range(stations.size() - 1):
+		var left: Dictionary = stations[index]
+		var right: Dictionary = stations[index + 1]
+		var left_x := float(left["x"])
+		var right_x := float(right["x"])
+		var left_front := Vector3(left_x, 0.0, float(left["z"]) - 1.25)
+		var left_back := Vector3(left_x, 0.0, float(left["z"]) + 1.25)
+		var right_front := Vector3(right_x, 0.0, float(right["z"]) - 1.25)
+		var right_back := Vector3(right_x, 0.0, float(right["z"]) + 1.25)
+		var left_top_front := Vector3(left_x, float(left["height"]), float(left["z"]) - 0.22)
+		var left_top_back := Vector3(left_x, float(left["height"]), float(left["z"]) + 0.22)
+		var right_top_front := Vector3(right_x, float(right["height"]), float(right["z"]) - 0.22)
+		var right_top_back := Vector3(right_x, float(right["height"]), float(right["z"]) + 0.22)
+		_add_double_sided_quad(surface, left_front, right_front, right_top_front, left_top_front)
+		_add_double_sided_quad(surface, right_back, left_back, left_top_back, right_top_back)
+		_add_double_sided_quad(surface, left_top_front, right_top_front, right_top_back, left_top_back)
+	_add_double_sided_quad(surface, Vector3(-7.2, 0.0, 5.1 - 1.25), Vector3(-7.2, 0.0, 5.1 + 1.25), Vector3(-7.2, 0.68, 5.1 + 0.22), Vector3(-7.2, 0.68, 5.1 - 0.22))
+	_add_double_sided_quad(surface, Vector3(7.2, 0.0, 5.12 - 1.25), Vector3(7.2, 0.0, 5.12 + 1.25), Vector3(7.2, 0.64, 5.12 + 0.22), Vector3(7.2, 0.64, 5.12 - 0.22))
+	surface.generate_normals()
+	var ridge := MeshInstance3D.new()
+	ridge.name = "FoldedIceHorizon"
+	ridge.mesh = surface.commit()
+	ridge.material_override = ice
+	ridge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(ridge)
+
+
+func _add_double_sided_quad(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
+	for triangle in [[a, b, c], [a, c, d], [c, b, a], [d, c, a]]:
+		for vertex in triangle:
+			surface.add_vertex(vertex)
