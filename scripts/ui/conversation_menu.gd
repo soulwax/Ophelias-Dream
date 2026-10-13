@@ -18,7 +18,6 @@ var _line: Label
 var _turn: Label
 var _action_row: HBoxContainer
 var _topics: VBoxContainer
-var _hint: Label
 var _panel: PanelContainer
 var _buttons: Array[Button] = []
 var _choice_texts: Array[String] = []
@@ -70,8 +69,6 @@ func _ready() -> void:
 	_topics = VBoxContainer.new()
 	_topics.add_theme_constant_override("separation", 2)
 	column.add_child(_topics)
-	_hint = UiChrome.term_label("", 11, UiChrome.ASH)
-	column.add_child(_hint)
 
 
 func open(npc_name: String) -> void:
@@ -98,13 +95,12 @@ func show_line(speaker_name: String, text: String, theirs: bool) -> void:
 	_line.add_theme_color_override("font_color", UiChrome.BONE if theirs else UiChrome.ASH)
 	_turn.hide()
 	_set_action("Continue")
-	_hint.text = "Esc  Leave"
 
 
 ## Her topics; the last one leaves. A taken topic is dimmed, not removed.
 func show_choices(topics: Array[Dictionary]) -> void:
 	_clear()
-	_turn.text = "// YOUR RESPONSE    %02d AVAILABLE" % topics.size()
+	_turn.text = "// YOUR REPLY"
 	_turn.show()
 	for i in topics.size():
 		var button := Button.new()
@@ -112,7 +108,7 @@ func show_choices(topics: Array[Dictionary]) -> void:
 		if topics[i].get("dim", false):
 			choice_text += "   /   heard"
 		_choice_texts.append(choice_text)
-		button.text = "  %02d  %s" % [i + 1, choice_text]
+		button.text = "  %d  %s" % [i + 1, choice_text]
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.add_theme_font_override("font", UiChrome.mono_font())
@@ -136,8 +132,7 @@ func show_choices(topics: Array[Dictionary]) -> void:
 		_buttons.append(button)
 	choices_shown = true
 	_pointer_moved = false
-	_set_action("Say")
-	_hint.text = "↑ / ↓  Choose   ·   1-%d  Speak   ·   Esc  Leave" % topics.size()
+	_action_row.hide()
 	select(0)
 
 
@@ -154,7 +149,7 @@ func select(index: int) -> void:
 		return
 	selected = index
 	for i in _buttons.size():
-		_buttons[i].text = ("> " if i == index else "  ") + "%02d  %s" % [i + 1, _choice_texts[i]]
+		_buttons[i].text = ("> " if i == index else "  ") + "%d  %s" % [i + 1, _choice_texts[i]]
 	_buttons[index].grab_focus()
 
 

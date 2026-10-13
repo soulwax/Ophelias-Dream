@@ -299,6 +299,8 @@ func restore_after_load(state: Dictionary) -> void:
 		Game.weather.set_dream_quiet(maxf(_dream_quiet, _lantern_wind_quiet))
 	if Game.player:
 		Game.player.dialogue_locked = _dream_journal_open or _conversation_camera_active or _conversation_camera_returning or _conversation_waiting or _conversation_intro_waiting or _answer_open
+		Game.player.set_dialogue_pose(_answer_open or _conversation_waiting or _conversation_intro_waiting or _station_dialogue_active,
+			_conversation_response_pending and _conversation_waiting)
 
 
 func _build_dream_route() -> void:
@@ -926,8 +928,9 @@ func _process(delta: float) -> void:
 			_update_lantern(delta)
 			return
 	if _answer_open:
-		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		var choice_mouse_mode := Input.MOUSE_MODE_VISIBLE if _choice_panel.visible else Input.MOUSE_MODE_CAPTURED
+		if Input.mouse_mode != choice_mouse_mode:
+			Input.mouse_mode = choice_mouse_mode
 		return
 	_update_story_lines(delta)
 	if _story_line_active or _conversation_camera_returning:
@@ -1267,6 +1270,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if not _answer_open:
 			return
+		var quick_choice := UiChrome.dialogue_choice_index(event, _choice_buttons.size())
+		if quick_choice >= 0:
+			_set_choice_index(quick_choice)
+			_choose_focused_memory()
+			get_viewport().set_input_as_handled()
+			return
 		if event is InputEventJoypadMotion and (event as InputEventJoypadMotion).axis == JOY_AXIS_LEFT_Y:
 			var stick_y := (event as InputEventJoypadMotion).axis_value
 			if absf(stick_y) < 0.28:
@@ -1275,10 +1284,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_choice_axis_latched = true
 				_focus_choice(1 if stick_y > 0.0 else -1)
 				get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("ui_up"):
+		elif event.is_action_pressed("ui_up") or event.is_action_pressed("move_forward"):
 			_focus_choice(-1)
 			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("ui_down"):
+		elif event.is_action_pressed("ui_down") or event.is_action_pressed("move_back"):
 			_focus_choice(1)
 			get_viewport().set_input_as_handled()
 		elif _is_dialogue_confirm(event):
@@ -1849,6 +1858,7 @@ func _begin_character_conversation(rambling := false) -> void:
 	if _conversation_camera_returning:
 		_complete_character_conversation()
 	Game.player.dialogue_locked = true
+	Game.player.set_dialogue_pose(true)
 	_set_figure_moving(false)
 	_lantern_prompt.hide()
 	if _conversation_camera_active and _conversation_camera and is_instance_valid(_conversation_camera):
@@ -1957,6 +1967,7 @@ func _complete_character_conversation() -> void:
 	_return_camera = null
 	if Game.player:
 		Game.player.dialogue_locked = false
+		Game.player.set_dialogue_pose(false)
 
 
 func _build_choices() -> void:
@@ -2002,6 +2013,7 @@ func _build_small_talk_choices() -> void:
 			_station_round_index = -1
 			_answer_open = false
 			_choice_panel.hide()
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			_restore_character_conversation()
 			return
 		_conversation_waiting = false
@@ -2050,6 +2062,7 @@ func _continue_station_dialogue() -> void:
 	_station_choice_effect = ""
 	_answer_open = false
 	_choice_panel.hide()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_restore_character_conversation()
 	_story_gap_remaining = 0.7
 	if completed_round == 2:
@@ -2140,13 +2153,14 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 	_choice_buttons.clear()
 	_choice_rows.clear()
 	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
-	var confirm_hint := "%s / X / A" % Game.settings.key_label("interact")
-	_choice_hint.text = "%s RETURN   ·   ESC PAUSE" % confirm_hint if _waking_card else "YOU // REPLY\n↑ / ↓ CHOOSE   ·   %s SPEAK   ·   ESC PAUSE" % confirm_hint
-	_set_caption_action("Return" if _waking_card else "Say")
+	_choice_hint.text = "RETURN" if _waking_card else "YOU // REPLY"
+	_set_caption_action("Return" if _waking_card else "")
 	for index in range(labels.size()):
 		var row := PanelContainer.new()
 		row.name = "DreamChoiceRow%d" % (index + 1)
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.mouse_entered.connect(_set_choice_index.bind(index))
+		row.gui_input.connect(_on_dream_choice_gui_input.bind(index))
 		_choice_panel.add_child(row)
 		var choice_label := _new_choice_label(20 if labels.size() <= 4 else 18)
 		choice_label.text = labels[index]
@@ -2158,6 +2172,8 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 		row.add_child(choice_label)
 		_choice_rows.append(row)
 		_choice_buttons.append(choice_label)
+	if not labels.is_empty() and not _waking_card:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_update_choice_positions()
 
 
@@ -2245,11 +2261,17 @@ func _choose_small_talk(index: int) -> void:
 	if effect == "push" or effect == "escalate":
 		_conversation_strain += 2
 		_pulse_effect(0.88, "doubt", _figure)
+		if Game.player:
+			Game.player.react_to_dialogue("recoil")
 	elif effect == "repair":
 		_conversation_strain = 0
 		_pulse_effect(0.72, "release", _figure)
+		if Game.player:
+			Game.player.react_to_dialogue("release")
 	else:
 		_pulse_effect(0.34, "footstep", _figure)
+		if Game.player:
+			Game.player.react_to_dialogue("uncertain")
 	_repair_menu_active = false
 	_conversation_choice_advances = bool(choice.get("advance", true))
 	_choice_panel.hide()
@@ -2305,8 +2327,17 @@ func _focus_choice(direction: int) -> void:
 
 
 func _set_choice_index(index: int) -> void:
+	if index < 0 or index >= _choice_buttons.size():
+		return
 	_choice_index = index
 	_refresh_choices()
+
+
+func _on_dream_choice_gui_input(event: InputEvent, index: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_set_choice_index(index)
+		_choose_focused_memory()
+		get_viewport().set_input_as_handled()
 
 
 func _style_choice(index: int, text: String) -> void:
@@ -2315,7 +2346,7 @@ func _style_choice(index: int, text: String) -> void:
 	var label := _choice_buttons[index]
 	var row := _choice_rows[index]
 	var selected := index == _choice_index
-	label.text = ("▸  " if selected else "   ") + text
+	label.text = ("▸ " if selected else "  ") + "%d  %s" % [index + 1, text]
 	label.modulate = UiChrome.BONE if selected else Color(UiChrome.BONE, 0.72)
 	var border_color := UiChrome.SIGNAL if selected else UiChrome.BONE
 	border_color.a = 0.76 if selected else 0.34
@@ -2369,6 +2400,7 @@ func _choose_memory(memory: String) -> void:
 	_finished = true
 	_answer_open = false
 	_choice_panel.hide()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_pulse_effect(0.42, "release")
 	_layout_caption()
 	_react_to_answer(memory)
@@ -2539,6 +2571,8 @@ func _set_caption(line: String, speaker := "", preserve_story_queue := false, ac
 		_story_line_queue.clear()
 	_story_gap_remaining = 0.0
 	_set_speaker(speaker)
+	if Game.player and Game.player.dialogue_locked and not line.is_empty():
+		Game.player.set_dialogue_pose(true, speaker.to_upper() == "YOU")
 	_caption.text = line
 	_set_caption_action(action)
 	_resize_caption(line, not action.is_empty())

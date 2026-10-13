@@ -30,6 +30,14 @@ public partial class GraceMotion : SkeletonModifier3D
 	private float _chestLift = 0.05f, _armSwing = 0.34f, _authoredArm = 0.2f;
 	private float _tiptoeAfter = 5.0f, _tiptoeCycle = 7.5f, _tiptoeLift = 0.075f, _tiptoePitch = 1.3f;
 	private float _speed, _poise = 1.0f, _glance;
+	private float _attentionTarget, _speakingTarget, _attention, _speaking;
+	private int _reaction;
+	private float _reactionTime;
+	private float _motionTime;
+	private float _attentionBlend = 2.8f, _speakingBlend = 4.0f;
+	private float _reactionDuration = 1.65f, _reactionStrength = 1.0f;
+	private float _motionDriveTarget, _motionTurnTarget, _motionDrive, _motionTurn;
+	private float _motionBlend = 7.0f, _motionStrength = 1.0f, _breathStrain;
 	private bool _authoredWalk;
 	private float _walkBlend, _idle, _tiptoe;
 
@@ -37,6 +45,18 @@ public partial class GraceMotion : SkeletonModifier3D
 	public float Poise { get => _poise; set => _poise = value; }
 	public float Glance { get => _glance; set => _glance = value; }
 	public bool AuthoredWalk { get => _authoredWalk; set => _authoredWalk = value; }
+	public float DialogueAttention { get => _attentionTarget; set => _attentionTarget = Mathf.Clamp(value, 0.0f, 1.0f); }
+	public float DialogueSpeaking { get => _speakingTarget; set => _speakingTarget = Mathf.Clamp(value, 0.0f, 1.0f); }
+	public float MotionDrive { get => _motionDriveTarget; set => _motionDriveTarget = Mathf.Clamp(value, -1.0f, 1.0f); }
+	public float MotionTurn { get => _motionTurnTarget; set => _motionTurnTarget = Mathf.Clamp(value, -1.0f, 1.0f); }
+	public float BreathStrain { get => _breathStrain; set => _breathStrain = Mathf.Clamp(value, 0.0f, 1.0f); }
+
+	/// <summary>1: uncertain, 2: recoil, 3: release. A new cue replaces the old one.</summary>
+	public void CueDialogueReaction(int kind)
+	{
+		_reaction = kind >= 1 && kind <= 3 ? kind : 0;
+		_reactionTime = 0.0f;
+	}
 
 	public void Configure(
 		float walkEnter, float walkExit, float glanceChest, float glanceHead,
@@ -57,6 +77,20 @@ public partial class GraceMotion : SkeletonModifier3D
 		_tiptoeCycle = Mathf.Max(tiptoeCycle, 0.001f);
 		_tiptoeLift = tiptoeLift;
 		_tiptoePitch = tiptoePitch;
+	}
+
+	public void ConfigureDialogue(float attentionBlend, float speakingBlend, float reactionDuration, float reactionStrength)
+	{
+		_attentionBlend = Mathf.Max(attentionBlend, 0.01f);
+		_speakingBlend = Mathf.Max(speakingBlend, 0.01f);
+		_reactionDuration = Mathf.Max(reactionDuration, 0.01f);
+		_reactionStrength = Mathf.Max(reactionStrength, 0.0f);
+	}
+
+	public void ConfigureMotion(float blend, float strength)
+	{
+		_motionBlend = Mathf.Max(blend, 0.01f);
+		_motionStrength = Mathf.Max(strength, 0.0f);
 	}
 
 	public override void _Ready()
@@ -86,6 +120,12 @@ public partial class GraceMotion : SkeletonModifier3D
 	{
 		if (!_valid || _skeleton == null) return;
 		float dt = Mathf.Clamp((float)delta, 0.001f, 0.1f);
+		_attention = Mathf.MoveToward(_attention, _attentionTarget, dt * _attentionBlend);
+		_speaking = Mathf.MoveToward(_speaking, _speakingTarget, dt * _speakingBlend);
+		_motionTime += dt;
+		float motionWeight = 1.0f - Mathf.Exp(-dt * _motionBlend);
+		_motionDrive = Mathf.Lerp(_motionDrive, _motionDriveTarget, motionWeight);
+		_motionTurn = Mathf.Lerp(_motionTurn, _motionTurnTarget, motionWeight);
 		for (int i = 0; i < _bones.Length; i++)
 		{
 			_pose[i] = _skeleton.GetBoneGlobalPose(_bones[i]);
@@ -125,11 +165,60 @@ public partial class GraceMotion : SkeletonModifier3D
 		Quaternion chin = new(Vector3.Right, -0.04f * rise);
 		Quaternion look = new(Vector3.Up, -(_glanceChest + _glanceHead) * _glance);
 		Turn(Bone.Head, (counter * lift).Inverse() * look * chin);
+		ApplyMotionFollowThrough();
+		ApplyDialoguePose(dt);
+	}
+
+	private void ApplyMotionFollowThrough()
+	{
+		float drive = _motionDrive * _poise * _motionStrength;
+		float turn = _motionTurn * _poise * _motionStrength;
+		// Exertion moves the ribs and shoulders, not the pelvis or planted feet.
+		float breath = Mathf.Sin(_motionTime * 2.8f) * _breathStrain * 0.018f;
+		if (Mathf.Abs(drive) + Mathf.Abs(turn) + Mathf.Abs(breath) < 0.001f) return;
+		Turn(Bone.Chest, new Quaternion(Vector3.Right, 0.035f * drive - breath)
+			* new Quaternion(Vector3.Up, 0.025f * turn));
+		Turn(Bone.UpperChest, new Quaternion(Vector3.Right, 0.02f * drive - breath * 0.7f)
+			* new Quaternion(Vector3.Up, 0.035f * turn));
+		Turn(Bone.Head, new Quaternion(Vector3.Right, -0.025f * drive + breath * 0.5f)
+			* new Quaternion(Vector3.Up, 0.055f * turn));
+		Turn(Bone.UpperArmL, new Quaternion(Vector3.Right, -0.04f * drive + 0.025f * turn + breath * 0.6f));
+		Turn(Bone.UpperArmR, new Quaternion(Vector3.Right, -0.04f * drive - 0.025f * turn + breath * 0.6f));
+	}
+
+	private void ApplyDialoguePose(float dt)
+	{
+		float pulse = 0.0f;
+		if (_reaction != 0)
+		{
+			_reactionTime += dt;
+			float phase = Mathf.Clamp(_reactionTime / _reactionDuration, 0.0f, 1.0f);
+			pulse = Mathf.Sin(phase * Mathf.Pi) * _reactionStrength;
+			if (phase >= 1.0f) _reaction = 0;
+		}
+		float uncertain = _reaction == 1 ? pulse : 0.0f;
+		float recoil = _reaction == 2 ? pulse : 0.0f;
+		float release = _reaction == 3 ? pulse : 0.0f;
+		float engaged = _attention * (1.0f - Mathf.SmoothStep(0.5f, 1.8f, _speed));
+		if (engaged < 0.001f && pulse < 0.001f) return;
+		float spokenBeat = Mathf.Sin(_motionTime * 3.2f) * _speaking * engaged;
+
+		// In the rig's +Z forward frame: close in to listen, open one hand to
+		// answer, pull back at a boundary, then let the shoulders unclench.
+		Turn(Bone.Chest, new Quaternion(Vector3.Right, 0.025f * engaged + 0.035f * recoil - 0.025f * release));
+		Turn(Bone.UpperChest, new Quaternion(Vector3.Right, 0.02f * engaged + 0.045f * recoil - 0.04f * release));
+		Turn(Bone.Head, new Quaternion(Vector3.Right, 0.03f * engaged + 0.065f * uncertain + 0.09f * recoil - 0.045f * release)
+			* new Quaternion(Vector3.Back, 0.035f * uncertain - 0.025f * release));
+		Turn(Bone.UpperArmL, new Quaternion(Vector3.Right, -0.07f * _speaking * engaged - 0.018f * spokenBeat + 0.05f * recoil - 0.035f * release)
+			* new Quaternion(Vector3.Back, 0.025f * engaged + 0.04f * recoil));
+		Turn(Bone.ForearmL, new Quaternion(Vector3.Right, -0.07f * _speaking * engaged - 0.025f * spokenBeat - 0.04f * uncertain - 0.06f * recoil));
+		Turn(Bone.UpperArmR, new Quaternion(Vector3.Right, 0.045f * recoil - 0.025f * release)
+			* new Quaternion(Vector3.Back, -0.025f * engaged - 0.04f * recoil));
 	}
 
 	private float TiptoeTarget(float delta)
 	{
-		if (_speed > 0.15f || _poise < 0.99f)
+		if (_speed > 0.15f || _poise < 0.99f || _attention > 0.1f)
 		{
 			_idle = 0.0f;
 			return 0.0f;

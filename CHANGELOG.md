@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.13.0 — 2026-10-13
+
+- Give the player restrained body reactions while listening, speaking, and responding to difficult choices.
+- Add upper body follow-through to starts, stops, turns, and exertion so movement feels more connected and emotionally present.
+- Refine dialogue choice input across keyboard, pointer, and controller.
+
 ## 0.2.12.0 — 2026-10-12
 
 愛

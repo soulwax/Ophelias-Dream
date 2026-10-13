@@ -229,6 +229,9 @@ func _physics_process(delta: float) -> void:
 		_sway = 0.0
 		if stride:
 			stride.update(0.0)
+		if grace:
+			grace.speed = _ground_speed()
+			grace.poise = 1.0
 		_breathe(delta, false)
 		_carry(delta, false)
 		return
@@ -446,6 +449,21 @@ func look_toward(point: Vector3, delta: float, rate := 3.0) -> void:
 	var weight := 1.0 - exp(-delta * rate)
 	_yaw = lerp_angle(_yaw, atan2(-to.x, -to.z), weight)
 	_pitch = lerpf(_pitch, clampf(atan2(to.y, Vector2(to.x, to.z).length()), Tune.PITCH_DOWN, Tune.PITCH_UP), weight)
+
+
+## The authored gait owns the legs; conversation only changes her carriage.
+func set_dialogue_pose(attentive: bool, speaking := false) -> void:
+	if grace:
+		grace.dialogue_attention = 1.0 if attentive else 0.0
+		grace.dialogue_speaking = 1.0 if attentive and speaking else 0.0
+
+
+func react_to_dialogue(kind: String) -> void:
+	if grace:
+		match kind:
+			"uncertain": grace.react(1)
+			"recoil": grace.react(2)
+			"release": grace.react(3)
 
 
 func _land(fall_speed: float) -> void:
@@ -952,6 +970,8 @@ func _breathe(delta: float, sprinting: bool) -> void:
 		strain = move_toward(strain, dream_breath, delta * 0.8)
 		if breath:
 			breath.strain = strain
+		if grace:
+			grace.breath_strain = strain
 		return
 	var spent := 1.0 - stamina / Tune.STAMINA_MAX
 	var target := spent * 0.55
@@ -966,6 +986,8 @@ func _breathe(delta: float, sprinting: bool) -> void:
 	strain = move_toward(strain, target, delta * (0.8 if target > strain else 0.09))
 	if breath:
 		breath.strain = strain
+	if grace:
+		grace.breath_strain = strain
 
 
 # She turns to where she is going instead of snapping to the camera, leans
@@ -984,6 +1006,9 @@ func _carry(delta: float, sprinting: bool) -> void:
 	var accel := (_glide - _last_glide) / maxf(delta, 0.0001)
 	_last_glide = _glide
 	var heading := Vector3(-sin(_facing), 0.0, -cos(_facing))
+	if grace:
+		grace.motion_drive = clampf(accel.dot(heading) / Tune.MOTION_ACCEL_FOR_FULL_POSE, -1.0, 1.0)
+		grace.motion_turn = clampf(turn_rate / Tune.MOTION_TURN_FOR_FULL_POSE, -1.0, 1.0)
 	var pace := flat.length() / Tune.SPRINT_SPEED
 	var pitch := clampf(-(pace * 0.09 + accel.dot(heading) * 0.012), -0.2, 0.1)
 	# Sliding, she sits back against the snow.

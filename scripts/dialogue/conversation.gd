@@ -38,6 +38,7 @@ var _topics: Array[Dictionary] = []
 var _their_voice: AudioStreamPlayer3D
 var _own_voice: AudioStreamPlayer3D
 var _duck := 0.0
+var _choice_axis_latched := false
 
 
 static func make(tree_path: String, speaker: Node3D) -> Conversation:
@@ -69,6 +70,8 @@ func begin() -> bool:
 	active = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	Game.set_phase(Game.Phase.DIALOGUE)
+	if Game.player:
+		Game.player.set_dialogue_pose(true)
 	_menu.open(tree.name_of(tree.npc))
 	if node_id == "":
 		_enter(tree.start)
@@ -125,6 +128,8 @@ func _offer() -> void:
 		var goodbye := {"text": str(tree.line(str(tree.leave.get("say", ""))).get("text", "Goodbye.")), "leave": true}
 		_topics.append(goodbye)
 	_menu.show_choices(_topics)
+	if Game.player:
+		Game.player.set_dialogue_pose(true)
 
 
 func _speak(ids: Array, then: Callable) -> void:
@@ -151,6 +156,8 @@ func _next() -> void:
 	heard[str(_current.id)] = true
 	var theirs := str(_current.speaker) == tree.npc
 	_menu.show_line(tree.name_of(str(_current.speaker)), str(_current.text), theirs)
+	if Game.player:
+		Game.player.set_dialogue_pose(true, not theirs)
 	var voice := _their_voice if theirs else _own_voice
 	var stream := _clip(_current)
 	_line_left = Conversation.spoken_for(str(_current.text))
@@ -200,6 +207,8 @@ func _finish(ending: String) -> void:
 	finished = ending
 	active = false
 	_menu.close()
+	if Game.player:
+		Game.player.set_dialogue_pose(false)
 	_restore_audio()
 	ended.emit(ending)
 
@@ -212,6 +221,8 @@ func _close() -> void:
 	_their_voice.stop()
 	_own_voice.stop()
 	_menu.close()
+	if Game.player:
+		Game.player.set_dialogue_pose(false)
 	_restore_audio()
 	if Game.phase == Game.Phase.DIALOGUE:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -273,6 +284,15 @@ func _input(event: InputEvent) -> void:
 		var quick_choice := UiChrome.dialogue_choice_index(event, _topics.size())
 		if quick_choice >= 0:
 			choose(quick_choice)
+		elif event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y:
+			var stick_y: float = (event as InputEventJoypadMotion).axis_value
+			if absf(stick_y) < 0.28:
+				_choice_axis_latched = false
+			elif absf(stick_y) >= 0.68 and not _choice_axis_latched:
+				_choice_axis_latched = true
+				_menu.step(1 if stick_y > 0.0 else -1)
+			else:
+				return
 		elif event.is_action_pressed("ui_up") or event.is_action_pressed("move_forward"):
 			_menu.step(-1)
 		elif event.is_action_pressed("ui_down") or event.is_action_pressed("move_back"):

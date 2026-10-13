@@ -30,11 +30,41 @@ var authored_walk: bool:
 	set(value):
 		if _motion:
 			_motion.AuthoredWalk = value
+var dialogue_attention: float:
+	get: return _motion.DialogueAttention if _motion else 0.0
+	set(value):
+		if _motion:
+			_motion.DialogueAttention = value
+var dialogue_speaking: float:
+	get: return _motion.DialogueSpeaking if _motion else 0.0
+	set(value):
+		if _motion:
+			_motion.DialogueSpeaking = value
+var motion_drive: float:
+	get: return _motion.MotionDrive if _motion else 0.0
+	set(value):
+		if _motion:
+			_motion.MotionDrive = value
+var motion_turn: float:
+	get: return _motion.MotionTurn if _motion else 0.0
+	set(value):
+		if _motion:
+			_motion.MotionTurn = value
+var breath_strain: float:
+	get: return _motion.BreathStrain if _motion else 0.0
+	set(value):
+		if _motion:
+			_motion.BreathStrain = value
 var active: bool:
 	get: return bool(_motion.get("active")) if _motion else false
 	set(value):
 		if _motion:
 			_motion.set("active", value)
+
+
+func react(kind: int) -> void:
+	if _motion:
+		_motion.CueDialogueReaction(kind)
 
 
 static func fit(skeleton: Skeleton3D) -> Grace:
@@ -51,6 +81,9 @@ static func fit(skeleton: Skeleton3D) -> Grace:
 		Tune.GRACE_COUNTER_TURN, Tune.GRACE_AUTHORED_COUNTER,
 		Tune.GRACE_CHEST_LIFT, Tune.GRACE_ARM_SWING, Tune.GRACE_AUTHORED_ARM,
 		Tune.TIPTOE_AFTER, Tune.TIPTOE_CYCLE, Tune.TIPTOE_LIFT, Tune.TIPTOE_PITCH)
+	motion.ConfigureDialogue(Tune.DIALOGUE_ATTENTION_BLEND, Tune.DIALOGUE_SPEAKING_BLEND,
+		Tune.DIALOGUE_REACTION_SECONDS, Tune.DIALOGUE_REACTION_STRENGTH)
+	motion.ConfigureMotion(Tune.MOTION_FOLLOW_BLEND, Tune.MOTION_FOLLOW_STRENGTH)
 	skeleton.add_child(motion)
 	grace._motion = motion
 	return grace

@@ -14,8 +14,6 @@ var _speaker: Label
 var _line: Label
 var _turn: Label
 var _topics: VBoxContainer
-var _action_row: HBoxContainer
-var _hint: Label
 var _buttons: Array[Button] = []
 var _responses: Array[Dictionary] = []
 var _target: Node3D
@@ -26,6 +24,7 @@ var _last_line := ""
 var _fade := 0.0
 var _previous_mouse: Input.MouseMode
 var _pointer_inside := false
+var _choice_axis_latched := false
 
 
 func _ready() -> void:
@@ -58,10 +57,6 @@ func _ready() -> void:
 	_topics = VBoxContainer.new()
 	_topics.add_theme_constant_override("separation", 4)
 	box.add_child(_topics)
-	_action_row = UiChrome.key_row(Game.settings.key_label("interact"), "Respond")
-	box.add_child(_action_row)
-	_hint = UiChrome.term_label("", 12, UiChrome.ASH)
-	box.add_child(_hint)
 	_surface_layer = CanvasLayer.new()
 	_surface_layer.name = "DialogueBubbleOverlay"
 	_surface_layer.layer = 22
@@ -107,7 +102,7 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 	_buttons.clear()
 	for i in _responses.size():
 		var button := Button.new()
-		button.text = "  %02d  %s" % [i + 1, str(_responses[i].text)]
+		button.text = "  %d  %s" % [i + 1, str(_responses[i].text)]
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.disabled = _responses[i].get("disabled", false)
 		button.focus_mode = Control.FOCUS_ALL
@@ -128,12 +123,8 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 	_selected = 0
 	while _buttons[_selected].disabled:
 		_selected += 1
-	UiChrome.set_key(_action_row, Game.settings.key_label("interact"))
-	_hint.text = "↑ / ↓  Choose   ·   1-%d  Speak   ·   Esc  Leave" % _responses.size()
 	_topics.show()
 	_turn.show()
-	_action_row.show()
-	_hint.show()
 	_panel.size.y = 0
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	Game.set_phase(Game.Phase.DIALOGUE)
@@ -209,7 +200,7 @@ func _select(index: int) -> void:
 		return
 	_selected = index
 	for i in _buttons.size():
-		_buttons[i].text = ("> " if i == index else "  ") + "%02d  %s" % [i + 1, str(_responses[i].text)]
+		_buttons[i].text = ("> " if i == index else "  ") + "%d  %s" % [i + 1, str(_responses[i].text)]
 	_buttons[index].grab_focus()
 
 
@@ -236,6 +227,15 @@ func _input(event: InputEvent) -> void:
 		choose(quick_choice)
 	elif event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
 		close()
+	elif event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_Y:
+		var stick_y: float = (event as InputEventJoypadMotion).axis_value
+		if absf(stick_y) < 0.28:
+			_choice_axis_latched = false
+		elif absf(stick_y) >= 0.68 and not _choice_axis_latched:
+			_choice_axis_latched = true
+			_step(1 if stick_y > 0.0 else -1)
+		else:
+			return
 		cancelled.emit()
 	elif event.is_action_pressed("ui_up") or event.is_action_pressed("move_forward"):
 		_step(-1)
@@ -280,8 +280,6 @@ func _process(delta: float) -> void:
 	if not _active:
 		_topics.hide()
 		_turn.hide()
-		_action_row.hide()
-		_hint.hide()
 		_speaker.text = Game.murmur_speaker.to_upper() if Game.murmur_speaker != "" else ("MATHILDA" if Game.mathilda_pov else "OPHELIA")
 		if _last_line != Game.murmur:
 			_last_line = Game.murmur

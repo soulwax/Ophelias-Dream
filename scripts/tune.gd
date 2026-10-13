@@ -70,6 +70,16 @@ const GRACE_AUTHORED_COUNTER := 0.25
 # Carriage eases into a walk and settles after stopping (seconds).
 const GRACE_WALK_ENTER := 0.18
 const GRACE_WALK_EXIT := 0.24
+# Dialogue carriage eases in and out; reactions remain brief and restrained.
+const DIALOGUE_ATTENTION_BLEND := 2.8
+const DIALOGUE_SPEAKING_BLEND := 4.0
+const DIALOGUE_REACTION_SECONDS := 1.65
+const DIALOGUE_REACTION_STRENGTH := 1.0
+# Upper-body follow-through only; physics and the gait own movement/feet.
+const MOTION_ACCEL_FOR_FULL_POSE := 7.0 # m/s²
+const MOTION_TURN_FOR_FULL_POSE := 2.4 # radians/s
+const MOTION_FOLLOW_BLEND := 7.0 # 1/s
+const MOTION_FOLLOW_STRENGTH := 1.0
 # Found bow: seconds, metres in world reach / unscaled skeleton carry frame.
 const BOW_HOIST_SECONDS := 2.8
 const BOW_MODEL := "res://assets/props/bow/bow.glb"

@@ -106,6 +106,8 @@ static func dialogue_choice_index(event: InputEvent, choice_count: int) -> int:
 	if not key.pressed or key.echo or key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
 		return -1
 	var index := key.keycode - KEY_1
+	if key.keycode >= KEY_KP_1 and key.keycode <= KEY_KP_9:
+		index = key.keycode - KEY_KP_1
 	return index if index >= 0 and index < choice_count else -1
 
 
