@@ -661,24 +661,28 @@ func _build_ui() -> void:
 	root.add_theme_constant_override("margin_top", 28)
 	root.add_theme_constant_override("margin_bottom", 28)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.theme = UiChrome.term_theme()
 	layer.add_child(root)
 	var column := VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(column)
 	_heading = Label.new()
 	_heading.text = "MATHILDA  /  CHARACTER STUDIO"
-	_heading.add_theme_color_override("font_color", Color("a9c5d8"))
+	_heading.add_theme_font_override("font", UiChrome.mono_font())
+	_heading.add_theme_color_override("font_color", UiChrome.SIGNAL)
 	_heading.add_theme_font_size_override("font_size", 18)
 	column.add_child(_heading)
 	_title = Label.new()
+	_title.add_theme_font_override("font", UiChrome.display_font())
+	_title.add_theme_color_override("font_color", UiChrome.BONE)
 	_title.add_theme_font_size_override("font_size", 32)
 	column.add_child(_title)
 	_description = Label.new()
 	_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_description.add_theme_color_override("font_color", Color("bdcbd5"))
+	_description.add_theme_color_override("font_color", UiChrome.BONE)
 	column.add_child(_description)
 	_animation_label = Label.new()
-	_animation_label.add_theme_color_override("font_color", Color("a9c5d8"))
+	_animation_label.add_theme_color_override("font_color", UiChrome.SIGNAL)
 	column.add_child(_animation_label)
 	var motion_row := HBoxContainer.new()
 	motion_row.add_theme_constant_override("separation", 10)
@@ -725,8 +729,8 @@ func _build_ui() -> void:
 	_hint = Label.new()
 	_hint.text = "← / → Characters   •   ↑ / ↓ Animations   •   Drag to turn   •   Wheel to zoom   •   Home reset   •   Esc close"
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hint.add_theme_color_override("font_color", Color("c4d3dc"))
-	_hint.add_theme_color_override("font_outline_color", Color("101922"))
+	_hint.add_theme_color_override("font_color", UiChrome.BONE)
+	_hint.add_theme_color_override("font_outline_color", UiChrome.VOID)
 	_hint.add_theme_constant_override("outline_size", 2)
 	column.add_child(_hint)
 	_build_creator_panel(layer)
@@ -740,15 +744,9 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	panel.offset_right = -24.0
 	panel.offset_top = 24.0
 	panel.offset_bottom = -24.0
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("101c27")
-	style.border_color = Color("405668")
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(12)
-	style.content_margin_left = 22.0
-	style.content_margin_right = 22.0
-	style.content_margin_top = 24.0
-	style.content_margin_bottom = 24.0
+	panel.theme = UiChrome.term_theme()
+	var style := UiChrome.term_box(UiChrome.VOID, Color(UiChrome.SIGNAL, 0.65), 1, 22)
+	style.border_width_left = 3
 	panel.add_theme_stylebox_override("panel", style)
 	layer.add_child(panel)
 	var scroll := ScrollContainer.new()
@@ -759,11 +757,13 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	scroll.add_child(column)
 	var title := Label.new()
 	title.text = "CREATE A CHARACTER"
+	title.add_theme_font_override("font", UiChrome.display_font())
+	title.add_theme_color_override("font_color", UiChrome.BONE)
 	title.add_theme_font_size_override("font_size", 21)
 	column.add_child(title)
 	var intro := Label.new()
 	intro.text = "Mix silhouettes. Make her yours."
-	intro.add_theme_color_override("font_color", Color("9bb2c3"))
+	intro.add_theme_color_override("font_color", UiChrome.ASH)
 	column.add_child(intro)
 	_name_edit = LineEdit.new()
 	_name_edit.placeholder_text = "Character name"
@@ -789,7 +789,7 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	var outfit_note := Label.new()
 	outfit_note.text = "Original costume only for now."
 	outfit_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	outfit_note.add_theme_color_override("font_color", Color("9bb2c3"))
+	outfit_note.add_theme_color_override("font_color", UiChrome.ASH)
 	column.add_child(outfit_note)
 	for key: String in ["hair_color", "eye_color", "cloth_color", "trim_color"]:
 		var row := HBoxContainer.new()
@@ -825,7 +825,7 @@ func _build_creator_panel(layer: CanvasLayer) -> void:
 	_save_status = Label.new()
 	_save_status.text = "Designs are saved on this computer."
 	_save_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_save_status.add_theme_color_override("font_color", Color("9bb2c3"))
+	_save_status.add_theme_color_override("font_color", UiChrome.ASH)
 	column.add_child(_save_status)
 	for control: Control in column.get_children():
 		if control is Button:
@@ -837,7 +837,7 @@ func _creator_label(column: VBoxContainer, text: String) -> void:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_size_override("font_size", 13)
-	label.add_theme_color_override("font_color", Color("91aabd"))
+	label.add_theme_color_override("font_color", UiChrome.SIGNAL)
 	column.add_child(label)
 
 

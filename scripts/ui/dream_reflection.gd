@@ -4,6 +4,7 @@ var memory := ""
 var mathilda := false
 var outcome := "complete"
 var _line: Label
+var _panel: Panel
 var _armed := false
 var _elapsed := 0.0
 var _context_reached := false
@@ -21,7 +22,14 @@ func _ready() -> void:
 	layer = 26
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var subtitle_size: int = Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)]
-	_line = UiChrome.label(_reflection_text(), subtitle_size, Color("e4e0df"))
+	_panel = Panel.new()
+	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := UiChrome.term_box(Color(UiChrome.VOID, 0.88), Color(UiChrome.SIGNAL, 0.58), 1, 10)
+	style.border_width_left = 3
+	_panel.add_theme_stylebox_override("panel", style)
+	_panel.modulate.a = 0.0
+	add_child(_panel)
+	_line = UiChrome.term_label(_reflection_text(), subtitle_size, UiChrome.BONE)
 	_line.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -72,9 +80,15 @@ func _show_echo() -> void:
 	_echo_anchor_ready = true
 	_layout_echo()
 	var fade := create_tween()
+	fade.set_parallel(true)
 	fade.tween_property(_line, "modulate:a", 1.0, 0.8)
+	fade.tween_property(_panel, "modulate:a", 1.0, 0.8)
+	fade.set_parallel(false)
 	fade.tween_interval(7.0)
+	fade.set_parallel(true)
 	fade.tween_property(_line, "modulate:a", 0.0, 1.4)
+	fade.tween_property(_panel, "modulate:a", 0.0, 1.4)
+	fade.set_parallel(false)
 	fade.tween_callback(queue_free)
 
 
@@ -86,7 +100,7 @@ func _layout_echo() -> void:
 	var font_size := _line.get_theme_font_size("font_size")
 	var chars_per_line := maxi(int(width / maxf(float(font_size) * 0.58, 1.0)), 1)
 	var lines := maxi(1, ceili(float(_line.text.length()) / float(chars_per_line)))
-	var height := maxf(64.0, float(lines) * float(font_size) * 1.4 + 14.0)
+	var height := maxf(72.0, float(lines) * float(font_size) * 1.4 + 24.0)
 	var screen := Vector2(viewport_size.x * 0.5, viewport_size.y * 0.23)
 	var camera := get_viewport().get_camera_3d()
 	if _echo_anchor_ready and camera:
@@ -100,10 +114,12 @@ func _layout_echo() -> void:
 	var safe_x := minf(width * 0.5 + 16.0, viewport_size.x * 0.5)
 	screen.x = clampf(screen.x, safe_x, viewport_size.x - safe_x)
 	screen.y = clampf(screen.y - height - 20.0, 24.0, maxf(24.0, viewport_size.y * 0.76 - height))
-	_line.offset_left = screen.x - width * 0.5
-	_line.offset_right = screen.x + width * 0.5
-	_line.offset_top = screen.y
-	_line.offset_bottom = screen.y + height
+	_panel.position = Vector2(screen.x - width * 0.5, screen.y)
+	_panel.size = Vector2(width, height)
+	_line.offset_left = screen.x - width * 0.5 + 16.0
+	_line.offset_right = screen.x + width * 0.5 - 16.0
+	_line.offset_top = screen.y + 8.0
+	_line.offset_bottom = screen.y + height - 8.0
 
 
 func _echo_anchor_position() -> Vector3:

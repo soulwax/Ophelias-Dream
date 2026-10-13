@@ -291,7 +291,7 @@ func _build_intro() -> void:
 	_intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_intro)
 	var scrim := ColorRect.new()
-	scrim.color = Color(0.04, 0.05, 0.07, 0.28)
+	scrim.color = Color(0.02, 0.015, 0.02, 0.45)
 	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro.add_child(scrim)
@@ -308,10 +308,10 @@ func _build_intro() -> void:
 	box.add_theme_constant_override("separation", 10)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(box)
-	var title := UiChrome.label("OPHELIA'S DREAM", 54)
+	var title := UiChrome.term_label("OPHELIA'S DREAM", 48, UiChrome.BONE, true)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var line := UiChrome.label("Ophelia left the lantern burning." if Game.mathilda_pov else "Mathilda went out into the storm.", 18, UiChrome.MUTED)
+	var line := UiChrome.term_label("Ophelia left the lantern burning." if Game.mathilda_pov else "Mathilda went out into the storm.", 18, UiChrome.BONE)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(line)
 	var told := UiChrome.label("You kept her cup." if Game.mathilda_pov else "You told her to.", 15, Color(UiChrome.MUTED, 0.75))
@@ -454,7 +454,7 @@ func _build_bottom() -> void:
 	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	track.add_child(back)
 	_breath_fill = ColorRect.new()
-	_breath_fill.color = Color(0.86, 0.9, 0.94)
+	_breath_fill.color = UiChrome.SIGNAL
 	_breath_fill.anchor_right = 1.0
 	_breath_fill.anchor_bottom = 1.0
 	_breath_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -498,7 +498,7 @@ func _build_toast() -> void:
 	_checkpoint.add_theme_stylebox_override("panel", UiChrome.plate(14, 6))
 	_checkpoint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_checkpoint.visible = false
-	_checkpoint.add_child(UiChrome.label("Checkpoint: the lookout", 15, UiChrome.MUTED))
+	_checkpoint.add_child(UiChrome.term_label("CHECKPOINT  //  THE LOOKOUT", 15, UiChrome.BONE))
 	add_child(_checkpoint)
 
 

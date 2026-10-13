@@ -270,7 +270,10 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
 		cancel()
 	elif _menu.choices_shown:
-		if event.is_action_pressed("ui_up") or event.is_action_pressed("move_forward"):
+		var quick_choice := UiChrome.dialogue_choice_index(event, _topics.size())
+		if quick_choice >= 0:
+			choose(quick_choice)
+		elif event.is_action_pressed("ui_up") or event.is_action_pressed("move_forward"):
 			_menu.step(-1)
 		elif event.is_action_pressed("ui_down") or event.is_action_pressed("move_back"):
 			_menu.step(1)

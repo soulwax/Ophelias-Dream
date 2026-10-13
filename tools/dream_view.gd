@@ -96,6 +96,10 @@ func _run() -> void:
 		await _capture_clearing(route, experience, "clearing")
 		get_tree().quit()
 		return
+	if focus == "choice":
+		await _capture_choice(route, experience, "answer")
+		get_tree().quit()
+		return
 	await _capture_entry(route, "entry")
 	await _capture_figure_apparition(experience)
 	await _capture_lantern(route, experience, "lantern")
@@ -501,6 +505,7 @@ func _capture_clearing(route: Node3D, experience: Node, name: String) -> void:
 
 func _capture_choice(route: Node3D, experience: Node, name: String) -> void:
 	_place_player(65.0)
+	experience.set("_dream_voice_unlocked", true)
 	experience.set("_stage", 4)
 	experience.set("_figure_offset", Game.trail.player_start_offset + 67.0)
 	experience.call("_place_figure", Game.trail.player_start_offset + 67.0)

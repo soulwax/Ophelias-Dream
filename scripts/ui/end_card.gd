@@ -59,7 +59,7 @@ func _show(title: String, body: String, action: String) -> void:
 
 func _build() -> void:
 	var dim := ColorRect.new()
-	dim.color = Color(0.03, 0.04, 0.06, 0.72)
+	dim.color = Color(0.012, 0.009, 0.011, 0.82)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dim)
@@ -78,11 +78,11 @@ func _build() -> void:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(box)
 
-	_title = UiChrome.label("", 42)
+	_title = UiChrome.term_label("", 42, UiChrome.BONE, true)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_title)
 
-	_body = UiChrome.label("", 18, UiChrome.MUTED)
+	_body = UiChrome.term_label("", 18, UiChrome.BONE)
 	_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.custom_minimum_size = Vector2(640, 0)

@@ -133,7 +133,7 @@ func _focus_child(group: HBoxContainer, text_to_find := "") -> void:
 func _fill_list() -> void:
 	for entry in Game.journal:
 		if not _buttons.has(entry.title):
-			var button := UiChrome.paper_button(entry.title)
+			var button := UiChrome.text_button(entry.title)
 			button.focus_mode = Control.FOCUS_ALL
 			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			button.pressed.connect(_select.bind(entry))
@@ -142,7 +142,8 @@ func _fill_list() -> void:
 		var shown := _buttons[entry.title] as Button
 		shown.text = entry.title + ("   (whole)" if Game.page_solved(entry) else "")
 		var chosen := _selected != null and _selected.title == entry.title
-		shown.add_theme_color_override("font_color", UiChrome.PAPER_INK if chosen else Color(UiChrome.PAPER_INK, 0.55))
+		shown.add_theme_color_override("font_color", UiChrome.BONE if chosen else UiChrome.ASH)
+		shown.add_theme_stylebox_override("normal", UiChrome.term_box(Color(UiChrome.SIGNAL, 0.12) if chosen else Color(0, 0, 0, 0), Color(UiChrome.SIGNAL, 0.7) if chosen else Color(UiChrome.BONE, 0.12), 1, 8))
 
 
 func _fill_blots() -> void:
@@ -242,7 +243,7 @@ func _build() -> void:
 	panel.offset_right = 540
 	panel.offset_top = -320
 	panel.offset_bottom = 320
-	panel.add_theme_stylebox_override("panel", UiChrome.paper(28))
+	panel.add_theme_stylebox_override("panel", UiChrome.plate(28))
 	add_child(panel)
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 28)
@@ -252,8 +253,8 @@ func _build() -> void:
 	left.custom_minimum_size = Vector2(260, 0)
 	left.add_theme_constant_override("separation", 6)
 	columns.add_child(left)
-	left.add_child(UiChrome.label("Journal", 30, UiChrome.PAPER_INK))
-	_empty = UiChrome.label("Nothing yet. The pages she finds are kept here.", 15, Color(UiChrome.PAPER_INK, 0.6))
+	left.add_child(UiChrome.term_label("JOURNAL  //  RECORDS", 25, UiChrome.BONE, true))
+	_empty = UiChrome.term_label("Nothing yet. The pages she finds are kept here.", 15, UiChrome.ASH)
 	_empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(_empty)
 	_list = VBoxContainer.new()
@@ -264,18 +265,22 @@ func _build() -> void:
 	left.add_child(spacer)
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
-	_close_keys = UiChrome.key_row("J", "Close", true)
+	_close_keys = UiChrome.key_row("J", "Close")
 	footer.add_child(_close_keys)
-	var close := UiChrome.paper_button("Close")
+	var close := UiChrome.text_button("Close")
 	close.focus_mode = Control.FOCUS_ALL
 	close.pressed.connect(func() -> void: Game.close_journal())
 	footer.add_child(close)
 	left.add_child(footer)
 
+	var sheet := PanelContainer.new()
+	sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sheet.add_theme_stylebox_override("panel", UiChrome.paper(24))
+	columns.add_child(sheet)
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 12)
-	columns.add_child(right)
+	sheet.add_child(right)
 	_title = UiChrome.label("", 28, UiChrome.PAPER_INK)
 	right.add_child(_title)
 	var scroll := ScrollContainer.new()

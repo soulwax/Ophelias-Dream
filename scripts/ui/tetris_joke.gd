@@ -210,18 +210,18 @@ func _clear_lines() -> void:
 func _draw() -> void:
 	if not visible:
 		return
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.012, 0.017, 0.02, 0.97))
+	draw_rect(Rect2(Vector2.ZERO, size), UiChrome.VOID)
 	var cell_size := floorf(minf(28.0, minf((size.y - 170.0) / ROWS, (size.x - 250.0) / COLUMNS)))
 	cell_size = maxf(12.0, cell_size)
 	var board_size := Vector2(COLUMNS, ROWS) * cell_size
 	var panel_size := Vector2(board_size.x + 250.0, board_size.y + 112.0)
 	var origin := (size - panel_size) * 0.5
 	var board_origin := origin + Vector2(28.0, 58.0)
-	draw_rect(Rect2(origin, panel_size), Color(0.035, 0.045, 0.05, 1.0), true)
-	draw_rect(Rect2(origin, panel_size), Color(0.44, 0.49, 0.47, 0.72), false, 1.0)
+	draw_rect(Rect2(origin, panel_size), UiChrome.VOID, true)
+	draw_rect(Rect2(origin, panel_size), UiChrome.SIGNAL, false, 1.0)
 	var font := ThemeDB.fallback_font
-	draw_string(font, origin + Vector2(28, 34), "OD-7 // UNSANCTIONED RECREATION", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#d6c8a6"))
-	draw_rect(Rect2(board_origin, board_size), Color("#10171b"), true)
+	draw_string(font, origin + Vector2(28, 34), "OD-7 // UNSANCTIONED RECREATION", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, UiChrome.BONE)
+	draw_rect(Rect2(board_origin, board_size), UiChrome.SOOT, true)
 	for y in ROWS:
 		for x in COLUMNS:
 			var value := _board[y][x]
@@ -236,10 +236,10 @@ func _draw() -> void:
 		var py := board_origin.y + y * cell_size
 		draw_line(Vector2(board_origin.x, py), Vector2(board_origin.x + board_size.x, py), Color(0.7, 0.8, 0.85, 0.07), 1.0)
 	var info_x := board_origin.x + board_size.x + 26.0
-	draw_string(font, Vector2(info_x, board_origin.y + 24), "SCORE   %06d" % _score, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#d6c8a6"))
+	draw_string(font, Vector2(info_x, board_origin.y + 24), "SCORE   %06d" % _score, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, UiChrome.BONE)
 	draw_string(font, Vector2(info_x, board_origin.y + 54), "LINES   %03d" % _lines, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("#9ca9aa"))
 	var status := "GAME OVER" if _over else ("PAUSED" if _paused else "STACK CAREFULLY")
-	draw_string(font, Vector2(info_x, board_origin.y + 96), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("#bc8f83") if _over else Color("#9ca9aa"))
+	draw_string(font, Vector2(info_x, board_origin.y + 96), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiChrome.SIGNAL if _over else UiChrome.ASH)
 	draw_string(font, Vector2(info_x, board_origin.y + 150), "← →   Move", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#9ca9aa"))
 	draw_string(font, Vector2(info_x, board_origin.y + 175), "↑ / X   Turn", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#9ca9aa"))
 	draw_string(font, Vector2(info_x, board_origin.y + 200), "↓   Faster", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#9ca9aa"))
@@ -248,7 +248,7 @@ func _draw() -> void:
 	draw_string(font, origin + Vector2(28, panel_size.y - 20), "A small diversion. The woods remain exactly where you left them.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.55, 0.61, 0.6, 0.76))
 	if _over or _paused:
 		draw_rect(Rect2(board_origin, board_size), Color(0.01, 0.015, 0.02, 0.62), true)
-		draw_string(font, board_origin + Vector2(0, board_size.y * 0.52), "GAME OVER  ·  PRESS R" if _over else "PAUSED  ·  PRESS P", HORIZONTAL_ALIGNMENT_CENTER, board_size.x, 19, Color("#e3d8bd"))
+		draw_string(font, board_origin + Vector2(0, board_size.y * 0.52), "GAME OVER  ·  PRESS R" if _over else "PAUSED  ·  PRESS P", HORIZONTAL_ALIGNMENT_CENTER, board_size.x, 19, UiChrome.BONE)
 
 
 func _draw_block(board_origin: Vector2, cell_size: float, x: int, y: int, color: Color) -> void:

@@ -12,6 +12,7 @@ var _surface: TextureRect
 var _panel: PanelContainer
 var _speaker: Label
 var _line: Label
+var _turn: Label
 var _topics: VBoxContainer
 var _action_row: HBoxContainer
 var _hint: Label
@@ -52,6 +53,8 @@ func _ready() -> void:
 	_line = UiChrome.term_label("", 22, UiChrome.BONE)
 	_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_line)
+	_turn = UiChrome.term_label("// YOUR RESPONSE", 12, UiChrome.SIGNAL)
+	box.add_child(_turn)
 	_topics = VBoxContainer.new()
 	_topics.add_theme_constant_override("separation", 4)
 	box.add_child(_topics)
@@ -104,7 +107,7 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 	_buttons.clear()
 	for i in _responses.size():
 		var button := Button.new()
-		button.text = "  %s" % str(_responses[i].text)
+		button.text = "  %02d  %s" % [i + 1, str(_responses[i].text)]
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.disabled = _responses[i].get("disabled", false)
 		button.focus_mode = Control.FOCUS_ALL
@@ -126,8 +129,9 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 	while _buttons[_selected].disabled:
 		_selected += 1
 	UiChrome.set_key(_action_row, Game.settings.key_label("interact"))
-	_hint.text = "↑ / ↓  Choose   ·   Esc  Leave"
+	_hint.text = "↑ / ↓  Choose   ·   1-%d  Speak   ·   Esc  Leave" % _responses.size()
 	_topics.show()
+	_turn.show()
 	_action_row.show()
 	_hint.show()
 	_panel.size.y = 0
@@ -205,7 +209,7 @@ func _select(index: int) -> void:
 		return
 	_selected = index
 	for i in _buttons.size():
-		_buttons[i].text = ("> " if i == index else "  ") + str(_responses[i].text)
+		_buttons[i].text = ("> " if i == index else "  ") + "%02d  %s" % [i + 1, str(_responses[i].text)]
 	_buttons[index].grab_focus()
 
 
@@ -227,7 +231,10 @@ func _step(direction: int) -> void:
 func _input(event: InputEvent) -> void:
 	if not _active:
 		return
-	if event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
+	var quick_choice := UiChrome.dialogue_choice_index(event, _responses.size())
+	if quick_choice >= 0:
+		choose(quick_choice)
+	elif event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel"):
 		close()
 		cancelled.emit()
 	elif event.is_action_pressed("ui_up") or event.is_action_pressed("move_forward"):
@@ -272,6 +279,7 @@ func _process(delta: float) -> void:
 	var shown := _active or (spoken and Game.phase == Game.Phase.PLAYING)
 	if not _active:
 		_topics.hide()
+		_turn.hide()
 		_action_row.hide()
 		_hint.hide()
 		_speaker.text = Game.murmur_speaker.to_upper() if Game.murmur_speaker != "" else ("MATHILDA" if Game.mathilda_pov else "OPHELIA")

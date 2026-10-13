@@ -89,6 +89,8 @@ var _dream_elapsed := 0.0
 var _dream_voice_unlocked := false
 var _opening_station_pending := false
 var _choice_panel: Control
+var _choice_title_back: Panel
+var _choice_hint_back: Panel
 var _choice_title: Label
 var _choice_hint: Label
 var _choice_buttons: Array[Label] = []
@@ -554,46 +556,35 @@ func _build_dream_journal() -> void:
 	_dream_journal_hint_panel.name = "DreamClueProgress"
 	_dream_journal_hint_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_dream_journal_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var hint_style := StyleBoxFlat.new()
-	hint_style.bg_color = Color(0.012, 0.018, 0.03, 0.78)
-	hint_style.border_color = Color("9c8a70", 0.42)
-	hint_style.set_border_width_all(1)
-	hint_style.set_corner_radius_all(5)
-	hint_style.content_margin_left = 10.0
-	hint_style.content_margin_right = 10.0
-	hint_style.content_margin_top = 4.0
-	hint_style.content_margin_bottom = 4.0
+	var hint_style := UiChrome.term_box(Color(UiChrome.VOID, 0.82), Color(UiChrome.SIGNAL, 0.52), 1, 5)
+	hint_style.border_width_left = 3
 	_dream_journal_hint_panel.add_theme_stylebox_override("panel", hint_style)
 	_dream_journal_hint_panel.hide()
 	root.add_child(_dream_journal_hint_panel)
-	_dream_journal_hint = UiChrome.label("", 17, Color("e2d3b6"))
+	_dream_journal_hint = UiChrome.term_label("", 17, UiChrome.BONE)
 	_dream_journal_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dream_journal_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_dream_journal_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_dream_journal_hint_panel.add_child(_dream_journal_hint)
 	_dream_journal_scrim = ColorRect.new()
 	_dream_journal_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_dream_journal_scrim.color = Color(0.008, 0.012, 0.022, 0.78)
+	_dream_journal_scrim.color = Color(0.012, 0.009, 0.011, 0.8)
 	_dream_journal_scrim.mouse_filter = Control.MOUSE_FILTER_STOP
 	_dream_journal_scrim.hide()
 	root.add_child(_dream_journal_scrim)
 	_dream_journal_panel = PanelContainer.new()
 	_dream_journal_panel.set_anchors_preset(Control.PRESET_CENTER)
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.025, 0.03, 0.045, 0.97)
-	panel_style.border_color = Color("9c8a70", 0.54)
-	panel_style.set_border_width_all(1)
-	panel_style.set_corner_radius_all(8)
-	panel_style.set_content_margin_all(28)
+	var panel_style := UiChrome.term_box(UiChrome.VOID, Color(UiChrome.SIGNAL, 0.65), 1, 28)
+	panel_style.border_width_left = 3
 	_dream_journal_panel.add_theme_stylebox_override("panel", panel_style)
 	_dream_journal_panel.hide()
 	root.add_child(_dream_journal_panel)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
 	_dream_journal_panel.add_child(column)
-	var title := UiChrome.label("DREAM JOURNAL", 27, Color("d5b779"))
+	var title := UiChrome.term_label("DREAM JOURNAL", 27, UiChrome.BONE, true)
 	column.add_child(title)
-	var subtitle := UiChrome.label("Words kept from the path. %s toggles notes; %s closes." % [Game.settings.key_label("interact"), Game.settings.key_label("journal")], 15, Color("9e9aa0"))
+	var subtitle := UiChrome.term_label("Words kept from the path. %s toggles notes; %s closes." % [Game.settings.key_label("interact"), Game.settings.key_label("journal")], 15, UiChrome.ASH)
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	subtitle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(subtitle)
@@ -610,7 +601,7 @@ func _build_dream_journal() -> void:
 	_dream_journal_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_dream_journal_rows.add_theme_constant_override("separation", 14)
 	_dream_journal_scroll.add_child(_dream_journal_rows)
-	var foot := UiChrome.label("The field pages are gone here. Mathilda's words make the record.", 13, Color("7e8791"))
+	var foot := UiChrome.term_label("The field pages are gone here. Mathilda's words make the record.", 13, UiChrome.ASH)
 	foot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(foot)
@@ -741,17 +732,17 @@ func _refresh_dream_journal() -> void:
 		child.queue_free()
 	for entry in _dream_journal_entries:
 		var place := str(entry.get("place", "THE WINTER PATH"))
-		var source := UiChrome.label("KEPT AT  ·  " + place, 12, Color("8e969f"))
+		var source := UiChrome.term_label("KEPT AT  ·  " + place, 12, UiChrome.SIGNAL)
 		_dream_journal_rows.add_child(source)
-		var title := UiChrome.label(str(entry.get("title", "")), 19, Color("c8ad79"))
+		var title := UiChrome.term_label(str(entry.get("title", "")), 19, UiChrome.BONE, true)
 		_dream_journal_rows.add_child(title)
-		var text := UiChrome.label(str(entry.get("text", "")), 16, Color("dedbd7"))
+		var text := UiChrome.term_label(str(entry.get("text", "")), 16, UiChrome.BONE)
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_dream_journal_rows.add_child(text)
 		var approach := str(entry.get("approach", "")).strip_edges()
 		if _journal_guidance_visible and not approach.is_empty():
-			var guidance := UiChrome.label("A WAY THROUGH  ·  " + approach, 14, Color("a9b0b8"))
+			var guidance := UiChrome.term_label("A WAY THROUGH  ·  " + approach, 14, UiChrome.ASH)
 			guidance.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			guidance.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			_dream_journal_rows.add_child(guidance)
@@ -2108,12 +2099,22 @@ func _build_choice_panel() -> void:
 	_choice_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_choice_panel.visible = false
 	_dream_ui_root.add_child(_choice_panel)
+	_choice_title_back = Panel.new()
+	_choice_title_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var title_style := UiChrome.term_box(Color(UiChrome.VOID, 0.9), Color(UiChrome.SIGNAL, 0.65), 1, 0)
+	title_style.border_width_left = 3
+	_choice_title_back.add_theme_stylebox_override("panel", title_style)
+	_choice_panel.add_child(_choice_title_back)
+	_choice_hint_back = Panel.new()
+	_choice_hint_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_choice_hint_back.add_theme_stylebox_override("panel", UiChrome.term_box(Color(UiChrome.VOID, 0.85), Color(UiChrome.BONE, 0.22), 1, 0))
+	_choice_panel.add_child(_choice_hint_back)
 	_choice_title = _new_choice_label(19)
-	_choice_title.modulate = Color("d5b779")
+	_choice_title.modulate = UiChrome.BONE
 	_choice_title.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_choice_panel.add_child(_choice_title)
 	_choice_hint = _new_choice_label(16)
-	_choice_hint.modulate = Color("b6b0a6")
+	_choice_hint.modulate = Color(UiChrome.BONE, 0.82)
 	_choice_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_choice_hint.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_choice_panel.add_child(_choice_hint)
@@ -2133,14 +2134,14 @@ func _new_choice_label(font_size: int) -> Label:
 
 func _set_choice_rows(title: String, labels: Array[String]) -> void:
 	for child in _choice_panel.get_children():
-		if child != _choice_title and child != _choice_hint:
+		if child != _choice_title and child != _choice_hint and child != _choice_title_back and child != _choice_hint_back:
 			_choice_panel.remove_child(child)
 			child.queue_free()
 	_choice_buttons.clear()
 	_choice_rows.clear()
 	_choice_title.text = title if _waking_card else "MATHILDA · %s" % title
 	var confirm_hint := "%s / X / A" % Game.settings.key_label("interact")
-	_choice_hint.text = "%s TO RETURN   ·   ESC TO PAUSE" % confirm_hint if _waking_card else "↑ / ↓ OR LEFT STICK TO CHOOSE   ·   %s TO SPEAK   ·   ESC TO PAUSE" % confirm_hint
+	_choice_hint.text = "%s RETURN   ·   ESC PAUSE" % confirm_hint if _waking_card else "YOU // REPLY\n↑ / ↓ CHOOSE   ·   %s SPEAK   ·   ESC PAUSE" % confirm_hint
 	_set_caption_action("Return" if _waking_card else "Say")
 	for index in range(labels.size()):
 		var row := PanelContainer.new()
@@ -2197,21 +2198,25 @@ func _update_choice_positions() -> void:
 	var row_spacing := row_height + 8.0
 	var row_half_height := float(_choice_buttons.size()) * row_spacing * 0.5
 	label_width = minf(label_width, viewport_size.x * 0.42)
-	var title_characters_per_line := maxi(int((label_width - 16.0) / 11.5), 12)
+	var title_characters_per_line := maxi(int((label_width - 40.0) / 11.5), 12)
 	var title_lines := maxi(1, ceili(float(_choice_title.text.length()) / float(title_characters_per_line)))
 	var title_height := maxf(30.0, float(title_lines) * 25.0)
-	var hint_characters_per_line := maxi(int((label_width - 12.0) / 9.5), 12)
+	var hint_characters_per_line := maxi(int((label_width - 40.0) / 9.5), 12)
 	var hint_lines := 0
 	for hint_part in _choice_hint.text.split("\n", false):
 		hint_lines += maxi(1, ceili(float(hint_part.length()) / float(hint_characters_per_line)))
 	var hint_height := maxf(24.0, float(hint_lines) * 22.0)
-	var center_margin := maxf(row_half_height + title_height + 20.0, row_half_height + hint_height + 24.0)
+	var center_margin := maxf(row_half_height + title_height + 20.0, row_half_height + hint_height + 36.0)
 	center_margin = minf(center_margin, viewport_size.y * 0.47)
 	var center_y := clampf(viewport_size.y * 0.55, center_margin, viewport_size.y - center_margin)
-	_choice_title.size = Vector2(label_width, title_height)
-	_choice_title.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - title_height - 12.0)
-	_choice_hint.size = Vector2(label_width, hint_height)
-	_choice_hint.position = Vector2(center_x - label_width * 0.5, center_y + row_half_height + 16.0)
+	_choice_title_back.size = Vector2(label_width, title_height)
+	_choice_title_back.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - title_height - 12.0)
+	_choice_title.size = Vector2(label_width - 24.0, title_height - 8.0)
+	_choice_title.position = _choice_title_back.position + Vector2(12.0, 4.0)
+	_choice_hint_back.size = Vector2(label_width, hint_height + 12.0)
+	_choice_hint_back.position = Vector2(center_x - label_width * 0.5, center_y + row_half_height + 16.0)
+	_choice_hint.size = Vector2(label_width - 24.0, hint_height)
+	_choice_hint.position = _choice_hint_back.position + Vector2(12.0, 6.0)
 	for index in _choice_buttons.size():
 		var button := _choice_buttons[index]
 		var row := _choice_rows[index]
@@ -2259,9 +2264,11 @@ func _begin_dialogue_exchange(player_line: String, mathilda_line: String) -> voi
 	_conversation_waiting = true
 	_conversation_response_pending = true
 	_conversation_response_ready = false
-	_conversation_response_timer = 1.2
+	# Give the chosen words their own readable turn before Mathilda answers.
+	# Confirmation can still move the exchange forward at the player's pace.
+	_conversation_response_timer = clampf(1.1 + player_line.length() * 0.065, 2.6, 7.0)
 	_conversation_response = mathilda_line
-	_set_caption(player_line, "YOU")
+	_set_caption(player_line, "YOU", false, "Listen")
 
 
 func _reveal_conversation_response() -> void:
@@ -2308,12 +2315,12 @@ func _style_choice(index: int, text: String) -> void:
 	var label := _choice_buttons[index]
 	var row := _choice_rows[index]
 	var selected := index == _choice_index
-	label.text = ("◆  " if selected else "◇  ") + text
-	label.modulate = Color("f4e6ca") if selected else Color("b9bec4")
-	var border_color := UiChrome.SIGNAL if selected else Color("8b8580")
+	label.text = ("▸  " if selected else "   ") + text
+	label.modulate = UiChrome.BONE if selected else Color(UiChrome.BONE, 0.72)
+	var border_color := UiChrome.SIGNAL if selected else UiChrome.BONE
 	border_color.a = 0.76 if selected else 0.34
 	var style := UiChrome.term_box(
-		Color("17151a", 0.91 if selected else 0.72),
+		Color(UiChrome.VOID, 0.94 if selected else 0.78),
 		border_color,
 		2 if selected else 1,
 		8

@@ -1,16 +1,16 @@
 class_name UiChrome
 extends RefCounted
 
-const INK := Color(0.94, 0.95, 0.96)
-const MUTED := Color(0.72, 0.75, 0.79)
-const RUST := Color(0.95, 0.48, 0.4)
+const INK := Color(0.91, 0.89, 0.85)
+const MUTED := Color(0.56, 0.54, 0.53)
+const RUST := Color(0.86, 0.12, 0.16)
 const PAPER := Color(0.91, 0.87, 0.78)
 const PAPER_INK := Color(0.17, 0.14, 0.11)
 # Scratched-out words on a page: the letters a blot is drawn with, and its ink.
 const BLOT := "xqvlmnrwzhk"
 const BLOT_INK := Color(0.42, 0.33, 0.25, 0.85)
 
-const PLATE := Color(0.055, 0.043, 0.047, 0.88)
+const PLATE := Color(0.035, 0.03, 0.034, 0.9)
 
 
 static func plate(margin: int = 14, radius: int = 6) -> StyleBoxFlat:
@@ -18,8 +18,9 @@ static func plate(margin: int = 14, radius: int = 6) -> StyleBoxFlat:
 	style.bg_color = PLATE
 	style.set_corner_radius_all(0)
 	style.set_content_margin_all(margin)
-	style.border_color = Color(SIGNAL, 0.28)
+	style.border_color = Color(SIGNAL, 0.48)
 	style.set_border_width_all(1)
+	style.border_width_left = 3
 	style.anti_aliasing = false
 	return style
 
@@ -27,8 +28,10 @@ static func plate(margin: int = 14, radius: int = 6) -> StyleBoxFlat:
 static func paper(margin: int = 28) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(PAPER.r, PAPER.g, PAPER.b, 0.97)
-	style.set_corner_radius_all(3)
+	style.set_corner_radius_all(0)
 	style.set_content_margin_all(margin)
+	style.border_color = Color(SIGNAL_DIM, 0.8)
+	style.set_border_width_all(1)
 	style.shadow_color = Color(0, 0, 0, 0.35)
 	style.shadow_size = 18
 	style.shadow_offset = Vector2(0, 8)
@@ -37,7 +40,7 @@ static func paper(margin: int = 28) -> StyleBoxFlat:
 
 static func keycap(on_paper := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	var ink := PAPER_INK if on_paper else Color.WHITE
+	var ink := PAPER_INK if on_paper else BONE
 	style.bg_color = Color(ink.r, ink.g, ink.b, 0.08 if on_paper else 0.055)
 	style.set_corner_radius_all(0)
 	style.set_content_margin_all(6)
@@ -52,7 +55,7 @@ static func button_style(fill: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill
 	style.set_corner_radius_all(0)
-	style.border_color = Color(SIGNAL, 0.24)
+	style.border_color = Color(SIGNAL, 0.42)
 	style.set_border_width_all(1)
 	style.set_content_margin_all(10)
 	style.content_margin_left = 16
@@ -63,6 +66,7 @@ static func button_style(fill: Color) -> StyleBoxFlat:
 static func label(text: String, size: int, color: Color = INK) -> Label:
 	var node := Label.new()
 	node.text = text
+	node.add_theme_font_override("font", mono_font())
 	node.add_theme_font_size_override("font_size", size)
 	node.add_theme_color_override("font_color", color)
 	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -78,7 +82,7 @@ static func key_row(keys: String, caption: String, on_paper := false) -> HBoxCon
 	cap.add_theme_stylebox_override("panel", keycap(on_paper))
 	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cap.custom_minimum_size = Vector2(64, 28)
-	var key := label(keys, 14, PAPER_INK if on_paper else INK)
+	var key := label(keys, 14, PAPER_INK if on_paper else BONE)
 	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cap.add_child(key)
 	row.add_child(cap)
@@ -92,6 +96,17 @@ static func set_key(row: HBoxContainer, keys: String) -> void:
 	var cap := row.get_child(0) as PanelContainer
 	if cap and cap.get_child_count() > 0:
 		(cap.get_child(0) as Label).text = keys
+
+
+## A numbered reply can be spoken directly from the main number row.
+static func dialogue_choice_index(event: InputEvent, choice_count: int) -> int:
+	if not event is InputEventKey:
+		return -1
+	var key := event as InputEventKey
+	if not key.pressed or key.echo or key.ctrl_pressed or key.alt_pressed or key.meta_pressed:
+		return -1
+	var index := key.keycode - KEY_1
+	return index if index >= 0 and index < choice_count else -1
 
 
 # The look of the Esc menu's own controls: sliders, toggles, dropdowns and
@@ -232,6 +247,17 @@ static func term_theme() -> Theme:
 		theme.set_color("font_hover_pressed_color", kind, Color.WHITE)
 		theme.set_color("font_disabled_color", kind, ASH)
 		theme.set_stylebox("disabled", kind, term_box(clear, Color(BONE, 0.08), 1))
+	for kind in ["OptionButton", "LineEdit", "ColorPickerButton"]:
+		theme.set_color("font_color", kind, BONE)
+		theme.set_color("font_hover_color", kind, Color.WHITE)
+		theme.set_color("font_focus_color", kind, Color.WHITE)
+		theme.set_font("font", kind, mono_font())
+		theme.set_stylebox("normal", kind, term_box(Color(BONE, 0.035), Color(BONE, 0.22), 1, 8))
+		theme.set_stylebox("hover", kind, term_box(Color(SIGNAL, 0.12), Color(SIGNAL, 0.7), 1, 8))
+		theme.set_stylebox("focus", kind, term_box(clear, SIGNAL, 1, 8))
+	theme.set_stylebox("read_only", "LineEdit", term_box(Color(BONE, 0.02), Color(BONE, 0.1), 1, 8))
+	theme.set_color("font_placeholder_color", "LineEdit", ASH)
+	theme.set_color("caret_color", "LineEdit", SIGNAL)
 	# Plain buttons (the page reset).
 	theme.set_stylebox("normal", "Button", term_box(clear, Color(BONE, 0.22), 1))
 	theme.set_stylebox("hover", "Button", term_box(Color(SIGNAL, 0.16), SIGNAL, 1))
@@ -305,14 +331,16 @@ static func term_theme() -> Theme:
 static func text_button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.focus_mode = Control.FOCUS_NONE
+	button.focus_mode = Control.FOCUS_ALL
+	button.add_theme_font_override("font", mono_font())
 	button.add_theme_font_size_override("font_size", 16)
-	button.add_theme_color_override("font_color", INK)
+	button.add_theme_color_override("font_color", BONE)
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	button.add_theme_stylebox_override("normal", button_style(Color(1, 1, 1, 0.08)))
-	button.add_theme_stylebox_override("hover", button_style(Color(1, 1, 1, 0.16)))
-	button.add_theme_stylebox_override("pressed", button_style(Color(1, 1, 1, 0.22)))
-	button.add_theme_stylebox_override("focus", button_style(Color(1, 1, 1, 0.08)))
+	button.add_theme_color_override("font_focus_color", Color.WHITE)
+	button.add_theme_stylebox_override("normal", term_box(Color(BONE, 0.035), Color(BONE, 0.22), 1, 10))
+	button.add_theme_stylebox_override("hover", term_box(Color(SIGNAL, 0.16), SIGNAL, 1, 10))
+	button.add_theme_stylebox_override("pressed", term_box(Color(SIGNAL, 0.32), SIGNAL, 1, 10))
+	button.add_theme_stylebox_override("focus", term_box(Color(0, 0, 0, 0), SIGNAL, 1, 10))
 	return button
 
 
