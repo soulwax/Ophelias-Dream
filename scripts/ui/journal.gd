@@ -5,6 +5,8 @@ extends Control
 # Game.Phase.JOURNAL: she stands still and the world goes on. A smudge is a
 # word she can't read yet; once its key is known (Game.known) she can try its
 # three readings. See docs/superpowers/specs/2026-10-06-mathilda-story-design.md.
+# Under the pages, Undone lists the errands she has noticed (Errands), in her
+# words; done and let-go ones are struck through. It never takes focus.
 
 const HINTS := {
 	"page": "Something else she wrote might help.",
@@ -20,6 +22,8 @@ var _blots: HBoxContainer
 var _readings: HBoxContainer
 var _hint: Label
 var _empty: Label
+var _undone_head: Label
+var _undone: VBoxContainer
 var _close_keys: HBoxContainer
 var _selected: NoteEntry
 var _smudge := -1
@@ -36,6 +40,7 @@ func _ready() -> void:
 	_build()
 	Game.phase_changed.connect(_on_phase)
 	Game.journal_changed.connect(_refresh)
+	Game.errand_changed.connect(_refresh.unbind(1))
 	Game.page_deciphered.connect(_on_page_deciphered)
 
 
@@ -106,6 +111,7 @@ func _refresh() -> void:
 		focus_group = _readings
 		focus_text = focused.text
 	_fill_list()
+	_fill_undone()
 	_empty.visible = Game.journal.is_empty()
 	_title.text = _selected.title if _selected else ""
 	_body.text = UiChrome.smudge_text(_selected, true) if _selected else ""
@@ -144,6 +150,37 @@ func _fill_list() -> void:
 		var chosen := _selected != null and _selected.title == entry.title
 		shown.add_theme_color_override("font_color", UiChrome.BONE if chosen else UiChrome.ASH)
 		shown.add_theme_stylebox_override("normal", UiChrome.term_box(Color(UiChrome.SIGNAL, 0.12) if chosen else Color(0, 0, 0, 0), Color(UiChrome.SIGNAL, 0.7) if chosen else Color(UiChrome.BONE, 0.12), 1, 8))
+
+
+## Known errands in the data's order; none known, no section.
+func _fill_undone() -> void:
+	for child in _undone.get_children():
+		_undone.remove_child(child)
+		child.queue_free()
+	var shown := 0
+	if Game.errands:
+		for errand in Game.errands.ordered():
+			var text := errand.undone_text()
+			if errand.state == Errand.State.UNKNOWN or text == "":
+				continue
+			var line := RichTextLabel.new()
+			line.bbcode_enabled = true
+			line.fit_content = true
+			line.scroll_active = false
+			line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			line.focus_mode = Control.FOCUS_NONE
+			line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			line.add_theme_font_override("normal_font", UiChrome.mono_font())
+			line.add_theme_font_size_override("normal_font_size", 14)
+			var open := errand.state == Errand.State.KNOWN
+			line.add_theme_color_override("default_color", UiChrome.BONE if open else UiChrome.ASH)
+			var safe := text.replace("[", "[lb]")
+			line.text = safe if open else "[s]%s[/s]" % safe
+			line.set_meta("errand", errand.id)
+			_undone.add_child(line)
+			shown += 1
+	_undone_head.visible = shown > 0
+	_undone.visible = shown > 0
 
 
 func _fill_blots() -> void:
@@ -260,6 +297,13 @@ func _build() -> void:
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 2)
 	left.add_child(_list)
+	_undone_head = UiChrome.term_label("UNDONE", 17, UiChrome.ASH, true)
+	_undone_head.visible = false
+	left.add_child(_undone_head)
+	_undone = VBoxContainer.new()
+	_undone.add_theme_constant_override("separation", 6)
+	_undone.visible = false
+	left.add_child(_undone)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(spacer)

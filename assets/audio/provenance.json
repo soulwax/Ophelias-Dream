@@ -1,6 +1,296 @@
 {
 	"note": "Recorded sounds for Ophelia's Dream. All sources are CC0 1.0 (public domain); credit is not required but is kept here. Regenerate with tools/fetch_sounds.py then tools/make_soundscape.py.",
 	"files": {
+		"errands/bell.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactBell_heavy_001.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactBell_heavy_001.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-1.741s, mono mix",
+			"processing": "levelled one-shot, natural tail kept"
+		},
+		"errands/cloth_00.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/cloth1.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): cloth1.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.027-0.607s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cloth_01.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/cloth2.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): cloth2.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.034-0.406s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cloth_02.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/cloth3.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): cloth3.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.001-0.477s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cloth_03.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/cloth4.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): cloth4.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.384s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cup_00.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactGlass_light_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactGlass_light_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.156s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cup_01.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactGlass_light_001.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactGlass_light_001.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.155s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cup_02.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactGlass_light_002.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactGlass_light_002.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.169s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cupboard_close_00.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/doorClose_1.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): doorClose_1.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.469s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cupboard_close_01.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/doorClose_2.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): doorClose_2.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.006-0.571s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cupboard_close_02.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/doorClose_3.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): doorClose_3.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.003-0.714s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cupboard_open_00.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/doorOpen_1.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): doorOpen_1.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.003-0.919s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/cupboard_open_01.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/doorOpen_2.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): doorOpen_2.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.029-1.413s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/kettle.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/metalPot1.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): metalPot1.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.074-1.393s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/latch.wav": {
+			"source": "kenney",
+			"id": "RPG Audio/metalLatch.ogg",
+			"page": "https://kenney.nl/assets/rpg-audio",
+			"title": "RPG Audio (Kenney Game Assets All-in-1 3.7.0): metalLatch.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.009-0.218s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/snow_dump_00.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactSoft_heavy_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactSoft_heavy_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.527s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/snow_dump_01.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactSoft_heavy_001.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactSoft_heavy_001.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.569s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/snow_dump_02.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactSoft_heavy_002.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactSoft_heavy_002.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.569s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/snow_dump_03.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactSoft_medium_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactSoft_medium_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.115s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/tin_00.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactTin_medium_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactTin_medium_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.156s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/tin_01.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactTin_medium_001.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactTin_medium_001.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.171s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/tin_02.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactTin_medium_002.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactTin_medium_002.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.131s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_drop_00.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactWood_heavy_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactWood_heavy_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.310s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_drop_01.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactWood_heavy_001.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactWood_heavy_001.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.310s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_drop_02.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactWood_heavy_002.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactWood_heavy_002.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.310s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_drop_03.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactWood_medium_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactWood_medium_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.223s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_stack_00.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactPlank_medium_000.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactPlank_medium_000.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.217s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_stack_01.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactPlank_medium_001.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactPlank_medium_001.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.425s, mono mix",
+			"processing": "levelled one-shot"
+		},
+		"errands/wood_stack_02.wav": {
+			"source": "kenney",
+			"id": "Impact Sounds/impactPlank_medium_002.ogg",
+			"page": "https://kenney.nl/assets/impact-sounds",
+			"title": "Impact Sounds (Kenney Game Assets All-in-1 3.7.0): impactPlank_medium_002.ogg",
+			"author": "Kenney (kenney.nl)",
+			"license": "CC0 1.0",
+			"taken": "0.000-0.416s, mono mix",
+			"processing": "levelled one-shot"
+		},
 		"nature/crow_00.wav": {
 			"source": "freesound",
 			"id": "334231",

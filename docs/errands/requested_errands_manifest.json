@@ -1,0 +1,292 @@
+{
+  "source_root": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets",
+  "local_use_only": true,
+  "note": "Owner-supplied asset bank. Leartes Studios Carpenter's Workshop and the WW2 storm lamp scan; no verified redistribution permission, so the files stay ignored under assets/vendor/requested_errands/. Errand props fall back to built stand-ins without them. Poly Haven's CC0 wooden_lantern_01 is tracked and credited in assets/vendor/polyhaven/provenance.json instead.",
+  "sources": [
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Crate.bin",
+      "sha256": "a0385e50ec31010449c686d6f5008b05625f60937b0e264d6e1ddc0589661c1b",
+      "to": "leartes/SM_Crate.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Crate.gltf",
+      "sha256": "825be5d0fcfb971a893a2f20a20b7182f37b48d46e30277acfb7c9d04040bc87",
+      "to": "leartes/SM_Crate.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Woodprops_01_B.tga",
+      "sha256": "1f904010359f2a2a32eb0a83df28e995859f4cac2c2fb907b429f91aafdb286f",
+      "to": "leartes/T_Woodprops_01_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Woodprops_01_N.tga",
+      "sha256": "97a79f8640c1d2bda978e09c7454fd35c53b3a3b6f9707ed71a98ac8e2a8ea88",
+      "to": "leartes/T_Woodprops_01_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Woodprops_01_ORM.tga",
+      "sha256": "eed3a24ef6e34d76b6690d59f6ae89586f742c2fa1615c7bb32cce2f7ed8fc1b",
+      "to": "leartes/T_Woodprops_01_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Woodprops_02_B.tga",
+      "sha256": "73fd8f1425b3afefdb7e5a5f8efed256d5f43589bb1707857edb61138e7014f8",
+      "to": "leartes/T_Woodprops_02_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Woodprops_02_N.tga",
+      "sha256": "4df54b3fd553cce67e7ee82f4c0c6b2b44212d12e4a18948531f676f1be92452",
+      "to": "leartes/T_Woodprops_02_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Woodprops_02_ORM.tga",
+      "sha256": "c8e207eb58a7e44a367d53408eef3bdc05577a9ea7e84e85fd45a30d2fee340d",
+      "to": "leartes/T_Woodprops_02_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Chest_01.bin",
+      "sha256": "36fb878edcd50bf043fbbe9a58aec12cb1f13f3868c5c583db9953ae8f4d103c",
+      "to": "leartes/SM_Chest_01.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Chest_01.gltf",
+      "sha256": "472db3f747feccb2cd5bba6955bf1112480c65474889249db4f8059f88e9bc0c",
+      "to": "leartes/SM_Chest_01.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Firewood.bin",
+      "sha256": "e47798c0ff0cfdad615b1d90183d229484ec33e15dc3f597d30b6e0adcc9a150",
+      "to": "leartes/SM_Firewood.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Firewood.gltf",
+      "sha256": "4783013df46bd2b3f5698f32a8f2c002237a91a59cd9cea2ceba1cf01f1b3ba7",
+      "to": "leartes/SM_Firewood.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Wooden_B.tga",
+      "sha256": "3069e2d087d402bed7d0a48dece102025d2434b3ead33dabc33760a77d5304a5",
+      "to": "leartes/T_Wooden_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Wooden_N.tga",
+      "sha256": "4343e377ba14a67db0f4fb21624af415b8aae83ca5babe20f2cb0cde8e25098b",
+      "to": "leartes/T_Wooden_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Wooden_ORM.tga",
+      "sha256": "329a4bf2d5b7943ae74cf7bbcf7f4df75a795af02f3f00b53e3a981112cd21cb",
+      "to": "leartes/T_Wooden_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Cup.bin",
+      "sha256": "43ca4bd4762276ab394dc42355066a73a91a0b1190d3a4322d2817f826779679",
+      "to": "leartes/SM_Cup.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Cup.gltf",
+      "sha256": "6570ba516f7acf0821cf4fc627d52eda6e471b38eb91820486cacdf188e68962",
+      "to": "leartes/SM_Cup.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Jar.bin",
+      "sha256": "ee1be3f7255c8206d4bf438bc05b5b83b706e45a86d7f4e7615f5dacfb2324af",
+      "to": "leartes/SM_Jar.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Jar.gltf",
+      "sha256": "51d76842823129d7f169c082133efa8e344b950b71261adcd0b4a0bd6f1636c9",
+      "to": "leartes/SM_Jar.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_GlassProps_B.tga",
+      "sha256": "f6afef4d72262dadaefbc0df0ee0f601f4a9f461234bd1a985dfa4b2e3a4adfc",
+      "to": "leartes/T_GlassProps_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_GlassProps_N.tga",
+      "sha256": "3c5544dfc6a5287293e877a0f2efaade15942390c7b6cdac19c1a45d5efa8168",
+      "to": "leartes/T_GlassProps_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_GlassProps_ORM.tga",
+      "sha256": "f44fabb719a0ccde15c924e6a98491cf28d3d6ad7567d9eb38349dfdca946c53",
+      "to": "leartes/T_GlassProps_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Bucket.bin",
+      "sha256": "eb6cfc402119ff0d9eb11e9acb8de2c99ed656795e7a9c71d1cd48b2dff0952a",
+      "to": "leartes/SM_Bucket.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Bucket.gltf",
+      "sha256": "2628df0cc9990dd7c5461ea6e70950bea8d2c6dc35ddeba4325a7eb63bde3e0c",
+      "to": "leartes/SM_Bucket.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Tin_03.bin",
+      "sha256": "d27de828ddf74897c001664c15c86f5aa27574f55a351360601139d9fb49c479",
+      "to": "leartes/SM_Tin_03.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Tin_03.gltf",
+      "sha256": "c9ed7db0136ff7e6d35ea6d8f2a83bea17607e12e9dc9a73394b2b6a448de3c2",
+      "to": "leartes/SM_Tin_03.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Tools_B.tga",
+      "sha256": "92aa1d35f5367a3d2ed22dbd3cf67f5b0f805f6d74c4f2f567ac3175bd4f5f79",
+      "to": "leartes/T_Tools_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Tools_N.tga",
+      "sha256": "c9490af96d98827460b5731911447571d3af4f6ff673e3b51f85c7ff8604de2c",
+      "to": "leartes/T_Tools_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Tools_ORM.tga",
+      "sha256": "0dae63f51895cf92512a5e912ccdef6649df559caa669f223720015c46c5f401",
+      "to": "leartes/T_Tools_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Bottle.bin",
+      "sha256": "bacbd8b0a7abf790cfdd96a218b9cd364405d4e6b4706bdd2d30136064284688",
+      "to": "leartes/SM_Bottle.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Bottle.gltf",
+      "sha256": "85653193836e3490673f53c32ec6dc52cf2d50cb88dbaea80813de4b13831483",
+      "to": "leartes/SM_Bottle.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Sign.bin",
+      "sha256": "8fe321e5a41c9ec2bd207d01c0cc54ecbc0c5b5fe42880c3cbba43d2c4afbdbd",
+      "to": "leartes/SM_Sign.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Sign.gltf",
+      "sha256": "43b9cf0fdc82b69bdd1b51fc4d5b2705d9e262f77d6180c5cde575ab57dd89b1",
+      "to": "leartes/SM_Sign.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Bench.bin",
+      "sha256": "6f2fe32a208cc42a4798dad3f6b958474aa556769e40f7e2c498c340a24bb9a5",
+      "to": "leartes/SM_Bench.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Bench.gltf",
+      "sha256": "a1d9a8bdb08979728318b649c964218c98a124a28d0954dc5f8b55dea211aa24",
+      "to": "leartes/SM_Bench.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_ShelfandBench_B.tga",
+      "sha256": "e236c850a832d7ab3c8aa81615363337b5155c430cf5851a0baca9c69bca4366",
+      "to": "leartes/T_ShelfandBench_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_ShelfandBench_N.tga",
+      "sha256": "081675441e2d95ba4998c91afa2e8095822ce3b9eb988c995db925047bbe2380",
+      "to": "leartes/T_ShelfandBench_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_ShelfandBench_ORM.tga",
+      "sha256": "cb078762a1228abd9fd7551d178f4b4f6789b5c91002f2c884307ffd797cdf75",
+      "to": "leartes/T_ShelfandBench_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Hook.bin",
+      "sha256": "be6f5dbc5c17a4dbeafa0407787311731ca885218591bf983bb59c4b01ce3697",
+      "to": "leartes/SM_Hook.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Hook.gltf",
+      "sha256": "fa7936f3ce6eed24b853e5d071e045bd8bcdac639e49c2bbd95b6979f504c864",
+      "to": "leartes/SM_Hook.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Metal_B.tga",
+      "sha256": "556a0aedeb245de256092ae4517803a4170edcce918eac8aa36d9035ce4ed406",
+      "to": "leartes/T_Metal_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Metal_N.tga",
+      "sha256": "2fc5fa90613d2335e2538a2f3aa4c2e3618c3fde99a4fcdd3f28dad8784a8ead",
+      "to": "leartes/T_Metal_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Metal_ORM.tga",
+      "sha256": "ec6184beb03576c275c00fcb182250d816a8f0bbcdf133548f2182b2c0800acc",
+      "to": "leartes/T_Metal_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Rope_02.bin",
+      "sha256": "7f2dda446d115fc2e7c511c7fca4da9f68a44edc5e2dc67f73c85261e3206a66",
+      "to": "leartes/SM_Rope_02.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Rope_02.gltf",
+      "sha256": "e62f9690fe4884b617b2454accd59fffa53ce1a8e2f17c963a8800177b16fe85",
+      "to": "leartes/SM_Rope_02.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Rope_B.tga",
+      "sha256": "94d9fc176cf438271b7fdff4d4eb7559b1dcc2dbd5032959e768b0ac20f2da68",
+      "to": "leartes/T_Rope_B.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Rope_N.tga",
+      "sha256": "c3ec27376ba998534293978391423c46e9b1ba467f667e9f2c24a5d71c72b326",
+      "to": "leartes/T_Rope_N.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Textures\\T_Rope_ORM.tga",
+      "sha256": "1b1fcc1d5578d011595e954c49088604e2eedf137638baea3323b178acf1808a",
+      "to": "leartes/T_Rope_ORM.png"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Rope_03.bin",
+      "sha256": "023d8dfb0f4d68e3808b545ebf90ae6c3f2008b0dd2787fd7af05494e1410405",
+      "to": "leartes/SM_Rope_03.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Rope_03.gltf",
+      "sha256": "628ae69b87de7c7c6ed26662d273a248d0ab7b1c5caac09e434eef143b05670d",
+      "to": "leartes/SM_Rope_03.gltf"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Cuboard_Small.bin",
+      "sha256": "162f1eecbf7308a896ad0a5b9c7bfbb63d9a54afaa16978c197f7636849c0fb2",
+      "to": "leartes/SM_Cuboard_Small.bin"
+    },
+    {
+      "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Cuboard_Small.gltf",
+      "sha256": "9cb40d0945072c344b623da464d33ecf1b6c73182e07828b3c04a44c2ebd085b",
+      "to": "leartes/SM_Cuboard_Small.gltf"
+    },
+    {
+      "source": "WW2_Lamp_f0243220\\WW2_Lamp\\Unity\\Rocket\\WW2_Lamp\\HDRP\\SM_WW2_Lamp_c1_LOD0.fbx",
+      "sha256": "8f4c042233de004932701694ed32e97dcaa45755efa81e8d384392e826aa29be",
+      "to": "ww2_lamp/SM_WW2_Lamp_c1_LOD0.fbx"
+    },
+    {
+      "source": "WW2_Lamp_f0243220\\WW2_Lamp\\Unity\\Rocket\\WW2_Lamp\\Textures\\T_WW2_Lamp_2048_B.png",
+      "sha256": "5048d952fd770464fb5d893780cb6e6af0b563dca4145af05f60e05b3c938f3d",
+      "to": "ww2_lamp/T_WW2_Lamp_2048_B.png"
+    },
+    {
+      "source": "WW2_Lamp_f0243220\\WW2_Lamp\\Unity\\Rocket\\WW2_Lamp\\Textures\\T_WW2_Lamp_2048_OpenGL_N.png",
+      "sha256": "c740e5cc3da8d8a8151d9d02d1418be18da49b54951427752d04cc26c44b2f8d",
+      "to": "ww2_lamp/T_WW2_Lamp_2048_N.png"
+    },
+    {
+      "source": "WW2_Lamp_f0243220\\WW2_Lamp\\Unity\\Rocket\\WW2_Lamp\\Textures\\T_WW2_Lamp_2048_AO.png",
+      "sha256": "a7568bc45c55043c296713e48dc08f13493f90588cb3a58397cfeb29bd7daa8e",
+      "to": "ww2_lamp/T_WW2_Lamp_2048_ORM.png"
+    },
+    {
+      "source": "WW2_Lamp_f0243220\\WW2_Lamp\\Unity\\Rocket\\WW2_Lamp\\Textures\\T_WW2_Lamp_2048_MS.png",
+      "sha256": "a6ce55fdb142fe8c337aa356fc535ded56f5eeac9c61fba0ed7afb954d640c99",
+      "to": "ww2_lamp/T_WW2_Lamp_2048_ORM.png"
+    }
+  ]
+}

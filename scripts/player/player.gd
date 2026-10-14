@@ -6,6 +6,7 @@ signal stepped(left: bool)
 # The sprint ran her out of breath; a landing came down hard (Voice).
 signal exhausted
 signal landed_hard(fall_speed: float)
+signal carrying_changed
 
 const BOOM_LENGTH := 3.35
 const BOOM_STEPS := 16
@@ -45,6 +46,10 @@ var foot_lock: FootLock
 var grace: Grace
 var leap_layer: Leap
 var bow_hoist: BowHoist
+var carry_hold: CarryHold
+var carrying: Carryable
+# RunSave restores the id; Errands resolves it after restoring world pieces.
+var carrying_item_id := ""
 # Per-step dynamics: time since the last real touchdown and how long a step
 # has been taking, so speed can check on impact and surge on push-off.
 var _since_plant := 0.0
@@ -105,6 +110,16 @@ var _outlined_meshes: Array[MeshInstance3D] = []
 var _outline_material: ShaderMaterial
 # Read / open pressed just before she can: kept a moment and tried again.
 var _interact_buffer := 0.0
+## What a held interact is working on (or last worked on, while it is still
+## remembered), and how far along it is, 0..1. Things that take a while say so
+## with interact_hold_seconds(); everything else is instant.
+var hold_target: Node3D
+var hold_progress := 0.0
+# Held now (by interact, or by a left click on the thing under the reticle).
+var _holding := false
+var _hold_by_click := false
+# Progress per thing, and how long since it last moved: [progress, idle].
+var _holds := {}
 var _collection_source: Node
 var _combat_aim_weight := 0.0
 # 0 looking ahead .. 1 looking back over her right shoulder.
@@ -143,6 +158,10 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("drop") and Game.phase == Game.Phase.PLAYING and not Game.locks_movement() and not dialogue_locked:
+		if drop_carried():
+			get_viewport().set_input_as_handled()
+		return
 	if dialogue_locked:
 		if event.is_action_pressed("draw_bow") or event.is_action_pressed("shoot_arrow"):
 			get_viewport().set_input_as_handled()
@@ -159,7 +178,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM]:
-			if _try_interact():
+			if _begin_hold(false) or _try_interact():
 				get_viewport().set_input_as_handled()
 			elif Game.phase == Game.Phase.PLAYING:
 				_interact_buffer = Tune.INTERACT_BUFFER
@@ -170,7 +189,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if Input.is_action_pressed("aim_bow") and _shoot_arrow():
 				get_viewport().set_input_as_handled()
 				return
-			if aim.direct and _try_interact():
+			if aim.direct and (_begin_hold(true) or _try_interact()):
 				get_viewport().set_input_as_handled()
 				return
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -189,12 +208,20 @@ func _try_interact() -> bool:
 	var thing := aim.target
 	if thing == null or not is_instance_valid(thing):
 		return false
+	# Held things only answer a hold, never a tap or the buffer.
+	if _hold_seconds(thing) > 0.0:
+		return false
 	if thing is FieldNote:
 		if Game.phase != Game.Phase.PLAYING:
 			return false
 		Game.active_note = thing as FieldNote
 		Game.begin_reading()
 		return true
+	_use(thing)
+	return true
+
+
+func _use(thing: Node3D) -> void:
 	var accepted: bool = thing.call("interact") == true
 	var feedback := ""
 	if not accepted and thing is HouseDoor:
@@ -202,7 +229,67 @@ func _try_interact() -> bool:
 	elif not accepted and thing.has_method("blocked_label"):
 		feedback = str(thing.call("blocked_label"))
 	Game.interaction_feedback.emit(feedback, accepted)
+
+
+static func _hold_seconds(thing: Node3D) -> float:
+	if thing == null or not is_instance_valid(thing) or not thing.has_method("interact_hold_seconds"):
+		return 0.0
+	return float(thing.call("interact_hold_seconds"))
+
+
+# A press on something that takes a while starts (or picks up) the hold.
+func _begin_hold(by_click: bool) -> bool:
+	if bow_hoist and bow_hoist.Busy:
+		return false
+	var thing := aim.target
+	if _hold_seconds(thing) <= 0.0:
+		return false
+	_holding = true
+	_hold_by_click = by_click
+	hold_target = thing
+	if not _holds.has(thing):
+		_holds[thing] = [0.0, 0.0]
 	return true
+
+
+# Each tick: a hold moves on only while it is still held, she is free to act,
+# and the same thing is still picked (and under the reticle, for a click).
+# Anything else pauses it; what is left alone is forgotten after HOLD_FORGET.
+func _tick_hold(delta: float) -> void:
+	if _holding:
+		_holding = Input.is_action_pressed("interact") or (_hold_by_click and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT))
+	var working: bool = (_holding and is_instance_valid(hold_target) and not dialogue_locked
+		and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and aim.target == hold_target
+		and (aim.direct or not _hold_by_click) and not (bow_hoist and bow_hoist.Busy)
+		and aim._in_reach(self, hold_target))
+	for thing: Variant in _holds.keys():
+		var entry: Array = _holds[thing]
+		if working and thing == hold_target:
+			entry[1] = 0.0
+			continue
+		entry[1] += delta
+		if not is_instance_valid(thing) or entry[1] >= Tune.HOLD_FORGET:
+			if is_instance_valid(thing) and thing.has_method("interact_hold_progress"):
+				thing.call("interact_hold_progress", 0.0)
+			_holds.erase(thing)
+	if not is_instance_valid(hold_target) or not _holds.has(hold_target):
+		hold_target = null
+		hold_progress = 0.0
+		_holding = false
+		return
+	var held: Array = _holds[hold_target]
+	if working:
+		held[0] = minf(held[0] + delta / maxf(_hold_seconds(hold_target), 0.01), 1.0)
+		if hold_target.has_method("interact_hold_progress"):
+			hold_target.call("interact_hold_progress", held[0])
+	hold_progress = held[0]
+	if hold_progress >= 1.0:
+		var thing := hold_target
+		_holds.erase(thing)
+		hold_target = null
+		hold_progress = 0.0
+		_holding = false
+		_use(thing)
 
 
 func _physics_process(delta: float) -> void:
@@ -217,6 +304,7 @@ func _physics_process(delta: float) -> void:
 		_interact_buffer -= delta
 		if Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and _try_interact():
 			_interact_buffer = 0.0
+	_tick_hold(delta)
 	if dialogue_locked:
 		if sliding:
 			_end_slide()
@@ -271,7 +359,7 @@ func _physics_process(delta: float) -> void:
 			_autopilot_clock = 0.0
 			jump_pressed = true
 	var hoisting: bool = bow_hoist != null and bow_hoist.Busy
-	if hoisting:
+	if hoisting or _heavy_carry():
 		jump_pressed = false
 		slide_pressed = false
 		_jump_buffer = 0.0
@@ -291,7 +379,7 @@ func _physics_process(delta: float) -> void:
 	if exhaust_left > 0.0:
 		exhaust_left -= delta
 	var slow := hoisting or (Input.is_action_pressed("walk_slow") and _autopilot == "")
-	var wants_sprint := moving and not slow and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
+	var wants_sprint := moving and not slow and not _heavy_carry() and _sprint_wanted(moving) and exhaust_left <= 0.0 and not sliding
 	# Once spent she must get some breath back before she can sprint again,
 	# so holding Shift through exhaustion cannot stutter into a stumble loop.
 	var sprinting := wants_sprint and stamina > 0.0 and (_sprinting or stamina > Tune.SPRINT_RESUME)
@@ -318,6 +406,8 @@ func _physics_process(delta: float) -> void:
 		stamina = minf(stamina + delta * Tune.STAMINA_REGEN, Tune.STAMINA_MAX)
 	if on_floor:
 		speed *= _slope_factor(wish)
+	if is_instance_valid(carrying):
+		speed = minf(speed, Tune.CARRY_HEAVY_SPEED) if carrying.heavy else speed * Tune.CARRY_LIGHT_SPEED_SCALE
 
 	_coyote = Tune.COYOTE if on_floor else _coyote - delta
 	_jump_buffer = Tune.JUMP_BUFFER if jump_pressed else _jump_buffer - delta
@@ -356,6 +446,10 @@ func _physics_process(delta: float) -> void:
 		var assist := _door_assist(Vector3(velocity.x, 0.0, velocity.z))
 		velocity.x += assist.x
 		velocity.z += assist.z
+	if _heavy_carry():
+		var capped := Vector3(velocity.x, 0.0, velocity.z).limit_length(Tune.CARRY_HEAVY_SPEED)
+		velocity.x = capped.x
+		velocity.z = capped.z
 	move_and_slide()
 	_track_air(delta)
 	_animate(delta, moving, sprinting)
@@ -384,6 +478,9 @@ func _process(delta: float) -> void:
 
 
 func _jump() -> void:
+	if _heavy_carry():
+		_jump_buffer = 0.0
+		return
 	var from_slide := sliding
 	if sliding:
 		_end_slide()
@@ -556,6 +653,8 @@ func _leaves_prints(at: Vector3, surface: String) -> bool:
 
 
 func _start_slide() -> void:
+	if _heavy_carry():
+		return
 	if _ground_speed() < Tune.SLIDE_MIN_SPEED or stamina < Tune.SLIDE_STAMINA or exhaust_left > 0.0:
 		return
 	sliding = true
@@ -607,6 +706,9 @@ func _end_slide() -> void:
 # and brakes first. Letting go she skids a short way; easing off a sprint she
 # slows over a stride or two. In the air she keeps what she left with.
 func _steer(wish: Vector3, top: float, sprinting: bool, on_floor: bool, delta: float) -> void:
+	if _heavy_carry():
+		top = minf(top, Tune.CARRY_HEAVY_SPEED)
+		_glide = _glide.limit_length(Tune.CARRY_HEAVY_SPEED)
 	var flat := Vector3(_glide.x, 0.0, _glide.z)
 	var current := flat.length()
 	var asked := wish.length() > 0.05
@@ -1294,11 +1396,17 @@ func _build_model() -> void:
 	bow_hoist.connect("Drawn", _on_bow_drawn)
 	bow_hoist.connect("ArrowReleased", _on_arrow_released)
 	bow_hoist.connect("CollectionFinished", _on_collection_finished)
+	carry_hold = CarryHold.new()
+	carry_hold.name = "CarryHold"
+	skeleton.add_child(carry_hold)
+	carry_hold.PickSeconds = Tune.CARRY_PICK_SECONDS
 	if Game.has_bow:
 		restore_bow()
 
 
 func take_bow(bow: Node3D) -> bool:
+	if is_instance_valid(carrying):
+		return false
 	if bow_hoist == null or bow_hoist.Busy or bow_hoist.HasBow or Game.has_bow:
 		return false
 	if not is_on_floor() or _ground_speed() > 0.25 or sliding or _airborne:
@@ -1324,6 +1432,8 @@ func toggle_bow() -> bool:
 	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or not bow_hoist.HasBow or bow_hoist.Busy:
 		return false
 	if not is_on_floor() or _airborne or sliding or _ground_speed() > Tune.WALK_SPEED + 0.1:
+		return false
+	if is_instance_valid(carrying) and not drop_carried():
 		return false
 	return bow_hoist.Stow() if bow_hoist.IsDrawn else bow_hoist.Draw()
 
@@ -1379,6 +1489,8 @@ func _on_arrow_released() -> void:
 
 
 func collect_arrows(source: Node, source_visual: Node3D) -> bool:
+	if is_instance_valid(carrying):
+		return false
 	if Game.phase != Game.Phase.PLAYING or bow_hoist == null or bow_hoist.Busy or not is_instance_valid(source):
 		return false
 	if Game.arrow_count >= Tune.ARROW_CAPACITY or not bow_hoist.BeginCollection():
@@ -1400,3 +1512,126 @@ func _on_collection_finished() -> void:
 	if _collection_source and is_instance_valid(_collection_source):
 		_collection_source.call("complete_collection")
 	_collection_source = null
+
+
+func _carry_allowed() -> bool:
+	return not Game.dream_mode and not Game.mathilda_pov and Game.phase == Game.Phase.PLAYING and not Game.locks_movement() and not dialogue_locked
+
+
+func _heavy_carry() -> bool:
+	return is_instance_valid(carrying) and carrying.heavy
+
+
+func pick_up(item: Carryable) -> bool:
+	if not _carry_allowed() or is_instance_valid(carrying) or not is_instance_valid(item) or not item.can_take():
+		return false
+	if carry_hold == null or (bow_hoist and (bow_hoist.Busy or bow_hoist.IsDrawn)) or sliding or _airborne:
+		return false
+	if not aim._in_reach(self, item):
+		return false
+	_attach_carried(item)
+	item.picked.emit()
+	return true
+
+
+func restore_carried(item: Carryable) -> bool:
+	# T5 resolves carrying_item_id after restoring sockets; no pickup event replays.
+	if Game.dream_mode or Game.mathilda_pov or not is_instance_valid(item) or carry_hold == null:
+		return false
+	if is_instance_valid(carrying):
+		return carrying == item
+	_attach_carried(item, true)
+	return true
+
+
+func _attach_carried(item: Carryable, restored := false) -> void:
+	if is_instance_valid(item.socket):
+		item.socket.remove_item(item)
+	item.socket = null
+	item.carrier = self
+	carrying = item
+	carrying_item_id = item.item_id
+	item.visual.reparent(carry_hold.get_parent(), true)
+	carry_hold.Pose = "armful" if item.heavy else "hand"
+	carry_hold.Weight = 1.0
+	carry_hold.Attach(item.visual, restored)
+	if item.heavy:
+		_sprinting = false
+		_sprint_latch = false
+		_jump_buffer = 0.0
+		_glide = _glide.limit_length(Tune.CARRY_HEAVY_SPEED)
+	item.tree_exiting.connect(_carried_exiting, CONNECT_ONE_SHOT)
+	_carry_changed()
+
+
+# Items and sockets may be built before or after her, so tell the groups directly.
+func _carry_changed() -> void:
+	if is_inside_tree():
+		get_tree().call_group("carryables", "refresh_interaction")
+		get_tree().call_group("carry_sockets", "refresh_interaction")
+	carrying_changed.emit()
+
+
+func _carried_exiting() -> void:
+	_clear_carried()
+
+
+func _clear_carried() -> void:
+	if is_instance_valid(carrying):
+		if carrying.tree_exiting.is_connected(_carried_exiting):
+			carrying.tree_exiting.disconnect(_carried_exiting)
+		carrying.carrier = null
+	carrying = null
+	carrying_item_id = ""
+	if is_instance_valid(carry_hold):
+		carry_hold.Detach()
+	_carry_changed()
+
+
+func place(socket: CarrySocket) -> bool:
+	if not _carry_allowed() or not is_instance_valid(socket) or not socket.can_accept(carrying):
+		return false
+	if not aim._in_reach(self, socket):
+		return false
+	var item := carrying
+	item.global_transform = socket.item_transform(socket.held.size())
+	item.return_visual()
+	socket.add_item(item)
+	_clear_carried()
+	item.refresh_interaction()
+	socket.refresh_interaction()
+	item.placed.emit(socket)
+	socket.filled.emit(item)
+	return true
+
+
+func drop_carried() -> bool:
+	if not _carry_allowed() or not is_instance_valid(carrying):
+		return false
+	var origin := global_position + Vector3.UP * 0.4
+	var ahead := -global_basis.z * Tune.CARRY_DROP_AHEAD
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + ahead, Tune.LAYER_WORLD)
+	query.exclude = [get_rid()]
+	var space := get_world_3d().direct_space_state
+	var obstruction := space.intersect_ray(query)
+	if not obstruction.is_empty():
+		ahead = ahead.normalized() * maxf(origin.distance_to(obstruction.position) - 0.25, 0.0)
+	var point := global_position + ahead
+	query.from = point + Vector3.UP * 0.4
+	query.to = point - Vector3.UP * 1.5
+	var floor_hit := space.intersect_ray(query)
+	if not floor_hit.is_empty() and (floor_hit.normal as Vector3).y > 0.55:
+		point = floor_hit.position
+	elif indoors() or trail == null:
+		return false
+	else:
+		point = trail.on_ground(point)
+		if absf(point.y - global_position.y) > 1.5:
+			return false
+	var item := carrying
+	item.global_transform = Transform3D(Basis(Vector3.UP, rotation.y), point + Vector3.UP * 0.015)
+	item.return_visual()
+	_clear_carried()
+	item.refresh_interaction()
+	item.dropped.emit()
+	return true

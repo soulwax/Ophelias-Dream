@@ -74,6 +74,7 @@ func save_now() -> bool:
 		"dream_architecture": _capture_dream_architecture(),
 		"dream_route": _capture_properties(_dream_route(), ["_fold_reveal"]),
 		"dream_soundscape": _capture_dream_soundscape(),
+		"errands": Game.errands.capture() if Game.errands else {},
 	}
 	if not _valid_snapshot(snapshot):
 		last_status = "The current run could not be saved because its state failed validation."
@@ -176,7 +177,7 @@ func _valid_snapshot(value: Dictionary) -> bool:
 		return false
 	if not value.get("game", null) is Dictionary or not value.get("player", null) is Dictionary:
 		return false
-	for section: String in ["weather", "atmosphere", "chapter", "voice", "dialogue", "journal_ui", "reader_ui", "dream", "dream_architecture", "dream_route", "dream_soundscape"]:
+	for section: String in ["weather", "atmosphere", "chapter", "voice", "dialogue", "journal_ui", "reader_ui", "dream", "dream_architecture", "dream_route", "dream_soundscape", "errands"]:
 		if value.has(section) and not value[section] is Dictionary:
 			return false
 	if not value.get("world_seed", null) is int or not value.get("phase", null) is int:
@@ -314,6 +315,9 @@ func apply_pending() -> bool:
 	_apply_properties(_dream_architecture(), data.get("dream_architecture", {}))
 	_apply_properties(_dream_route(), data.get("dream_route", {}))
 	_apply_player(data.get("player", {}))
+	# After the player, whose carrying_item_id says what is back in her arms.
+	if Game.errands and data.get("errands", {}) is Dictionary:
+		Game.errands.restore(data.get("errands", {}))
 	_refresh_field_pages()
 	var desired_phase: Game.Phase = int(data.get("phase", Game.Phase.PLAYING))
 	if desired_phase not in [Game.Phase.INTRO, Game.Phase.DREAM, Game.Phase.PLAYING, Game.Phase.READING, Game.Phase.JOURNAL, Game.Phase.PAUSED, Game.Phase.CAUGHT, Game.Phase.ESCAPED, Game.Phase.DIALOGUE]:
@@ -401,6 +405,7 @@ func _capture_player() -> Dictionary:
 	result["global_transform"] = Game.player.global_transform
 	result["velocity"] = Game.player.velocity
 	result["bow_present"] = Game.has_bow
+	result["carrying_item_id"] = Game.player.carrying.item_id if is_instance_valid(Game.player.carrying) else Game.player.carrying_item_id
 	return result
 
 
@@ -409,6 +414,8 @@ func _apply_player(data: Dictionary) -> void:
 		Game.player.global_transform = data["global_transform"]
 	Game.player.velocity = data.get("velocity", Vector3.ZERO)
 	_apply_properties(Game.player, data)
+	# Errands resolves this stable id once its saved items/sockets are restored.
+	Game.player.carrying_item_id = str(data.get("carrying_item_id", "")) if not Game.dream_mode and not Game.mathilda_pov else ""
 	Game.player.dialogue_locked = false
 	Game.player.reset_physics_interpolation()
 	Game.player.call("_apply_look")

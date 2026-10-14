@@ -1,0 +1,49 @@
+{
+	"version": 1,
+	"errands": [
+		{
+			"id": "warm_house",
+			"steps": [
+				{"id": "cold", "undone": "The woodbox is empty and the stove is cold."},
+				{"id": "carry", "undone": "Wood from under the eaves, an armful at a time."},
+				{"id": "light", "undone": "The box is full. Now the stove."}
+			],
+			"done": "The stove is lit. The house holds its warmth.",
+			"let_go": "The stove can stay cold. Nobody is coming back to it.",
+			"requires": []
+		},
+		{
+			"id": "two_cups",
+			"steps": [
+				{"id": "missing", "undone": "One cup in the cupboard. There were always two."},
+				{"id": "found", "undone": "Her cup was out on the porch rail, under the snow."},
+				{"id": "kettle", "undone": "Both cups on the table. The kettle wants the stove."}
+			],
+			"done": "Two cups and the kettle warm, as if she were only late.",
+			"let_go": "One cup on the table. It will have to do.",
+			"requires": ["warm_house"]
+		},
+		{
+			"id": "red_thread",
+			"steps": [
+				{"id": "window", "undone": "Red wool on the window frame."},
+				{"id": "follow", "undone": "Red wool, the birches, the stump. It goes on."},
+				{"id": "birch", "undone": "The thread ends at a birch. Something lies in the snow there."}
+			],
+			"done": "Her glove at the end of it, and our letters in the bark.",
+			"let_go": "I stopped following the thread. Let it lead someone else.",
+			"requires": []
+		},
+		{
+			"id": "light_for_dark",
+			"steps": [
+				{"id": "dark", "undone": "It will be dark soon, and the storm lamp is empty."},
+				{"id": "oil", "undone": "Oil from the janitor's room. The lamp hangs on the porch."},
+				{"id": "carry", "undone": "The lamp is lit. Take it with me."}
+			],
+			"done": "A light in my hand for the dark.",
+			"let_go": "No lamp. I will walk in the dark.",
+			"requires": []
+		}
+	]
+}

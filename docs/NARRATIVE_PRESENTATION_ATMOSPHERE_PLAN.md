@@ -42,6 +42,8 @@ The existing dream runtime is approximately 2,200 lines and owns flow, choreogra
 
 Use [DREAM_ATMOSPHERE_PLAN.md](DREAM_ATMOSPHERE_PLAN.md) for the current overlapping architecture and [DREAM_PLAYABILITY_RELEASE_PLAN.md](DREAM_PLAYABILITY_RELEASE_PLAN.md) for its established playability checks. [DREAM_EXPERIENCE_PLAN.md](DREAM_EXPERIENCE_PLAN.md) contains valuable earlier intent, but some mechanics are historical: the current dream has six branches and three outcomes. This roadmap supplies the whole-game direction; live code and current story data remain authoritative for implemented behavior.
 
+Ophelia's domestic actions and her new ways of touching the world (section 9, slice 8) are specified in [the errands design](superpowers/specs/2026-10-14-errands-and-interactions-design.md) and built task by task, with subagents, from [its plan](superpowers/plans/2026-10-14-errands-and-interactions.md). That plan also carries the move of every proprietary asset into `build/` (section 19).
+
 ## 3. Settle the dramatic contract before expanding content
 
 Write a compact story bible with four separate columns: **authorial fact, a character's belief, observable evidence, and unresolved interpretation**. Use it to audit every page, encounter, monologue, and ending.
@@ -214,6 +216,8 @@ Give the opening one short, optional practical action whose meaning returns late
 Rework the trail's page progression as five changes in understanding. Each page should either contradict an assumption, reveal a human detail, or make an earlier action feel different. Avoid repeating the same “the world is wrong” message at increasing volume. Keep the cellar's institutional language cold and sparse; the contrast with domestic language is its strength.
 
 Make the lookout deception emotionally credible. From the route, its lights resemble a practical way out. At arrival, the expected evidence fails: no car, no road, a wind that does not carry an engine. Let the player discover the mismatch through movement and sound before a caption confirms it. The posts toward the lake should immediately supply a readable continuation.
+
+**In progress (2026-10-15): errands and environment interactions.** The optional practical actions take the form of four *errands*: warm the house, set out two cups, follow the red thread, and carry a light into the dark. They are kept in the journal's *Undone* list in her own words, never on the HUD, and none gates an ending. Seven verbs support them and stand on their own: carry, place, hold to do, open and look inside, knock the snow down, warm her hands, and ring the lookout bell. Carrying is one thing held in her arms, never an inventory. Each errand pays off in play: a calmer house, a `{cups}` reading and a line on the ice, a keepsake page and a glove at the camp, a lamp for her night. Specification: [errands design](superpowers/specs/2026-10-14-errands-and-interactions-design.md); execution and status: [errands plan](superpowers/plans/2026-10-14-errands-and-interactions.md).
 
 At the lake, the conversation should move from accusation or evasion to an actual ask. Keep the existing encounter and journal references, but protect a clear dramatic spine for players who did not discover optional material. Every successful relational ending earns a physical change: walking beside, stepping aside, or keeping a light without calling the other woman back.
 
@@ -395,7 +399,7 @@ Measure the finer terrain grid against its actual visual benefit. Keep integer-c
 
 Lean graphics may reduce distant vegetation, particle density, shadow refinement, and optical layers. It retains landmark silhouettes, clue visibility, the figure, response focus, and outcome cues. No ending depends on a decorative mesh or shader that disappears in lean mode.
 
-Reuse assets with known provenance and consistent materials before sourcing replacements. Owner-supplied packs and downloads without verified redistribution rights stay local; a releasable fallback must support the same scene composition. The current animation licensing makes the project non-commercial; presentation upgrades do not erase that constraint.
+Reuse assets with known provenance and consistent materials before sourcing replacements. Owner-supplied packs and downloads without verified redistribution rights stay local; a releasable fallback must support the same scene composition. New assets come from the owner's asset bank first (`C:\Users\soulwax\OneDrive - Biz\Desktop\Assets`), through a curation script and a manifest. **Proprietary assets live in the git-ignored `build/` folder** (`build/vendor/requested_<area>/`, decided 2026-10-15). Because `build/` is not imported by Godot, the game reads them at runtime through `VendorLoader`, and a release ships them in a `vendor/` folder beside the executable or falls back without them. The errand props are the first area built this way. The older `assets/vendor/requested_house|camp|dream|paper/` folders move one at a time after the errands, each checked against its probes and startup time (errands plan, Task 13). The current animation licensing makes the project non-commercial; presentation upgrades do not erase that constraint.
 
 ## 20. Implementation order and reviewable milestones
 
@@ -417,6 +421,8 @@ Priority labels mean **P0: correctness, readability, or a release blocker; P1: t
 | **10. Shared motif echoes** | P1; reflections, encounter references, small scene state | Contextual echoes of dream memories and practical actions across both chapters | Each echo changes a familiar object's meaning without repeating exposition or closing a chapter path unfairly. **Visual review 5.** |
 | **11. Material, landscape, acting, and sound finish** | P2; relevant art owners and performance tools | Winter character treatment, composed route pockets, material consistency, acting transitions, final mix, and lean parity | No unfinished structures, floating props, distracting shader repetition, foot skating, or broken mix handoffs remain in the critical path. |
 | **12. Whole-game review and release preparation** | P0 gate; build/export, data checks, evidence, documentation | Validated candidate, synchronized versions, license inventory, and short release copy | All critical paths and restoration cases pass, the exported build is exercised, and remaining defects are explicitly triaged. **Visual review 6.** |
+
+Slice 8's practical actions are being delivered by the errands plan (tasks 0–12), and its Task 13, the asset move into `build/`, feeds slice 12's license inventory and release preparation.
 
 Start a narrow save/load check whenever a slice adds persistent state; slice 7 completes the broader restoration pass. Similarly, record performance during each visual review rather than postponing all measurement until slice 11.
 

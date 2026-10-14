@@ -20,6 +20,7 @@ const ACTIONS := [
 	["walk_slow", "Walk slowly (hold)"],
 	["glance_back", "Glance back (hold)"],
 	["interact", "Read / open / use"],
+	["drop", "Set down what you carry"],
 	["draw_bow", "Draw / put away bow"],
 	["aim_bow", "Aim the bow (hold)"],
 	["shoot_arrow", "Shoot an arrow"],

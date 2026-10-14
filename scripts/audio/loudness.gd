@@ -63,6 +63,18 @@ const TRAY := 70.0
 const THUD := 80.0
 const STEP_ABOVE := 62.0
 const WHISPER := 42.0
+# Errands: the lookout bell rolling out over the field; an armful of wood
+# dropped by the stove; the oil tin, a cup set down, a cupboard door, the
+# stove latch, the kettle on the plate; a cloth wiped; snow shaken off a branch.
+const BELL := 96.0
+const WOOD_DROP := 72.0
+const TIN := 64.0
+const CUP := 58.0
+const CUPBOARD := 60.0
+const LATCH := 64.0
+const KETTLE := 62.0
+const CLOTH := 46.0
+const SNOW_DUMP := 66.0
 
 # Recordings that tools/make_soundscape.py did not level: how far each sits
 # from the levelled impact (-12 dBFS over its loudest 50 ms), measured once.

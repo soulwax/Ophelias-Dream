@@ -20,6 +20,8 @@ var _prompt_caption: Label
 var _prompt_target: Node3D
 var _prompt_tween: Tween
 var _reticle: Panel
+var _hold_ring: Control
+var _hold_shown := 0.0
 var _quiver: Label
 var _feedback_text := ""
 var _feedback_left := 0.0
@@ -221,6 +223,14 @@ func _refresh_reticle(aim: Aim) -> void:
 	else:
 		ring.border_color = Color(UiChrome.PAPER, 0.55)
 	back.modulate.a = 1.0 if aim.direct or aim.far else 0.7
+	# A held errand fills a thin ring around it; paused, it keeps its place.
+	var fill := 0.0
+	if Game.player and Game.player.hold_target and Game.player.hold_target == aim.target:
+		fill = Game.player.hold_progress
+	_hold_ring.visible = fill > 0.0
+	if fill != _hold_shown:
+		_hold_shown = fill
+		_hold_ring.queue_redraw()
 
 
 func _on_interaction_feedback(message: String, succeeded: bool) -> void:
@@ -388,6 +398,16 @@ func _build_reticle() -> void:
 	_reticle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_reticle.add_theme_stylebox_override("panel", _ring(Color(UiChrome.PAPER, 0.95), 2, 9))
 	back.add_child(_reticle)
+	# Just outside the reticle, from the top and clockwise.
+	_hold_ring = Control.new()
+	_hold_ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hold_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hold_ring.visible = false
+	_hold_ring.draw.connect(func() -> void:
+		var centre := _hold_ring.size * 0.5
+		var end := -PI * 0.5 + TAU * clampf(_hold_shown, 0.0, 1.0)
+		_hold_ring.draw_arc(centre, 13.0, -PI * 0.5, end, 48, Color(UiChrome.BONE, 0.9), 2.0, true))
+	back.add_child(_hold_ring)
 
 
 func _build_quiver() -> void:

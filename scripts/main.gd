@@ -98,6 +98,12 @@ func _ready() -> void:
 	add_child(Wildlife.new())
 	add_child(Camp.new())
 	add_child(Lake.new())
+	# Errands (Ophelia's chapter only; it frees itself otherwise) builds once the
+	# snapshot is applied, below. Dev hook: RUN_ERRANDS=off leaves it out.
+	if OS.get_environment("RUN_ERRANDS") != "off":
+		var errands := Errands.new()
+		errands.wait_for_level = true
+		add_child(errands)
 	await _loading_stage(0.6, "SETTING THE DISTANT LIGHTS")
 	Game.mark("build sound and hud")
 	add_child(Soundscape.new())
@@ -188,6 +194,8 @@ func _ready() -> void:
 	if Game.weather:
 		Game.weather.settle()
 	trail.adopt_markers()
+	if Game.errands:
+		Game.errands.ensure_built()
 	await _loading_stage(0.88, "PLACING WHAT WAS LEFT BEHIND")
 	if not Game.dream_mode:
 		var bow_pickup := BOW_PICKUP.new()

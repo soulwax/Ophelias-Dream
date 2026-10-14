@@ -186,15 +186,14 @@ public partial class BowHoist : SkeletonModifier3D
 			{
 				var readyPosition = _held.Origin + new Vector3(
 					Mathf.Lerp(0.0f, -0.04f, RunWeight),
-					Mathf.Lerp(-0.06f, -0.17f, RunWeight) + 0.12f * AimWeight,
-					Mathf.Lerp(0.03f, 0.08f, AimWeight));
-				HoldBow(readyPosition, _held.Basis.GetRotationQuaternion(), 1);
+					Mathf.Lerp(0.0f, -0.13f, RunWeight) + 0.15f * AimWeight,
+					0.0f);
+				var readyRotation = _held.Basis.GetRotationQuaternion().Slerp(
+					ForwardGuardRotation(AimWeight), AimWeight);
+				HoldBow(readyPosition, readyRotation, 1);
 				UpdateNockedArrow(readyPosition);
 				SelectArm(false);
-				var support = new Vector3(
-					Mathf.Lerp(-0.15f, -0.08f, AimWeight),
-					Mathf.Lerp(1.4f, 1.5f, AimWeight) - 0.12f * RunWeight,
-					Mathf.Lerp(0.1f, 0.2f, AimWeight));
+				Vector3 support = StringHandTarget(readyPosition, readyRotation, AimWeight, RunWeight);
 				SolveArm(support, 1);
 				CurlFingers(_rig.GetBoneGlobalPose(_hand).Basis.X.Normalized(), 0.35f + 0.55f * AimWeight);
 				SelectArm(true);
@@ -280,17 +279,18 @@ public partial class BowHoist : SkeletonModifier3D
 	{
 		// Until the grip closes, the bow stays on the moving back attachment.
 		if (!_gripped) _found = _rig.GlobalTransform.AffineInverse() * _bow!.GlobalTransform;
-		Vector3 over = new(0.38f, 2.02f, -0.08f);
-		Vector3 raised = new(0.46f, 1.78f, 0.32f);
+		Vector3 over = new(0.30f, 1.92f, 0.18f);
+		Vector3 raised = new(0.23f, 1.68f, 0.52f);
+		Quaternion guardRotation = ForwardGuardRotation(0);
 		Quaternion rotation = _found.Basis.Orthonormalized().GetRotationQuaternion().Slerp(
-			_held.Basis.GetRotationQuaternion(), Ease((t - 0.23f) / 0.67f));
+			guardRotation, Ease((t - 0.18f) / 0.58f));
 		Vector3 target;
-		if (t < 0.23f)
+		if (t < 0.18f)
 		{
 			var frame = new Basis(rotation);
-			target = _startHand.Lerp(_found.Origin - frame.X * GripSign * 0.085f, Ease(t / 0.23f));
+			target = _startHand.Lerp(_found.Origin - frame.X * GripSign * 0.085f, Ease(t / 0.18f));
 			SolveArm(target, 1);
-			PoseGrip(rotation, Ease(t / 0.23f), Ease((t - 0.18f) / 0.05f));
+			PoseGrip(rotation, Ease(t / 0.18f), Ease((t - 0.13f) / 0.05f));
 			PoseSupportArm(0);
 			return;
 		}
@@ -299,11 +299,11 @@ public partial class BowHoist : SkeletonModifier3D
 			_bow!.Reparent(_rig, true);
 			_gripped = true;
 		}
-		if (t < 0.48f) target = _found.Origin.Lerp(over, Ease((t - 0.23f) / 0.25f));
-		else if (t < 0.7f) target = over.Lerp(raised, Ease((t - 0.48f) / 0.22f));
-		else target = raised.Lerp(_held.Origin, Ease((t - 0.7f) / 0.3f));
+		if (t < 0.47f) target = _found.Origin.Lerp(over, Ease((t - 0.18f) / 0.29f));
+		else if (t < 0.72f) target = over.Lerp(raised, Ease((t - 0.47f) / 0.25f));
+		else target = raised.Lerp(_held.Origin, Ease((t - 0.72f) / 0.28f));
 		HoldBow(target, rotation, 1);
-		PoseSupportArm(Ease((t - 0.43f) / 0.52f));
+		PoseSupportArm(Ease((t - 0.50f) / 0.34f));
 		if (t >= 1)
 		{
 			IsDrawn = true;
@@ -340,6 +340,24 @@ public partial class BowHoist : SkeletonModifier3D
 		}
 	}
 
+	private Quaternion ForwardGuardRotation(float aim)
+	{
+		// The prop's long axis is local Y. Tip it forward while keeping its grip upright.
+		var forward = new Quaternion(Vector3.Right, Mathf.Lerp(0.30f, 0.64f, aim));
+		return (_held.Basis.GetRotationQuaternion() * forward).Normalized();
+	}
+
+	private Vector3 StringHandTarget(Vector3 bowPosition, Quaternion bowRotation, float aim, float run)
+	{
+		var frame = new Basis(bowRotation);
+		// The drawing hand stays beside the string; aiming draws it back toward the cheek.
+		return bowPosition
+			- frame.X * 0.34f
+			+ frame.Y * (0.03f + 0.03f * aim)
+			- frame.Z * Mathf.Lerp(0.08f, 0.28f, aim)
+			+ Vector3.Down * 0.08f * run;
+	}
+
 	private void UpdateNockedArrow(Vector3 position)
 	{
 		if (_nockedArrow == null) return;
@@ -353,10 +371,9 @@ public partial class BowHoist : SkeletonModifier3D
 	private void PoseSupportArm(float weight)
 	{
 		SelectArm(false);
-		Vector3 support = new(
-			Mathf.Lerp(-0.15f, -0.08f, AimWeight),
-			Mathf.Lerp(1.4f, 1.5f, AimWeight),
-			Mathf.Lerp(0.1f, 0.2f, AimWeight));
+		var readyPosition = _held.Origin + new Vector3(0.0f, 0.15f * AimWeight, 0.0f);
+		var rotation = _held.Basis.GetRotationQuaternion().Slerp(ForwardGuardRotation(AimWeight), AimWeight);
+		Vector3 support = StringHandTarget(readyPosition, rotation, AimWeight, RunWeight);
 		Vector3 natural = _rig.GetBoneGlobalPose(_hand).Origin;
 		SolveArm(natural.Lerp(support, weight), 1);
 		CurlFingers(_rig.GetBoneGlobalPose(_hand).Basis.X.Normalized(), weight * 0.85f);

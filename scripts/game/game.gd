@@ -13,6 +13,10 @@ signal page_added(entry: NoteEntry)
 signal page_deciphered(entry: NoteEntry)
 # She looked back after the last page (turn_around).
 signal turned
+# Her day ran out before she went to the lake (mathilda_gone).
+signal day_ran_out
+# An errand was learned, moved on, done or let go (Errands).
+signal errand_changed(id: String)
 
 enum Reading { LOCKED, WRONG, RIGHT }
 
@@ -37,6 +41,8 @@ var soundscape: Soundscape
 var dialogue: DialogueBubble
 var voice: Voice
 var weather: Weather
+# Only in Ophelia's chapter; null in the dream and Mathilda's chapter.
+var errands: Errands
 var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
 var notes_found: int = 0
@@ -131,6 +137,7 @@ func _ready() -> void:
 	_bind("glance_back", KEY_Q)
 	_bind("journal", KEY_J)
 	_bind("journal", KEY_TAB)
+	_bind("drop", KEY_Z)
 	_bind_mouse("glance_back", MOUSE_BUTTON_MIDDLE)
 	_bind_pad()
 	# After the defaults, so it knows what to reset the keys to.
@@ -194,6 +201,7 @@ func reset() -> void:
 	dialogue = null
 	voice = null
 	weather = null
+	errands = null
 	active_note = null
 	notes_found = 0
 	has_bow = false
@@ -558,6 +566,7 @@ func mathilda_gone() -> void:
 	if journal.size() < Tune.LAKE_PAGES:
 		ending_body += " You never read enough of her to follow."
 	mark("mathilda is gone")
+	day_ran_out.emit()
 	escape()
 
 
@@ -616,6 +625,7 @@ func reach_checkpoint() -> void:
 		"arrow_pickups": arrow_pickups.duplicate(),
 		"day_seconds": day_seconds,
 		"moments_said": _moments_said.duplicate(),
+		"errands": errands.capture() if errands else {},
 	}
 	mark("checkpoint: lookout")
 	checkpoint_reached.emit()
@@ -663,6 +673,9 @@ func resume_checkpoint() -> bool:
 	player.global_transform = checkpoint.at
 	player.velocity = Vector3.ZERO
 	player.reset_physics_interpolation()
+	# After she is in place, so what she carried comes with her.
+	if errands:
+		errands.restore(checkpoint.get("errands", {}))
 	journal_changed.emit()
 	mark("resumed at the lookout")
 	return true
@@ -838,7 +851,8 @@ func _bind_pad() -> void:
 			["sprint", JOY_BUTTON_LEFT_STICK], ["glance_back", JOY_BUTTON_RIGHT_STICK],
 			["aim_bow", JOY_BUTTON_LEFT_SHOULDER],
 			["draw_bow", JOY_BUTTON_RIGHT_SHOULDER],
-			["journal", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK]]:
+			["journal", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK],
+			["drop", JOY_BUTTON_DPAD_DOWN]]:
 		if not InputMap.has_action(button[0]):
 			InputMap.add_action(button[0])
 		var event := InputEventJoypadButton.new()

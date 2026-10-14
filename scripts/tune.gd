@@ -428,3 +428,29 @@ const PASS_WALK := Vector2(0.85, 1.2)
 const PASS_STEP := 0.62
 const PASS_PERSONAL := 1.7
 const PASS_SPEAK := 3.6
+
+# Carrying: an armful of wood slows her to CARRY_HEAVY_SPEED (m/s), anything
+# lighter takes CARRY_LIGHT_SPEED_SCALE of her pace. A dropped thing lands
+# CARRY_DROP_AHEAD m in front of her; picking up takes CARRY_PICK_SECONDS.
+const CARRY_HEAVY_SPEED := 2.6
+const CARRY_LIGHT_SPEED_SCALE := 0.92
+const CARRY_DROP_AHEAD := 0.55
+const CARRY_PICK_SECONDS := 0.45
+# Hold to do: the usual hold (s), and how long a let-go hold keeps its progress (s).
+const HOLD_DEFAULT := 1.2
+const HOLD_FORGET := 3.0
+# Errands: armfuls of wood for the stove, snags of red thread on the way.
+const ERRAND_WOOD_ARMFULS := 3
+const ERRAND_THREAD_SNAGS := 5
+# An oil lamp burns LAMP_HOURS of the day clock, lighting LAMP_RANGE m at LAMP_ENERGY.
+const LAMP_HOURS := 9.0
+const LAMP_RANGE := 7.0
+const LAMP_ENERGY := 1.6
+# Warming her hands at a fire takes WARM_SECONDS, then the cold leaves her be for WARM_QUIET s.
+const WARM_SECONDS := 2.5
+const WARM_QUIET := 240.0
+# A shaken branch holds snow again after this long (s).
+const SNOW_BRANCH_REFILL := 600.0
+# The lookout bell: the trees answer BELL_ECHO_DELAY s later, this often (0..1).
+const BELL_ECHO_DELAY := 1.4
+const BELL_ECHO_CHANCE := 1.0

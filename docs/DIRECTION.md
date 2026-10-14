@@ -4,6 +4,8 @@
 
 > The story is now the search for Mathilda (2026-10-06): see [the design](superpowers/specs/2026-10-06-mathilda-story-design.md). The HUD has no objective; pages are deciphered in the journal.
 
+> Errands and environment interactions are in progress (2026-10-15): optional quests kept in the journal's *Undone* list, never on the HUD, plus carrying, holding, cupboards, snow-laden branches, warming and the lookout bell. See the roadmap's section 9 in [NARRATIVE_PRESENTATION_ATMOSPHERE_PLAN.md](NARRATIVE_PRESENTATION_ATMOSPHERE_PLAN.md) and [the errands plan](superpowers/plans/2026-10-14-errands-and-interactions.md). Proprietary assets now live in the git-ignored `build/` folder and are loaded at runtime.
+
 Build a short, authored daylight winter horror game. The player leaves a record
 with her boots that disagrees with the pages and the mortuary file. Survival
 should be understandable; the identities should remain unresolved.

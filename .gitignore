@@ -17,6 +17,8 @@ decrypt.key
 /assets/vendor/requested_paper/
 # Mathilda's camp props from the same asset bank (tools/curate_camp_assets.py).
 /assets/vendor/requested_camp/
+# Errand props from the same asset bank (tools/curate_errand_assets.py).
+/assets/vendor/requested_errands/
 
 # Sketchfab forest pack: the raw diorama and its original textures live in build/vendor/sketchfab_forest/
 # (Sketchfab Standard licence: no stand-alone redistribution). Only the split meshes and the textures they use are tracked.

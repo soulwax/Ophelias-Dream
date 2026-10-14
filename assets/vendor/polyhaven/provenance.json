@@ -1125,5 +1125,63 @@
         "bytes": 1486072
       }
     ]
+  },
+  {
+    "id": "wooden_lantern_01",
+    "type": "model",
+    "name": "Wooden Lantern 01",
+    "source": "https://polyhaven.com/a/wooden_lantern_01",
+    "authors": [
+      "James Ray Cock"
+    ],
+    "license": "CC0 1.0 (https://polyhaven.com/license)",
+    "retrieved": "2026-10-14",
+    "dimensions_mm": [
+      221.04809433221817,
+      234.72441732883453,
+      530.1365610212088
+    ],
+    "files": [
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/textures/wooden_lantern_01_arm_2k.jpg",
+        "sha256": "91f36a21a9322d40aeb13b75d0d3e015f8c44b842b528369562c2dc1f7ddef68",
+        "bytes": 3113676
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/textures/wooden_lantern_01_diff_2k.jpg",
+        "sha256": "52273b03dda90f3e703e2a524817cf7c46b726e7a2011c84e1c02cb94ef8f777",
+        "bytes": 2755465
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/textures/wooden_lantern_01_glass_arm_2k.jpg",
+        "sha256": "be21ec21910483063763eb67ac5d64e9648297887c6ce65234f9f48afb1bb62c",
+        "bytes": 2150139
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/textures/wooden_lantern_01_glass_diff_2k.jpg",
+        "sha256": "989446236405daa5251dca8126d68bbadb8d9aa17abf1dd3731e0abcccddd94a",
+        "bytes": 1620643
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/textures/wooden_lantern_01_glass_nor_gl_2k.jpg",
+        "sha256": "6940dcd22bc21d0410838e432e4f66430bdb90a79576a61d2385850fab928efa",
+        "bytes": 1029036
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/textures/wooden_lantern_01_nor_gl_2k.jpg",
+        "sha256": "375040c774f89483879b5790923c843749d30955be219109243bc031fa96cf65",
+        "bytes": 3047934
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/wooden_lantern_01.bin",
+        "sha256": "65c6b1a776c66d4170dab3657f0809b1a8a88219507589d6c9aad70ffbe687a3",
+        "bytes": 268136
+      },
+      {
+        "path": "./assets/vendor/polyhaven/wooden_lantern_01/wooden_lantern_01_2k.gltf",
+        "sha256": "6f92eae1fa0286ab2efa7a9ac39966fc7ae8ca71e27fdb01260c07bf9055656f",
+        "bytes": 9540
+      }
+    ]
   }
 ]
