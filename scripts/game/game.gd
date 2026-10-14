@@ -46,6 +46,8 @@ var errands: Errands
 var active_note: FieldNote
 var intro_left: float = Tune.INTRO_TIME
 var notes_found: int = 0
+var has_lantern := false
+var lantern_equipped := false
 var has_bow := false
 var arrow_count := 0
 var arrow_pickups: Dictionary = {}
@@ -123,7 +125,8 @@ func _ready() -> void:
 	_bind("move_right", KEY_D)
 	_bind("sprint", KEY_SHIFT)
 	_bind("interact", KEY_E)
-	_bind("draw_bow", KEY_F)
+	_bind("toggle_lantern", KEY_F)
+	_bind("draw_bow", KEY_B)
 	_bind("aim_bow", KEY_X)
 	_bind("shoot_arrow", KEY_G)
 	_bind_mouse("aim_bow", MOUSE_BUTTON_RIGHT)
@@ -204,6 +207,8 @@ func reset() -> void:
 	errands = null
 	active_note = null
 	notes_found = 0
+	has_lantern = false
+	lantern_equipped = false
 	has_bow = false
 	arrow_count = 0
 	arrow_pickups.clear()
@@ -620,6 +625,8 @@ func reach_checkpoint() -> void:
 		"turned_around": turned_around,
 		"hunt_started": hunt_started,
 		"notes_found": notes_found,
+		"has_lantern": has_lantern,
+		"lantern_equipped": lantern_equipped,
 		"has_bow": has_bow,
 		"arrow_count": arrow_count,
 		"arrow_pickups": arrow_pickups.duplicate(),
@@ -650,6 +657,12 @@ func resume_checkpoint() -> bool:
 	turned_around = checkpoint.turned_around
 	hunt_started = checkpoint.hunt_started
 	notes_found = checkpoint.notes_found
+	has_lantern = bool(checkpoint.get("has_lantern", false))
+	lantern_equipped = bool(checkpoint.get("lantern_equipped", false))
+	if has_lantern:
+		player.restore_lantern(lantern_equipped)
+		for pickup in get_tree().get_nodes_in_group("lantern_pickup"):
+			pickup.call("remove_found_lantern")
 	has_bow = bool(checkpoint.get("has_bow", false))
 	arrow_count = int(checkpoint.get("arrow_count", 0))
 	arrow_pickups = (checkpoint.get("arrow_pickups", {}) as Dictionary).duplicate()
@@ -852,7 +865,7 @@ func _bind_pad() -> void:
 			["aim_bow", JOY_BUTTON_LEFT_SHOULDER],
 			["draw_bow", JOY_BUTTON_RIGHT_SHOULDER],
 			["journal", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["restart", JOY_BUTTON_BACK],
-			["drop", JOY_BUTTON_DPAD_DOWN]]:
+			["drop", JOY_BUTTON_DPAD_DOWN], ["toggle_lantern", JOY_BUTTON_DPAD_UP]]:
 		if not InputMap.has_action(button[0]):
 			InputMap.add_action(button[0])
 		var event := InputEventJoypadButton.new()

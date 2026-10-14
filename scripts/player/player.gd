@@ -25,7 +25,7 @@ var trail: Trail
 var spring_arm: SpringArm3D
 var camera: Camera3D
 var ears: AudioListener3D
-var lantern: SpotLight3D
+var camera_light: SpotLight3D
 var lamp_fill: OmniLight3D
 var visual: Node3D
 var animation_player: AnimationPlayer
@@ -46,6 +46,8 @@ var foot_lock: FootLock
 var grace: Grace
 var leap_layer: Leap
 var bow_hoist: BowHoist
+var lantern_hold: LanternHold
+var lantern: Lantern
 var carry_hold: CarryHold
 var carrying: Carryable
 # RunSave restores the id; Errands resolves it after restoring world pieces.
@@ -165,6 +167,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if dialogue_locked:
 		if event.is_action_pressed("draw_bow") or event.is_action_pressed("shoot_arrow"):
 			get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("toggle_lantern") and toggle_lantern():
+		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("draw_bow") and toggle_bow():
 		get_viewport().set_input_as_handled()
@@ -300,6 +305,8 @@ func _physics_process(delta: float) -> void:
 	rotation.y = _yaw
 	if bow_hoist and Game.phase == Game.Phase.PLAYING:
 		bow_hoist.Advance(delta)
+	if lantern_hold and Game.phase == Game.Phase.PLAYING:
+		lantern_hold.Advance(delta)
 	if _interact_buffer > 0.0:
 		_interact_buffer -= delta
 		if Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and _try_interact():
@@ -358,7 +365,7 @@ func _physics_process(delta: float) -> void:
 		if _autopilot == "leap" and _autopilot_clock > 2.4 and _ground_speed() > Tune.SPRINT_SPEED * 0.9:
 			_autopilot_clock = 0.0
 			jump_pressed = true
-	var hoisting: bool = bow_hoist != null and bow_hoist.Busy
+	var hoisting: bool = (bow_hoist != null and bow_hoist.Busy) or (lantern_hold != null and lantern_hold.Busy)
 	# An armful blocks every jump, the standing hop too: intended, it reads right.
 	if hoisting or _heavy_carry():
 		jump_pressed = false
@@ -457,7 +464,7 @@ func _physics_process(delta: float) -> void:
 	_breathe(delta, sprinting)
 	_carry(delta, sprinting)
 	_steps(delta)
-	_flicker_lantern(delta)
+	_flicker_camera_light(delta)
 
 
 # The camera rig lives outside the physics tick: it follows her interpolated
@@ -970,7 +977,7 @@ func _settle_spawn() -> void:
 	_arm_reach = _boom
 	if camera and Game.settings:
 		camera.fov = Game.settings.fov
-	_flicker_lantern(0.0)
+	_flicker_camera_light(0.0)
 	_apply_look()
 
 
@@ -1263,15 +1270,15 @@ func _move_camera(delta: float) -> void:
 	_rise_lag = lerpf(_rise_lag, rise, 1.0 - exp(-delta * 6.0))
 
 
-func _flicker_lantern(delta: float) -> void:
-	if lantern == null:
+func _flicker_camera_light(delta: float) -> void:
+	if camera_light == null:
 		return
 	# Outside she needs the lamp in the storm. Indoors the rooms are already warm,
 	# and a hard beam would wash that out.
 	_glow = move_toward(_glow, 1.0 if indoors() else 0.0, delta * 1.4)
-	lantern.light_energy = lerpf(0.48, 0.1, _glow) + sin(Time.get_ticks_msec() * 0.013) * 0.02
-	lantern.spot_range = lerpf(8.0, 4.2, _glow)
-	lantern.spot_angle = lerpf(28.0, 16.0, _glow)
+	camera_light.light_energy = lerpf(0.48, 0.1, _glow) + sin(Time.get_ticks_msec() * 0.013) * 0.02
+	camera_light.spot_range = lerpf(8.0, 4.2, _glow)
+	camera_light.spot_angle = lerpf(28.0, 16.0, _glow)
 	if lamp_fill:
 		lamp_fill.light_color = Color(0.62, 0.7, 0.82).lerp(Color(1.0, 0.78, 0.58), _glow)
 		lamp_fill.light_energy = lerpf(0.05, 0.14, _glow)
@@ -1327,15 +1334,15 @@ func _build_camera() -> void:
 	camera.far = 420.0
 	spring_arm.add_child(camera)
 
-	lantern = SpotLight3D.new()
-	lantern.light_color = Color(1.0, 0.82, 0.58)
-	lantern.light_energy = 0.22
-	lantern.spot_range = 7.0
-	lantern.spot_angle = 24.0
-	lantern.spot_attenuation = 0.8
-	lantern.light_volumetric_fog_energy = 0.15
-	lantern.shadow_enabled = false
-	camera.add_child(lantern)
+	camera_light = SpotLight3D.new()
+	camera_light.light_color = Color(1.0, 0.82, 0.58)
+	camera_light.light_energy = 0.22
+	camera_light.spot_range = 7.0
+	camera_light.spot_angle = 24.0
+	camera_light.spot_attenuation = 0.8
+	camera_light.light_volumetric_fog_energy = 0.15
+	camera_light.shadow_enabled = false
+	camera.add_child(camera_light)
 
 	lamp_fill = OmniLight3D.new()
 	lamp_fill.light_color = Color(0.7, 0.76, 0.9)
@@ -1400,8 +1407,64 @@ func _build_model() -> void:
 	carry_hold = CarryHold.new()
 	carry_hold.name = "CarryHold"
 	skeleton.add_child(carry_hold)
+	lantern_hold = LanternHold.new()
+	lantern_hold.name = "LanternHold"
+	skeleton.add_child(lantern_hold)
+	lantern_hold.Configure(Tune.LANTERN_HOIST_SECONDS, Tune.LANTERN_TOGGLE_SECONDS, Tune.LANTERN_CHEST_POSITION, Tune.LANTERN_HIP_POSITION)
+	lantern_hold.connect("Hoisted", _on_lantern_hoisted)
+	lantern_hold.connect("Toggled", _on_lantern_toggled)
+	if Game.has_lantern:
+		restore_lantern(Game.lantern_equipped)
 	if Game.has_bow:
 		restore_bow()
+
+
+func take_lantern(item: Node3D) -> bool:
+	if is_instance_valid(carrying):
+		return false
+	if lantern_hold == null or lantern_hold.Busy or lantern_hold.HasLantern or Game.has_lantern:
+		return false
+	if not is_on_floor() or _ground_speed() > 0.25 or sliding or _airborne:
+		return false
+	var toward := item.global_position - global_position
+	toward.y = 0.0
+	if toward.length() > Tune.LANTERN_PICKUP_REACH:
+		return false
+	_facing = atan2(-toward.x, -toward.z)
+	visual.rotation = Vector3(0.0, _facing - _yaw, 0.0)
+	_glide = Vector3.ZERO
+	lantern = item as Lantern
+	return lantern_hold.BeginPickup(item, Tune.LANTERN_HOIST_SECONDS)
+
+
+func _on_lantern_hoisted() -> void:
+	Game.has_lantern = true
+	Game.lantern_equipped = true
+	var key := Game.settings.key_label("toggle_lantern")
+	Game.interaction_feedback.emit("The lantern hangs in front of your coat. %s to stow / equip." % key, true)
+
+
+func _on_lantern_toggled(equipped: bool) -> void:
+	Game.lantern_equipped = equipped
+
+
+func toggle_lantern() -> bool:
+	if Game.phase != Game.Phase.PLAYING or lantern_hold == null or not lantern_hold.HasLantern or lantern_hold.Busy:
+		return false
+	if not is_on_floor() or _airborne or sliding or _ground_speed() > Tune.WALK_SPEED + 0.1:
+		return false
+	return lantern_hold.Toggle(Tune.LANTERN_TOGGLE_SECONDS)
+
+
+func restore_lantern(equipped := true) -> void:
+	if lantern_hold == null or lantern_hold.HasLantern:
+		return
+	lantern = Lantern.new()
+	lantern.scale = Vector3.ONE * Tune.PLAYER_MODEL_SCALE
+	add_child(lantern)
+	lantern_hold.Restore(lantern, equipped)
+	Game.has_lantern = true
+	Game.lantern_equipped = equipped
 
 
 func take_bow(bow: Node3D) -> bool:

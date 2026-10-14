@@ -97,6 +97,15 @@ const BOW_DRAW_SECONDS := 1.8
 const BOW_HAND_POSITION := Vector3(0.33, 1.3, 0.22)
 const BOW_HAND_ROLL := -0.18
 const BOW_COMBAT_SPEED := 0.78
+# Found lantern: pickup duration, model, reach, sockets and lighting.
+const LANTERN_HOIST_SECONDS := 1.2
+const LANTERN_MODEL := "res://assets/vendor/polyhaven/Lantern_01/Lantern_01_1k.gltf"
+const LANTERN_PICKUP_REACH := 1.4
+const LANTERN_CHEST_POSITION := Vector3(0.0, -0.25, 0.22)
+const LANTERN_HIP_POSITION := Vector3(-0.20, -0.10, 0.12)
+const LANTERN_TOGGLE_SECONDS := 0.55
+const LANTERN_LIGHT_RANGE := 12.0
+const LANTERN_LIGHT_ENERGY := 1.3
 const ARROW_MODEL := "res://assets/props/arrow/arrow.glb"
 const ARROW_CAPACITY := 8
 const ARROW_SPEED := 43.0

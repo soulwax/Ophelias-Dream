@@ -357,7 +357,7 @@ func return_to_title() -> void:
 
 func _capture_game() -> Dictionary:
 	var result := _capture_properties(Game, [
-		"closeness", "intro_left", "notes_found", "has_bow", "arrow_count", "arrow_pickups",
+		"closeness", "intro_left", "notes_found", "has_lantern", "lantern_equipped", "has_bow", "arrow_count", "arrow_pickups",
 		"dread", "threat_hint", "something_at_door", "murmur", "murmur_left", "murmur_speaker",
 		"passings", "understood", "read_last_page", "journal_focus", "read_pages", "visited",
 		"heard_events", "deciphered", "turned_around", "_turn_hold", "at_checkpoint",
@@ -404,6 +404,8 @@ func _capture_player() -> Dictionary:
 	var result := _capture_properties(Game.player, fields)
 	result["global_transform"] = Game.player.global_transform
 	result["velocity"] = Game.player.velocity
+	result["lantern_present"] = Game.has_lantern
+	result["lantern_equipped"] = Game.lantern_equipped
 	result["bow_present"] = Game.has_bow
 	result["carrying_item_id"] = Game.player.carrying.item_id if is_instance_valid(Game.player.carrying) else Game.player.carrying_item_id
 	return result
@@ -419,6 +421,10 @@ func _apply_player(data: Dictionary) -> void:
 	Game.player.dialogue_locked = false
 	Game.player.reset_physics_interpolation()
 	Game.player.call("_apply_look")
+	if Game.has_lantern:
+		Game.player.restore_lantern(Game.lantern_equipped)
+		for pickup in get_tree().get_nodes_in_group("lantern_pickup"):
+			pickup.call("remove_found_lantern")
 	if Game.has_bow:
 		Game.player.restore_bow()
 		for pickup in get_tree().get_nodes_in_group("bow_pickup"):

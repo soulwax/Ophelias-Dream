@@ -765,7 +765,12 @@ func _furnish() -> void:
 	# Human-sized pieces around the perimeter; the larger shell stays walkable.
 	HouseKit.prop(root, "vintage_day_bed", Vector3(-5.35, 0.0, 2.15), 90.0)
 	HouseKit.prop(root, "painted_wooden_nightstand", Vector3(-5.6, 0.0, 4.1), 90.0)
-	HouseKit.prop(root, "Lantern_01", Vector3(-5.6, 0.62, 4.1))
+	if not Game.has_lantern:
+		var pickup := LanternPickup.new()
+		pickup.position = Vector3(-5.6, 0.62, 4.1)
+		root.add_child(pickup)
+	else:
+		HouseKit.prop(root, "Lantern_01", Vector3(-5.6, 0.62, 4.1))
 	HouseKit.prop(root, "wicker_basket_01", Vector3(-2.1, 0.0, 1.1))
 	HouseKit.prop(root, "ArmChair_01", Vector3(-3.45, 0.0, 4.05), 155.0)
 	HouseKit.prop(root, "round_wooden_table_02", Vector3(-2.25, 0.0, 4.05))
