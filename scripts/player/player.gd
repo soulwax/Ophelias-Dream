@@ -359,6 +359,7 @@ func _physics_process(delta: float) -> void:
 			_autopilot_clock = 0.0
 			jump_pressed = true
 	var hoisting: bool = bow_hoist != null and bow_hoist.Busy
+	# An armful blocks every jump, the standing hop too: intended, it reads right.
 	if hoisting or _heavy_carry():
 		jump_pressed = false
 		slide_pressed = false
@@ -1399,7 +1400,6 @@ func _build_model() -> void:
 	carry_hold = CarryHold.new()
 	carry_hold.name = "CarryHold"
 	skeleton.add_child(carry_hold)
-	carry_hold.PickSeconds = Tune.CARRY_PICK_SECONDS
 	if Game.has_bow:
 		restore_bow()
 
@@ -1433,9 +1433,13 @@ func toggle_bow() -> bool:
 		return false
 	if not is_on_floor() or _airborne or sliding or _ground_speed() > Tune.WALK_SPEED + 0.1:
 		return false
+	if bow_hoist.IsDrawn:
+		return bow_hoist.Stow()
+	# HasBow, not Busy and not IsDrawn are everything Draw() checks (HasBow means the
+	# rig is ready and the bow known), so the draw will happen: set the item down first.
 	if is_instance_valid(carrying) and not drop_carried():
 		return false
-	return bow_hoist.Stow() if bow_hoist.IsDrawn else bow_hoist.Draw()
+	return bow_hoist.Draw()
 
 
 func _on_bow_drawn() -> void:
@@ -1552,6 +1556,10 @@ func _attach_carried(item: Carryable, restored := false) -> void:
 	carrying = item
 	carrying_item_id = item.item_id
 	item.visual.reparent(carry_hold.get_parent(), true)
+	# CarryHold places it every frame from the interpolated rig (like ears and
+	# spring_arm), so it is top-level and not interpolated a second time.
+	item.visual.top_level = true
+	item.visual.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	carry_hold.Pose = "armful" if item.heavy else "hand"
 	carry_hold.Weight = 1.0
 	carry_hold.Attach(item.visual, restored)
@@ -1595,6 +1603,7 @@ func place(socket: CarrySocket) -> bool:
 		return false
 	var item := carrying
 	item.global_transform = socket.item_transform(socket.held.size())
+	item.reset_physics_interpolation()
 	item.return_visual()
 	socket.add_item(item)
 	_clear_carried()
@@ -1609,7 +1618,9 @@ func drop_carried() -> bool:
 	if not _carry_allowed() or not is_instance_valid(carrying):
 		return false
 	var origin := global_position + Vector3.UP * 0.4
-	var ahead := -global_basis.z * Tune.CARRY_DROP_AHEAD
+	# In front of her model, not the camera: the body turns with _yaw, she with _facing.
+	var facing := Basis(Vector3.UP, _facing)
+	var ahead := -facing.z * Tune.CARRY_DROP_AHEAD
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + ahead, Tune.LAYER_WORLD)
 	query.exclude = [get_rid()]
 	var space := get_world_3d().direct_space_state
@@ -1629,7 +1640,8 @@ func drop_carried() -> bool:
 		if absf(point.y - global_position.y) > 1.5:
 			return false
 	var item := carrying
-	item.global_transform = Transform3D(Basis(Vector3.UP, rotation.y), point + Vector3.UP * 0.015)
+	item.global_transform = Transform3D(facing, point + Vector3.UP * 0.015)
+	item.reset_physics_interpolation()
 	item.return_visual()
 	_clear_carried()
 	item.refresh_interaction()

@@ -6,8 +6,9 @@ public partial class CarryHold : SkeletonModifier3D
 {
 	public string Pose { get; set; } = "hand";
 	public float Weight { get; set; }
-	public float PickSeconds { get; set; } = 0.45f;
 	public Transform3D HandSocket { get; private set; } = Transform3D.Identity;
+	private float _pickSeconds = 0.45f;
+	private Vector3 _handTarget, _armfulTarget, _pole;
 	private Skeleton3D? _rig;
 	private Node3D? _visual;
 	private Vector3 _scale = Vector3.One;
@@ -16,6 +17,11 @@ public partial class CarryHold : SkeletonModifier3D
 
 	public override void _Ready()
 	{
+		var tune = GD.Load<Script>("res://scripts/tune.gd").GetScriptConstantMap();
+		_pickSeconds = tune["CARRY_PICK_SECONDS"].AsSingle();
+		_handTarget = tune["CARRY_HAND_TARGET"].AsVector3();
+		_armfulTarget = tune["CARRY_ARMFUL_TARGET"].AsVector3();
+		_pole = tune["CARRY_ARM_POLE"].AsVector3();
 		_rig = GetSkeleton();
 		if (_rig == null) return;
 		int i = 0;
@@ -36,21 +42,26 @@ public partial class CarryHold : SkeletonModifier3D
 	public override void _ProcessModificationWithDelta(double delta)
 	{
 		if (_rig == null || _bones[0] < 0 || _bones[1] < 0 || _bones[2] < 0) return;
-		_blend = Mathf.MoveToward(_blend, Mathf.Clamp(Weight, 0, 1), (float)delta / Mathf.Max(PickSeconds, 0.01f));
+		_blend = Mathf.MoveToward(_blend, Mathf.Clamp(Weight, 0, 1), (float)delta / Mathf.Max(_pickSeconds, 0.01f));
 		float amount = Mathf.SmoothStep(0, 1, _blend);
 		if (amount > 0)
 		{
-			SolveArm(0, Pose == "armful" ? new Vector3(-0.17f, 1.13f, 0.32f) : new Vector3(-0.25f, 0.89f, 0.2f), amount);
+			SolveArm(0, Pose == "armful" ? _armfulTarget : _handTarget, amount);
 			if (Pose == "armful" && _bones[3] >= 0 && _bones[4] >= 0 && _bones[5] >= 0)
-				SolveArm(3, new Vector3(0.17f, 1.13f, 0.32f), amount);
+				SolveArm(3, Mirror(_armfulTarget), amount);
 		}
-		HandSocket = _rig.GlobalTransform * _rig.GetBoneGlobalPose(_bones[2]);
+		// Modifiers run in the idle frame (the skeleton's default callback mode), where the
+		// skin is drawn at the rig's interpolated transform times these bone poses. The
+		// visual has interpolation off and is placed from that same interpolated rig, so it
+		// sits on the drawn palm instead of a physics tick behind or ahead of it.
+		Transform3D rig = _rig.GetGlobalTransformInterpolated();
+		HandSocket = rig * _rig.GetBoneGlobalPose(_bones[2]);
 		if (_visual == null || !IsInstanceValid(_visual)) return;
 		Vector3 origin = HandSocket.Origin;
 		if (Pose == "armful" && _bones[5] >= 0)
-			origin = origin.Lerp((_rig.GlobalTransform * _rig.GetBoneGlobalPose(_bones[5])).Origin, 0.5f);
+			origin = origin.Lerp((rig * _rig.GetBoneGlobalPose(_bones[5])).Origin, 0.5f);
 		// Upright props follow the evaluated palm, after every arm modifier.
-		_visual.GlobalTransform = new Transform3D(_rig.GlobalBasis.Orthonormalized().Scaled(_scale), origin);
+		_visual.GlobalTransform = new Transform3D(rig.Basis.Orthonormalized().Scaled(_scale), origin);
 	}
 
 	private void SolveArm(int first, Vector3 target, float weight)
@@ -66,7 +77,7 @@ public partial class CarryHold : SkeletonModifier3D
 		Vector3 toward = target - shoulder;
 		float distance = Mathf.Clamp(toward.Length(), Mathf.Abs(a - b) + 0.005f, a + b - 0.005f);
 		Vector3 direction = toward.Normalized();
-		Vector3 pole = new(first == 0 ? -1 : 1, -0.1f, 0.15f);
+		Vector3 pole = first == 0 ? _pole : Mirror(_pole);
 		Vector3 perpendicular = (pole - direction * pole.Dot(direction)).Normalized();
 		float along = (a * a - b * b + distance * distance) / (2 * distance);
 		Vector3 elbow = shoulder + direction * along + perpendicular * Mathf.Sqrt(Mathf.Max(a * a - along * along, 0));
@@ -77,6 +88,8 @@ public partial class CarryHold : SkeletonModifier3D
 		turn = new Quaternion((hand.Origin - fore.Origin).Normalized(), (shoulder + direction * distance - fore.Origin).Normalized());
 		SetRotation(foreId, fore.Basis.GetRotationQuaternion().Slerp(turn * fore.Basis.GetRotationQuaternion(), weight));
 	}
+
+	private static Vector3 Mirror(Vector3 v) => new(-v.X, v.Y, v.Z);
 
 	private void SetRotation(int bone, Quaternion rotation)
 	{

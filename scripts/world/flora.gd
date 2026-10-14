@@ -213,6 +213,20 @@ func _notification(what: int) -> void:
 				PhysicsServer3D.free_rid(shape)
 			_bodies.clear()
 			_shapes.clear()
+			_parts.clear()
+			_wind_materials.clear()
+
+
+func _process(_delta: float) -> void:
+	if Game.weather and not _wind_materials.is_empty():
+		var w_dir := Vector2(Game.weather.wind.x, Game.weather.wind.z)
+		if w_dir.length_squared() > 0.01:
+			var norm_dir := w_dir.normalized()
+			var gust := 1.0 + Game.weather.gust * 0.8
+			for mat: ShaderMaterial in _wind_materials.values():
+				mat.set_shader_parameter("wind_dir", norm_dir)
+				mat.set_shader_parameter("wind_strength", gust)
+
 
 
 # --- Placement ---------------------------------------------------------------
@@ -448,8 +462,12 @@ func _plant_clearings() -> void:
 			if snow < 0.5:
 				if mask > 0.55 or roll > 0.75:
 					continue
-				model = PACK + "grass_card"
-				scale = lerpf(0.6, 1.2, size_roll)
+				if roll < 0.15:
+					model = "flowers"
+					scale = lerpf(0.5, 0.9, size_roll)
+				else:
+					model = PACK + "grass_card"
+					scale = lerpf(0.6, 1.2, size_roll)
 			else:
 				if mask > 0.2 and mask < 0.5 and roll < 0.12:
 					model = LOGS[int(size_roll * LOGS.size()) % LOGS.size()]
@@ -540,6 +558,10 @@ func _draw_batches() -> void:
 	_batches.clear()
 
 
+static var _wind_shader := preload("res://shaders/nature_wind.gdshader")
+static var _wind_materials: Dictionary = {}
+
+
 # The visible mesh parts of a model, with their materials baked into the
 # surfaces and their offset from the model's root.
 func _model_parts(model: String) -> Array:
@@ -547,8 +569,15 @@ func _model_parts(model: String) -> Array:
 		return _parts[model]
 	var parts: Array = []
 	if model.begins_with(PACK):
-		var mesh := load(model + ".res") as Mesh
-		if mesh:
+		var src_mesh := load(model + ".res") as Mesh
+		if src_mesh:
+			var mesh := src_mesh
+			if _is_vegetation(model) and src_mesh is ArrayMesh:
+				mesh = src_mesh.duplicate() as Mesh
+				for s in mesh.get_surface_count():
+					var mat := (mesh as ArrayMesh).surface_get_material(s)
+					if mat:
+						(mesh as ArrayMesh).surface_set_material(s, _wind_material_for(mat, model))
 			parts.append([mesh, Transform3D(), true])
 	else:
 		var node := PropFactory.spawn(model)
@@ -562,6 +591,8 @@ func _model_parts(model: String) -> Array:
 					for surface in mesh.get_surface_count():
 						var material := instance.get_active_material(surface)
 						if material:
+							if _is_vegetation(model):
+								material = _wind_material_for(material, model)
 							(mesh as ArrayMesh).surface_set_material(surface, material)
 				parts.append([mesh, _relative(instance, node), true])
 			node.free()
@@ -569,6 +600,70 @@ func _model_parts(model: String) -> Array:
 		push_warning("Flora: no mesh for " + model)
 	_parts[model] = parts
 	return parts
+
+
+func _is_vegetation(model: String) -> bool:
+	var m := model.to_lower()
+	if "rock" in m or "stone" in m or "boulder" in m or "cliff" in m:
+		return false
+	if "mound" in m or "log" in m or "stump" in m or "bench" in m:
+		return false
+	return true
+
+
+func _wind_material_for(source: Material, model: String) -> Material:
+	if source is ShaderMaterial:
+		return source
+	if not (source is StandardMaterial3D):
+		return source
+	var sm := source as StandardMaterial3D
+	var key := "%s|%d|%s" % [sm.resource_path if sm.resource_path != "" else str(sm.get_instance_id()), int(sm.transparency), model]
+	if _wind_materials.has(key):
+		return _wind_materials[key]
+
+	var wm := ShaderMaterial.new()
+	wm.shader = _wind_shader
+	if sm.albedo_texture:
+		wm.set_shader_parameter("albedo_texture", sm.albedo_texture)
+	wm.set_shader_parameter("albedo_color", sm.albedo_color)
+	var scissor := sm.alpha_scissor_threshold if sm.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR else 0.05
+	wm.set_shader_parameter("alpha_scissor_threshold", scissor)
+	wm.set_shader_parameter("roughness", sm.roughness)
+	wm.set_shader_parameter("specular", sm.metallic)
+	if sm.normal_enabled and sm.normal_texture:
+		wm.set_shader_parameter("normal_enabled", true)
+		wm.set_shader_parameter("normal_texture", sm.normal_texture)
+	if sm.ao_enabled and sm.ao_texture:
+		wm.set_shader_parameter("ao_enabled", true)
+		wm.set_shader_parameter("ao_texture", sm.ao_texture)
+	if sm.backlight_enabled:
+		wm.set_shader_parameter("backlight_enabled", true)
+		wm.set_shader_parameter("backlight", sm.backlight)
+
+	var mod_lower := model.to_lower()
+	var is_under := "grass" in mod_lower or "card_fir" in mod_lower or "card_bush" in mod_lower or "flower" in mod_lower or "ivy" in mod_lower or "fern" in mod_lower
+	var is_bush := "bush" in mod_lower
+
+	wm.set_shader_parameter("is_undergrowth", is_under)
+	if is_under:
+		wm.set_shader_parameter("height_reference", 1.2)
+		wm.set_shader_parameter("wind_speed", 2.6)
+		wm.set_shader_parameter("wind_strength", 1.1)
+	elif is_bush:
+		wm.set_shader_parameter("height_reference", 2.4)
+		wm.set_shader_parameter("trunk_sway", 0.04)
+		wm.set_shader_parameter("branch_sway", 0.09)
+		wm.set_shader_parameter("leaf_flutter", 0.035)
+		wm.set_shader_parameter("wind_speed", 2.2)
+	else:
+		wm.set_shader_parameter("height_reference", 16.0)
+		wm.set_shader_parameter("trunk_sway", 0.075)
+		wm.set_shader_parameter("branch_sway", 0.11)
+		wm.set_shader_parameter("leaf_flutter", 0.04)
+		wm.set_shader_parameter("wind_speed", 2.0)
+
+	_wind_materials[key] = wm
+	return wm
 
 
 func _shown(node: Node, root: Node) -> bool:

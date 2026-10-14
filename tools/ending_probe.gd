@@ -96,7 +96,13 @@ func _run() -> void:
 	var lake := get_tree().get_first_node_in_group("lake") as Lake
 	var shore := Game.trail.position_at(Game.trail.lake_offset - Tune.LAKE_RADIUS - 10.0)
 	_stand(shore)
-	await _frames(4)
+	# Lake places her from its own frame loop, and only opens the meeting once
+	# it has seen Ophelia away from her: wait for both, not a fixed count.
+	for i in 60:
+		if lake.mathilda != null and lake.mathilda.visible:
+			break
+		await _frames(1)
+	await _frames(3)
 	_check(lake.mathilda != null and lake.mathilda.visible and Game.meeting_waiting, "Mathilda waits on the ice")
 	_stand(Game.trail.lake_hole)
 	await _frames(3)
@@ -133,9 +139,17 @@ func _run() -> void:
 		(Game.deciphered[last.title] as Dictionary)[index] = true
 	lake = get_tree().get_first_node_in_group("lake") as Lake
 	_stand(shore)
-	await _frames(4)
+	# Lake places her from its own frame loop: wait for it rather than a fixed count.
+	for i in 60:
+		if lake.mathilda != null and lake.mathilda.visible:
+			break
+		await _frames(1)
+	_check(lake.mathilda != null and lake.mathilda.visible, "turning around: she was waiting first")
 	Game.turned_around = true
-	await _frames(3)
+	for i in 60:
+		if lake.mathilda == null or not lake.mathilda.visible:
+			break
+		await _frames(1)
 	_check(lake.mathilda != null and not lake.mathilda.visible and not Game.meeting_waiting, "turning around: she is not there any more")
 
 	print("ENDINGS %s" % ("PASS" if _failures == 0 else "FAIL (%d)" % _failures))

@@ -1,0 +1,57 @@
+{
+  "source_root": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets",
+  "local_use_only": true,
+  "note": "Owner-supplied asset bank. Nature scans (Alpine Flowers, Ivy); no verified redistribution permission, so all assets remain in build/vendor/requested_nature/. Flora falls back gracefully if absent.",
+  "files": [
+    {
+      "source": "MVV_FlowerSet_Flowers_01_B_447d267c\\MVV_FlowerSet_Flowers_01_B\\Unity\\Rocket\\MVV_FlowerSet_Flowers_01_B\\HDRP\\SM_MVV_Flowers_01_B_c1_LOD0.fbx",
+      "sha256": "3912e5304b3357cb6cbb078417bb9b10a37d44402313b4a90fd7e8db8d96692f",
+      "to": "flowers/SM_MVV_Flowers_01_B_c1_LOD0.fbx"
+    },
+    {
+      "source": "MVV_FlowerSet_Flowers_01_B_447d267c\\MVV_FlowerSet_Flowers_01_B\\Unity\\Rocket\\MVV_FlowerSet_Flowers_01_B\\Textures\\T_MVV_Flowers_2048_B.png",
+      "sha256": "37629c129416edeea2096fcaa59f96303680084e9bfea5bc229b03452bb8aa1f",
+      "to": "flowers/flowers_albedo.png"
+    },
+    {
+      "source": "MVV_FlowerSet_Flowers_01_B_447d267c\\MVV_FlowerSet_Flowers_01_B\\Unity\\Rocket\\MVV_FlowerSet_Flowers_01_B\\Textures\\T_MVV_Flowers_2048_OpenGL_N.png",
+      "sha256": "5d450a188a920c9beb7aad9d29a405da14f7ae3aa6428bed450c5ff44ca6bf25",
+      "to": "flowers/flowers_normal.png"
+    },
+    {
+      "source": "MVV_FlowerSet_Flowers_01_B_447d267c\\MVV_FlowerSet_Flowers_01_B\\Unity\\Rocket\\MVV_FlowerSet_Flowers_01_B\\Textures\\T_MVV_Flowers_2048_AO.png",
+      "sha256": "c1513aaf22ef8a34e2a12ccb9852a4bc319995464d332ea7930ebd2ff80a59ea",
+      "to": "flowers/flowers_orm.png (AO channel)"
+    },
+    {
+      "source": "MVV_FlowerSet_Flowers_01_B_447d267c\\MVV_FlowerSet_Flowers_01_B\\Unity\\Rocket\\MVV_FlowerSet_Flowers_01_B\\Textures\\T_MVV_Flowers_2048_MS.png",
+      "sha256": "093c8e74dd9eb2168b2625382df81fdcada2776f3beeddd7c31281674895e855",
+      "to": "flowers/flowers_orm.png (Roughness & Metallic channels)"
+    },
+    {
+      "source": "PAD_MV_IvySet_Ivy01e_66d6f637\\PAD_MV_IvySet_Ivy01e\\Unity\\Rocket\\PAD_MV_IvySet_Ivy01e\\HDRP\\SM_PAD_MV_Ivy01e_c1_LOD0.fbx",
+      "sha256": "3ac4ffa8ce6f200806387b6dc3eda9a857f81a32918e5e69ed0ee9bc3ba751c2",
+      "to": "ivy/SM_PAD_MV_Ivy01e_c1_LOD0.fbx"
+    },
+    {
+      "source": "PAD_MV_IvySet_Ivy01e_66d6f637\\PAD_MV_IvySet_Ivy01e\\Unity\\Rocket\\PAD_MV_IvySet_Ivy01e\\Textures\\T_PAD_IvySet_2048_B.png",
+      "sha256": "107662c8c090951aa1ef220e7d02016f74db4ef164d87d5989c99931aa6ce167",
+      "to": "ivy/ivy_albedo.png"
+    },
+    {
+      "source": "PAD_MV_IvySet_Ivy01e_66d6f637\\PAD_MV_IvySet_Ivy01e\\Unity\\Rocket\\PAD_MV_IvySet_Ivy01e\\Textures\\T_PAD_IvySet_2048_OpenGL_N.png",
+      "sha256": "c324819407ff9f11467ac3088e57d410ab735979e77add1a3e4112a08c86f639",
+      "to": "ivy/ivy_normal.png"
+    },
+    {
+      "source": "PAD_MV_IvySet_Ivy01e_66d6f637\\PAD_MV_IvySet_Ivy01e\\Unity\\Rocket\\PAD_MV_IvySet_Ivy01e\\Textures\\T_PAD_IvySet_2048_AO.png",
+      "sha256": "692fa4af19d5ff9ebd7f5e929da8fa2c35cc317878d7a4818619c8d44fea20db",
+      "to": "ivy/ivy_orm.png (AO channel)"
+    },
+    {
+      "source": "PAD_MV_IvySet_Ivy01e_66d6f637\\PAD_MV_IvySet_Ivy01e\\Unity\\Rocket\\PAD_MV_IvySet_Ivy01e\\Textures\\T_PAD_IvySet_2048_MS.png",
+      "sha256": "f57ca1fb2a21ab3c7da1b0ac1ed3859b816a4ed6eb7b09700419e86f0b0e1c8e",
+      "to": "ivy/ivy_orm.png (Roughness & Metallic channels)"
+    }
+  ]
+}

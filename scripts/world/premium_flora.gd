@@ -23,10 +23,20 @@ static var _scenes: Dictionary = {}
 
 
 static func spawn(file_name: String) -> Node3D:
+	if file_name == "flowers" or file_name == "SM_Env_Flowers_01.fbx":
+		var vendor := VendorLoader.spawn_nature_prop("flowers")
+		if vendor:
+			return vendor
+	if file_name == "ivy" or file_name == "SM_Env_Ivy_01.fbx":
+		var vendor := VendorLoader.spawn_nature_prop("ivy")
+		if vendor:
+			return vendor
 	if not REPLACEMENTS.has(file_name):
 		return null
 	var replacement: String = REPLACEMENTS[file_name]
 	var scene_path := ROOT + "scenes/" + replacement.get_basename() + ".tscn"
 	if not _scenes.has(scene_path):
 		_scenes[scene_path] = load(scene_path)
+	if _scenes[scene_path] == null:
+		return null
 	return (_scenes[scene_path] as PackedScene).instantiate() as Node3D

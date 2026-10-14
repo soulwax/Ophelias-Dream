@@ -60,13 +60,19 @@ const FACE_RATE_SPRINT := 10.0
 const STRIDE_WALK := 0.986 # Neutral walk pace at PLAYER_MODEL_SCALE.
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
-# Her carriage over the clips (Grace), in radians unless noted.
-const GRACE_ARM_SWING := 0.34
-const GRACE_COUNTER_TURN := 0.09
-const GRACE_CHEST_LIFT := 0.05
+# Her carriage over the clips (Grace), in radians unless noted. 25% more feminine gait & carriage.
+const GRACE_ARM_SWING := 0.425
+const GRACE_COUNTER_TURN := 0.068
+const GRACE_CHEST_LIFT := 0.0625
 # Authored walk already carries the hips, shoulders and arms.
-const GRACE_AUTHORED_ARM := 0.2
-const GRACE_AUTHORED_COUNTER := 0.25
+const GRACE_AUTHORED_ARM := 0.25
+const GRACE_AUTHORED_COUNTER := 0.19
+# Feminine hip sway and arm carriage dynamics.
+const GRACE_HIP_SWAY_YAW := 0.11
+const GRACE_HIP_SWAY_ROLL := 0.087
+const GRACE_HIP_SHIFT := 0.025
+const GRACE_ELBOW_TUCK := 0.13
+const GRACE_FOREARM_SOFT := 0.28
 # Carriage eases into a walk and settles after stopping (seconds).
 const GRACE_WALK_ENTER := 0.18
 const GRACE_WALK_EXIT := 0.24
@@ -102,7 +108,7 @@ const ARROW_PICKUP_QUANTITIES := [4, 4, 4]
 const TIPTOE_AFTER := 5.0
 const TIPTOE_CYCLE := 7.5
 # Most her heels lift her (skeleton metres) and the steepest foot pitch.
-const TIPTOE_LIFT := 0.075
+const TIPTOE_LIFT := 0.09375
 const TIPTOE_PITCH := 1.3
 # Per-step speed swing: checks on impact, surges on push-off.
 const STEP_SURGE_WALK := 0.03
@@ -436,6 +442,13 @@ const CARRY_HEAVY_SPEED := 2.6
 const CARRY_LIGHT_SPEED_SCALE := 0.92
 const CARRY_DROP_AHEAD := 0.55
 const CARRY_PICK_SECONDS := 0.45
+# Where CarryHold reaches her hands, in skeleton space (+Y up, +Z ahead of her,
+# her right hand at -X): one hand at her side for a light thing, both hands
+# under an armful (the left mirrors CARRY_ARMFUL_TARGET in X). The pole points
+# the right elbow outward and a little down (mirrored for the left).
+const CARRY_HAND_TARGET := Vector3(-0.25, 0.89, 0.2)
+const CARRY_ARMFUL_TARGET := Vector3(-0.17, 1.13, 0.32)
+const CARRY_ARM_POLE := Vector3(-1.0, -0.1, 0.15)
 # Hold to do: the usual hold (s), and how long a let-go hold keeps its progress (s).
 const HOLD_DEFAULT := 1.2
 const HOLD_FORGET := 3.0

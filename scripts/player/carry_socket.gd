@@ -8,6 +8,8 @@ signal filled(item: Carryable)
 @export var socket_id: String = ""
 @export var allow_take := true
 var held: Array[Carryable] = []
+# item -> the Callable connected to its tree_exiting, so it can be disconnected.
+var _exits := {}
 
 
 func _ready() -> void:
@@ -55,13 +57,17 @@ func item_transform(index: int) -> Transform3D:
 func add_item(item: Carryable) -> void:
 	held.append(item)
 	item.socket = self
-	item.tree_exiting.connect(remove_item.bind(item), CONNECT_ONE_SHOT)
+	var exiting := remove_item.bind(item)
+	_exits[item] = exiting
+	item.tree_exiting.connect(exiting, CONNECT_ONE_SHOT)
 	_reflow()
 
 
 func remove_item(item: Carryable) -> void:
-	if item.tree_exiting.is_connected(remove_item.bind(item)):
-		item.tree_exiting.disconnect(remove_item.bind(item))
+	var exiting: Variant = _exits.get(item)
+	_exits.erase(item)
+	if exiting is Callable and is_instance_valid(item) and item.tree_exiting.is_connected(exiting):
+		item.tree_exiting.disconnect(exiting)
 	held.erase(item)
 	item.socket = null
 	_reflow()
@@ -70,6 +76,7 @@ func remove_item(item: Carryable) -> void:
 func _reflow() -> void:
 	for index in held.size():
 		held[index].global_transform = item_transform(index)
+		held[index].reset_physics_interpolation()
 		held[index].refresh_interaction()
 	refresh_interaction()
 

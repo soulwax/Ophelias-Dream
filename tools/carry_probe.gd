@@ -35,6 +35,8 @@ func _run() -> void:
 	await _read_keeps_item()
 	await _indoors_drop_on_floor()
 	await _hand_follows()
+	await _drop_in_front_of_her()
+	await _reparent_keeps_visual()
 	await _hands_full()
 	await _drop_ignored_in_dialogue()
 	_lamp.global_position = _player.global_position + Vector3.UP * 0.7
@@ -222,8 +224,11 @@ func _hand_follows() -> void:
 	_lamp.global_position = _player.global_position + Vector3.UP * 0.7
 	_check(_player.pick_up(_lamp), "lamp picked for evaluated hand check")
 	var rig := _player.carry_hold.get_parent() as Skeleton3D
+	# The skin is drawn at the rig's interpolated transform times the evaluated bone
+	# poses, so that is the rendered palm. This proves the visual lands on the palm
+	# after every arm modifier in the frame it is drawn; it does not look at pixels.
 	_player.carry_hold.modification_processed.connect(func() -> void:
-		_palm = rig.global_transform * rig.get_bone_global_pose(rig.find_bone("DEF-hand.R")).origin)
+		_palm = rig.get_global_transform_interpolated() * rig.get_bone_global_pose(rig.find_bone("DEF-hand.R")).origin)
 	Input.action_press("move_forward")
 	await _ticks(60)
 	var error := _lamp.visual.global_position.distance_to(_palm)
@@ -231,6 +236,46 @@ func _hand_follows() -> void:
 	await _capture("hand")
 	Input.action_release("move_forward")
 	await _ticks(25)
+
+
+func _drop_in_front_of_her() -> void:
+	# Walk toward the camera so her model faces about 180 degrees from the view,
+	# then set the lamp down: it lands ahead of her, behind the camera's forward.
+	_check(_player.drop_carried(), "lamp set down before facing check")
+	await _outside()
+	_lamp.global_position = _player.global_position + Vector3.UP * 0.7
+	_check(_player.pick_up(_lamp), "lamp picked for facing check")
+	Input.action_press("move_back")
+	await _ticks(50)
+	Input.action_release("move_back")
+	await _ticks(40)
+	var heading := Vector3(-sin(_player._facing), 0.0, -cos(_player._facing))
+	var view := -_player.global_basis.z
+	_check(heading.dot(view) < -0.8, "_drop_in_front_of_her: she faces the camera (%.2f)" % heading.dot(view))
+	var from := _player.global_position
+	_check(_player.drop_carried(), "_drop_in_front_of_her: put down")
+	var offset := _lamp.global_position - from
+	offset.y = 0.0
+	_check(offset.dot(heading) > 0.3 and offset.dot(view) < 0.0, "_drop_in_front_of_her: lands in front of her model (%.2f ahead)" % offset.dot(heading))
+	_check((-_lamp.global_basis.z).dot(heading) > 0.95, "_drop_in_front_of_her: turned the way she faces")
+	await _ticks(2)
+	_lamp.global_position = _player.global_position + Vector3.UP * 0.7
+	_check(_player.pick_up(_lamp), "lamp picked again after facing check")
+	_check(_lamp.world_position().distance_to(_lamp.visual.global_position) < 0.001 and _lamp.interact_point() == _lamp.world_position(), "carried world_position follows the visual")
+
+
+func _reparent_keeps_visual() -> void:
+	var shelf := Node3D.new()
+	add_child(shelf)
+	var shown := _lamp.visual
+	_lamp.reparent(shelf)
+	await _ticks(2)
+	_check(is_instance_valid(shown) and shown.get_parent() == _lamp and _player.carrying == null, "_reparent_keeps_visual: reparenting a held item lets go and keeps its visual")
+	_lamp.reparent(self)
+	shelf.queue_free()
+	await _ticks(2)
+	_lamp.global_position = _player.global_position + Vector3.UP * 0.7
+	_check(_player.pick_up(_lamp), "lamp picked after reparent")
 
 
 func _hands_full() -> void:
