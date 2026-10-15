@@ -94,7 +94,7 @@ var _choice_hint_back: Panel
 var _choice_title: Label
 var _choice_hint: Label
 var _choice_buttons: Array[Label] = []
-var _choice_rows: Array[PanelContainer] = []
+var _choice_rows: Array[Panel] = []
 var _conversation_camera: Camera3D
 var _return_camera: Camera3D
 var _conversation_camera_active := false
@@ -2156,7 +2156,10 @@ func _set_choice_rows(title: String, labels: Array[String]) -> void:
 	_choice_hint.text = "RETURN" if _waking_card else "YOU // REPLY"
 	_set_caption_action("Return" if _waking_card else "")
 	for index in range(labels.size()):
-		var row := PanelContainer.new()
+		# A plain Panel, not a PanelContainer: a container never shrinks below its
+		# autowrapped label's minimum height, which stretched the rows over each
+		# other; _update_choice_positions sizes the row and the label fills it.
+		var row := Panel.new()
 		row.name = "DreamChoiceRow%d" % (index + 1)
 		row.mouse_filter = Control.MOUSE_FILTER_STOP
 		row.mouse_entered.connect(_set_choice_index.bind(index))
@@ -2217,11 +2220,11 @@ func _update_choice_positions() -> void:
 	var title_characters_per_line := maxi(int((label_width - 40.0) / 11.5), 12)
 	var title_lines := maxi(1, ceili(float(_choice_title.text.length()) / float(title_characters_per_line)))
 	var title_height := maxf(30.0, float(title_lines) * 25.0)
-	var hint_characters_per_line := maxi(int((label_width - 40.0) / 9.5), 12)
-	var hint_lines := 0
-	for hint_part in _choice_hint.text.split("\n", false):
-		hint_lines += maxi(1, ceili(float(hint_part.length()) / float(hint_characters_per_line)))
-	var hint_height := maxf(24.0, float(hint_lines) * 22.0)
+	# Measured from the wrapped label itself; a characters-per-line guess left the
+	# guidance spilling out of its box at the real font.
+	_choice_hint.size.x = label_width - 24.0
+	var hint_line := float(_choice_hint.get_line_height() + _choice_hint.get_theme_constant("line_spacing"))
+	var hint_height := maxf(24.0, float(_choice_hint.get_line_count()) * hint_line + 4.0)
 	var center_margin := maxf(row_half_height + title_height + 20.0, row_half_height + hint_height + 36.0)
 	center_margin = minf(center_margin, viewport_size.y * 0.47)
 	var center_y := clampf(viewport_size.y * 0.55, center_margin, viewport_size.y - center_margin)

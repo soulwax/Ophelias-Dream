@@ -80,6 +80,9 @@ func interact() -> bool:
 func blocked_label() -> String:
 	if Game.player != null and is_instance_valid(Game.player.carrying):
 		return "Your hands are full."
+	var lantern_hold := Game.player.lantern_hold if Game.player != null else null
+	if lantern_hold and (lantern_hold.IsEquipped or lantern_hold.Busy):
+		return "The lantern is in your hand. %s to put it away." % Game.settings.key_label("toggle_lantern")
 	return ""
 
 

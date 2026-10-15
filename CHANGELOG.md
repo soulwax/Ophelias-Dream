@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.15.0 — 2026-10-15
+
+- Keep dream replies legible when the pause menu opens, and let the player manage a carried item and lantern without conflicting hand actions.
+- Add focused interaction and dream-branch probes so these paths can be checked in future changes.
+
 ## 0.2.13.0 — 2026-10-13
 
 - Give the player restrained body reactions while listening, speaking, and responding to difficult choices.

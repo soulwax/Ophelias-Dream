@@ -61,8 +61,14 @@ func _run() -> void:
 	var round_data: Dictionary = rounds[0]
 	var labels: Array[String] = []
 	for choice: Dictionary in round_data.get("choices", []):
-		labels.append(str(choice.get("text", "")))
+		labels.append(str(choice.get("label", "")))
 	experience.call("_set_choice_rows", str(round_data.get("prompt", "")), labels)
+	# The round adds its guidance above the reply hint, as the walk does.
+	var guidance := str(round_data.get("guidance", ""))
+	var hint_label := experience.get("_choice_hint") as Label
+	if not guidance.is_empty():
+		hint_label.text = "%s
+%s" % [guidance, hint_label.text]
 	var panel := experience.get("_choice_panel") as Control
 	panel.visible = true
 	for _frame in 20:
@@ -78,14 +84,29 @@ func _run() -> void:
 		if row.get_combined_minimum_size().y > row.size.y + 0.5:
 			fits = false
 	_check(fits, "each row's content fits the height the dream lays out")
+	var rows_clear := true
+	for index in range(1, rows.size()):
+		if (rows[index] as Control).position.y < (rows[index - 1] as Control).position.y + (rows[index - 1] as Control).size.y - 0.5:
+			rows_clear = false
+	_check(rows_clear, "the reply rows do not overlap")
+	var hint := experience.get("_choice_hint") as Label
+	var hint_back := experience.get("_choice_hint_back") as Control
+	var hint_text := float(hint.get_line_count() * (hint.get_line_height() + hint.get_theme_constant("line_spacing")))
+	_check(hint_text <= hint.size.y + 1.0 and hint.size.y <= hint_back.size.y, "the guidance fits its box",
+		"%d lines, %.0f px of text, label %.0f, box %.0f" % [hint.get_line_count(), hint_text, hint.size.y, hint_back.size.y])
+	var reply_shot := OS.get_environment("PROBE_SHOT")
+	if not reply_shot.is_empty() and DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(reply_shot.get_basename() + "_unpaused.png")
 
 	Game.toggle_pause()
 	_check(Game.phase == Game.Phase.PAUSED and get_tree().paused, "Esc pauses the dream")
-	# While paused the dream's per-frame layout stops; anything that re-sorts
-	# a row (hover, focus, theme) leaves it at its own minimum size.
+	# While paused the dream's per-frame layout stops; a row must not grow to
+	# its label's minimum size when something asks it to recompute.
 	for row: Control in rows:
-		row.queue_sort()
-		(row as Control).update_minimum_size()
+		row.update_minimum_size()
+		for child in row.get_children():
+			(child as Control).update_minimum_size()
 	for _frame in 20:
 		await get_tree().process_frame
 	print("  paused:  " + _describe(rows))

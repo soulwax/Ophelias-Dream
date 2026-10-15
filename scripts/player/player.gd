@@ -1474,6 +1474,10 @@ func toggle_lantern() -> bool:
 		return false
 	if not is_on_floor() or _airborne or sliding or _ground_speed() > Tune.WALK_SPEED + 0.1:
 		return false
+	# The lantern and a carried thing both take her right hand: like drawing
+	# the bow, taking the lantern out sets the carried thing down first.
+	if not lantern_hold.IsEquipped and is_instance_valid(carrying) and not drop_carried():
+		return false
 	return lantern_hold.Toggle(Tune.LANTERN_TOGGLE_SECONDS)
 
 
@@ -1614,6 +1618,9 @@ func pick_up(item: Carryable) -> bool:
 	if not _carry_allowed() or is_instance_valid(carrying) or not is_instance_valid(item) or not item.can_take():
 		return false
 	if carry_hold == null or (bow_hoist and (bow_hoist.Busy or bow_hoist.IsDrawn)) or sliding or _airborne:
+		return false
+	# Her right hand holds the lantern while it is out (or on its way).
+	if lantern_hold and (lantern_hold.IsEquipped or lantern_hold.Busy):
 		return false
 	if not aim._in_reach(self, item):
 		return false

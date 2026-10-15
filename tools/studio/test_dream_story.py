@@ -14,7 +14,7 @@ def main():
     assert len(story["branches"]) == 6
     assert len(story["small_talk"]) == 4
     assert len(story["events"]) == 3
-    assert story["event_talk"] == {"thread": 0, "window": 1}
+    assert story["event_talk"] == {"thread": 1, "window": 2}
     assert len(story["repair"]["choices"]) == 3
     assert {branch["id"] for branch in story["branches"]} == {
         "name", "waiting", "remember", "silence", "walk_beside", "present_need"

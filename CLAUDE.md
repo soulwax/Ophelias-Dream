@@ -69,6 +69,10 @@ godot --headless --path . tools/ending_probe.tscn       # three pages at the lak
 godot --headless --path . tools/dream_story_probe.tscn  # dream.json shape and story rules
 godot --headless --path . tools/dream_flow_probe.tscn   # walks the live dream to waking (RUN_DREAM_PACE=walk|sprint)
 godot --headless --path . tools/bow_probe.tscn          # bow pickup, hoist and checkpoint on the real player
+godot --headless --path . tools/interaction_probe.tscn  # real-input pick/place/drop, hold vs pause and freed targets, lantern vs carry, slope drops
+godot --headless --path . tools/spawn_probe.tscn        # where each chapter starts (PROBE_CHAPTER=mathilda, RUN_MEETING=1)
+godot --headless --path . tools/dream_pause_probe.tscn  # the Esc menu over a dream reply (PROBE_SHOT=<png> with a window)
+godot --headless --path . tools/dream_branches_probe.tscn # every memory answer kept, repair and rupture (isolated user dir, as dream_flow)
 godot --headless --path . tools/mathilda_probe.tscn     # Mathilda's chapter
 godot --headless --path . tools/dialogue_probe.tscn
 godot --headless --path . tools/house_domestic_probe.tscn
