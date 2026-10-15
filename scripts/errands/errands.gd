@@ -90,9 +90,41 @@ func ensure_built() -> void:
 	if is_built or Game.trail == null:
 		return
 	world_root()
+	_build_verbs()
 	is_built = true
 	built.emit()
 	_dev_hook()
+
+
+## The verbs that stand on their own (MASTERPLAN W06): the lookout bell and the
+## two places to warm her hands. Cupboards, brushable snow and snow branches are
+## placed by the errands that use them.
+func _build_verbs() -> void:
+	var trail := Game.trail
+	var lake := get_tree().get_first_node_in_group("lake")
+	if lake and not bool(lake.get("is_built")):
+		lake.call("_build")
+	# On its own post a step in front of the tower, below the two lanterns that
+	# read as headlights, facing back down the path she came by.
+	var lanterns: Array = lake.get("_lanterns") if lake else []
+	var front := trail.exit_point
+	if lanterns.size() >= 2:
+		front = ((lanterns[0] as Node3D).global_position + (lanterns[1] as Node3D).global_position) * 0.5
+	var back_down := trail.position_at(trail.offset_of(trail.exit_point) - 12.0) - front
+	back_down.y = 0.0
+	back_down = back_down.normalized() if back_down.length() > 0.1 else Vector3.FORWARD
+	Bell.make(world_root(), trail.on_ground(front + back_down * 1.6), atan2(back_down.x, back_down.z))
+	var house := trail.house
+	var stove := house.find_child("StoveChore", true, false) as Chore if house else null
+	if stove:
+		WarmSpot.make(world_root(), "StoveWarmth", house.to_global(Vector3(4.75, 0.15, -1.2)), "the stove",
+			func() -> bool: return is_instance_valid(stove) and stove.done)
+	var camp := get_tree().get_first_node_in_group("camp") as Camp
+	if camp:
+		camp.ensure_built()
+		if camp.fire_light:
+			WarmSpot.make(world_root(), "CampfireWarmth", trail.on_ground(camp.fire_light.global_position), "the fire",
+				func() -> bool: return true)
 
 
 ## Where errand pieces live: a plain Node3D under Errands, at the world origin.
@@ -289,7 +321,10 @@ func capture() -> Dictionary:
 			loose[item_id] = thing.global_transform
 	var pieces := {}
 	for id: String in _states:
-		pieces[id] = (_states[id][0] as Callable).call()
+		# A piece freed since it registered (used up, rebuilt) has nothing to keep.
+		var getter := _states[id][0] as Callable
+		if getter.is_valid():
+			pieces[id] = getter.call()
 	return {"version": 1, "errands": states, "sockets": held, "loose": loose, "carrying": carrying,
 		"gone": _gone.keys(), "pieces": pieces}
 
@@ -308,7 +343,7 @@ func restore(data: Dictionary) -> void:
 		errand.flags = (saved.get("flags", {}) as Dictionary).duplicate(true)
 	var pieces: Dictionary = data.get("pieces", {})
 	for id: String in pieces:
-		if _states.has(id):
+		if _states.has(id) and (_states[id][1] as Callable).is_valid():
 			(_states[id][1] as Callable).call(pieces[id])
 	var held: Dictionary = data.get("sockets", {})
 	var loose: Dictionary = data.get("loose", {})

@@ -1,10 +1,17 @@
 class_name VendorLoader
 extends RefCounted
 
-## Runtime loader for non-redistributable, proprietary vendor assets placed
-## in the git-ignored build/ folder (e.g. build/vendor/requested_*).
+## Runtime loader for non-redistributable, proprietary vendor assets.
 ## Because build/ has a .gdignore, assets are loaded directly from disk via
 ## FBXDocument, GLTFDocument, and Image rather than through ResourceLoader.
+##
+## One path contract (MASTERPLAN W04): a vendor path is relative to the vendor
+## root, e.g. "requested_nature/flowers/SM_MVV_Flowers_01_B_c1_LOD0.fbx".
+## - developing: <project>/build/vendor/
+## - exported:   <folder of the executable>/vendor/
+## - RUN_VENDOR=off: nothing is available, so every caller builds its fallback.
+## Older callers pass "build/vendor/..." and are accepted. Nothing here decides
+## whether a file may be shipped; that is the asset manifest's job (W15).
 
 const BUILD_ROOT := "build/vendor/"
 static var _models: Dictionary = {}
@@ -12,14 +19,48 @@ static var _textures: Dictionary = {}
 static var _wind_shader := preload("res://shaders/nature_wind.gdshader")
 
 
+## The folder vendor paths are relative to, or "" when vendor assets are off.
+static func root() -> String:
+	if OS.get_environment("RUN_VENDOR") == "off":
+		return ""
+	if OS.has_feature("template"):
+		return OS.get_executable_path().get_base_dir().path_join("vendor")
+	return ProjectSettings.globalize_path("res://" + BUILD_ROOT).trim_suffix("/")
+
+
+## The absolute file for a vendor path, or "" when vendor assets are off.
+static func resolve(rel_path: String) -> String:
+	var base := root()
+	if base.is_empty():
+		return ""
+	return base.path_join(rel_path.trim_prefix(BUILD_ROOT).trim_prefix("res://" + BUILD_ROOT))
+
+
+## Whether the vendor file is present; callers build their fallback otherwise.
+static func available(rel_path: String) -> bool:
+	var path := resolve(rel_path)
+	return not path.is_empty() and FileAccess.file_exists(path)
+
+
+## Frees the cached models and drops the cached textures. Game calls it when it
+## leaves the tree: static caches outlive the rendering server otherwise, and an
+## exported build crashed on quit releasing them.
+static func clear() -> void:
+	for cached: Variant in _models.values():
+		if is_instance_valid(cached):
+			(cached as Node).free()
+	_models.clear()
+	_textures.clear()
+
+
 static func load_model(rel_path: String) -> Node3D:
 	if _models.has(rel_path):
 		var cached: Node3D = _models[rel_path]
 		return cached.duplicate() if is_instance_valid(cached) else null
 
-	var path := ProjectSettings.globalize_path("res://" + rel_path)
-	if not FileAccess.file_exists(path):
+	if not available(rel_path):
 		return null
+	var path := resolve(rel_path)
 	var ext := path.get_extension().to_lower()
 	var root: Node3D = null
 	if ext == "fbx":
@@ -43,40 +84,44 @@ static func load_model(rel_path: String) -> Node3D:
 static func load_texture(rel_path: String) -> ImageTexture:
 	if _textures.has(rel_path):
 		return _textures[rel_path]
-	var path := ProjectSettings.globalize_path("res://" + rel_path)
-	if not FileAccess.file_exists(path):
+	if not available(rel_path):
 		return null
-	var img := Image.load_from_file(path)
+	var img := Image.load_from_file(resolve(rel_path))
 	if img == null or img.is_empty():
 		return null
+	# Mipmaps, or distant foliage and props shimmer.
+	if not img.has_mipmaps():
+		img.generate_mipmaps()
 	var tex := ImageTexture.create_from_image(img)
 	_textures[rel_path] = tex
 	return tex
 
 
-static func spawn_nature_prop(kind: String) -> Node3D:
-	var mesh_file := ""
-	match kind:
-		"flowers":
-			mesh_file = "flowers/SM_MVV_Flowers_01_B_c1_LOD0.fbx"
-		"ivy":
-			mesh_file = "ivy/SM_PAD_MV_Ivy01e_c1_LOD0.fbx"
-		"grass":
-			mesh_file = "grass/SM_PAD_SV_Grass02a_c1_LOD0.fbx"
-		"bush":
-			mesh_file = "bush/SM_MVV_Bush03_B_c1_LOD0.fbx"
-		_:
-			return null
+const NATURE_MESHES := {
+	"flowers": "flowers/SM_MVV_Flowers_01_B_c1_LOD0.fbx",
+	"ivy": "ivy/SM_PAD_MV_Ivy01e_c1_LOD0.fbx",
+	"grass": "grass/SM_PAD_SV_Grass02a_c1_LOD0.fbx",
+	"bush": "bush/SM_MVV_Bush03_B_c1_LOD0.fbx",
+}
 
-	var model_rel := BUILD_ROOT + "requested_nature/" + mesh_file
+
+## The vendor path of a nature prop's mesh, or "" for an unknown kind.
+static func nature_mesh(kind: String) -> String:
+	return "requested_nature/" + str(NATURE_MESHES[kind]) if NATURE_MESHES.has(kind) else ""
+
+
+static func spawn_nature_prop(kind: String) -> Node3D:
+	var model_rel := nature_mesh(kind)
+	if model_rel.is_empty():
+		return null
 	var node := load_model(model_rel)
 	if node == null:
 		return null
 
 	# Wire up nature wind material
-	var albedo := load_texture(BUILD_ROOT + "requested_nature/%s/%s_albedo.png" % [kind, kind])
-	var normal := load_texture(BUILD_ROOT + "requested_nature/%s/%s_normal.png" % [kind, kind])
-	var orm := load_texture(BUILD_ROOT + "requested_nature/%s/%s_orm.png" % [kind, kind])
+	var albedo := load_texture("requested_nature/%s/%s_albedo.png" % [kind, kind])
+	var normal := load_texture("requested_nature/%s/%s_normal.png" % [kind, kind])
+	var orm := load_texture("requested_nature/%s/%s_orm.png" % [kind, kind])
 
 	var mat := ShaderMaterial.new()
 	mat.shader = _wind_shader

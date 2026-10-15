@@ -36,6 +36,9 @@ func _ready() -> void:
 				if material and material.shader and material.shader.resource_path == "res://shaders/snow_ground.gdshader":
 					material.set_shader_parameter("terrain_noise", noise)
 		return
+	# Dev hook: RUN_SELFCHECK=1 (with RUN_PLAY=1) reports what this build has and quits.
+	if OS.get_environment("RUN_SELFCHECK") == "1":
+		add_child(SelfCheck.new())
 	if OS.get_environment("RUN_MATHILDA") == "1":
 		Game.mathilda_pov = true
 	var pending_run := RunSave.pending_snapshot()

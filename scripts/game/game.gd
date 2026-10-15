@@ -40,6 +40,7 @@ var trail: Trail
 var soundscape: Soundscape
 var dialogue: DialogueBubble
 var voice: Voice
+var wildlife: Wildlife
 var weather: Weather
 # Only in Ophelia's chapter; null in the dream and Mathilda's chapter.
 var errands: Errands
@@ -109,6 +110,12 @@ var hunt_started := false
 var _hunt_seconds := 0.0
 var audio_fade := 0.0
 var _audio_hold := 4
+
+
+# Quitting: release the vendor caches while the servers still run (an exported
+# build crashed releasing them later). Restarts keep the autoload, and the cache.
+func _exit_tree() -> void:
+	VendorLoader.clear()
 
 
 func _ready() -> void:
@@ -203,6 +210,7 @@ func reset() -> void:
 	soundscape = null
 	dialogue = null
 	voice = null
+	wildlife = null
 	weather = null
 	errands = null
 	active_note = null

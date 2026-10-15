@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.16.0 — 2026-10-15
+
+- Ring the lookout bell and warm her hands beside a lit stove or campfire, with reusable interactions for the upcoming errands.
+- Load optional vendor scenery beside exported builds, preserve foliage fallbacks when it is absent, and release cached models safely on exit.
+
 ## 0.2.15.0 — 2026-10-15
 
 - Keep dream replies legible when the pause menu opens, and let the player manage a carried item and lantern without conflicting hand actions.

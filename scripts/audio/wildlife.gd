@@ -32,6 +32,7 @@ var _retarget := 0.0
 
 
 func _ready() -> void:
+	Game.wildlife = self
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	for kind in ["flump", "tree_creak", "crow", "raven"]:
 		_clips[kind] = _load_set(kind)
@@ -191,6 +192,11 @@ func _series(at: Vector3, kind: String, count: int, spacing: float, spl: float) 
 		await get_tree().create_timer(spacing * randf_range(0.8, 1.3), false).timeout
 		if not is_inside_tree():
 			return
+
+
+## Snow sliding off a branch at a point (a SnowBranch she knocked, or shot).
+func flump(at: Vector3) -> void:
+	_shot("flump", at, Loudness.SNOW_FLUMP + randf_range(-2.0, 1.0), randf_range(0.9, 1.08))
 
 
 func _shot(kind: String, at: Vector3, spl: float, pitch: float) -> void:

@@ -10,6 +10,11 @@ extends Node
 const LINES := "res://assets/audio/voice/lines.json"
 const CLIPS := "res://assets/audio/voice/"
 # Only a higher number cuts off a playing line (a misread may cut a misread).
+## The bell's answer until its line is in the script (docs/mvp/STORY_CONTRACT.md, section 7).
+const BELL_ANSWER := "Here."
+
+signal bell_answered
+
 const PRIORITY := {"ending": 4, "page": 3, "deciphered": 3, "turned": 3, "moment": 3, "place": 2, "revisit": 2,
 	"spent": 2, "fall": 2, "encounter": 4, "bored": 1, "memory": 1, "call": 1, "misread": 1, "cold": 1}
 const STAGES := ["hope", "doubt", "resolve"]
@@ -375,6 +380,9 @@ func _memory_tick(outdoors: bool, speed: float) -> void:
 func _cold_tick(outdoors: bool) -> void:
 	if not outdoors or _outdoor_time < Tune.COLD_AFTER or _clock < _cold_next or _busy() or _cold_at >= _cold.size():
 		return
+	# She warmed her hands at a fire a little while ago (WarmSpot).
+	if Game.player and Game.player.warmth > 0.0:
+		return
 	var weather := Game.weather
 	if weather == null or (weather.whiteout <= 0.5 and weather.gust <= 0.6):
 		return
@@ -430,6 +438,27 @@ func _speak_ending(ticket: int) -> void:
 	var line: Dictionary = _endings.get(kind, {})
 	if not line.is_empty():
 		_say(line)
+
+
+## The lookout bell was rung (Bell): "Here.", from the far trees in her own
+## voice, like the trees that already answer (errands spec, verb 7). It plays
+## the answers line "bell" once one is written and baked; until then the
+## subtitle carries it. Nothing answers once she has turned around.
+func answer_bell() -> void:
+	if Game.turned_around or Game.player == null or Game.trail == null or Game.trail.flora == null:
+		return
+	var line: Dictionary = _answers.get("bell", {"text": BELL_ANSWER})
+	var stream := _clip(line) if _answers.has("bell") else null
+	var at := Voice.echo_from(Game.player.global_position, Game.trail.flora.tree_positions())
+	if stream and at != Vector3.INF:
+		_answer_close = false
+		_echo_stopped_early = false
+		_echo.stream = stream
+		_echo.global_position = at
+		Loudness.place(_echo, Tune.VOICE_SPL - 3.0, true)
+		_echo.play()
+	Game.murmur_line("…" + str(line.text))
+	bell_answered.emit()
 
 
 # At the lake, after her plea: "Okay.", from the ice behind her, in her own

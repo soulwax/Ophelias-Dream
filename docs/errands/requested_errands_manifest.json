@@ -1,7 +1,7 @@
 {
   "source_root": "C:\\Users\\soulwax\\OneDrive - Biz\\Desktop\\Assets",
   "local_use_only": true,
-  "note": "Owner-supplied asset bank. Leartes Studios Carpenter's Workshop and the WW2 storm lamp scan; no verified redistribution permission, so the files stay ignored under assets/vendor/requested_errands/. Errand props fall back to built stand-ins without them. Poly Haven's CC0 wooden_lantern_01 is tracked and credited in assets/vendor/polyhaven/provenance.json instead.",
+  "note": "Owner-supplied asset bank. Leartes Studios Carpenter's Workshop and the WW2 storm lamp scan; no verified redistribution permission, so the files stay ignored under build/vendor/requested_errands/. Errand props fall back to built stand-ins without them. Poly Haven's CC0 wooden_lantern_01 is tracked and credited in assets/vendor/polyhaven/provenance.json instead.",
   "sources": [
     {
       "source": "CarpentersWorkshopForward\\Carpenters_Workshop_Forward\\Assets\\LeartesStudios\\CarpentersWorkshop\\Art\\Meshes\\SM_Crate.bin",

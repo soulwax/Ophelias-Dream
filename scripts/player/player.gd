@@ -117,6 +117,10 @@ var _interact_buffer := 0.0
 ## remembered), and how far along it is, 0..1. Things that take a while say so
 ## with interact_hold_seconds(); everything else is instant.
 var hold_target: Node3D
+## Crouched at a WarmSpot while her hold there is working.
+var warming := false
+## Seconds of warmth left after warming her hands: cold lines wait, breath slows.
+var warmth := 0.0
 var hold_progress := 0.0
 # Held now (by interact, or by a left click on the thing under the reticle).
 var _holding := false
@@ -268,6 +272,7 @@ func _tick_hold(delta: float) -> void:
 		and Game.phase in [Game.Phase.PLAYING, Game.Phase.DREAM] and aim.target == hold_target
 		and (aim.direct or not _hold_by_click) and not (bow_hoist and bow_hoist.Busy)
 		and aim._in_reach(self, hold_target))
+	warming = working and hold_target.has_method("warms_her")
 	for thing: Variant in _holds.keys():
 		var entry: Array = _holds[thing]
 		if working and thing == hold_target:
@@ -1030,7 +1035,8 @@ func _arm_free(pivot: Vector3, back: Vector3, length: float) -> float:
 func _animate(delta: float, moving: bool, sprinting: bool) -> void:
 	var air_target := 1.0 if _airborne and (_jumped or _air_time > 0.12) else 0.0
 	_air_weight = move_toward(_air_weight, air_target, delta * (12.0 if air_target > 0.0 else 9.0))
-	_slide_weight = move_toward(_slide_weight, 1.0 if sliding else 0.0, delta * 8.0)
+	# The slide pose doubles as her crouch at a fire, eased in more gently.
+	_slide_weight = move_toward(_slide_weight, 1.0 if sliding or warming else 0.0, delta * (3.0 if warming and not sliding else 8.0))
 	var flight := _leap_progress()
 	if stride:
 		stride.update(_ground_speed())
@@ -1094,6 +1100,10 @@ func _breathe(delta: float, sprinting: bool) -> void:
 		target = minf(1.0, 0.2 + spent * 1.1)
 	if exhaust_left > 0.0:
 		target = 1.0
+	elif warmth > 0.0:
+		# Warmed at a fire: her breath comes slower for a while.
+		target *= 0.5
+	warmth = maxf(warmth - delta, 0.0)
 	strain = move_toward(strain, target, delta * (0.8 if target > strain else 0.09))
 	if breath:
 		breath.strain = strain
