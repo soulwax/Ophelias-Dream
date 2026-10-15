@@ -1,8 +1,12 @@
 # Ophelia's Dream — remaining work
 
-The [playable direction](docs/DIRECTION.md) is the current plan. The longer
-[narrative intent](docs/NARRATIVE_INTENT.md) is preserved for reference; many of
-its implementation passes are already complete.
+> Start with [MASTERPLAN.md](MASTERPLAN.md) for the reconciled MVP backlog,
+> subagent assignments, dependencies, and verification gates. The older checklist
+> below is historical where it refers to removed threats or a road escape.
+
+The older [playable direction](docs/DIRECTION.md) and longer
+[narrative intent](docs/NARRATIVE_INTENT.md) are preserved for reference; many of
+their implementation passes are already complete.
 
 The figure and the Listener were removed on 2026-10-05. Until new threats are
 built from [THREATS.md](docs/THREATS.md), the run has no catch; the checks below

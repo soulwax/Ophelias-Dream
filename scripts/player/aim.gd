@@ -22,6 +22,7 @@ var far: Node3D
 
 
 func update(player: Player) -> void:
+	_update_marks(player)
 	var previous := target
 	target = null
 	direct = false
@@ -65,6 +66,26 @@ func update(player: Player) -> void:
 	if previous and kept_angle <= best_angle + Tune.AIM_STICKY:
 		best = previous
 	target = best
+
+
+# A page's label shows only once the page is within reading reach of her feet
+# and in plain sight (docs/mvp/STORY_CONTRACT.md, C3): not a marker. Unlike a
+# press, a run does not hide it, and a little slack keeps it from flickering.
+func _update_marks(player: Player) -> void:
+	if not player.is_inside_tree():
+		return
+	var feet := player.global_position + Vector3(0.0, 0.1, 0.0)
+	var chest := player.global_position + Vector3(0.0, 1.2, 0.0)
+	for node in player.get_tree().get_nodes_in_group("field_notes"):
+		var note := node as FieldNote
+		var mark := note.get_node_or_null("Mark") as Label3D if note else null
+		if mark == null:
+			continue
+		var reach := Tune.READ_DISTANCE + (0.4 if mark.visible else 0.0)
+		var shown := note.is_visible_in_tree() and feet.distance_to(_closest(note, feet)) <= reach
+		if shown:
+			shown = not _blocked(player, chest, note.global_position + Vector3(0.0, 1.0, 0.0), note)
+		mark.visible = shown
 
 
 static func centre_of(thing: Node3D) -> Vector3:

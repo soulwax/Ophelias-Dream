@@ -11,6 +11,8 @@ var _lines := {}
 
 
 func _ready() -> void:
+	# main.gd stops at the title menu unless a run is asked for (since 9b7a3fd).
+	OS.set_environment("RUN_MATHILDA" if OS.get_environment("PROBE_CHAPTER") == "mathilda" else "RUN_PLAY", "1")
 	Game.mathilda_pov = OS.get_environment("PROBE_CHAPTER") == "mathilda"
 	_run.call_deferred()
 

@@ -5,12 +5,14 @@ var _failed := 0
 
 
 func _ready() -> void:
+	# main.gd stops at the title menu unless a run is asked for (since 9b7a3fd).
+	OS.set_environment("RUN_PLAY", "1")
 	_run.call_deferred()
 
 
 func _run() -> void:
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
-	main.get_node("EditableLevel").set_meta("seed", 1701)
+	_editable(main).set_meta("seed", 1701)
 	get_tree().root.add_child(main)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -85,3 +87,14 @@ func _capture(main: Node, ground: Ground) -> void:
 	var image := get_viewport().get_texture().get_image()
 	var result := image.save_png(OS.get_environment("GROUND_MATERIAL_SHOT"))
 	_check(result == OK, "GPU frame saved with actual %s shader branch" % ("lean" if Game.lean_graphics else "full"))
+
+
+## main.tscn no longer embeds the editable level; main.gd loads it when it is
+## missing (since 9b7a3fd). Add it the same way so it can be set up first.
+func _editable(main: Node) -> Node:
+	var snapshot := main.get_node_or_null("EditableLevel")
+	if snapshot == null:
+		snapshot = (load("res://scenes/editable_level.scn") as PackedScene).instantiate()
+		snapshot.name = "EditableLevel"
+		main.add_child(snapshot)
+	return snapshot

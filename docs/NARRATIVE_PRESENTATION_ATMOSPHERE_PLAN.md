@@ -1,5 +1,9 @@
 # Ophelia's Dream: storytelling, presentation, and atmosphere roadmap
 
+> [MASTERPLAN.md](../MASTERPLAN.md) reconciles this roadmap with the current
+> implementation and the other plans. It owns MVP scope, subagent work packages,
+> dependencies, and acceptance gates; this document retains the creative direction.
+
 Written 2026-10-11 against the current Godot 4.7.2 Mono project. This is a game-wide design and production plan, not a record of completed implementation.
 
 ## 1. The experience we are building

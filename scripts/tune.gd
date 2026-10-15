@@ -68,11 +68,11 @@ const GRACE_CHEST_LIFT := 0.0625
 const GRACE_AUTHORED_ARM := 0.25
 const GRACE_AUTHORED_COUNTER := 0.19
 # Feminine hip sway and arm carriage dynamics.
-const GRACE_HIP_SWAY_YAW := 0.11
-const GRACE_HIP_SWAY_ROLL := 0.087
-const GRACE_HIP_SHIFT := 0.025
-const GRACE_ELBOW_TUCK := 0.13
-const GRACE_FOREARM_SOFT := 0.28
+const GRACE_HIP_SWAY_YAW := 0.138
+const GRACE_HIP_SWAY_ROLL := 0.109
+const GRACE_HIP_SHIFT := 0.031
+const GRACE_ELBOW_TUCK := 0.162
+const GRACE_FOREARM_SOFT := 0.35
 # Carriage eases into a walk and settles after stopping (seconds).
 const GRACE_WALK_ENTER := 0.18
 const GRACE_WALK_EXIT := 0.24
@@ -94,7 +94,7 @@ const BOW_BACK_POSITION := Vector3(0.04, 1.48, -0.22)
 const BOW_BACK_ROLL := -0.45
 const BOW_TRAIL_OFFSET := 12.0
 const BOW_DRAW_SECONDS := 1.8
-const BOW_HAND_POSITION := Vector3(0.33, 1.3, 0.22)
+const BOW_HAND_POSITION := Vector3(0.33, 1.52, 0.32)
 const BOW_HAND_ROLL := -0.18
 const BOW_COMBAT_SPEED := 0.78
 # Found lantern: pickup duration, model, reach, sockets and lighting.

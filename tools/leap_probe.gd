@@ -15,6 +15,8 @@ var _steps: Array = []
 
 
 func _ready() -> void:
+	# main.gd stops at the title menu unless a run is asked for (since 9b7a3fd).
+	OS.set_environment("RUN_PLAY", "1")
 	process_priority = -100
 	process_physics_priority = -100
 	_run.call_deferred()

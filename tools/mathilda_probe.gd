@@ -1,6 +1,7 @@
 extends Node
 var ticks := 0
 func _ready() -> void:
+ OS.set_environment("RUN_MATHILDA", "1")
  Game.mathilda_pov = true
  add_child(load("res://scenes/main.tscn").instantiate())
 func _process(_delta: float) -> void:

@@ -9,6 +9,8 @@ var _template_owner := Node3D.new()
 
 
 func _ready() -> void:
+	# main.gd stops at the title menu unless a run is asked for (since 9b7a3fd).
+	OS.set_environment("RUN_PLAY", "1")
 	_run.call_deferred()
 
 
@@ -23,7 +25,7 @@ func _run() -> void:
 func _fixture(kind: String) -> void:
 	print("Snapshot fixture: " + kind)
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
-	var snapshot := main.get_node("EditableLevel")
+	var snapshot := _editable(main)
 	if _template:
 		var old_trail := snapshot.get_node("Trail")
 		snapshot.remove_child(old_trail)
@@ -264,3 +266,14 @@ func _check(ok: bool, label: String) -> void:
 	print(("  ok   " if ok else "  FAIL ") + label)
 	if not ok:
 		_failed += 1
+
+
+## main.tscn no longer embeds the editable level; main.gd loads it when it is
+## missing (since 9b7a3fd). Add it the same way so it can be set up first.
+func _editable(main: Node) -> Node:
+	var snapshot := main.get_node_or_null("EditableLevel")
+	if snapshot == null:
+		snapshot = (load("res://scenes/editable_level.scn") as PackedScene).instantiate()
+		snapshot.name = "EditableLevel"
+		main.add_child(snapshot)
+	return snapshot

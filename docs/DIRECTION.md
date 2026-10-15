@@ -1,5 +1,9 @@
 # Ophelia's Dream: creative direction
 
+> MVP production order and scope now live in [MASTERPLAN.md](../MASTERPLAN.md).
+> The sequence below includes historical threat and road-escape assumptions;
+> use the masterplan's reconciliation table and current code for remaining work.
+
 > The figure and the Listener were removed on 2026-10-05. The steps and the validation record below that rely on them wait for replacements from [THREATS.md](THREATS.md).
 
 > The story is now the search for Mathilda (2026-10-06): see [the design](superpowers/specs/2026-10-06-mathilda-story-design.md). The HUD has no objective; pages are deciphered in the journal.

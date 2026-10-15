@@ -32,6 +32,16 @@ ITEMS = {
 		"mesh": "SM_PAD_MV_Ivy01e_c1_LOD0.fbx",
 		"stem": "T_PAD_IvySet_2048",
 	},
+	"grass": {
+		"folder": BANK / "PAD_SV_GrassSet_Grass02a_00201e0e/PAD_SV_GrassSet_Grass02a/Unity/Rocket/PAD_SV_GrassSet_Grass02a",
+		"mesh": "SM_PAD_SV_Grass02a_c1_LOD0.fbx",
+		"stem": "T_PAD_GrassSet_2048",
+	},
+	"bush": {
+		"folder": BANK / "MVV_BushesSet_Bush03_B_9577c737/MVV_BushesSet_Bush03_B/Unity/Rocket/MVV_BushesSet_Bush03_B",
+		"mesh": "SM_MVV_Bush03_B_c1_LOD0.fbx",
+		"stem": "T_MVV_Bushes_2048",
+	},
 }
 
 

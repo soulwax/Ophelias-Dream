@@ -186,12 +186,12 @@ public partial class BowHoist : SkeletonModifier3D
 			{
 				var readyPosition = _held.Origin + new Vector3(
 					Mathf.Lerp(0.0f, -0.04f, RunWeight),
-					Mathf.Lerp(0.0f, -0.13f, RunWeight) + 0.15f * AimWeight,
+					Mathf.Lerp(0.0f, -0.13f, RunWeight) + 0.04f * AimWeight,
 					0.0f);
 				var readyRotation = _held.Basis.GetRotationQuaternion().Slerp(
 					ForwardGuardRotation(AimWeight), AimWeight);
 				HoldBow(readyPosition, readyRotation, 1);
-				UpdateNockedArrow(readyPosition);
+				UpdateNockedArrow(readyPosition, readyRotation);
 				SelectArm(false);
 				Vector3 support = StringHandTarget(readyPosition, readyRotation, AimWeight, RunWeight);
 				SolveArm(support, 1);
@@ -316,15 +316,13 @@ public partial class BowHoist : SkeletonModifier3D
 	{
 		SelectArm(true);
 		var readyPosition = _held.Origin + new Vector3(0.0f, 0.12f, 0.08f);
-		HoldBow(readyPosition, _held.Basis.GetRotationQuaternion(), 1);
+		var readyRotation = ForwardGuardRotation(1);
+		HoldBow(readyPosition, readyRotation, 1);
 		SelectArm(false);
 		float draw = Ease(t / 0.42f);
-		Vector3 target = new(
-			Mathf.Lerp(-0.15f, -0.12f, draw),
-			Mathf.Lerp(1.42f, 1.5f, draw),
-			Mathf.Lerp(0.12f, 0.28f, draw));
 		if (t > 0.72f)
-			target.Z = Mathf.Lerp(0.28f, 0.14f, Ease((t - 0.72f) / 0.28f));
+			draw = 1.0f - Ease((t - 0.72f) / 0.28f);
+		Vector3 target = StringHandTarget(readyPosition, readyRotation, draw, RunWeight);
 		SolveArm(target, 1);
 		CurlFingers(_rig.GetBoneGlobalPose(_hand).Basis.X.Normalized(), t < 0.78f ? 1 : 0);
 		if (!_gestureSignalSent && t >= 0.58f)
@@ -354,16 +352,16 @@ public partial class BowHoist : SkeletonModifier3D
 		return bowPosition
 			- frame.X * 0.34f
 			+ frame.Y * (0.03f + 0.03f * aim)
-			- frame.Z * Mathf.Lerp(0.08f, 0.28f, aim)
+			- frame.Z * Mathf.Lerp(0.08f, 0.20f, aim)
 			+ Vector3.Down * 0.08f * run;
 	}
 
-	private void UpdateNockedArrow(Vector3 position)
+	private void UpdateNockedArrow(Vector3 position, Quaternion bowRotation)
 	{
 		if (_nockedArrow == null) return;
 		_nockedArrow.Visible = HasArrowForAim && AimWeight > 0.18f;
 		if (!_nockedArrow.Visible) return;
-		var basis = _rig.GlobalBasis * _held.Basis * new Basis(Vector3.Right, -Mathf.Pi * 0.5f);
+		var basis = _rig.GlobalBasis * new Basis(bowRotation) * new Basis(Vector3.Right, -Mathf.Pi * 0.5f);
 		var localPosition = position + new Vector3(0.0f, 0.01f, 0.035f);
 		_nockedArrow.GlobalTransform = new Transform3D(basis, _rig.GlobalTransform * localPosition);
 	}
@@ -371,7 +369,7 @@ public partial class BowHoist : SkeletonModifier3D
 	private void PoseSupportArm(float weight)
 	{
 		SelectArm(false);
-		var readyPosition = _held.Origin + new Vector3(0.0f, 0.15f * AimWeight, 0.0f);
+		var readyPosition = _held.Origin + new Vector3(0.0f, 0.04f * AimWeight, 0.0f);
 		var rotation = _held.Basis.GetRotationQuaternion().Slerp(ForwardGuardRotation(AimWeight), AimWeight);
 		Vector3 support = StringHandTarget(readyPosition, rotation, AimWeight, RunWeight);
 		Vector3 natural = _rig.GetBoneGlobalPose(_hand).Origin;
@@ -459,8 +457,12 @@ public partial class BowHoist : SkeletonModifier3D
 		Vector3 shoulder = upper.Origin;
 		float a = shoulder.DistanceTo(fore.Origin);
 		float b = fore.Origin.DistanceTo(hand.Origin);
+		if (IsDrawn || _gesture is Gesture.Draw or Gesture.Shoot)
+			target = ConstrainCombatReach(target, shoulder, a, b);
 		Vector3 toward = target - shoulder;
-		float distance = Mathf.Clamp(toward.Length(), Mathf.Abs(a - b) + 0.005f, a + b - 0.005f);
+		// Keep a visible elbow bend; a straight, locked elbow is outside her usable pose range.
+		float maxReach = Mathf.Sqrt(a * a + b * b + 2.0f * a * b * Mathf.Cos(Mathf.DegToRad(14.0f)));
+		float distance = Mathf.Clamp(toward.Length(), Mathf.Abs(a - b) + 0.015f, maxReach);
 		Vector3 direction = toward.Normalized();
 		// Keep the active elbow outside its shoulder, away from the torso.
 		Vector3 pole = new Vector3(-GripSign, 0.1f, 0.15f);
@@ -469,7 +471,13 @@ public partial class BowHoist : SkeletonModifier3D
 		float height = Mathf.Sqrt(Mathf.Max(a * a - along * along, 0));
 		Vector3 elbow = shoulder + direction * along + perpendicular * height;
 		Vector3 end = shoulder + direction * distance;
-		Quaternion turn = new Quaternion((fore.Origin - shoulder).Normalized(), (elbow - shoulder).Normalized());
+		Vector3 upperDirection = (fore.Origin - shoulder).Normalized();
+		Vector3 desiredUpperDirection = (elbow - shoulder).Normalized();
+		Quaternion turn = new Quaternion(upperDirection, desiredUpperDirection);
+		float shoulderSwing = 2.0f * Mathf.Acos(Mathf.Clamp(Mathf.Abs(turn.W), 0.0f, 1.0f));
+		const float maxShoulderSwing = 1.92f; // 110 degrees from the evaluated pose.
+		if (shoulderSwing > maxShoulderSwing)
+			turn = Quaternion.Identity.Slerp(turn, maxShoulderSwing / shoulderSwing);
 		SetGlobalRotation(_upper, upper.Basis.GetRotationQuaternion().Slerp(
 			turn * upper.Basis.GetRotationQuaternion(), weight));
 		// Parent changed: read the evaluated forearm once before solving its rotation.
@@ -479,6 +487,32 @@ public partial class BowHoist : SkeletonModifier3D
 		SetGlobalRotation(_fore, fore.Basis.GetRotationQuaternion().Slerp(
 			turn * fore.Basis.GetRotationQuaternion(), weight));
 		HandError = _rig.GetBoneGlobalPose(_hand).Origin.DistanceTo(target);
+	}
+
+	private Vector3 ConstrainCombatReach(Vector3 target, Vector3 shoulder, float upperLength, float forearmLength)
+	{
+		Transform3D chest = _rig.GetBoneGlobalPose(_chest);
+		Vector3 localTarget = chest.AffineInverse() * target;
+		Vector3 localShoulder = chest.AffineInverse() * shoulder;
+		float midline = _usingLeft ? -0.035f : 0.035f;
+		localTarget.X = _usingLeft
+			? Mathf.Max(localTarget.X, midline)
+			: Mathf.Min(localTarget.X, midline);
+		// Hands may reach forward or slightly behind the shoulder, but cannot pass through the torso.
+		localTarget.Z = Mathf.Clamp(localTarget.Z, localShoulder.Z - 0.18f, localShoulder.Z + 0.62f);
+		localTarget.Y = Mathf.Clamp(localTarget.Y, localShoulder.Y - 0.48f, localShoulder.Y + 0.58f);
+		Vector3 constrained = chest * localTarget;
+		Vector3 offset = constrained - shoulder;
+		float maxReach = Mathf.Sqrt(
+			upperLength * upperLength + forearmLength * forearmLength
+			+ 2.0f * upperLength * forearmLength * Mathf.Cos(Mathf.DegToRad(14.0f)));
+		float minReach = Mathf.Abs(upperLength - forearmLength) + 0.015f;
+		float length = offset.Length();
+		if (length > maxReach)
+			constrained = shoulder + offset / length * maxReach;
+		else if (length < minReach && length > 0.0001f)
+			constrained = shoulder + offset / length * minReach;
+		return constrained;
 	}
 
 	private void RotateGlobal(int bone, Quaternion rotation)

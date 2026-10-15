@@ -10,10 +10,16 @@ var transcript: PackedStringArray = []
 
 func _ready() -> void:
 	OS.set_environment("RUN_MEETING", "1")
+	OS.set_environment("RUN_MATHILDA", "1")
 	Game.mathilda_pov = true
 	add_child(load("res://scenes/main.tscn").instantiate())
-	for i in 12:
+	# The doorway is staged once main.gd has finished loading.
+	for i in 600:
 		await get_tree().process_frame
+		if Game.voice and Game.voice.get("_going_home") and Game.player.global_position.distance_to(Game.voice._ophelia.global_position) < 4.0:
+			break
+	for i in 6:
+		await get_tree().physics_frame
 	var chapter: Node = Game.voice
 	assert(chapter._going_home and is_instance_valid(chapter._ophelia), "Ophelia waits at the door")
 	assert(chapter._near_ophelia(), "she starts within reach")

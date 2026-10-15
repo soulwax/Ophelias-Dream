@@ -282,8 +282,15 @@ func _build() -> void:
 	ending = EndCard.new()
 	add_child(ending)
 	add_child(preload("res://scripts/ui/dream_menu.gd").new())
+	# Its own layer, above every game overlay (dream interface 21, bubble 22,
+	# reflection 26, dream journal 28, conversation 30) and below the loading
+	# screen (120) and the signal glass (128).
+	var menu_layer := CanvasLayer.new()
+	menu_layer.name = "PauseLayer"
+	menu_layer.layer = 60
+	add_child(menu_layer)
 	menu = PauseMenu.new()
-	add_child(menu)
+	menu_layer.add_child(menu)
 	_debug = UiChrome.label("", 14, UiChrome.MUTED)
 	_debug.visible = false
 	_debug.set_anchors_preset(Control.PRESET_TOP_RIGHT)

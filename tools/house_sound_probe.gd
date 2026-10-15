@@ -3,6 +3,8 @@ extends Node
 var failed := false
 
 func _ready() -> void:
+	# main.gd stops at the title menu unless a run is asked for (since 9b7a3fd).
+	OS.set_environment("RUN_PLAY", "1")
 	_run.call_deferred()
 
 func check(value: bool, description: String) -> void:
@@ -13,7 +15,7 @@ func check(value: bool, description: String) -> void:
 
 func settle(audio: StormAudio, ears: Vector3, shelter: float = 1.0) -> float:
 	for step in range(120):
-		audio._place_door_leak(ears,.8,.4,shelter)
+		audio._place_door_leak(ears,.8,.4,shelter,0.0)
 	return audio._door_leak.volume_db
 
 func _run() -> void:
@@ -31,10 +33,13 @@ func _run() -> void:
 	check(audio._door_leak.playing and audio._door_leak.bus==&"Ambience","recorded loop uses existing ambience routing")
 	check(settle(audio,ears)<-79,"closed front door silences local wind")
 	var door := house.doors["front"] as HouseDoor
+	# The front door is swollen shut (the shove chore, since f6c236e); this probe is about sound.
+	door.jam_shoves = 0
 	Game.player.global_position = house.to_global(Vector3(0,.08,3.4))
 	check(door.interact(),"front door physically opens")
 	for frame in range(120): await get_tree().physics_frame
 	var open_level := settle(audio,ears)
+	print("HOUSE SOUND front door angle %.1f deg, leak %.1f dB" % [rad_to_deg(door._motion.angle), open_level])
 	check(open_level> -55,"open front door admits local wind")
 	var occluded := settle(audio,house.to_global(Vector3(-3.8,1.4,2.7)))
 	check(occluded<open_level-20,"closed room partition attenuates the leak")

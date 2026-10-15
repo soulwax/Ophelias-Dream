@@ -64,6 +64,15 @@ func _start() -> void:
 	# Dev hook: RUN_MEETING=1 starts at the doorstep, RUN_MEETING=open also opens the meeting.
 	var meeting := OS.get_environment("RUN_MEETING")
 	if meeting != "":
+		# main.gd is still loading: the hidden editable snapshot keeps its collision
+		# until it has been applied and freed, and settling on it lifts Ophelia
+		# above the doorstep. Wait for it to go.
+		for tick in 600:
+			var snapshot := get_parent().get_node_or_null("EditableLevel")
+			if snapshot == null or snapshot.is_queued_for_deletion():
+				break
+			await get_tree().process_frame
+		await get_tree().physics_frame
 		for object_name in _object_names:
 			_inspected[object_name] = true
 		_mathilda_seen["arrival"] = true

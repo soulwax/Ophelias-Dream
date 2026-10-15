@@ -432,7 +432,9 @@ func _understory(at: Vector3, rolls: Array, lean: bool) -> void:
 		if lean and rolls[k * 3 + 2] >= Tune.FOREST_LEAN_SHARE:
 			continue
 		undergrowth_count += 1
-		var model := PACK + ("card_fir" if rolls[k * 3 + 2] < 0.6 else "card_bush")
+		var has_bush := FileAccess.file_exists("res://build/vendor/requested_nature/bush/SM_MVV_Bush03_B_c1_LOD0.fbx")
+		var bush_model := "bush" if has_bush else (PACK + "card_bush")
+		var model := PACK + "card_fir" if rolls[k * 3 + 2] < 0.6 else bush_model
 		_add(model, Vector3(x, _ground.height_at(x, z) - 0.05, z), angle * 3.7, lerpf(0.8, 1.6, rolls[k * 3 + 1]), true)
 
 
@@ -466,7 +468,8 @@ func _plant_clearings() -> void:
 					model = "flowers"
 					scale = lerpf(0.5, 0.9, size_roll)
 				else:
-					model = PACK + "grass_card"
+					var has_grass := FileAccess.file_exists("res://build/vendor/requested_nature/grass/SM_PAD_SV_Grass02a_c1_LOD0.fbx")
+					model = "grass" if has_grass else (PACK + "grass_card")
 					scale = lerpf(0.6, 1.2, size_roll)
 			else:
 				if mask > 0.2 and mask < 0.5 and roll < 0.12:

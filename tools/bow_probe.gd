@@ -10,6 +10,7 @@ var _camera: Camera3D
 var _sheet: Image
 var _frame := 0
 var _capture_tag := "hoist"
+var _capture_view := "three_quarter"
 
 
 func _ready() -> void:
@@ -143,7 +144,7 @@ func _combat_and_arrows() -> void:
 	Input.action_press("aim_bow")
 	await _ticks(12)
 	_check(_player.bow_hoist.AimWeight > 0.5, "aim blends her support hand and nocks a finite arrow")
-	_check(_player.bow_hoist.HandError < 0.1, "the supporting hand remains within reach while aiming")
+	_check(_player.bow_hoist.HandError < 0.1, "the supporting hand remains within reach while aiming (%.3f m)" % _player.bow_hoist.HandError)
 	_capture_tag = "combat"
 	_frame = 0
 	if _sheet:
@@ -218,8 +219,12 @@ func _draw_and_stow(carried: Node3D) -> void:
 		await _capture()
 	Input.action_release("move_forward")
 	Input.action_release("sprint")
-	await _ticks(15)
-	await _capture()
+	await _ticks(45)
+	for view in ["front", "side", "back"]:
+		_capture_view = view
+		_frame = 0
+		await _capture()
+	_capture_view = "three_quarter"
 	_check(_player.bow_hoist.IsDrawn and not _player.bow_hoist.Busy, "draw finishes in a held bow pose")
 	_check(draws[0] == 1 and Game.has_bow, "draw fires once and preserves ownership")
 	_check(carried.get_parent() == _player.bow_hoist.get_parent(), "same bow follows the hand rather than the back attachment")
@@ -257,8 +262,14 @@ func _capture() -> void:
 	if _camera == null:
 		return
 	var rig := _player.bow_hoist.get_parent() as Skeleton3D
-	var side := -1.0 if _capture_tag == "hoist" else 1.0
-	_camera.look_at_from_position(rig.to_global(Vector3(3.2 * side, 1.65, -3.4)), rig.to_global(Vector3(0.0, 1.15, 0.0)))
+	var view_offset := Vector3(3.2, 0.5, -3.4)
+	match _capture_view:
+		"front": view_offset = Vector3(0.0, 0.5, -4.8)
+		"side": view_offset = Vector3(4.8, 0.5, 0.0)
+		"back": view_offset = Vector3(0.0, 0.5, 4.8)
+		_:
+			view_offset = Vector3(3.2, 0.5, -3.4 if _capture_tag == "hoist" else 3.4)
+	_camera.look_at_from_position(rig.to_global(view_offset + Vector3(0.0, 1.15, 0.0)), rig.to_global(Vector3(0.0, 1.15, 0.0)))
 	await RenderingServer.frame_post_draw
 	var shot := get_viewport().get_texture().get_image()
 	shot.save_png(ProjectSettings.globalize_path("res://build/animation/bow/%s_%02d.png" % [_capture_tag, _frame]))

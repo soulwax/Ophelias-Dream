@@ -31,6 +31,14 @@ static func spawn(file_name: String) -> Node3D:
 		var vendor := VendorLoader.spawn_nature_prop("ivy")
 		if vendor:
 			return vendor
+	if file_name == "grass" or file_name == "SM_Env_Grass_01.fbx" or file_name == "SM_Env_Moss_Lumps_03.fbx":
+		var vendor := VendorLoader.spawn_nature_prop("grass")
+		if vendor:
+			return vendor
+	if file_name == "bush" or file_name == "card_bush" or file_name.begins_with("SM_Env_Bush"):
+		var vendor := VendorLoader.spawn_nature_prop("bush")
+		if vendor:
+			return vendor
 	if not REPLACEMENTS.has(file_name):
 		return null
 	var replacement: String = REPLACEMENTS[file_name]

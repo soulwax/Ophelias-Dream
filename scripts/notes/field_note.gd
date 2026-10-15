@@ -60,7 +60,9 @@ func _build() -> void:
 	marker.outline_size = 8
 	marker.position = Vector3(0, 0.85, 0)
 	marker.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	marker.no_depth_test = true
+	# Hidden behind walls and until she is within reading reach (Aim._update_marks).
+	marker.no_depth_test = false
+	marker.visible = false
 	marker.pixel_size = 0.002
 	add_child(marker)
 

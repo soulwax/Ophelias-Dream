@@ -48,6 +48,7 @@ var leap_layer: Leap
 var bow_hoist: BowHoist
 var lantern_hold: LanternHold
 var lantern: Lantern
+var _lantern_audio: AudioStreamPlayer3D
 var carry_hold: CarryHold
 var carrying: Carryable
 # RunSave restores the id; Errands resolves it after restoring world pieces.
@@ -1276,6 +1277,9 @@ func _flicker_camera_light(delta: float) -> void:
 	# Outside she needs the lamp in the storm. Indoors the rooms are already warm,
 	# and a hard beam would wash that out.
 	_glow = move_toward(_glow, 1.0 if indoors() else 0.0, delta * 1.4)
+	if lantern and lantern.lit:
+		camera_light.light_energy = move_toward(camera_light.light_energy, 0.0, delta * 3.0)
+		return
 	camera_light.light_energy = lerpf(0.48, 0.1, _glow) + sin(Time.get_ticks_msec() * 0.013) * 0.02
 	camera_light.spot_range = lerpf(8.0, 4.2, _glow)
 	camera_light.spot_angle = lerpf(28.0, 16.0, _glow)
@@ -1434,18 +1438,35 @@ func take_lantern(item: Node3D) -> bool:
 	visual.rotation = Vector3(0.0, _facing - _yaw, 0.0)
 	_glide = Vector3.ZERO
 	lantern = item as Lantern
+	_play_lantern_audio("click")
 	return lantern_hold.BeginPickup(item, Tune.LANTERN_HOIST_SECONDS)
 
 
 func _on_lantern_hoisted() -> void:
 	Game.has_lantern = true
 	Game.lantern_equipped = true
+	_play_lantern_audio("latch")
 	var key := Game.settings.key_label("toggle_lantern")
 	Game.interaction_feedback.emit("The lantern hangs in front of your coat. %s to stow / equip." % key, true)
 
 
 func _on_lantern_toggled(equipped: bool) -> void:
 	Game.lantern_equipped = equipped
+	_play_lantern_audio("click")
+
+
+func _play_lantern_audio(cue: String) -> void:
+	if _lantern_audio == null:
+		_lantern_audio = AudioStreamPlayer3D.new()
+		_lantern_audio.name = "LanternAudio"
+		_lantern_audio.bus = "Effects"
+		add_child(_lantern_audio)
+	var path := DoorAudio.LATCH if cue == "latch" else DoorAudio.HANDLE
+	if ResourceLoader.exists(path):
+		_lantern_audio.stream = load(path) as AudioStream
+		Loudness.sound(_lantern_audio, Loudness.LATCH if cue == "latch" else Loudness.SWITCH)
+		_lantern_audio.pitch_scale = randf_range(0.95, 1.05)
+		_lantern_audio.play()
 
 
 func toggle_lantern() -> bool:

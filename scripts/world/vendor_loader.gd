@@ -7,11 +7,16 @@ extends RefCounted
 ## FBXDocument, GLTFDocument, and Image rather than through ResourceLoader.
 
 const BUILD_ROOT := "build/vendor/"
+static var _models: Dictionary = {}
 static var _textures: Dictionary = {}
 static var _wind_shader := preload("res://shaders/nature_wind.gdshader")
 
 
 static func load_model(rel_path: String) -> Node3D:
+	if _models.has(rel_path):
+		var cached: Node3D = _models[rel_path]
+		return cached.duplicate() if is_instance_valid(cached) else null
+
 	var path := ProjectSettings.globalize_path("res://" + rel_path)
 	if not FileAccess.file_exists(path):
 		return null
@@ -30,7 +35,9 @@ static func load_model(rel_path: String) -> Node3D:
 
 	if root:
 		_clean_hierarchy(root)
-	return root
+		_models[rel_path] = root
+		return root.duplicate()
+	return null
 
 
 static func load_texture(rel_path: String) -> ImageTexture:
@@ -54,6 +61,10 @@ static func spawn_nature_prop(kind: String) -> Node3D:
 			mesh_file = "flowers/SM_MVV_Flowers_01_B_c1_LOD0.fbx"
 		"ivy":
 			mesh_file = "ivy/SM_PAD_MV_Ivy01e_c1_LOD0.fbx"
+		"grass":
+			mesh_file = "grass/SM_PAD_SV_Grass02a_c1_LOD0.fbx"
+		"bush":
+			mesh_file = "bush/SM_MVV_Bush03_B_c1_LOD0.fbx"
 		_:
 			return null
 
@@ -80,8 +91,10 @@ static func spawn_nature_prop(kind: String) -> Node3D:
 
 	mat.set_shader_parameter("alpha_scissor_threshold", 0.35)
 	mat.set_shader_parameter("is_undergrowth", true)
-	mat.set_shader_parameter("height_reference", 1.2 if kind == "flowers" else 2.0)
-	mat.set_shader_parameter("wind_speed", 2.2)
+	var height_ref := 0.6 if kind == "grass" else (1.2 if kind == "flowers" else 1.8)
+	var speed_val := 2.6 if kind == "grass" else (2.2 if kind == "flowers" else 1.8)
+	mat.set_shader_parameter("height_reference", height_ref)
+	mat.set_shader_parameter("wind_speed", speed_val)
 	mat.set_shader_parameter("wind_strength", 1.0)
 
 	for child in node.find_children("*", "MeshInstance3D", true, false):
