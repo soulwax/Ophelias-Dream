@@ -43,6 +43,19 @@ static func scan(id: String, tint: Color = Color.WHITE, tile_scale: float = 1.0)
 	return material
 
 
+## A painted surface with the scan's physical roughness and normal detail,
+## without printing the scan's stains into a clean room's paint colour.
+static func scanned_paint(id: String, color: Color, tile_scale: float = 1.0) -> ORMMaterial3D:
+	var key := "scanned_paint|%s|%s|%s" % [id, color.to_html(), tile_scale]
+	if _cache.has(key):
+		return _cache[key]
+	var material := scan(id, Color.WHITE, tile_scale).duplicate() as ORMMaterial3D
+	material.albedo_texture = null
+	material.albedo_color = color
+	_cache[key] = material
+	return material
+
+
 static func paint(color: Color, roughness: float = 0.6, metallic: float = 0.0) -> StandardMaterial3D:
 	var key := "paint|%s|%s|%s" % [color.to_html(), roughness, metallic]
 	if _cache.has(key):

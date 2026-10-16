@@ -14,5 +14,6 @@ extends Resource
 # "page:<title>" | "place:<place>" | "event:<call|echo>"}. The body holds
 # {0}, {1}, ... where they sit (NoteCatalog._make).
 @export var smudges: Array[Dictionary] = []
+# Optional `also` is an alternate evidence key; the original key stays valid.
 # The sentence between the lines, legible once every smudge is solved.
 @export var between: String = ""

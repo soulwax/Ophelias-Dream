@@ -299,5 +299,19 @@
     "mood": "wry",
     "text": "Neither did you.",
     "pause": 0.4
+  },
+  {
+    "id": "o21",
+    "speaker": "ophelia",
+    "mood": "warm",
+    "text": "Both cups are on the table. The kettle’s on.",
+    "pause": 0.4
+  },
+  {
+    "id": "m24",
+    "speaker": "mathilda",
+    "mood": "hushed",
+    "text": "Both. You never set out both at once.",
+    "pause": 0.6
   }
 ]

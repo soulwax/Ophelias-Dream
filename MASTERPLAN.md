@@ -249,6 +249,17 @@ Treat every package as roughly **one to three focused agent sessions**, not a ca
 
 ### W08 — two cups with a real conversation payoff [P1; domestic/narrative integration agent]
 
+**Implementation 2026-10-15:** `TwoCups` builds a cupboard, porch cup, two table
+slots and a kettle heated by a real hold on the lit stove. Pieces use the
+existing Errands/RunSave registry. The owner approved the six lines, IDs,
+moods and `cups` flag in STORY_CONTRACT section 7. `event:cups` is an alternate
+key for the pack's *two* reading; `place:living` still works. Lake refreshes
+the topic flag from completion. **Verified 2026-10-16:** vendor and fallback
+runs pass three real save/load cycles, actual kettle hold input and the
+once-only lake exchange. Cups, kettle and porch snow have an asymmetric,
+stable placement pass. Journal, dialogue and affected regression probes pass.
+Six approved voice clips remain W16 debt. See [W08 handoff](docs/mvp/W08.md).
+
 **Own:** cups builder and proposed cups probe; leases for note catalogue, `lake.gd`, `lake.json`, lake script and generators. **Depends:** W07 and W02 approved text.
 
 - Discover kitchen cupboard, find porch cup, carry/place two cups, warm the kettle only after the stove works. Completion produces the `event:cups` evidence.
@@ -328,6 +339,12 @@ Treat every package as roughly **one to three focused agent sessions**, not a ca
 - Mix wind, fire, steps, cloth, bell, ice and speech with scene-specific quiet. Verify priority, distance, reverb, duck/recovery and volume settings. A missing clip must not look like an intentional silent turn.
 - Measure named hardware at 1600×900: median and p95 frame time, long stalls, cold/warm startup and memory over a repeated run. Begin with the roadmap's 60 FPS objective (16.7 ms); G0 sets the attainable full and lean acceptance budgets. Record any agreed lower lean target explicitly.
 - Probe cache invalidation, missing packs and nature/flora performance. Treat `performance_probe` as policy/cache checks, not measured rendered FPS. Runtime vendor migration should add no more than about one second on the same machine; profile/cache only if measured necessary.
+
+**Lighting pass 2026-10-16:** selected indoor fixtures cast bounded shadows,
+the house uses cool sky fill and warm practical lamps, and clean plaster keeps
+the scanned normal/roughness detail. Lean rendered views of the kitchen,
+bedroom and cellar were inspected. W14 still owns the whole-route visual and
+frame-time acceptance.
 
 **Done:** evidence and measured budgets support a smooth, readable critical path; reduced settings preserve meaning; no unbounded quality work remains.
 
@@ -494,11 +511,14 @@ Update this section after evidence is reviewed. Keep package details above as th
 | Gate | State at plan creation | Evidence / next action |
 | --- | --- | --- |
 | G0 contract | Pending; **W01 headless baseline done 2026-10-15** | [docs/mvp/BASELINE.md](docs/mvp/BASELINE.md): every headless probe passes with its documented command except the flora time budget (D-7, remeasure); hold failure not reproduced; meeting assertion was a dev-hook placement bug, fixed. Fixed since: export lake JSON in the preset (D-1), Esc menu under dream overlays (D-13). Open: export vendor paths (D-2), probes writing the real save (D-6), labels through walls (D-14, needs a decision). **W02 contract drafted 2026-10-15:** [docs/mvp/STORY_CONTRACT.md](docs/mvp/STORY_CONTRACT.md) (ending requirements from code, D02 no contradiction, D03 real, D10 already live via house documents). Still to do for G0: the owner's answers to its section 8 |
-| G1 foundations | Pending; **W03 done 2026-10-15** | W03: `tools/interaction_probe.tscn` (real input: pick, place, drop; hold vs pause and freed target; lantern vs carry; slope drop) passes, with carry/hold/errand/bow probes. Fixed: the lantern and a carried thing shared her right hand (`player.gd` `toggle_lantern`/`pick_up`, `carryable.gd` refusal text); `bow_probe` now sets `RUN_PLAY`. **W05 done 2026-10-15:** `tools/dream_branches_probe.tscn` (all six answers kept, a closed question ignores a late answer, repair clears strain, escalation ruptures), `dream_flow` walk/sprint, `dream_story`, `dream_pause` and Studio tests pass. Fixed: dream reply rows stretched over each other at the real font (`PanelContainer` → `Panel`) and the guidance overflowed its box (measured, not estimated) in `dream_experience.gd`; lean and no-screen-effects captures inspected. Full-graphics captures are left for a discrete-GPU machine. **W04 done 2026-10-15:** one vendor path contract (`build/vendor/` developing, `vendor/` beside the exe, `RUN_VENDOR=off`), `tools/vendor_probe.tscn` both ways, and `RUN_SELFCHECK=1` for packaged builds; a release export loads the pack and falls back without it, and all runtime data loads. Fixed: flowers fell back to boxes without the pack (D-16), the export crashed on quit with the pack (D-17). Remeasured D-7 (cold builds over budget, W14). **G1 complete; next G2: W06 world verbs, then W07 warm house.** |
-| G2 domestic slice | Pending; **W06 done 2026-10-15** | W06: `scripts/errands/` `HouseDrawer`, `Brushable`, `SnowBranch`, `WarmSpot`, `Bell`, `ErrandKit`; `Errands` places the lookout bell (on its own post in front of the tower, within reach) and warm spots at the stove (once lit) and the campfire; `Player.warming`/`warmth` (crouch on an active hold, cold lines wait, breath slows), `Voice.answer_bell` (subtitle *Here.* until the line is approved and baked), `Wildlife.flump`, `Game.wildlife`. `tools/verbs_probe.tscn` passes (34 checks) with the house, page-reach, ending, checkpoint, journal, voice, errand, carry, hold, interaction, bow, Mathilda and meeting probes. Fixed: `Errands.capture/restore` called freed pieces. Errand assets curated into `build/vendor/requested_errands/`. Next: W07 warm house |
-| G3 feature complete | Pending | W08–W11; freeze writing and refresh voice debt |
+| G1 foundations | **Reached 2026-10-15** | W03: `tools/interaction_probe.tscn` (real input: pick, place, drop; hold vs pause and freed target; lantern vs carry; slope drop) passes, with carry/hold/errand/bow probes. Fixed: the lantern and a carried thing shared her right hand (`player.gd` `toggle_lantern`/`pick_up`, `carryable.gd` refusal text); `bow_probe` now sets `RUN_PLAY`. **W05 done 2026-10-15:** `tools/dream_branches_probe.tscn` (all six answers kept, a closed question ignores a late answer, repair clears strain, escalation ruptures), `dream_flow` walk/sprint, `dream_story`, `dream_pause` and Studio tests pass. Fixed: dream reply rows stretched over each other at the real font (`PanelContainer` → `Panel`) and the guidance overflowed its box (measured, not estimated) in `dream_experience.gd`; lean and no-screen-effects captures inspected. Full-graphics captures are left for a discrete-GPU machine. **W04 done 2026-10-15:** one vendor path contract (`build/vendor/` developing, `vendor/` beside the exe, `RUN_VENDOR=off`), `tools/vendor_probe.tscn` both ways, and `RUN_SELFCHECK=1` for packaged builds; a release export loads the pack and falls back without it, and all runtime data loads. Fixed: flowers fell back to boxes without the pack (D-16), the export crashed on quit with the pack (D-17). Remeasured D-7 (cold builds over budget, W14). **G1 complete; G2 subsequently reached with W06/W07.** |
+| G2 domestic slice | **Reached 2026-10-15** | W06: `scripts/errands/` `HouseDrawer`, `Brushable`, `SnowBranch`, `WarmSpot`, `Bell`, `ErrandKit`; `Errands` places the lookout bell (on its own post in front of the tower, within reach) and warm spots at the stove (once lit) and the campfire; `Player.warming`/`warmth` (crouch on an active hold, cold lines wait, breath slows), `Voice.answer_bell` (subtitle *Here.* until the line is approved and baked), `Wildlife.flump`, `Game.wildlife`. `tools/verbs_probe.tscn` passes (34 checks) with the house, page-reach, ending, checkpoint, journal, voice, errand, carry, hold, interaction, bow, Mathilda and meeting probes. Fixed: `Errands.capture/restore` called freed pieces. Errand assets curated into `build/vendor/requested_errands/`. **W07 done 2026-10-15 — G2 reached:** `scripts/errands/warm_house.gd` (woodpile under the eaves right of the door, one armful at a time; woodbox by the stove takes three and stacks them; the stove refuses "No wood in the box" until full, which teaches the errand; lighting it finishes it; the warm ground floor settles the haunting). `tools/warm_house_probe.tscn` passes as is, with `RUN_VENDOR=off` and in Mathilda's chapter (stove lights at once), through two real `RunSave` save/loads (carrying the third armful with two boxed; after completion). `Chore` gained `gate`/`blocked`/`restore_done`, and the stove's lit state is now saved. `house_space_probe` updated for the gated stove. G3 is active; W08 is now complete, with W09 next |
+| G3 feature complete | In progress; **W08 done 2026-10-16** | W08 vendor/fallback, save/load, rendered placement and real lake exchange verified; six clips deferred to W16. Next W09, then W10/W11; freeze writing and refresh voice debt |
 | G4 state/content lock | Pending | W12 restoration, W15 provenance/migration, W16 required audio |
 | G5 candidate quality | Pending | W13 continuous runs, W14 presentation/performance, W17 reproducible packaging/docs |
 | G6 accepted MVP | Pending | W18 extracted-package review and final validation record |
 
-The next implementation task is **W01**, not a fresh feature brainstorm. Its handoff should identify the first failing foundation, the next safe assignments, and the smallest complete slice that can reach G2.
+G2 is reached and W08 is complete. G3 is the active gate: next W09 red thread,
+then W10 storm lamp and W11 chapter connections. Serialize their changes
+to Errands and obtain the remaining story approvals before generating those
+lines. The W01 foundation audit is already recorded in BASELINE.md.

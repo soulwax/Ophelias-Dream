@@ -41,6 +41,16 @@ func _run() -> void:
 	_check(stove != null and window != null and not stove.done and not window.done, "the stove and window chores start undone")
 	var hearth := house.find_child("HearthLight", true, false) as OmniLight3D
 	_check(hearth != null and hearth.light_energy == 0.0, "the hearth starts cold")
+	# In her chapter the stove wants wood first (warm_house); fill its box, as she would.
+	var warm := Game.errands.builders.get(WarmHouse.ID) as WarmHouse if Game.errands else null
+	if warm:
+		_check(not stove.interact() and not stove.done, "the stove will not light with an empty woodbox")
+		for index in warm.box.capacity:
+			var wood := Carryable.new()
+			wood.kind = "wood"
+			wood.item_id = "probe_wood_%d" % index
+			add_child(wood)
+			warm.box.add_item(wood)
 	stove.interact()
 	_check(stove.done and not stove.is_in_group("interactables"), "lighting the stove uses it up")
 	var grate := house.find_child("GratePage", true, false) as FieldNote

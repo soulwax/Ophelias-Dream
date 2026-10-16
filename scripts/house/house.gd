@@ -87,7 +87,7 @@ func _ready() -> void:
 	_plank_floor = HouseKit.surface(HouseKit.scan("weathered_plank_siding", Color(0.55, 0.4, 0.29), 0.7), "wood")
 	# Clean warm paint upstairs; the scanned plaster is grimy enough for the
 	# cellar's limewash once lifted toward white.
-	_plaster = HouseKit.paint(Color("d8d8ce"), 0.92)
+	_plaster = HouseKit.scanned_paint("white_plaster_rough_01", Color("d8d8ce"))
 	_limewash = HouseKit.scan("white_plaster_rough_01", Color(1.0, 1.0, 0.97), 1.4)
 	_concrete = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.42, 0.42, 0.42), 2.0), "stone")
 	_stone = HouseKit.surface(HouseKit.scan("white_plaster_rough_01", Color(0.45, 0.46, 0.48), 0.6), "stone")
@@ -407,6 +407,44 @@ func settle_comfort() -> void:
 	for lamp_name in ["LandingLight", "CorridorSouthLight", "JanitorLight"]:
 		_retune(lights, lamp_name, Color("c5d4e2"), 0.28, 4.0, 1.35)
 	HouseIdentity.retune(self)
+	_settle_surface_detail()
+	_settle_shadows()
+
+
+## The editable snapshot can carry older flat paint; retain its geometry and
+## authored placement while restoring the current normal/roughness finish.
+func _settle_surface_detail() -> void:
+	var floor := get_node_or_null("GroundFloor")
+	if floor == null:
+		return
+	var ceiling := HouseKit.scanned_paint("white_plaster_rough_01", Color("c7c4b6"))
+	for node in floor.get_children():
+		if not node is MeshInstance3D:
+			continue
+		var label := String(node.name)
+		if label.begins_with("Ceiling_"):
+			(node as MeshInstance3D).material_override = ceiling
+		elif label.ends_with("_face-1") or label.begins_with("BedroomWall_") or label.begins_with("LivingWall_") or label.begins_with("BackHallWall_"):
+			(node as MeshInstance3D).material_override = _plaster
+
+
+## A few key fixtures provide the indoor shadow direction. Keep the cube-map
+## budget small on integrated GPUs; all lights still illuminate every room.
+func _settle_shadows() -> void:
+	var fixture_names := ["KitchenLight", "LanternLight"]
+	if not Game.lean_graphics:
+		fixture_names.append_array(["LivingLamp", "ReadingLamp", "LandingLight", "CorridorSouthLight", "HearthLight"])
+	for room in room_lights:
+		for node in room_lights[room]:
+			var lamp := node as OmniLight3D
+			if lamp == null or not is_instance_valid(lamp):
+				continue
+			lamp.shadow_enabled = String(lamp.name) in fixture_names
+			if lamp.shadow_enabled:
+				lamp.shadow_caster_mask = 0xFFFFF & ~Tune.FOREST_RENDER_LAYER
+				lamp.shadow_bias = 0.035
+				lamp.shadow_normal_bias = 1.0
+				lamp.shadow_blur = 3.0
 
 
 ## Built after authored properties are applied. Only the opaque structural
@@ -545,7 +583,7 @@ func _build_ground_floor() -> void:
 		HouseKit.wall(root, "Plinth", side[0], side[1], SLAB_TOP, 0.0, EXTERIOR + 0.04, _stone)
 	var stair_hole := Rect2(STAIR_BOTTOM_X, STAIR_Z - STAIR_WIDTH * 0.5, STAIR_TOP_X - STAIR_BOTTOM_X, STAIR_WIDTH)
 	HouseKit.slab(root, "Floor", UPSTAIRS, -0.25, 0.0, _plank_floor, [stair_hole])
-	HouseKit.slab(root, "Ceiling", UPSTAIRS, CEILING, CEILING + 0.15, HouseKit.paint(Color("c7c4b6"),0.96))
+	HouseKit.slab(root, "Ceiling", UPSTAIRS, CEILING, CEILING + 0.15, HouseKit.scanned_paint("white_plaster_rough_01", Color("c7c4b6")))
 	var window := _window_spec(Vector3.ZERO)
 	var kitchen_window := _window_spec(Vector3(0,0,-4.9))
 	var east_front := {"width":2.0,"height":2.5,"sill":0.0} if HouseLoftRoom.available() else window

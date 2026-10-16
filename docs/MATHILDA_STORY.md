@@ -250,6 +250,16 @@ Before she sets out: the front door is swollen shut, the stove is cold, a window
 - **window_latched:** [steady] Latched. That's one less thing the storm gets to keep.
 - **window_thread:** [shaken] A thread. Red wool, caught in the frame. She didn't leave through the door.
 
+### Errands
+
+Optional things she does with her hands. W08 lines approved on 2026-10-15;
+the stove and other errand writing remain in STORY_CONTRACT section 7.
+
+- **cups_missing:** [steady] One cup. Where’s the other?
+- **cups_found:** [warm] You left it out here.
+- **cups_set:** [warm] Both cups, this time.
+- **cups_kettle:** [warm] The kettle’s on.
+
 ### Passing
 
 When she and Mathilda cross paths (see *When they pass each other*). The `o_` lines are hers when she is played; the `n_` lines are hers when Mathilda is played and she is the one met on the path. Never resolved, never the whole sentence.

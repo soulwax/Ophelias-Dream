@@ -87,7 +87,12 @@ func _process(delta: float) -> void:
 	_maybe_turn_mat()
 	_lay_door_mark()
 	var inside := room != ""
-	tension = clampf(tension + delta * (1.0 / 100.0 if inside else -1.0 / 45.0), 0.0, 1.0)
+	var rate := 1.0 / 100.0 if inside else -1.0 / 45.0
+	# A warm house (the warm_house errand): on the lit ground floor the house
+	# settles instead, 1.6 times slower than it eases outside. The cellar does not.
+	if inside and not House.is_cellar(here) and Game.errands and Game.errands.is_done("warm_house"):
+		rate = -1.0 / (45.0 * 1.6)
+	tension = clampf(tension + delta * rate, 0.0, 1.0)
 	_ambient(delta)
 	if not inside:
 		return

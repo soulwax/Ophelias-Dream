@@ -94,7 +94,22 @@ Approve IDs, moods and flags before any generator runs (MASTERPLAN W02). Counts 
 | W10 | Oil found; lamp lit; lamp low; lamp out | MATHILDA_STORY `### Errands` | 4 lines |
 | W11 | *Let go* journal prose for each errand | `errands.json` | 4 prose lines, no voice |
 
-*Draft for the owner, not approved:* `o21` (warm) *Both cups are on the table. The kettle's on.* / `m24` (hushed) *Both. You never set out both at once.* This keeps m06 (*you only ever set out one for yourself*) true and makes the errand matter.
+**W08 approved by the owner on 2026-10-15:** the following six lines, IDs,
+moods and the optional completed-`two_cups` flag `cups`. Other writing slots
+in the table above remain pending.
+
+| Group | ID | Mood | Approved text |
+| --- | --- | --- | --- |
+| Ophelia errands | cups_missing | steady | One cup. Where’s the other? |
+| Ophelia errands | cups_found | warm | You left it out here. |
+| Ophelia errands | cups_set | warm | Both cups, this time. |
+| Ophelia errands | cups_kettle | warm | The kettle’s on. |
+| Lake Ophelia | o21 | warm | Both cups are on the table. The kettle’s on. |
+| Lake Mathilda | m24 | hushed | Both. You never set out both at once. |
+
+This keeps m06 (*you only ever set out one for yourself*) true. The pair stays
+on the table after completion so the lake exchange remains true. New recordings
+are W16 debt; approved text can play as subtitles until those clips exist.
 
 ## 8. Decisions
 
@@ -107,7 +122,9 @@ Answered by the owner on 2026-10-15:
 | 3 | C3 page labels | **Depth-test plus reach** | Implemented in W02 (`field_note.gd`) |
 | 4 | D01 `docs/THREATS.md` | **Drop the references** | Removed from CLAUDE.md, AGENTS.md and MASTERPLAN in W02 |
 
-Still open: approval of the writing slots and IDs in section 7 (with the `o21`/`m24` draft), and the D03 rewordings in section 9. None of these blocks G1 (W03–W05). The warm-house writing (three stove lines) does not depend on them either, so W07 is blocked only by W06.
+Still open: approval of the W06/W07/W09–W11 writing slots and IDs in section 7,
+and the D03 rewordings in section 9. W08's six lines and completed-cups flag
+are approved above. None of these remaining decisions blocks W08 mechanics.
 
 ## 9. D03 rewordings (draft, not approved)
 

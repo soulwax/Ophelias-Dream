@@ -10,7 +10,7 @@ extends RefCounted
 
 # The page that asks her to stop looking. The road remembers it.
 const LAST_TITLE := "don't turn around"
-const EVENTS := ["call", "echo"]
+const EVENTS := ["call", "echo", "cups"]
 
 
 static func all() -> Array[NoteEntry]:
@@ -51,6 +51,9 @@ static func all() -> Array[NoteEntry]:
 			"the sheet in the cellar is not me. it is the coat. say it back to me. the sheet is the coat."
 		),
 	]
+	# An additional way to understand the pair; the original living-room key
+	# remains sufficient, so no optional activity gates the base story.
+	notes[0].smudges[0]["also"] = "event:cups"
 	return notes
 
 

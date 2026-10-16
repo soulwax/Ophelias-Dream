@@ -78,6 +78,7 @@ func _watch_meeting() -> void:
 		_away = true
 	elif to_her <= Tune.MEETING_REACH and _away and Game.phase == Game.Phase.PLAYING and meeting.finished == "":
 		_away = false
+		_refresh_errand_flags()
 		meeting.begin()
 
 
@@ -96,9 +97,20 @@ func _place_mathilda(trail: Trail) -> void:
 			meeting.flags[PAGE_FLAGS[title]] = true
 	if Game.passings > 0:
 		meeting.flags["passed"] = true
+	_refresh_errand_flags()
 	meeting.ended.connect(Game.finish_meeting)
 	Game.meeting_waiting = true
 	Game.mark("mathilda waits on the ice")
+
+
+func _refresh_errand_flags() -> void:
+	if meeting == null:
+		return
+	# Completion, not merely noticing the cups, opens this optional exchange.
+	if Game.errands and Game.errands.is_done(TwoCups.ID):
+		meeting.flags["cups"] = true
+	else:
+		meeting.flags.erase("cups")
 
 
 func _withdraw() -> void:

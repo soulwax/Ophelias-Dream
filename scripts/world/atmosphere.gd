@@ -188,13 +188,13 @@ func apply_weather(
 	if Game.dream_mode:
 		_env.background_color = _env.background_color.lerp(Color(0.40, 0.41, 0.62), 0.34)
 
-	# Outside the fill is the storm's blue. Inside it is a warm bounce, so the
-	# lamps read as a room and the cold is what comes through the door.
+	# Keep a faint, neutral sky bounce indoors. Warmth comes from the fixtures,
+	# while their shadows and the surface normals can still describe the room.
 	var outdoor_ambient := Color(0.67, 0.75, 0.85).lerp(Color(0.78, 0.83, 0.89), w)
-	_env.ambient_light_color = outdoor_ambient.lerp(Color(1.0, 0.82, 0.64), indoors)
+	_env.ambient_light_color = outdoor_ambient.lerp(Color(0.68, 0.73, 0.76), indoors)
 	if Game.dream_mode:
 		_env.ambient_light_color = _env.ambient_light_color.lerp(Color(0.54, 0.43, 0.69), 0.18)
-	_env.ambient_light_energy = lerpf(0.92, 0.68, s * 0.7 + w * 0.3) * lerpf(1.0, 0.27, indoors)
+	_env.ambient_light_energy = lerpf(0.92, 0.68, s * 0.7 + w * 0.3) * lerpf(1.0, 0.18, indoors)
 	_env.adjustment_brightness = lerpf(1.04, 0.93, s * 0.65 + w * 0.35) * lerpf(1.0, 0.96, indoors) * (Game.settings.brightness if Game.settings else 1.0)
 	if Game.dream_mode:
 		_env.ambient_light_energy *= 0.8
@@ -204,8 +204,8 @@ func apply_weather(
 
 	if _sun:
 		var sun_tint := Color(0.88, 0.92, 0.98).lerp(Color(0.80, 0.86, 0.94), s)
-		_sun.light_color = sun_tint.lerp(Color(1.0, 0.9, 0.78), indoors * 0.25)
-		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0)) * lerpf(1.0, 0.24, indoors)
+		_sun.light_color = sun_tint
+		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0)) * lerpf(1.0, 0.42, indoors)
 		_sun.light_volumetric_fog_energy = lerpf(1.15, 2.35, clampf(s * 0.6 + g * 0.4 + w * 0.4, 0.0, 1.0)) * lerpf(1.0, 0.18, indoors)
 		if Game.dream_mode:
 			_sun.light_energy *= 0.66

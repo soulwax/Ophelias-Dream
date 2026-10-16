@@ -472,13 +472,17 @@ func all_deciphered() -> bool:
 	return true
 
 
+func reading_known(smudge: Dictionary) -> bool:
+	return known(str(smudge.get("key", ""))) or known(str(smudge.get("also", "")))
+
+
 func decipher(entry: NoteEntry, index: int, reading: String) -> Reading:
 	if entry == null or index < 0 or index >= entry.smudges.size():
 		return Reading.WRONG
 	if solved(entry, index):
 		return Reading.RIGHT
 	var smudge: Dictionary = entry.smudges[index]
-	if not known(str(smudge.key)):
+	if not reading_known(smudge):
 		return Reading.LOCKED
 	if reading != str((smudge.readings as Array)[0]):
 		if voice:

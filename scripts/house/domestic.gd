@@ -97,7 +97,7 @@ static func build(house: House) -> void:
 	# Cold until she lights it: one of her chores before she sets out.
 	var hearth_energy := hearth.light_energy
 	hearth.light_energy = 0.0
-	Chore.make(root,"StoveChore",Vector3(4.95,.75,-1.55),"Light the stove",func()->void:
+	var light_stove := func(say: bool)->void:
 		var tween := hearth.create_tween()
 		tween.tween_property(hearth,"light_energy",hearth_energy,1.1).set_trans(Tween.TRANS_CUBIC)
 		var crackle := AudioStreamPlayer3D.new()
@@ -114,7 +114,9 @@ static func build(house: House) -> void:
 		crackle.position = Vector3(4.95,.3,-1.2)
 		Loudness.sound(crackle,Loudness.CAMPFIRE-10.0)
 		crackle.play()
-		if Game.voice: Game.voice.chore("stove_lit"))
+		if say and Game.voice: Game.voice.chore("stove_lit")
+	var stove_chore := Chore.make(root,"StoveChore",Vector3(4.95,.75,-1.55),"Light the stove",light_stove.bind(true))
+	stove_chore.on_restore = light_stove.bind(false)
 	# A window the storm has worked loose, near enough to the stove that
 	# tending one room is one trip, not two.
 	Chore.make(root,"WindowChore",Vector3(5.75,1.5,-3.2),"Latch the window",func()->void:

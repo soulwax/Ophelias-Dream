@@ -50,6 +50,10 @@ var _sockets: Dictionary = {}
 var _states: Dictionary = {}
 var _makers: Dictionary = {}
 var _gone: Dictionary = {}
+# Errand builders that want a tick each physics frame (tick()), e.g. WarmHouse.
+var _watched: Array = []
+# The built errands, by id, for probes and later packages.
+var builders: Dictionary = {}
 
 
 func _ready() -> void:
@@ -117,14 +121,31 @@ func _build_verbs() -> void:
 	var house := trail.house
 	var stove := house.find_child("StoveChore", true, false) as Chore if house else null
 	if stove:
-		WarmSpot.make(world_root(), "StoveWarmth", house.to_global(Vector3(4.75, 0.15, -1.2)), "the stove",
+		var stove_warmth := WarmSpot.make(world_root(), "StoveWarmth", house.to_global(Vector3(4.75, 0.15, -1.2)), "the stove",
 			func() -> bool: return is_instance_valid(stove) and stove.done)
+		stove_warmth.pick_size = Vector3(0.55, 0.4, 0.55)
+	var warm := WarmHouse.build(self)
+	if warm:
+		builders[WarmHouse.ID] = warm
+	var cups := TwoCups.build(self)
+	if cups:
+		builders[TwoCups.ID] = cups
 	var camp := get_tree().get_first_node_in_group("camp") as Camp
 	if camp:
 		camp.ensure_built()
 		if camp.fire_light:
 			WarmSpot.make(world_root(), "CampfireWarmth", trail.on_ground(camp.fire_light.global_position), "the fire",
 				func() -> bool: return true)
+
+
+## A builder whose tick() runs each physics frame while Errands lives.
+func watch(builder: Object) -> void:
+	_watched.append(builder)
+
+
+func _physics_process(_delta: float) -> void:
+	for builder: Object in _watched:
+		builder.call("tick")
 
 
 ## Where errand pieces live: a plain Node3D under Errands, at the world origin.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.17.0 — 2026-10-16
+
+- Bring the warm-house errand from its cold stove through carrying and stacking wood to a lit, saved house.
+- Set out the two cups and kettle in natural places, remember their arrangement through saves, and unlock their optional lake conversation.
+- Give the house directional indoor shadows, restrained cool daylight and warm practical light; add surface detail to the painted walls and ceiling.
+
 ## 0.2.16.0 — 2026-10-15
 
 - Ring the lookout bell and warm her hands beside a lit stove or campfire, with reusable interactions for the upcoming errands.

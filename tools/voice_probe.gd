@@ -49,7 +49,7 @@ func _all_lines() -> Array:
 	var found: Array = voice._pages.values() + voice._deciphered.values() + voice._places.values() \
 		+ voice._revisits.values() + voice._misread + voice._spent + voice._cold + voice._falls \
 		+ voice._endings.values() + voice._answers.values() + voice._moments.values() \
-		+ voice._chores.values() + voice._encounters.values() + [voice._turned]
+		+ voice._chores.values() + voice._errands.values() + voice._encounters.values() + [voice._turned]
 	for stage in voice._bored:
 		found += voice._bored[stage]
 	for stage in Voice.STAGES:
@@ -72,7 +72,8 @@ func _lines() -> void:
 	_check(voice._chores.size() == 5 and voice._chores.has("door_stuck") and voice._chores.has("window_thread"), "the door, the stove and the window each have their lines")
 	var every := _all_lines()
 	_check(voice._encounters.size() == 21 and voice._encounters.has("o_name") and voice._encounters.has("n_dont"), "her lines for passing Mathilda, and for being passed")
-	_check(every.size() == 182, "182 lines in all (%d)" % every.size())
+	_check(voice._errands.size() == 4 and voice._errands.has("cups_missing") and voice._errands.has("cups_kettle"), "the four approved cups lines load")
+	_check(every.size() == 186, "186 lines in all (%d)" % every.size())
 	for line in every:
 		_check(Voice.MOODS.has(str(line.mood)) and str(line.text) != "", "a mood for: " + str(line.text))
 	for entry in NoteCatalog.everything():

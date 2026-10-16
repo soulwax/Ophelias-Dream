@@ -229,7 +229,7 @@ func _pick(index: int) -> void:
 	if _selected == null or index < 0 or index >= _selected.smudges.size() or Game.solved(_selected, index):
 		return
 	var key := str(_selected.smudges[index].key)
-	if not Game.known(key):
+	if not Game.reading_known(_selected.smudges[index]):
 		_smudge = -1
 		_hint.text = "I can't make this out yet. " + str(HINTS.get(key.get_slice(":", 0), ""))
 		_fill_readings()

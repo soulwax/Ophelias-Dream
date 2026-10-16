@@ -9,7 +9,7 @@ Ophelia's Dream is a third-person winter horror game using Godot 4.7, Forward+ r
 - `assets/characters/styloo_elf/` contains the player model, textures, baked animations, and CC0 license; her walk and jog in `feminine/` are CC BY-NC 4.0, so the game is non-commercial. `addons/quaternius_ik_rigged/` supplies the shared animation source. `shaders/` holds GPU shaders.
 - `Hud` creates `Journal` alongside the reader and menus. The HUD has no objective; `show_journal_toast` controls its journal notice. The rebindable `journal` action uses J/Tab and pad Y. `NoteCatalog` parses `{word}` smudges, unlocked through `Game.known` and solved through `Game.decipher`. `Phase.JOURNAL` locks her controls while `Game.awake()` keeps the world running.
 - The lookout at the end of the drawn route is a checkpoint and a false lead (two lanterns, no car); posts lead on to the frozen lake (`Lake`, `scripts/world/lake.gd`), where the run ends. `Game.restart(true)` resumes from the lookout. The lake needs three journal pages; a whole in-game day (40 minutes) without an attempt ends on "Mathilda is gone"; with every trail page read, the last deciphered and no turning around, Mathilda waits on the ice for a conversation (`docs/LAKE_MEETING.md`, `assets/dialogue/lake.json`) that ends "Together" or "On the shore".
-- `Voice` plays 182 lines in 14 moods from `docs/MATHILDA_STORY.md`, the script of record; `tools/script_to_lines.py` writes `lines.json` from it.
+- `Voice` has 186 scripted lines in 14 moods from `docs/MATHILDA_STORY.md`, the script of record; `tools/script_to_lines.py` writes `lines.json` from it. The four approved W08 errand lines currently use subtitles; recordings remain W16 debt.
   - Groups: pages, places, stages (with `after` once she turns around), memories, calls, breath, cold, falls, spoken endings.
   - Priorities with forget-on-interrupt.
   - The trees answer in Ophelia’s own voice; Mathilda speaks in Ophelia’s chapter only on the ice and when they pass each other. The optional first-person Mathilda chapter (`scripts/player/mathilda_pov.gd`, `docs/MATHILDA_POV.md`) has 69 separate lines and clips under `assets/audio/voice/mathilda/`.
@@ -31,6 +31,7 @@ Run these from the repository root in PowerShell. This workstation's Godot execu
 & $env:GODOT_BIN --path . -e               # Open the editor
 & $env:GODOT_BIN --headless --path . --import # Import assets/register new classes
 & $env:GODOT_BIN --headless --path . tools/journal_probe.tscn # Journal rules and UI
+& $env:GODOT_BIN --headless --path . tools/cups_probe.tscn # Two cups, kettle, real save/load and lake payoff
 & $env:GODOT_BIN --headless --path . tools/voice_probe.tscn # Voice rules; PROBE_CLIPS=1 checks clips
 python tools/voice_status.py                       # every line: final, draft, missing, owed
 python tools/studio/server.py                      # Story Studio in the browser (docs/STORY_STUDIO.md)

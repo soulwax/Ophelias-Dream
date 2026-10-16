@@ -20,6 +20,7 @@ SECTIONS = {
     "Revisits": ("revisits", "keyed"),
     "Time and the lake": ("moments", "keyed"),
     "Chores": ("chores", "keyed"),
+    "Errands": ("errands", "keyed"),
     "Passing": ("encounters", "keyed"),
     "Idle thoughts": ("bored", "staged"),
     "Memories": ("memories", "staged"),

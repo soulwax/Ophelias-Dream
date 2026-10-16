@@ -59,6 +59,7 @@ var _answers := {}
 var _moments := {}
 # Small fixes before she sets out (docs/MATHILDA_STORY.md, "Chores").
 var _chores := {}
+var _errands := {}
 # When she and the other one pass each other ("Passing"): picked by id by Encounters.
 var _encounters := {}
 # While the two of them are standing there, nothing else in her head gets said.
@@ -426,6 +427,16 @@ func chore(id: String) -> void:
 		_queue.append(line)
 
 
+## Approved optional activities; the regular voice path supplies subtitles
+## while recordings are owed. Respect her voice setting and once-only keys.
+func errand(id: String) -> void:
+	if not _active or not _errands.has(id):
+		return
+	var line: Dictionary = _errands[id]
+	if not _spoken.has(_key(line)) and not _say(line) and not _queue.has(line):
+		_queue.append(line)
+
+
 func _on_front_jam(remaining: int) -> void:
 	chore("door_stuck" if remaining > 0 else "door_free")
 
@@ -673,6 +684,7 @@ func _load() -> void:
 			["places", _places, "place"], ["revisits", _revisits, "revisit"],
 			["endings", _endings, "ending"], ["answers", _answers, "answer"],
 			["moments", _moments, "moment"], ["chores", _chores, "chore"],
+			["errands", _errands, "errand"],
 			["encounters", _encounters, "encounter"]]:
 		var group: Variant = data.get(pair[0], {})
 		if typeof(group) == TYPE_DICTIONARY:

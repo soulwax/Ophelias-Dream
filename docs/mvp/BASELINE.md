@@ -64,7 +64,7 @@ Severity: **B** blocker, **M** major, **m** minor, **F** fixture/tooling.
 | --- | --- | --- | --- | --- | --- |
 | D-1 | B | Exported builds lose the lake's line table: `export_presets.cfg` `include_filter` had no `assets/audio/voice/lake/*.json`, while `assets/dialogue/lake.json` reads `res://assets/audio/voice/lake/lines.json` | read the preset; verify in a packaged build | W17 | **fixed and verified**: a release export's `RUN_SELFCHECK` loads all nine runtime data files, the lake's included (2026-10-15, W04) |
 | D-2 | M | Vendor packs can never load in an export: `VendorLoader` resolves `globalize_path("res://build/vendor/…")` and `flora.gd` checks `res://build/vendor/…`; neither exists beside an exe. Falls back silently, no crash | read `vendor_loader.gd`, `flora.gd:435,471` | W04 | **fixed** (W04): `VendorLoader.root()` is `build/vendor/` developing and `vendor/` beside the exe exported (`RUN_VENDOR=off` forces fallbacks); `flora.gd` asks the loader once per kind. A release export loads the pack from `vendor/` and falls back cleanly without it |
-| D-3 | M | No errands are built: `Errands.ensure_built()` only makes an empty `World`; `scripts/errands/` has no verb or builder scripts | read `errands.gd:89` | W06–W10 | **verbs done (W06)**; the four errand builders remain (W07–W10) |
+| D-3 | M | At W01 no errands were built: `Errands.ensure_built()` only made an empty `World` | W01 read of `errands.gd:89` | W06–W10 | **verbs, warm-house and two cups done (W06/W07/W08)**; W08 verified 2026-10-16; W09/W10 builders remain |
 | D-4 | m | `RUN_MEETING` dev hook placed Ophelia 2.37 m above the doorstep. It ran inside `MathildaPov._start()` during `main.gd`'s loading awaits, when the hidden editable snapshot's collision was still live, so `OpheliaNpc.settle()` landed on snapshot geometry. Normal play is unaffected (the return happens after loading; restores run after `apply_pending`) | `spawn_probe` with `PROBE_CHAPTER=mathilda RUN_MEETING=1`: 2.20 m across, 2.44 m below her; the same ray after loading hits ground at the doorstep height | W01 | **fixed**: the hook waits for the snapshot to be freed (`mathilda_pov.gd`) |
 | D-5 | m | Nature pack log noise: `SM_MVV_Flowers_01_B_c1_LOD0.fbx` and the grass FBX reference `Flowers_Normal.png`, `Flowers_Opacity.png`, `build/vendor/Textures/T_GrassSet_B.tga`, which the curated pack lacks; FBXDocument logs errors before the loader replaces materials | any world probe log | nature work owner / W04 | open |
 | D-6 | m | Probes write to the real user save (see *How probes must be run*) | first batch changed all three files | W12 / tooling | mitigated by procedure; an automatic guard is still needed |
@@ -80,6 +80,8 @@ Severity: **B** blocker, **M** major, **m** minor, **F** fixture/tooling.
 | D-16 | M | Without the vendor pack (every public build) each `flowers` placement fell back to PropFactory's 0.6 x 1.2 x 0.6 m box in the green clearings; flora also asked the disk for the pack once per undergrowth candidate, and its cache did not key on the pack's presence | `tools/vendor_probe.tscn` with `RUN_VENDOR=off` | W04 | **fixed**: flowers fall back to the forest pack's grass card; availability is asked once per kind and joins the flora cache fingerprint; the probe checks no box fallback either way |
 | D-17 | B | A release export with the vendor pack crashed on quit (exit 139, 2 of 2 runs): `VendorLoader`'s static caches were released after the rendering server shut down | `RUN_PLAY=1 RUN_SELFCHECK=1 OpheliasDream.exe --headless` | W04 | **fixed**: `VendorLoader.clear()` from `Game._exit_tree()`; 3 of 3 clean exits after re-export |
 | D-18 | m | The release export is 1.3 GB (exe with embedded pack) plus 77 MB of .NET data | export of 2026-10-15 | W17 | open: audit what the pack carries |
+| D-19 | M | No chore's `done` state is saved: after loading, a lit stove is cold, a latched window loose, a shoved front door jammed again (`RunSave` keeps only the chores' voice lines) | read `run_save.gd`; `warm_house_probe` reload | W07 / W12 | stove **fixed** (W07, registered with Errands, `Chore.restore_done()`); window and front door remain for W12 |
+| D-20 | m | The woodpile (W07) and the lookout bell (W06) are hard to pick out in the fog from the path, dark against dark | `build/mvp/g2/W07/outside.png`, `build/mvp/g2/W06/lookout.png` | W14 | open (both are placed and reachable; probes check reach and position) |
 
 ## Inventories
 
@@ -94,10 +96,14 @@ Severity: **B** blocker, **M** major, **m** minor, **F** fixture/tooling.
 - No export attempt. D-1 and D-2 come from reading code and config.
 - No audio listening.
 
-## Next safe assignments
+## Next safe assignments (updated after W08, 2026-10-16)
 
-- **W03** can start: hold, carry and errand probes pass on current code. Remaining W03 work is the player-input demonstration and the cancellation/phase cases.
-- **W04** owns D-2 and D-5, but the loader is in active uncommitted nature work: clear ownership first.
-- **W17** can take D-1 now (one filter entry), with verification deferred to the first packaged candidate.
-- Remeasure D-7 with the orphan stopped before treating it as a regression.
-- Smallest complete slice to G2 remains W06 (carry/place/hold verbs plus the stove) then W07 warm-house.
+- G1 foundations and G2 warm-house are complete; the current gate is G3.
+- W08 two cups is complete and verified (`W08.md`), including the organic
+  placement pass, vendor/fallback runs and three real save/load cycles. Continue
+  with W09 red thread, W10 storm lamp and W11 chapter connections, serializing
+  shared builders and retaining the pending writing decisions.
+- W12 still owns the window/front-door restoration gap D-19. W14 owns D-20
+  visual legibility and the remaining performance findings.
+- D-1/D-2 have packaged verification from W04 and the 0.2.16.0 release.
+  New W08 voice debt is six clips; the total is 74 missing and 26 drafts.

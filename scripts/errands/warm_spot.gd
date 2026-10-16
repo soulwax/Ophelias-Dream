@@ -8,6 +8,9 @@ extends Node3D
 ## slows (Player.warmth). It can be done again whenever she likes.
 
 var noun := "the stove"
+## The stove uses the lower fire door, leaving its top for the kettle.
+## The open campfire keeps the larger default target.
+var pick_size := Vector3(0.9, 0.9, 0.9)
 ## Returns whether the fire burns; when it does not, the spot is hidden and so
 ## never picked.
 var lit: Callable = func() -> bool: return true
@@ -52,7 +55,7 @@ func interact_point() -> Vector3:
 
 
 func aim_box() -> Array:
-	return [global_transform, AABB(Vector3(-0.45, 0.0, -0.45), Vector3(0.9, 0.9, 0.9))]
+	return [global_transform, AABB(Vector3(-pick_size.x * 0.5, 0.0, -pick_size.z * 0.5), pick_size)]
 
 
 func interact_hold_seconds() -> float:

@@ -97,6 +97,24 @@
       "mood": "shaken"
     }
   },
+  "errands": {
+    "cups_missing": {
+      "text": "One cup. Where’s the other?",
+      "mood": "steady"
+    },
+    "cups_found": {
+      "text": "You left it out here.",
+      "mood": "warm"
+    },
+    "cups_set": {
+      "text": "Both cups, this time.",
+      "mood": "warm"
+    },
+    "cups_kettle": {
+      "text": "The kettle’s on.",
+      "mood": "warm"
+    }
+  },
   "encounters": {
     "o_name": {
       "text": "Mathilda?",

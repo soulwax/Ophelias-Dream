@@ -75,6 +75,7 @@ godot --headless --path . tools/dream_pause_probe.tscn  # the Esc menu over a dr
 godot --headless --path . tools/dream_branches_probe.tscn # every memory answer kept, repair and rupture (isolated user dir, as dream_flow)
 godot --headless --path . tools/vendor_probe.tscn       # VendorLoader paths, caching, mipmaps, flora fallbacks (also with RUN_VENDOR=off)
 godot --headless --path . tools/verbs_probe.tscn        # errand verbs: cupboard, brushable snow, snow branch (and arrows), warming, the lookout bell
+godot --headless --path . tools/warm_house_probe.tscn   # warm_house through two real save/loads (also RUN_VENDOR=off, PROBE_CHAPTER=mathilda; isolated user dir)
 # In an exported build (templates refuse a scene argument): RUN_PLAY=1 RUN_SELFCHECK=1 "Ophelia's Dream.exe" --headless
 # reports vendor root and models, box fallbacks and runtime data files, and exits 0/1
 godot --headless --path . tools/mathilda_probe.tscn     # Mathilda's chapter
@@ -251,7 +252,7 @@ Recorded sound comes from CC0 sources: BigSoundBank WAV originals and Freesound 
 
 **Voice (`scripts/player/voice.gd`, `docs/VOICE.md`)**:
 - **Script:** `docs/MATHILDA_STORY.md` is the script of record. `python tools/script_to_lines.py` writes `assets/audio/voice/lines.json` from it, and `--check` fails if the two have drifted.
-- **Lines:** 182, each in one of 14 moods (plus the meeting on the ice: 43 lines in `assets/audio/voice/lake/`, Mathilda's baked with Kokoro by `tools/bake_lake.py`), in these groups:
+- **Lines:** 186, each in one of 14 moods (plus the meeting on the ice: 45 lines in `assets/audio/voice/lake/`, Mathilda's baked with Kokoro by `tools/bake_lake.py`). W08 adds four Ophelia errand lines and the `o21`/`m24` lake exchange, approved on 2026-10-15; their six clips remain W16 debt. Groups:
   - pages, deciphered, places, revisits, chores (the jammed front door, the stove, the window; `Chore` in `scripts/house/chore.gd`)
   - encounters ("Passing": `o_*` hers when played, `n_*` hers when Mathilda is played and meets her), said through `Voice.encounter(id)`; `Voice.hushed` keeps everything else quiet during a passing
   - bored by stage (hope/doubt/resolve, plus `after` once she turns around)

@@ -1,6 +1,8 @@
 class_name HouseDrawer
 extends Node3D
 
+signal opened
+
 ## A cupboard or drawer (errands spec, verb 4: open and look inside). A press
 ## opens it on a hinge (the door swings about its left edge) or a slide (the
 ## front pulls out along local +Z); a press closes it. Whatever is put inside
@@ -85,7 +87,16 @@ func interact() -> bool:
 	if ErrandKit.player() == null and Game.player != null:
 		return false
 	_set_open(not is_open, true)
+	if is_open:
+		opened.emit()
 	return true
+
+
+## Once taken, closing this cupboard must never hide the item again, even
+## after she drops it elsewhere. Save owners call this before restoring it.
+func release(thing: Node3D) -> void:
+	_held.erase(thing)
+	thing.show()
 
 
 func _set_open(open: bool, animate: bool) -> void:
