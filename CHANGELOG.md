@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.18.0 — 2026-10-17
+
+- Make Story Studio easier to use for dialogue, voice pipelines and SFX review, including quicker sound replacement and experimental voice auditions.
+- Give the title eye a more restrained gaze and let its tear appear in less predictable intervals.
+- Replace the walk animation with a more active authored take and preserve it through the retargeting tools.
+
 ## 0.2.17.0 — 2026-10-16
 
 - Bring the warm-house errand from its cold stove through carrying and stacking wood to a lit, saved house.
