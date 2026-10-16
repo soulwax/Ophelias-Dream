@@ -18,8 +18,16 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child(main)
-	for i in 10:
+	var waited_frames := 0
+	while Game.trail == null and waited_frames < 1200:
 		await get_tree().process_frame
+		waited_frames += 1
+	if Game.trail == null:
+		push_error("Timed out waiting for the gameplay world to finish building.")
+		get_tree().quit(1)
+		return
+	for layer in main.find_children("*", "CanvasLayer", true, false):
+		(layer as CanvasLayer).visible = false
 	Game.set_phase(Game.Phase.PLAYING)
 	var trail := Game.trail
 	var ground := trail.ground
@@ -29,7 +37,7 @@ func _run() -> void:
 	var camera := Camera3D.new()
 	camera.far = 2400.0
 	get_tree().root.add_child(camera)
-	camera.current = true
+	camera.make_current()
 	var start := trail.player_start_offset
 	var along := func(metres: float) -> Vector3: return trail.position_at(start + metres)
 	var thaw := _thaw_spot(ground)
@@ -40,17 +48,38 @@ func _run() -> void:
 		["high", along.call(80.0) + Vector3(60, 90, 70), along.call(130.0)],
 		["eye", along.call(100.0) + Vector3(0, 1.8, 0), along.call(140.0) + Vector3(0, 1.5, 0)],
 		["far", centre + Vector3(0, 650, 520), centre + Vector3(0, 0, -60)],
+		["sun", along.call(100.0) + Vector3(0, 1.8, 0), Vector3.ZERO],
 		["thaw", thaw + Vector3(-25, 12, 30), thaw],
 		["green", green + Vector3(0, 1.8, 0), green + Vector3(30, 1.0, -30)],
 	]
+	var view_only := OS.get_environment("RUN_VIEW_ONLY")
+	if view_only != "":
+		shots = shots.filter(func(shot: Array) -> bool: return shot[0] == view_only)
 	for shot: Array in shots:
 		var target: Vector3 = shot[2]
-		target.y = ground.height_at(target.x, target.z) + (target.y if shot[0] in ["eye", "green"] else 0.0)
 		var from: Vector3 = shot[1]
-		from.y += ground.height_at(from.x, from.z) if shot[0] != "far" else 0.0
+		if shot[0] != "far":
+			from.y += ground.height_at(from.x, from.z)
+		if shot[0] == "sun":
+			var atmosphere := get_tree().get_first_node_in_group("atmosphere") as Atmosphere
+			var sun := atmosphere.get_node("Sun") as DirectionalLight3D if atmosphere else null
+			if sun:
+				target = from + sun.global_basis.z * 200.0
+			else:
+				push_error("Sun view requested, but the world's DirectionalLight3D was not found.")
+				get_tree().quit(1)
+				return
+		else:
+			target.y = ground.height_at(target.x, target.z) + (target.y if shot[0] in ["eye", "green"] else 0.0)
 		camera.look_at_from_position(from, target)
+		camera.make_current()
 		for i in 12:
 			await get_tree().process_frame
+		if shot[0] == "sun":
+			var atmosphere := get_tree().get_first_node_in_group("atmosphere") as Atmosphere
+			var sky_material := atmosphere.get("_weather_sky_material") as ShaderMaterial if atmosphere else null
+			if sky_material:
+				print("camera %s sun_uv %s visible %.1f" % [get_viewport().get_camera_3d().name, sky_material.get_shader_parameter("sun_screen_uv"), float(sky_material.get_shader_parameter("sun_screen_visible"))])
 		await RenderingServer.frame_post_draw
 		if shot[0] == "eye":
 			var frames := 0

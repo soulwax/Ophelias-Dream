@@ -3,7 +3,24 @@
 /android/
 /build/
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+# Per-user editors and generated operating-system files.
+.vscode/
+.idea/
+.vs/
+.claude/
+*.user
+*.suo
+*.log
+*.tmp
+*.bak
+*.swp
+Thumbs.db
+.DS_Store
 # Purchased/local character models are installed per machine and must not be pushed.
 /assets/characters/asset_bank/
 

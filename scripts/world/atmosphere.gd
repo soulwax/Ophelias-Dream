@@ -3,12 +3,15 @@ extends WorldEnvironment
 
 const VOLUMETRIC_SHADER := "res://shaders/volumetric_weather.gdshader"
 const DREAM_UNIVERSE_SKY_SHADER := "res://shaders/dream_universe_sky.gdshader"
+const WINTER_SKY_SHADER := "res://shaders/winter_sky.gdshader"
 
 var _sun: DirectionalLight3D
 var _veil: ShaderMaterial
 var _local_veil: ShaderMaterial
 var _env: Environment
 var _dream_sky: Sky
+var _weather_sky: Sky
+var _weather_sky_material: ShaderMaterial
 # 0 out in the snow .. 1 deep inside the house. Indoors the daylight ambience
 # falls away and the rooms are only what their lamps make of them.
 var shelter := 0.0
@@ -71,6 +74,7 @@ func rebind_authoring_resources() -> void:
 func _ready() -> void:
 	add_to_group("atmosphere")
 	environment = _make_environment()
+	_ensure_weather_sky()
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
 	sun.light_color = Color(0.95, 0.94, 0.9)
@@ -80,6 +84,8 @@ func _ready() -> void:
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	sun.directional_shadow_max_distance = 120.0
 	sun.shadow_bias = 0.04
+	sun.light_angular_distance = 0.42
+	sun.shadow_blur = 1.1
 	sun.light_volumetric_fog_energy = 1.95
 	if Game.lean_graphics:
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
@@ -161,7 +167,9 @@ func apply_weather(
 		_env.fog_density *= 0.36
 		_env.fog_height_density *= 0.32
 	_env.fog_aerial_perspective = 0.08 if in_dream else lerpf(0.38, 0.78, clampf(s * 0.7 + w * 0.3, 0.0, 1.0))
-	_env.fog_sky_affect = 0.06 if in_dream else 1.0
+	# Keep distant fog on the landscape, but let the actual sky retain its
+	# blue-to-cream gradient and cloud contrast instead of whitening overhead.
+	_env.fog_sky_affect = 0.06 if in_dream else 0.18
 
 	var clear_fog := Color(0.75, 0.82, 0.90)
 	var squall_fog := Color(0.82, 0.86, 0.91)
@@ -179,7 +187,7 @@ func apply_weather(
 	_env.volumetric_fog_density = lerpf(0.0045, 0.024, pow(s, 1.3)) + w * 0.012
 	if in_dream:
 		_env.volumetric_fog_density *= 0.42
-	_env.volumetric_fog_sky_affect = 0.06 if in_dream else 1.0
+	_env.volumetric_fog_sky_affect = 0.06 if in_dream else 0.22
 	_env.volumetric_fog_albedo = Color(0.88, 0.92, 0.97).lerp(Color(0.96, 0.98, 1.0), w * 0.7 + f * 0.3)
 	_env.volumetric_fog_anisotropy = lerpf(0.62, 0.26, clampf(s * 0.55 + w * 0.65, 0.0, 1.0))
 	_env.volumetric_fog_length = lerpf(108.0, 58.0, clampf(s * 0.6 + w * 0.5, 0.0, 1.0))
@@ -195,7 +203,9 @@ func apply_weather(
 		_env.background_mode = Environment.BG_SKY
 		_env.sky = _dream_sky
 	else:
-		_env.background_mode = Environment.BG_COLOR
+		_ensure_weather_sky()
+		_env.background_mode = Environment.BG_SKY
+		_env.sky = _weather_sky
 
 	# Keep a faint, neutral sky bounce indoors. Warmth comes from the fixtures,
 	# while their shadows and the surface normals can still describe the room.
@@ -214,7 +224,7 @@ func apply_weather(
 	_env.glow_bloom = 0.10 if in_dream else 0.06
 
 	if _sun:
-		var sun_tint := Color(0.88, 0.92, 0.98).lerp(Color(0.80, 0.86, 0.94), s)
+		var sun_tint := Color(1.0, 0.96, 0.86).lerp(Color(0.83, 0.88, 0.96), s)
 		_sun.light_color = sun_tint.lerp(Color(0.74, 0.80, 1.0), 0.35) if in_dream else sun_tint
 		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0)) * lerpf(1.0, 0.42, indoors)
 		_sun.light_volumetric_fog_energy = lerpf(1.15, 2.35, clampf(s * 0.6 + g * 0.4 + w * 0.4, 0.0, 1.0)) * lerpf(1.0, 0.18, indoors)
@@ -224,6 +234,7 @@ func apply_weather(
 
 	if clock_running:
 		_apply_clock(indoors)
+	_update_weather_sky(s, g, w, wind)
 
 	var flat_wind := Vector2(wind.x, wind.z)
 	var wind_dir := flat_wind.normalized() if flat_wind.length() > 0.05 else Vector2(0.92, 0.38)
@@ -354,4 +365,62 @@ func _ensure_dream_sky() -> void:
 	_dream_sky = Sky.new()
 	_dream_sky.sky_material = sky_mat
 	_dream_sky.process_mode = Sky.PROCESS_MODE_REALTIME
+
+
+func _ensure_weather_sky() -> void:
+	if _weather_sky != null:
+		return
+	_weather_sky_material = ShaderMaterial.new()
+	if ResourceLoader.exists(WINTER_SKY_SHADER):
+		_weather_sky_material.shader = load(WINTER_SKY_SHADER) as Shader
+	_weather_sky = Sky.new()
+	_weather_sky.sky_material = _weather_sky_material
+	_weather_sky.process_mode = Sky.PROCESS_MODE_REALTIME
+
+
+func _update_weather_sky(intensity: float, gust: float, whiteout: float, wind: Vector3) -> void:
+	if _weather_sky_material == null or _weather_sky_material.shader == null:
+		return
+	var storm := clampf(intensity * 0.58 + gust * 0.18 + whiteout * 0.78, 0.0, 1.0)
+	var clear_top := Color(0.28, 0.47, 0.70)
+	var squall_top := Color(0.50, 0.61, 0.72)
+	var whiteout_top := Color(0.72, 0.79, 0.86)
+	var clear_horizon := Color(0.82, 0.85, 0.84)
+	var squall_horizon := Color(0.74, 0.79, 0.84)
+	var sky_top := clear_top.lerp(squall_top, clampf(storm * 0.8, 0.0, 1.0)).lerp(whiteout_top, whiteout * 0.65)
+	var sky_horizon := clear_horizon.lerp(squall_horizon, storm).lerp(Color(0.87, 0.89, 0.91), whiteout)
+	var dusk := 0.0
+	var day := 1.0
+	if clock_running:
+		var elevation := sun_elevation()
+		var low := 1.0 - smoothstep(1.0, 18.0, elevation)
+		dusk = low * smoothstep(-7.0, 2.0, elevation)
+		day = daylight()
+		sky_horizon = sky_horizon.lerp(Color(0.96, 0.57, 0.36), dusk * 0.42)
+		sky_top = sky_top.lerp(Color(0.35, 0.48, 0.67), dusk * 0.28)
+	_weather_sky_material.set_shader_parameter("sky_color", sky_top)
+	_weather_sky_material.set_shader_parameter("horizon_color", sky_horizon)
+	_weather_sky_material.set_shader_parameter("cloud_light_color", Color(0.98, 0.96, 0.89).lerp(Color(0.87, 0.90, 0.94), storm))
+	_weather_sky_material.set_shader_parameter("cloud_shadow_color", Color(0.46, 0.53, 0.62).lerp(Color(0.37, 0.44, 0.54), storm))
+	_weather_sky_material.set_shader_parameter("cloud_coverage", clampf(0.20 + intensity * 0.42 + gust * 0.17 + whiteout * 0.34, 0.08, 0.96))
+	_weather_sky_material.set_shader_parameter("cloud_opacity", lerpf(0.68, 0.94, storm))
+	_weather_sky_material.set_shader_parameter("wind_direction", Vector2(wind.x, wind.z).normalized() if Vector2(wind.x, wind.z).length() > 0.05 else Vector2(0.92, 0.38))
+	_weather_sky_material.set_shader_parameter("cloud_speed", lerpf(0.006, 0.025, clampf(wind.length() / 13.0, 0.0, 1.0)))
+	_weather_sky_material.set_shader_parameter("sun_warmth", maxf(dusk, 0.14 if not clock_running else 0.0))
+	_weather_sky_material.set_shader_parameter("daylight_amount", day)
+	if _sun:
+		var sun_direction := _sun.global_basis.z.normalized()
+		_weather_sky_material.set_shader_parameter("sun_direction", sun_direction)
+		_weather_sky_material.set_shader_parameter("sun_light_color", _sun.light_color)
+		_weather_sky_material.set_shader_parameter("sun_energy", _sun.light_energy)
+		var camera := get_viewport().get_camera_3d()
+		if camera:
+			var sun_target := camera.global_position + sun_direction * 1000.0
+			var screen_size := get_viewport().get_visible_rect().size
+			var sun_screen := camera.unproject_position(sun_target)
+			var radius_uv := tan(deg_to_rad(maxf(_sun.light_angular_distance, 0.42)) * 0.5) / tan(deg_to_rad(camera.fov) * 0.5) * 0.5
+			_weather_sky_material.set_shader_parameter("sun_screen_uv", sun_screen / screen_size)
+			_weather_sky_material.set_shader_parameter("sun_screen_radius", maxf(radius_uv, 0.006))
+			_weather_sky_material.set_shader_parameter("screen_aspect", screen_size.x / maxf(screen_size.y, 1.0))
+			_weather_sky_material.set_shader_parameter("sun_screen_visible", 0.0 if camera.is_position_behind(sun_target) else 1.0)
 
