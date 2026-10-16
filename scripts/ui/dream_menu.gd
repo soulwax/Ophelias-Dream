@@ -16,8 +16,8 @@ var _eye: ShaderMaterial
 var _tear_glass: ColorRect
 var _tear_material: ShaderMaterial
 var _menu_time := 0.0
-var _tear_cycle_time := 0.0
-var _tear_cycle_active := false
+var _tear_active := false
+var _tear_delay := 0.0
 var _glitch: ShaderMaterial
 var _glitch_glass: ColorRect
 var _snow: GPUParticles2D
@@ -44,7 +44,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = UiChrome.menu_theme()
 	_tremor_seed = randf() * 1000.0
-	_tear_cycle_active = randf() < 0.5
+	_tear_active = randf() < 0.85
+	_tear_delay = 0.0 if _tear_active else _random_tear_delay()
 	_music = AudioStreamPlayer.new()
 	_music.stream = load("res://assets/audio/music/danse_macabre.ogg")
 	if _music.stream is AudioStreamOggVorbis:
@@ -169,6 +170,8 @@ func _ready() -> void:
 		visible = next == Game.Phase.BOOT
 		if next == Game.Phase.BOOT:
 			_menu_time = 0.0
+			_tear_active = randf() < 0.85
+			_tear_delay = 0.0 if _tear_active else _random_tear_delay()
 		if _snow:
 			_snow.emitting = visible
 		if next != Game.Phase.BOOT:
@@ -184,9 +187,9 @@ func _ready() -> void:
 func _aim_at(point: Vector2) -> void:
 	var viewport_size := size.max(Vector2.ONE)
 	var relative := point / viewport_size - Vector2(0.424, 0.454)
-	# Definitive, expressive tracking of the mouse pointer location
-	_target = clampf(0.5 + relative.x * 2.2, 0.06, 0.94)
-	_target_y = clampf(0.5 + relative.y * 2.0, 0.08, 0.92)
+	# Balanced horizontal tracking with 20% expanded vertical look
+	_target = clampf(0.5 + relative.x * 1.18, 0.22, 0.78)
+	_target_y = clampf(0.5 + relative.y * 1.26, 0.20, 0.80)
 
 
 func _set_menu_selection(button: Button, selected: bool) -> void:
@@ -255,17 +258,37 @@ func _input(event: InputEvent) -> void:
 	_target_mobility = 0.55 if _buttons[-1].get_global_rect().has_point((event as InputEventMouseMotion).position) else 1.0
 
 
+func _random_tear_delay() -> float:
+	# Uneven spacing: mix of short pauses and occasional moderate pauses
+	var r := randf()
+	if r < 0.45:
+		return randf_range(8.0, 22.0)
+	elif r < 0.80:
+		return randf_range(25.0, 48.0)
+	else:
+		return randf_range(50.0, 80.0)
+
+
 func _process(delta: float) -> void:
 	if visible:
 		var forced_time := OS.get_environment("RUN_TEAR_TIME")
 		if forced_time != "":
 			_menu_time = float(forced_time)
 		else:
-			_tear_cycle_time += delta
-			if _tear_cycle_time >= 120.0:
-				_tear_cycle_time = fmod(_tear_cycle_time, 120.0)
-				_tear_cycle_active = randf() < 0.5
-			_menu_time = _tear_cycle_time if _tear_cycle_active else 0.0
+			if _tear_active:
+				_menu_time += delta
+				if _menu_time >= 70.0:
+					_tear_active = false
+					_menu_time = 0.0
+					_tear_delay = _random_tear_delay()
+			else:
+				_tear_delay -= delta
+				if _tear_delay <= 0.0:
+					if randf() < 0.85:
+						_tear_active = true
+						_menu_time = 0.0
+					else:
+						_tear_delay = randf_range(10.0, 25.0)
 		_layout_snow()
 		# A living eye never quite settles: a small, smooth tremor on top of
 		# the deliberate pursuit, each frequency irrational against the rest
@@ -273,9 +296,9 @@ func _process(delta: float) -> void:
 		var t := Time.get_ticks_msec() * 0.001 + _tremor_seed
 		var tremor_x := sin(t * 1.7) * 0.0055 + sin(t * 4.3 + 1.1) * 0.0028
 		var tremor_y := sin(t * 2.1 + 0.6) * 0.0048 + sin(t * 5.1 + 2.4) * 0.0024
-		# Responsive, definitive pursuit with natural micro-tremor
-		_gaze = lerpf(_gaze, _target + tremor_x, 1.0 - exp(-delta * 16.0))
-		_gaze_y = lerpf(_gaze_y, _target_y + tremor_y, 1.0 - exp(-delta * 14.0))
+		# Balanced middle ground pursuit with natural micro-tremor
+		_gaze = lerpf(_gaze, _target + tremor_x, 1.0 - exp(-delta * 13.0))
+		_gaze_y = lerpf(_gaze_y, _target_y + tremor_y, 1.0 - exp(-delta * 11.0))
 		_gaze_mobility = lerpf(_gaze_mobility, _target_mobility, 1.0 - exp(-delta * 8.0))
 		# The same soft light drives illumination and the pupil reflex: it
 		# constricts quickly toward a nearer light and eases open slowly once

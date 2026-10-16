@@ -2,6 +2,8 @@
 .godot/
 /android/
 /build/
+__pycache__/
+*.pyc
 # Purchased/local character models are installed per machine and must not be pushed.
 /assets/characters/asset_bank/
 

@@ -27,10 +27,7 @@ void compute_tear(vec2 uv, out float out_h, out vec3 out_norm, out float out_wet
 		float welling_time_weight = 0.0;
 		if (menu_time >= 14.0) {
 			float build = smoothstep(14.0, 20.0, menu_time);
-			float sustain = 1.0;
-			if (menu_time > 65.0) {
-				sustain = mix(1.0, 0.45, smoothstep(65.0, 75.0, menu_time));
-			}
+			float sustain = 1.0 - smoothstep(62.0, 68.0, menu_time);
 			welling_time_weight = build * sustain;
 		}
 
@@ -100,8 +97,8 @@ void compute_tear(vec2 uv, out float out_h, out vec3 out_norm, out float out_wet
 			float t_cheek = clamp((menu_time - 20.0) / 40.0, 0.0, 1.0);
 			float eased_cheek = pow(t_cheek, 1.12);
 			float y_cheek_head = mix(0.710, 1.035, eased_cheek);
-			float cheek_active = smoothstep(19.8, 20.3, menu_time);
-			float trail_sustain = menu_time <= 60.0 ? 1.0 : mix(1.0, 0.65, smoothstep(60.0, 75.0, menu_time));
+			float cheek_active = smoothstep(19.8, 20.3, menu_time) * (1.0 - smoothstep(62.0, 68.0, menu_time));
+			float trail_sustain = 1.0 - smoothstep(60.0, 68.0, menu_time);
 
 			if (uv.y >= 0.708 && uv.y <= y_cheek_head + 0.018) {
 				float x_center = cheek_path_x(uv.y);
