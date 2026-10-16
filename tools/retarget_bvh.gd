@@ -20,7 +20,7 @@ const OUTPUT := "res://assets/characters/styloo_elf/feminine/elf_feminine.res"
 # The second walk take lifts a hand to shoulder height mid-stride, which reads
 # as a wave; the left and right takes turn rather than sidestep.
 const TAKES := [
-	["dataset-1_walk_feminine_001", "Walk"],
+	["dataset-1_walk_active_001", "Walk"],
 	["dataset-1_run_feminine_001", "Jog"],
 	["dataset-1_dash_feminine_001", "Run"],
 	["dataset-1_walk-back_feminine_001", "Walk_Back"],
@@ -61,7 +61,7 @@ const SEAM := 5
 # further than the take. The jog keeps its step and loses most of the pound
 # (bob): the drop shrinks more than the rise, so it reads light.
 const QUIET := {
-	"Walk": {"hips": 0.72, "roll": 0.5, "arms": 1.35, "bob": 1.0},
+	"Walk": {"hips": 0.85, "roll": 0.85, "arms": 1.0, "bob": 0.75},
 	"Jog": {"hips": 0.9, "roll": 0.8, "arms": 1.3, "bob": 0.38},
 	"Run": {"hips": 1.0, "roll": 1.0, "arms": 1.0, "bob": 1.0},
 	"Walk_Back": {"hips": 0.78, "roll": 0.7, "arms": 1.2, "bob": 1.0},
@@ -122,6 +122,15 @@ func _bake() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT.get_base_dir()))
 	var result := ResourceSaver.save(library, OUTPUT)
 	print("Saved ", OUTPUT, " error ", result)
+	const BASE_OUTPUT := "res://assets/characters/styloo_elf/elf_animations.res"
+	if ResourceLoader.exists(BASE_OUTPUT):
+		var base_lib := load(BASE_OUTPUT) as AnimationLibrary
+		if base_lib:
+			if base_lib.has_animation("Walk"):
+				base_lib.remove_animation("Walk")
+			base_lib.add_animation("Walk", library.get_animation("Walk"))
+			var base_res := ResourceSaver.save(base_lib, BASE_OUTPUT)
+			print("Updated Walk in ", BASE_OUTPUT, " error ", base_res)
 	quit(0 if result == OK else 1)
 
 
@@ -442,8 +451,6 @@ func _pose(pose: Dictionary) -> void:
 		var turn := source * (_neutral[name] as Basis).inverse()
 		# Less of the performer's hip and chest swagger; the step stays.
 		var roll := float(_quiet["roll"])
-		if name != "DEF-spine":
-			roll = lerpf(roll, 1.0, 0.4)
 		if roll < 0.999:
 			turn = Basis(Quaternion.IDENTITY.slerp(turn.get_rotation_quaternion(), roll))
 		turns[name] = turn

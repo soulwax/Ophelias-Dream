@@ -57,22 +57,22 @@ const PIVOT_SPEED := 0.9
 const FACE_RATE_WALK := 7.5
 const FACE_RATE_SPRINT := 10.0
 # Natural ground speed of the movement clips at playback 1.
-const STRIDE_WALK := 0.986 # Neutral walk pace at PLAYER_MODEL_SCALE.
+const STRIDE_WALK := 1.576 # Active athletic walk pace at PLAYER_MODEL_SCALE.
 const STRIDE_JOG := 3.2
 const STRIDE_SPRINT := 4.3
-# Her carriage over the clips (Grace), in radians unless noted. 25% more feminine gait & carriage.
-const GRACE_ARM_SWING := 0.425
-const GRACE_COUNTER_TURN := 0.068
-const GRACE_CHEST_LIFT := 0.0625
+# Her carriage over the clips (Grace): walk is fully authored mocap with 0 procedural overrides.
+const GRACE_ARM_SWING := 0.0
+const GRACE_COUNTER_TURN := 0.0
+const GRACE_CHEST_LIFT := 0.0
 # Authored walk already carries the hips, shoulders and arms.
-const GRACE_AUTHORED_ARM := 0.25
-const GRACE_AUTHORED_COUNTER := 0.19
-# Feminine hip sway and arm carriage dynamics.
-const GRACE_HIP_SWAY_YAW := 0.138
-const GRACE_HIP_SWAY_ROLL := 0.109
-const GRACE_HIP_SHIFT := 0.031
-const GRACE_ELBOW_TUCK := 0.162
-const GRACE_FOREARM_SOFT := 0.35
+const GRACE_AUTHORED_ARM := 0.0
+const GRACE_AUTHORED_COUNTER := 0.0
+# Grounded hip sway and subtle arm carriage dynamics: 0 for clean authored gait.
+const GRACE_HIP_SWAY_YAW := 0.0
+const GRACE_HIP_SWAY_ROLL := 0.0
+const GRACE_HIP_SHIFT := 0.0
+const GRACE_ELBOW_TUCK := 0.0
+const GRACE_FOREARM_SOFT := 0.0
 # Carriage eases into a walk and settles after stopping (seconds).
 const GRACE_WALK_ENTER := 0.18
 const GRACE_WALK_EXIT := 0.24

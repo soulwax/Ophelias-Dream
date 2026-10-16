@@ -23,6 +23,15 @@ func _bake() -> void:
 	var target_skeleton := target.find_child("Skeleton3D", true, false) as Skeleton3D
 	var player := source.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	var output := AnimationLibrary.new()
+	const FEMININE_OUTPUT := "res://assets/characters/styloo_elf/feminine/elf_feminine.res"
+	if ResourceLoader.exists(FEMININE_OUTPUT):
+		var fem_lib := load(FEMININE_OUTPUT) as AnimationLibrary
+		if fem_lib and fem_lib.has_animation("Walk"):
+			output.add_animation("Walk", fem_lib.get_animation("Walk"))
+	elif ResourceLoader.exists(OUTPUT):
+		var existing := load(OUTPUT) as AnimationLibrary
+		if existing and existing.has_animation("Walk"):
+			output.add_animation("Walk", existing.get_animation("Walk"))
 	var mappings: Array[Dictionary] = []
 	for source_name in BONES:
 		var target_name: String = BONES[source_name]
@@ -35,6 +44,9 @@ func _bake() -> void:
 		mappings.append({"source": source_bone, "target": target_bone, "source_name": source_name, "name": target_name})
 	mappings.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.target < b.target)
 	for name in CLIPS:
+		if output.has_animation(name):
+			print("Preserving authored ", name)
+			continue
 		var full_name := Stride._resolve(player, name)
 		var clip := player.get_animation(full_name) if full_name != "" else null
 		if clip == null:

@@ -146,46 +146,31 @@ public partial class GraceMotion : SkeletonModifier3D
 		float target = Mathf.SmoothStep(0.15f, 0.9f, _speed) * (1.0f - Mathf.SmoothStep(1.9f, 2.5f, _speed));
 		float duration = target > _walkBlend ? _walkEnter : _walkExit;
 		_walkBlend = Mathf.MoveToward(_walkBlend, target, dt / duration);
-		float walk = Mathf.SmoothStep(0.0f, 1.0f, _walkBlend) * _poise;
-		float reachL = _pose[(int)Bone.ThighL].Basis.Y.Z;
-		float reachR = _pose[(int)Bone.ThighR].Basis.Y.Z;
-		float legs = Mathf.Clamp((reachL - reachR) / 0.6f, -1.0f, 1.0f);
+
 		_tiptoe = Mathf.MoveToward(_tiptoe, TiptoeTarget(dt), dt * (_speed < 0.15f ? 1.2f : 5.0f));
 		float rise = Mathf.SmoothStep(0.0f, 1.0f, _tiptoe);
 
-		float jogWeight = Mathf.SmoothStep(1.9f, 2.5f, _speed) * (1.0f - Mathf.SmoothStep(3.8f, 4.6f, _speed)) * 0.45f;
-		float sprintWeight = Mathf.SmoothStep(4.4f, 5.2f, _speed) * 0.12f;
-		float gaitSway = (walk + (jogWeight + sprintWeight) * _poise);
-
-		// Pelvis / hip sway: yaw forward with reaching leg, roll down on swinging side.
-		Quaternion hipYaw = new(Vector3.Up, -_hipSwayYaw * legs * gaitSway);
-		Quaternion hipRoll = new(Vector3.Back, _hipSwayRoll * legs * gaitSway);
-		Turn(Bone.Hips, hipYaw * hipRoll);
-
 		Quaternion back = new(Vector3.Up, -_glanceChest * _glance);
-		float counterGain = _authoredWalk ? _authoredCounter : 1.0f;
-		float armGain = _authoredWalk ? _authoredArm : 1.0f;
-		Quaternion counter = new Quaternion(Vector3.Up, _counterTurn * counterGain * legs * walk) * back;
-		Quaternion lift = new(Vector3.Right, -(_chestLift + 0.03f * rise) * _poise);
-		Turn(Bone.Chest, counter);
+		Quaternion lift = new(Vector3.Right, -0.03f * rise * _poise);
+		Turn(Bone.Chest, back);
 		Turn(Bone.UpperChest, lift);
-		for (int side = 0; side < 2; side++)
+
+		if (rise > 0.001f)
 		{
-			bool left = side == 0;
-			float sign = left ? 1.0f : -1.0f;
-			Bone upper = left ? Bone.UpperArmL : Bone.UpperArmR;
-			Bone fore = left ? Bone.ForearmL : Bone.ForearmR;
-			float swing = _armSwing * armGain * legs * sign * walk;
-			float hang = sign * (Mathf.DegToRad(-3.0f + 4.0f * rise) - _elbowTuck) * _poise;
-			Turn(upper, new Quaternion(Vector3.Back, hang) * new Quaternion(Vector3.Right, swing));
-			float ahead = Mathf.Clamp(-legs * sign, 0.0f, 1.0f);
-			float softBend = -_forearmSoft * _poise;
-			Turn(fore, new Quaternion(Vector3.Right, -Mathf.DegToRad(5.0f + 16.0f * ahead) * armGain * walk + softBend));
+			for (int side = 0; side < 2; side++)
+			{
+				bool left = side == 0;
+				float sign = left ? 1.0f : -1.0f;
+				Bone upper = left ? Bone.UpperArmL : Bone.UpperArmR;
+				float hang = sign * Mathf.DegToRad(-3.0f + 4.0f * rise) * _poise;
+				Turn(upper, new Quaternion(Vector3.Back, hang));
+			}
 		}
-		ApplyPelvisPosition(rise, legs, gaitSway);
+
+		ApplyPelvisPosition(rise);
 		Quaternion chin = new(Vector3.Right, -0.04f * rise);
 		Quaternion look = new(Vector3.Up, -(_glanceChest + _glanceHead) * _glance);
-		Turn(Bone.Head, (counter * lift).Inverse() * look * chin);
+		Turn(Bone.Head, (back * lift).Inverse() * look * chin);
 		ApplyMotionFollowThrough();
 		ApplyDialoguePose(dt);
 	}
@@ -254,51 +239,46 @@ public partial class GraceMotion : SkeletonModifier3D
 		return 0.0f;
 	}
 
-	private void ApplyPelvisPosition(float rise, float legs, float gaitSway)
+	private void ApplyPelvisPosition(float rise)
 	{
-		Vector3 lateralShift = new(-legs * _hipShift * gaitSway, 0.0f, 0.0f);
-		Vector3 tiptoeShift = Vector3.Zero;
-		if (rise > 0.001f)
+		if (rise <= 0.001f) return;
+		float height = _tiptoeLift;
+		for (int side = 0; side < 2; side++)
 		{
-			float height = _tiptoeLift;
-			for (int side = 0; side < 2; side++)
-			{
-				Bone foot = side == 0 ? Bone.FootL : Bone.FootR;
-				Bone toe = side == 0 ? Bone.ToeL : Bone.ToeR;
-				Vector3 reach = _pose[(int)toe].Origin - _pose[(int)foot].Origin;
-				height = Mathf.Min(height, Mathf.Max(reach.Length() * Mathf.Sin(_tiptoePitch) + reach.Y, 0.0f));
-			}
-			height *= rise;
-			tiptoeShift = new Vector3(0.0f, height, 0.0f);
-			for (int side = 0; side < 2; side++)
-			{
-				Bone foot = side == 0 ? Bone.FootL : Bone.FootR;
-				Bone toe = side == 0 ? Bone.ToeL : Bone.ToeR;
-				Vector3 reach = _pose[(int)toe].Origin - _pose[(int)foot].Origin;
-				Vector3 across = new(reach.X, 0.0f, reach.Z);
-				float drop = Mathf.Min(-reach.Y + height, reach.Length());
-				float forward = across.Length() - Mathf.Sqrt(Mathf.Max(reach.LengthSquared() - drop * drop, 0.0f));
-				if (across.LengthSquared() > 0.000001f) tiptoeShift += across.Normalized() * forward * 0.5f;
-			}
-			for (int side = 0; side < 2; side++)
-			{
-				Bone foot = side == 0 ? Bone.FootL : Bone.FootR;
-				Bone toe = side == 0 ? Bone.ToeL : Bone.ToeR;
-				Vector3 ankle = _pose[(int)foot].Origin;
-				Vector3 ball = _pose[(int)toe].Origin;
-				Vector3 from = (ball - ankle).Normalized();
-				Vector3 to = (ball - ankle - tiptoeShift).Normalized();
-				if (from.Dot(to) > 0.99999f) continue;
-				Quaternion pitch = new(from, to);
-				Turn(foot, pitch);
-				Turn(toe, pitch.Inverse());
-			}
+			Bone foot = side == 0 ? Bone.FootL : Bone.FootR;
+			Bone toe = side == 0 ? Bone.ToeL : Bone.ToeR;
+			Vector3 reach = _pose[(int)toe].Origin - _pose[(int)foot].Origin;
+			height = Mathf.Min(height, Mathf.Max(reach.Length() * Mathf.Sin(_tiptoePitch) + reach.Y, 0.0f));
 		}
-		Vector3 totalShift = lateralShift + tiptoeShift;
-		if (totalShift.LengthSquared() > 0.000001f)
+		height *= rise;
+		Vector3 tiptoeShift = new(0.0f, height, 0.0f);
+		for (int side = 0; side < 2; side++)
+		{
+			Bone foot = side == 0 ? Bone.FootL : Bone.FootR;
+			Bone toe = side == 0 ? Bone.ToeL : Bone.ToeR;
+			Vector3 reach = _pose[(int)toe].Origin - _pose[(int)foot].Origin;
+			Vector3 across = new(reach.X, 0.0f, reach.Z);
+			float drop = Mathf.Min(-reach.Y + height, reach.Length());
+			float forward = across.Length() - Mathf.Sqrt(Mathf.Max(reach.LengthSquared() - drop * drop, 0.0f));
+			if (across.LengthSquared() > 0.000001f) tiptoeShift += across.Normalized() * forward * 0.5f;
+		}
+		for (int side = 0; side < 2; side++)
+		{
+			Bone foot = side == 0 ? Bone.FootL : Bone.FootR;
+			Bone toe = side == 0 ? Bone.ToeL : Bone.ToeR;
+			Vector3 ankle = _pose[(int)foot].Origin;
+			Vector3 ball = _pose[(int)toe].Origin;
+			Vector3 from = (ball - ankle).Normalized();
+			Vector3 to = (ball - ankle - tiptoeShift).Normalized();
+			if (from.Dot(to) > 0.99999f) continue;
+			Quaternion pitch = new(from, to);
+			Turn(foot, pitch);
+			Turn(toe, pitch.Inverse());
+		}
+		if (tiptoeShift.LengthSquared() > 0.000001f)
 		{
 			int hips = _bones[(int)Bone.Hips];
-			Vector3 moved = _parentPose[(int)Bone.Hips].Basis.Inverse() * totalShift;
+			Vector3 moved = _parentPose[(int)Bone.Hips].Basis.Inverse() * tiptoeShift;
 			_skeleton!.SetBonePosePosition(hips, _skeleton.GetBonePosePosition(hips) + moved);
 		}
 	}
