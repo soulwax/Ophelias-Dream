@@ -26,8 +26,60 @@ const MOOD_DIRECTIONS = {
 	spent: "Speak with the last of your strength, slow and breath-thin, without melodrama.",
 };
 
+const TAKE_HISTORY_KEY = "story-studio:scratch-takes:v1";
+const SCRATCH_WAV = /^build\/studio\/scratch\/[A-Za-z0-9._-]+\.wav$/;
+function readTakeHistory() {
+	try {
+		const stored = JSON.parse(localStorage.getItem(TAKE_HISTORY_KEY) || "{}");
+		if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
+		const result = {};
+		for (const [uid, takes] of Object.entries(stored)) {
+			if (uid.length > 160 || !/^(ophelia|mathilda|lake|doorway)\//.test(uid) || !Array.isArray(takes)) continue;
+			const clean = takes.slice(0, 16).filter((take) => take && SCRATCH_WAV.test(take.path) &&
+				typeof take.text === "string" && typeof take.voice === "string").map((take) => ({
+				path: take.path, raw_path: SCRATCH_WAV.test(take.raw_path || "") ? take.raw_path : "",
+				text: take.text.slice(0, 600), voice: take.voice.slice(0, 120),
+				speed: Number.isFinite(take.speed) ? take.speed : null,
+				seed: Number.isFinite(take.seed) ? take.seed : null,
+				temperature: Number.isFinite(take.temperature) ? take.temperature : null,
+				energy: Number.isFinite(take.energy) ? take.energy : null,
+				model_id: typeof take.model_id === "string" ? take.model_id : "",
+				converted: Boolean(take.converted),
+			}));
+			if (clean.length) result[uid] = clean;
+		}
+		return result;
+	} catch { return {}; }
+}
+function saveTakeHistory() {
+	try { localStorage.setItem(TAKE_HISTORY_KEY, JSON.stringify(state.takes)); }
+	catch { $("#lab-status").textContent = "This browser could not remember takes; the audio is still in scratch."; }
+}
+function addTake(uid, take) {
+	const previous = state.takes[uid] || [];
+	state.takes[uid] = [take, ...previous.filter((item) => item.path !== take.path)].slice(0, 16);
+	saveTakeHistory();
+}
+async function validateTakes(uid) {
+	const paths = [...new Set((state.takes[uid] || []).flatMap((take) => [take.path, take.raw_path].filter(Boolean)))];
+	if (!paths.length) return;
+	const checked = await Promise.all(paths.map(async (path) => {
+		try { return [path, (await api(`/api/scratch/exists?path=${encodeURIComponent(path)}`)).exists]; }
+		catch { return [path, true]; }
+	}));
+	const exists = new Map(checked);
+	const before = state.takes[uid] || [];
+	const after = before.filter((take) => exists.get(take.path) !== false).map((take) =>
+		!take.raw_path || exists.get(take.raw_path) !== false ? take : { ...take, raw_path: "" });
+	if (JSON.stringify(before) === JSON.stringify(after)) return;
+	if (after.length) state.takes[uid] = after; else delete state.takes[uid];
+	saveTakeHistory();
+	if (state.selected?.uid === uid) renderTakes();
+}
+
 const state = { lines: [], summary: {}, actions: [], filter: { chapter: "", group: "", status: "", speaker: "", owed: "", q: "" },
-	selected: null, takes: {}, playing: null, voicesLoaded: false, conversationTurns: [], conversationResults: [], dreamStory: null };
+	selected: null, takes: readTakeHistory(), playing: null, voicesPromise: null,
+	conversationTurns: [], conversationResults: [], dreamStory: null };
 const player = $("#player");
 
 async function api(path, body) {
@@ -328,7 +380,8 @@ async function select(line, discardConfirmed = false) {
 	if (line.clip_path) current.append(playButton(line.clip_path, labelOf(line)), el("span", { textContent: ` In the game now (${line.clip})` }));
 	else current.append(el("span", { className: "muted", textContent: "No clip yet: the game shows this line as a subtitle." }));
 	if (line.meta && line.meta.reaction) current.append(el("div", { className: "muted", textContent: `Action / reaction: ${line.meta.reaction}` }));
-	if (!state.voicesLoaded) await loadVoices();
+	if (!state.voicesPromise) state.voicesPromise = loadVoices();
+	await state.voicesPromise;
 	if (sequence !== selectionSequence) return false;
 	if (state.models) {
 		configureModelControls();
@@ -344,6 +397,7 @@ async function select(line, discardConfirmed = false) {
 	$("#lab-speed").value = speed;
 	$("#lab-speed-out").textContent = speed.toFixed(2);
 	renderTakes();
+	void validateTakes(line.uid);
 	renderRows();
 	return true;
 }
@@ -371,17 +425,20 @@ function fillDialogue(line) {
 async function loadVoices() {
 	const select = $("#lab-voice");
 	$("#lab-status").textContent = "Waking Kokoro…";
-	const data = await api("/api/voices");
+	let data;
+	try { data = await api("/api/voices"); }
+	catch (error) { data = { error: `Kokoro voice list unavailable: ${error.message}` }; }
 	select.replaceChildren();
 	for (const voice of data.voices || ["af_bella", "af_sarah"]) select.append(el("option", { value: voice, textContent: voice }));
-	state.voicesLoaded = Boolean(data.voices);
 	$("#lab-status").textContent = data.error ? data.error : "";
 }
 
 function renderTakes() {
 	const list = $("#lab-takes");
 	list.replaceChildren();
-	for (const take of state.takes[state.selected.uid] || []) {
+	const takes = state.takes[state.selected.uid] || [];
+	$("#lab-clear-takes").hidden = !takes.length;
+	for (const take of takes) {
 		const variation = take.seed == null ? "" : ` · seed ${take.seed}${take.temperature == null ? "" : ` · temp ${take.temperature.toFixed(2)}`}${take.energy == null ? "" : ` · energy ${take.energy.toFixed(2)}`}`;
 		const row = el("li", {}, playButton(take.path, `take · ${take.text}`), el("span", { textContent: `${take.voice}${take.speed == null ? "" : ` · ${take.speed.toFixed(2)}`}${variation} — “${take.text.slice(0, 60)}”` }));
 		if (take.raw_path) row.append(el("span", { className: "muted", textContent: "Identity pass" }), playButton(take.raw_path, `raw expression · ${take.text}`));
@@ -392,14 +449,18 @@ function renderTakes() {
 				const lineUid = state.selected.uid;
 				convert.disabled = true;
 				$("#lab-status").textContent = "Converting to Ophelia's voice with Chatterbox…";
-				const result = await api("/api/model_unify", { path: take.path });
-				if (state.selected?.uid !== lineUid) return;
+				let result;
+				try { result = await api("/api/model_unify", { path: take.path }); }
+				catch (error) { result = { ok: false, error: `Identity conversion could not finish: ${error.message}` }; }
 				if (!result.ok) {
-					$("#lab-status").textContent = result.error || "Identity conversion failed";
-					convert.disabled = !state.models?.can_unify;
+					if (state.selected?.uid === lineUid) {
+						$("#lab-status").textContent = result.error || "Identity conversion failed";
+						convert.disabled = !state.models?.can_unify;
+					}
 					return;
 				}
-				(state.takes[lineUid] ||= []).unshift({ path: result.path, voice: "Ophelia identity · Chatterbox VC", text: take.text, converted: true });
+				addTake(lineUid, { path: result.path, voice: "Ophelia identity · Chatterbox VC", text: take.text, converted: true });
+				if (state.selected?.uid !== lineUid) return;
 				$("#lab-status").textContent = result.cached ? "Played from the scratch cache." : "Converted take is in scratch; it has not changed any game clips.";
 				renderTakes();
 				toggle(result.path, `Ophelia voice · ${take.text}`);
@@ -408,7 +469,7 @@ function renderTakes() {
 		}
 		list.append(row);
 	}
-	if (!list.children.length) list.append(el("li", { className: "muted", textContent: "None yet. Kokoro renders on this machine in a few seconds; the first one also wakes the model." }));
+	if (!list.children.length) list.append(el("li", { className: "muted", textContent: "No scratch takes for this line yet. Try a reading to compare it with the game clip above." }));
 }
 
 async function tryReading() {
@@ -440,6 +501,10 @@ async function tryReading() {
 		result = { ok: false, error: `Audition could not finish: ${error.message}` };
 	}
 	state.auditionBusy = false;
+	if (result.ok) addTake(line.uid, { path: result.path, raw_path: result.raw_path || "",
+		voice: qwen || chatter ? (result.pipeline || result.model) : voice, speed: qwen || chatter ? null : speed,
+		seed: qwen || chatter ? result.seed : null, temperature: qwen ? result.temperature : null, energy: chatter ? result.energy : null,
+		text, model_id: qwen ? engine : "", converted: identityPass });
 	if (state.selected?.uid !== line.uid) { configureModelControls(); return; }
 	configureModelControls();
 	if (!result.ok) {
@@ -448,10 +513,6 @@ async function tryReading() {
 	}
 	$("#lab-status").textContent = result.cached ? "Played from the scratch cache."
 		: result.seconds != null ? `Rendered ${result.seconds}s in scratch.` : "Rendered in scratch.";
-	(state.takes[line.uid] ||= []).unshift({ path: result.path, raw_path: result.raw_path || "",
-		voice: qwen || chatter ? (result.pipeline || result.model) : voice, speed: qwen || chatter ? null : speed,
-		seed: qwen || chatter ? result.seed : null, temperature: qwen ? result.temperature : null, energy: chatter ? result.energy : null,
-		text, model_id: qwen ? engine : "", converted: identityPass });
 	renderTakes();
 	toggle(result.path, `take · ${text}`);
 }
@@ -1367,6 +1428,14 @@ for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "s
 	});
 }
 $("#lab-close").onclick = closeLab;
+$("#lab-clear-takes").onclick = () => {
+	if (!state.selected) return;
+	delete state.takes[state.selected.uid];
+	saveTakeHistory();
+	renderTakes();
+	$("#lab-status").textContent = "Take list cleared for this line. Scratch audio files remain on disk.";
+	$("#lab-try").focus();
+};
 $("#lab-try").onclick = tryReading;
 $("#lab-engine").onchange = configureModelControls;
 $("#lab-pipeline").onchange = configureModelControls;

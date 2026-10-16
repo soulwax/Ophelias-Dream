@@ -580,6 +580,11 @@ button.save kbd { color: #1b1014; }
 #lab-availability.waiting { color: var(--draft); background: #34291f; }
 .character-reference { display: flex; align-items: center; gap: 9px; margin-top: 12px; padding: 9px; border: 1px solid #3a4a4e; border-radius: 8px; color: #c6d4d1; font-size: 12px; }
 .character-reference .play { flex: 0 0 30px; }
+.takes-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.takes-head .lab-h { margin-bottom: 4px; }
+.takes-note { margin: 0 0 7px; font-size: 11px; line-height: 1.4; }
+.takes li { min-width: 0; padding: 5px 0; border-bottom: 1px solid #29373c; }
+.takes li span { min-width: 0; overflow-wrap: anywhere; }
 .sfx-filters { top: 66px; margin: 0 0 12px; padding: 10px; border: 1px solid #28363b; border-radius: 12px; background: rgb(16 22 25 / 96%); }
 .sfx-filters input, .sfx-filters select { min-height: 38px; }
 .sfx-filters select { max-width: min(200px, 100%); }

@@ -2,7 +2,7 @@
 
 The story is the search for Mathilda. Read the [complete story and spoken script](MATHILDA_STORY.md) before changing it: that document is the **script of record**. `python tools/script_to_lines.py` writes `assets/audio/voice/lines.json` from it, and `--check` exits 1 if the two have drifted. The [voice README](../assets/audio/voice/README.md) covers editing and re-performing single lines. Do not run `tools/bake_voice.py`: its old format overwrites the script.
 
-`lines.json` holds 137 lines. Every entry has text and one of fourteen moods: steady, warm, hushed, shaken, breaking, resolve, calling, numb, bitter, pleading, wry, remembering, panicked, spent. Plain strings load as steady. An entry may carry `exaggeration`, `cfg` or `temperature` for the baker; the game ignores them.
+`lines.json` currently holds 186 lines. Every entry has text and one of fourteen moods: steady, warm, hushed, shaken, breaking, resolve, calling, numb, bitter, pleading, wry, remembering, panicked, spent. Plain strings load as steady. An entry may carry `exaggeration`, `cfg` or `temperature` for the baker; the game ignores them.
 
 The HUD has a journal notice instead of an objective. J or Tab (pad Y) opens the journal; the bindings can be changed in the Esc menu. Each smudge has three readings and a key: a page read, a place visited or an event heard. `Game.known` unlocks readings and `Game.decipher` settles the right one; solving a whole page reveals its sentence between the lines. With voice off, visiting the snow stands in for hearing a call, and reading the last page stands in for an echo. The world goes on in `Phase.JOURNAL` (`Game.awake()`) while movement and look are locked.
 

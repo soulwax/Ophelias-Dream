@@ -107,8 +107,8 @@ void fragment() {
 		float bowl = clamp((uv.y - 0.32) / 0.39, 0.0, 1.0);
 		vec3 sclera = mix(vec3(0.39, 0.43, 0.54), vec3(0.76, 0.78, 0.84), bowl);
 		sclera *= mix(0.70, 1.0, smoothstep(0.0, 24.0, edge_distance));
-		vec2 angle = vec2((gaze - 0.5) * 0.85, (gaze_y - 0.5) * 0.65) * mobility;
-		vec2 offset = sin(angle) * vec2(0.075, 0.085);
+		vec2 angle = vec2((gaze - 0.5) * 1.35, (gaze_y - 0.5) * 1.10) * mobility;
+		vec2 offset = sin(angle) * vec2(0.120, 0.105);
 		vec2 local = (uv - eye_center - offset) * ratio / vec2(cos(angle.x), cos(angle.y));
 		float radius = length(local) / iris_radius;
 		float aa = max(fwidth(radius), 0.001);

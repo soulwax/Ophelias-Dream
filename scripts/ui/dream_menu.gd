@@ -13,6 +13,11 @@ signal mode_selected
 
 var _music: AudioStreamPlayer
 var _eye: ShaderMaterial
+var _tear_glass: ColorRect
+var _tear_material: ShaderMaterial
+var _menu_time := 0.0
+var _tear_cycle_time := 0.0
+var _tear_cycle_active := false
 var _glitch: ShaderMaterial
 var _glitch_glass: ColorRect
 var _snow: GPUParticles2D
@@ -39,6 +44,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = UiChrome.menu_theme()
 	_tremor_seed = randf() * 1000.0
+	_tear_cycle_active = randf() < 0.5
 	_music = AudioStreamPlayer.new()
 	_music.stream = load("res://assets/audio/music/danse_macabre.ogg")
 	if _music.stream is AudioStreamOggVorbis:
@@ -59,6 +65,13 @@ func _ready() -> void:
 	_eye.set_shader_parameter("portrait", load("res://assets/ui/mathilda_eye.png"))
 	background.material = _eye
 	add_child(background)
+	_tear_glass = ColorRect.new()
+	_tear_glass.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_tear_glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tear_material = ShaderMaterial.new()
+	_tear_material.shader = preload("res://shaders/tear_layer.gdshader")
+	_tear_glass.material = _tear_material
+	add_child(_tear_glass)
 	_glitch_glass = ColorRect.new()
 	_glitch_glass.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_glitch_glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -154,6 +167,8 @@ func _ready() -> void:
 	add_child(_settings_terminal)
 	Game.phase_changed.connect(func(next: Game.Phase) -> void:
 		visible = next == Game.Phase.BOOT
+		if next == Game.Phase.BOOT:
+			_menu_time = 0.0
 		if _snow:
 			_snow.emitting = visible
 		if next != Game.Phase.BOOT:
@@ -167,9 +182,11 @@ func _ready() -> void:
 
 
 func _aim_at(point: Vector2) -> void:
-	var relative := point / size.max(Vector2.ONE) - Vector2(0.424, 0.454)
-	_target = clampf(0.5 + relative.x, 0.08, 0.92)
-	_target_y = clampf(0.5 + relative.y, 0.12, 0.88)
+	var viewport_size := size.max(Vector2.ONE)
+	var relative := point / viewport_size - Vector2(0.424, 0.454)
+	# Definitive, expressive tracking of the mouse pointer location
+	_target = clampf(0.5 + relative.x * 2.2, 0.06, 0.94)
+	_target_y = clampf(0.5 + relative.y * 2.0, 0.08, 0.92)
 
 
 func _set_menu_selection(button: Button, selected: bool) -> void:
@@ -240,17 +257,25 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if visible:
+		var forced_time := OS.get_environment("RUN_TEAR_TIME")
+		if forced_time != "":
+			_menu_time = float(forced_time)
+		else:
+			_tear_cycle_time += delta
+			if _tear_cycle_time >= 120.0:
+				_tear_cycle_time = fmod(_tear_cycle_time, 120.0)
+				_tear_cycle_active = randf() < 0.5
+			_menu_time = _tear_cycle_time if _tear_cycle_active else 0.0
 		_layout_snow()
-	if visible:
 		# A living eye never quite settles: a small, smooth tremor on top of
 		# the deliberate pursuit, each frequency irrational against the rest
 		# so the motion never visibly repeats.
 		var t := Time.get_ticks_msec() * 0.001 + _tremor_seed
 		var tremor_x := sin(t * 1.7) * 0.0055 + sin(t * 4.3 + 1.1) * 0.0028
 		var tremor_y := sin(t * 2.1 + 0.6) * 0.0048 + sin(t * 5.1 + 2.4) * 0.0024
-		# Quicker to pick up a new point of interest than to drift there.
-		_gaze = lerpf(_gaze, _target + tremor_x, 1.0 - exp(-delta * 13.0))
-		_gaze_y = lerpf(_gaze_y, _target_y + tremor_y, 1.0 - exp(-delta * 11.0))
+		# Responsive, definitive pursuit with natural micro-tremor
+		_gaze = lerpf(_gaze, _target + tremor_x, 1.0 - exp(-delta * 16.0))
+		_gaze_y = lerpf(_gaze_y, _target_y + tremor_y, 1.0 - exp(-delta * 14.0))
 		_gaze_mobility = lerpf(_gaze_mobility, _target_mobility, 1.0 - exp(-delta * 8.0))
 		# The same soft light drives illumination and the pupil reflex: it
 		# constricts quickly toward a nearer light and eases open slowly once
@@ -258,11 +283,16 @@ func _process(delta: float) -> void:
 		var light_target := clampf(_pointer_light + 0.08 * sin(Time.get_ticks_msec() * 0.0007), 0.0, 1.0)
 		var light_rate := 7.0 if light_target > _light_level else 2.4
 		_light_level = lerpf(_light_level, light_target, 1.0 - exp(-delta * light_rate))
+		var aspect_ratio := size.x / maxf(size.y, 1.0)
 		_eye.set_shader_parameter("light_level", _light_level)
 		_eye.set_shader_parameter("mobility", _gaze_mobility)
 		_eye.set_shader_parameter("gaze", _gaze)
 		_eye.set_shader_parameter("gaze_y", _gaze_y)
-		_eye.set_shader_parameter("aspect", size.x / maxf(size.y, 1.0))
+		_eye.set_shader_parameter("aspect", aspect_ratio)
+		if _tear_material:
+			_tear_material.set_shader_parameter("menu_time", _menu_time)
+			_tear_material.set_shader_parameter("aspect", aspect_ratio)
+			_tear_material.set_shader_parameter("light_level", _light_level)
 
 
 func _sync_glitch() -> void:

@@ -527,6 +527,11 @@ class Handler(BaseHTTPRequestHandler):
             if allowed and target.suffix.lower() in (".wav", ".ogg") and target.exists():
                 return self._file(target)
             return self._send(404, {"error": "no such clip"})
+        if url.path == "/api/scratch/exists":
+            relative = parse_qs(url.query).get("path", [""])[0]
+            target = (ROOT / relative).resolve()
+            exists = target.is_relative_to(SCRATCH.resolve()) and target.suffix.lower() == ".wav" and target.is_file()
+            return self._send(200, {"exists": exists})
         if url.path == "/api/sfx":
             return self._send(200, {"items": sfx.catalog()})
         if url.path == "/api/state":
