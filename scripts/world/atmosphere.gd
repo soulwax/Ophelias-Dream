@@ -2,11 +2,13 @@ class_name Atmosphere
 extends WorldEnvironment
 
 const VOLUMETRIC_SHADER := "res://shaders/volumetric_weather.gdshader"
+const DREAM_UNIVERSE_SKY_SHADER := "res://shaders/dream_universe_sky.gdshader"
 
 var _sun: DirectionalLight3D
 var _veil: ShaderMaterial
 var _local_veil: ShaderMaterial
 var _env: Environment
+var _dream_sky: Sky
 # 0 out in the snow .. 1 deep inside the house. Indoors the daylight ambience
 # falls away and the rooms are only what their lamps make of them.
 var shelter := 0.0
@@ -146,6 +148,7 @@ func apply_weather(
 	var indoors := clampf(shelter, 0.0, 1.0)
 	var outdoor_mask := lerpf(1.0, 0.04, indoors)
 
+	var in_dream := Game.dream_mode or Game.phase == Game.Phase.DREAM
 	# Exponential depth fog + ground-hugging spindrift height fog.
 	var base_fog := lerpf(0.0045, 0.024, pow(s, 1.25)) + w * 0.014 + g * 0.004
 	if not Game.lean_graphics:
@@ -153,28 +156,30 @@ func apply_weather(
 	_env.fog_density = base_fog * outdoor_mask
 	_env.fog_height = focus_y + lerpf(2.2, 8.5, clampf(s * 0.65 + g * 0.35 + w * 0.4, 0.0, 1.0))
 	_env.fog_height_density = lerpf(0.032, 0.22, clampf(s * 0.55 + g * 0.45 + w * 0.35, 0.0, 1.0)) * outdoor_mask
-	if Game.dream_mode:
-		# Memory fragments need several metres of depth even in the storm.
-		_env.fog_density *= 0.48
-		_env.fog_height_density *= 0.42
-	_env.fog_aerial_perspective = lerpf(0.38, 0.78, clampf(s * 0.7 + w * 0.3, 0.0, 1.0))
+	if in_dream:
+		# Memory fragments and the panoramic cosmos need clear depth through the winter night.
+		_env.fog_density *= 0.36
+		_env.fog_height_density *= 0.32
+	_env.fog_aerial_perspective = 0.08 if in_dream else lerpf(0.38, 0.78, clampf(s * 0.7 + w * 0.3, 0.0, 1.0))
+	_env.fog_sky_affect = 0.06 if in_dream else 1.0
 
 	var clear_fog := Color(0.75, 0.82, 0.90)
 	var squall_fog := Color(0.82, 0.86, 0.91)
 	var whiteout_fog := Color(0.90, 0.93, 0.96)
 	_env.fog_light_color = clear_fog.lerp(squall_fog, s).lerp(whiteout_fog, w)
-	if Game.dream_mode:
-		_env.fog_light_color = _env.fog_light_color.lerp(Color(0.42, 0.38, 0.58), 0.44)
+	if in_dream:
+		_env.fog_light_color = _env.fog_light_color.lerp(Color(0.18, 0.20, 0.38), 0.72)
 	_env.fog_light_energy = lerpf(0.95, 1.22, w * 0.7 + g * 0.3)
-	if Game.dream_mode:
-		_env.fog_light_energy *= 0.68
+	if in_dream:
+		_env.fog_light_energy *= 0.52
 	_env.fog_sun_scatter = lerpf(0.28, 0.06, clampf(s * 0.6 + w * 0.6, 0.0, 1.0))
 
 	# Volumetric fog scattering: forward-scattered sun shafts during lulls,
 	# dense isotropic whiteout wall during blizzards.
 	_env.volumetric_fog_density = lerpf(0.0045, 0.024, pow(s, 1.3)) + w * 0.012
-	if Game.dream_mode:
-		_env.volumetric_fog_density *= 0.58
+	if in_dream:
+		_env.volumetric_fog_density *= 0.42
+	_env.volumetric_fog_sky_affect = 0.06 if in_dream else 1.0
 	_env.volumetric_fog_albedo = Color(0.88, 0.92, 0.97).lerp(Color(0.96, 0.98, 1.0), w * 0.7 + f * 0.3)
 	_env.volumetric_fog_anisotropy = lerpf(0.62, 0.26, clampf(s * 0.55 + w * 0.65, 0.0, 1.0))
 	_env.volumetric_fog_length = lerpf(108.0, 58.0, clampf(s * 0.6 + w * 0.5, 0.0, 1.0))
@@ -185,31 +190,37 @@ func apply_weather(
 	var sky_squall := Color(0.72, 0.77, 0.83)
 	var sky_whiteout := Color(0.85, 0.88, 0.92)
 	_env.background_color = sky_clear.lerp(sky_squall, s).lerp(sky_whiteout, w)
-	if Game.dream_mode:
-		_env.background_color = _env.background_color.lerp(Color(0.40, 0.41, 0.62), 0.34)
+	if in_dream:
+		_ensure_dream_sky()
+		_env.background_mode = Environment.BG_SKY
+		_env.sky = _dream_sky
+	else:
+		_env.background_mode = Environment.BG_COLOR
 
 	# Keep a faint, neutral sky bounce indoors. Warmth comes from the fixtures,
 	# while their shadows and the surface normals can still describe the room.
 	var outdoor_ambient := Color(0.67, 0.75, 0.85).lerp(Color(0.78, 0.83, 0.89), w)
 	_env.ambient_light_color = outdoor_ambient.lerp(Color(0.68, 0.73, 0.76), indoors)
-	if Game.dream_mode:
-		_env.ambient_light_color = _env.ambient_light_color.lerp(Color(0.54, 0.43, 0.69), 0.18)
+	if in_dream:
+		_env.ambient_light_color = _env.ambient_light_color.lerp(Color(0.46, 0.44, 0.74), 0.38)
 	_env.ambient_light_energy = lerpf(0.92, 0.68, s * 0.7 + w * 0.3) * lerpf(1.0, 0.18, indoors)
 	_env.adjustment_brightness = lerpf(1.04, 0.93, s * 0.65 + w * 0.35) * lerpf(1.0, 0.96, indoors) * (Game.settings.brightness if Game.settings else 1.0)
-	if Game.dream_mode:
-		_env.ambient_light_energy *= 0.8
-		_env.adjustment_brightness *= 0.91
-	_env.adjustment_contrast = lerpf(1.06, 0.98, w * 0.65)
-	_env.adjustment_saturation = lerpf(lerpf(0.80, 0.46, clampf(s * 0.65 + w * 0.55, 0.0, 1.0)), 0.9, indoors)
+	if in_dream:
+		_env.ambient_light_energy *= 0.76
+		_env.adjustment_brightness *= 0.96
+	_env.adjustment_contrast = 1.08 if in_dream else lerpf(1.06, 0.98, w * 0.65)
+	_env.adjustment_saturation = 1.06 if in_dream else lerpf(lerpf(0.80, 0.46, clampf(s * 0.65 + w * 0.55, 0.0, 1.0)), 0.9, indoors)
+	_env.glow_intensity = 0.28 if in_dream else 0.18
+	_env.glow_bloom = 0.10 if in_dream else 0.06
 
 	if _sun:
 		var sun_tint := Color(0.88, 0.92, 0.98).lerp(Color(0.80, 0.86, 0.94), s)
-		_sun.light_color = sun_tint
+		_sun.light_color = sun_tint.lerp(Color(0.74, 0.80, 1.0), 0.35) if in_dream else sun_tint
 		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0)) * lerpf(1.0, 0.42, indoors)
 		_sun.light_volumetric_fog_energy = lerpf(1.15, 2.35, clampf(s * 0.6 + g * 0.4 + w * 0.4, 0.0, 1.0)) * lerpf(1.0, 0.18, indoors)
-		if Game.dream_mode:
-			_sun.light_energy *= 0.66
-			_sun.light_volumetric_fog_energy *= 0.45
+		if in_dream:
+			_sun.light_energy *= 0.62
+			_sun.light_volumetric_fog_energy *= 0.32
 
 	if clock_running:
 		_apply_clock(indoors)
@@ -332,3 +343,15 @@ func _configure_environment_weather(env: Environment) -> void:
 		env.ssao_enabled = false
 		env.volumetric_fog_enabled = false
 		env.fog_density = 0.009
+
+
+func _ensure_dream_sky() -> void:
+	if _dream_sky != null:
+		return
+	var sky_mat := ShaderMaterial.new()
+	if ResourceLoader.exists(DREAM_UNIVERSE_SKY_SHADER):
+		sky_mat.shader = load(DREAM_UNIVERSE_SKY_SHADER) as Shader
+	_dream_sky = Sky.new()
+	_dream_sky.sky_material = sky_mat
+	_dream_sky.process_mode = Sky.PROCESS_MODE_REALTIME
+

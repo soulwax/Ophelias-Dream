@@ -7,7 +7,7 @@ from studio import models  # noqa: E402
 
 
 def main():
-    assert len(models.CATALOG) == 3
+    assert len(models.CATALOG) == 4
     for key, entry in models.CATALOG.items():
         assert key == entry["id"]
         assert entry["path"].is_relative_to(models.HF_ROOT)
@@ -30,7 +30,13 @@ def main():
         models.shutil.which = original_which
 
     assert models.CATALOG["qwen-custom-voice-small"]["mode"] == "custom-small"
-    assert "can_unify" in models.view()
+    assert models.CATALOG["qwen-base-clone"]["mode"] == "base"
+    assert not next(item for item in models.view()["models"] if item["id"] == "qwen-base-clone")["contextual"]
+    view = models.view()
+    assert "can_unify" in view
+    assert "steady" in view["references"]["ophelia"]
+    assert "steady" in view["references"]["mathilda"]
+    assert set(view["can_chatter"]) == {"ophelia", "mathilda"}
     print(f"Curated model catalog checked: {len(models.CATALOG)} entries")
 
 

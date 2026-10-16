@@ -52,6 +52,16 @@ def main():
                     text=text, language="English", speaker=request.get("speaker", "Serena"),
                     instruct=instruction if kind == "custom" else None, max_new_tokens=384,
                     do_sample=True, temperature=temperature)
+            elif kind == "base":
+                ref_audio = Path(request["ref_audio"]).resolve()
+                approved = ((ROOT / "tools/voice/ref").resolve(),
+                            (ROOT / "assets/audio/voice/mathilda").resolve())
+                if not any(ref_audio.is_relative_to(folder) for folder in approved) or not ref_audio.is_file():
+                    raise ValueError("voice clone reference must be a project character clip")
+                wavs, rate = engine.generate_voice_clone(
+                    text=text, language="English", ref_audio=str(ref_audio),
+                    ref_text=str(request["ref_text"]), x_vector_only_mode=False,
+                    max_new_tokens=384, do_sample=True, temperature=temperature)
             else:
                 raise ValueError(f"unsupported Qwen model mode: {kind}")
             out = Path(request["out"]).resolve()

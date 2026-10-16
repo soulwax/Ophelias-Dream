@@ -199,6 +199,7 @@ function renderRows() {
 	rows.replaceChildren();
 	const list = visible();
 	state.visibleLines = list;
+	$("#clear-filters").hidden = !Object.values(state.filter).some(Boolean);
 	$("#count").textContent = `${list.length} line${list.length === 1 ? "" : "s"}`;
 	if (!list.length) {
 		rows.append(el("tr", { className: "placeholder" }, el("td", { colSpan: 6,
@@ -218,9 +219,22 @@ function renderRows() {
 		const classes = [];
 		if (state.selected?.uid === line.uid) classes.push("sel");
 		if (state.kbd === index) classes.push("kbd");
-		const tr = el("tr", { className: classes.join(" ") });
+		const tr = el("tr", { className: classes.join(" "), tabIndex: state.kbd === index || state.kbd < 0 && index === 0 ? 0 : -1 });
 		tr.dataset.index = index;
 		tr.setAttribute("aria-selected", state.selected?.uid === line.uid ? "true" : "false");
+		tr.onfocus = () => {
+			state.kbd = index;
+			for (const row of rows.querySelectorAll("tr[data-index]")) {
+				row.classList.toggle("kbd", row === tr);
+				row.tabIndex = row === tr ? 0 : -1;
+			}
+		};
+		tr.onkeydown = (event) => {
+			if (event.target !== tr || !["Enter", " "].includes(event.key)) return;
+			event.preventDefault();
+			event.stopPropagation();
+			tr.click();
+		};
 		tr.onclick = () => {
 			if (line.uid === state.selected?.uid) { state.kbd = index; renderRows(); return; }
 			if (!confirmLineSwitch(line)) return;
@@ -247,6 +261,7 @@ function renderRows() {
 function moveLine(delta) {
 	const list = state.visibleLines || [];
 	if (!list.length) return;
+	const rowHadFocus = Boolean(document.activeElement?.closest("#rows tr[data-index]"));
 	const from = state.kbd ?? -1;
 	const next = Math.max(0, Math.min(list.length - 1, from < 0 ? 0 : from + delta));
 	const target = list[next];
@@ -254,7 +269,9 @@ function moveLine(delta) {
 	if (changesSelection && !confirmLineSwitch(target)) return;
 	state.kbd = next;
 	renderRows();
-	$(`#rows tr[data-index="${state.kbd}"]`)?.scrollIntoView({ block: "nearest" });
+	const row = $(`#rows tr[data-index="${state.kbd}"]`);
+	row?.scrollIntoView({ block: "nearest" });
+	if (rowHadFocus) row?.focus({ preventScroll: true });
 	if (changesSelection) select(target, true);
 }
 
@@ -289,6 +306,8 @@ async function select(line, discardConfirmed = false) {
 	previewSequence++;
 	state.selected = line;
 	$("#lab").hidden = false;
+	syncLabLayout();
+	if (compactLab.matches) $("#lab-close").focus();
 	if (currentView() === "lines") history.replaceState(null, "", `#line=${encodeURIComponent(line.uid)}`);
 	$("#lab-uid").textContent = line.uid;
 	const badges = [el("span", { textContent: line.speaker }), el("span", { textContent: line.mood }),
@@ -311,7 +330,15 @@ async function select(line, discardConfirmed = false) {
 	if (line.meta && line.meta.reaction) current.append(el("div", { className: "muted", textContent: `Action / reaction: ${line.meta.reaction}` }));
 	if (!state.voicesLoaded) await loadVoices();
 	if (sequence !== selectionSequence) return false;
-	if (state.models) configureModelControls();
+	if (state.models) {
+		configureModelControls();
+		if (state.pendingVoiceEngine) {
+			$("#lab-engine").value = state.pendingVoiceEngine.engine;
+			$("#lab-pipeline").value = state.pendingVoiceEngine.pipeline;
+			state.pendingVoiceEngine = null;
+			configureModelControls();
+		}
+	}
 	$("#lab-voice").value = line.speaker === "mathilda" ? "af_bella" : "af_sarah";
 	const speed = line.speaker === "mathilda" ? 0.94 : 0.92;
 	$("#lab-speed").value = speed;
@@ -355,21 +382,24 @@ function renderTakes() {
 	const list = $("#lab-takes");
 	list.replaceChildren();
 	for (const take of state.takes[state.selected.uid] || []) {
-		const variation = take.seed == null ? "" : ` · seed ${take.seed} · temp ${take.temperature.toFixed(2)}`;
+		const variation = take.seed == null ? "" : ` · seed ${take.seed}${take.temperature == null ? "" : ` · temp ${take.temperature.toFixed(2)}`}${take.energy == null ? "" : ` · energy ${take.energy.toFixed(2)}`}`;
 		const row = el("li", {}, playButton(take.path, `take · ${take.text}`), el("span", { textContent: `${take.voice}${take.speed == null ? "" : ` · ${take.speed.toFixed(2)}`}${variation} — “${take.text.slice(0, 60)}”` }));
-		if (take.model_id && !take.converted) {
+		if (take.raw_path) row.append(el("span", { className: "muted", textContent: "Identity pass" }), playButton(take.raw_path, `raw expression · ${take.text}`));
+		if (take.model_id && !take.converted && take.model_id !== "qwen-base-clone" && state.selected.speaker === "ophelia") {
 			const convert = el("button", { className: "ghost", textContent: "Match Ophelia", disabled: !state.models?.can_unify,
 				title: state.models?.can_unify ? "Convert this take to Ophelia's approved steady voice" : "Needs the Chatterbox CUDA runtime, NVIDIA GPU, and steady reference" });
 			convert.onclick = async () => {
+				const lineUid = state.selected.uid;
 				convert.disabled = true;
 				$("#lab-status").textContent = "Converting to Ophelia's voice with Chatterbox…";
 				const result = await api("/api/model_unify", { path: take.path });
+				if (state.selected?.uid !== lineUid) return;
 				if (!result.ok) {
 					$("#lab-status").textContent = result.error || "Identity conversion failed";
 					convert.disabled = !state.models?.can_unify;
 					return;
 				}
-				(state.takes[state.selected.uid] ||= []).unshift({ path: result.path, voice: "Ophelia identity · Chatterbox VC", text: take.text, converted: true });
+				(state.takes[lineUid] ||= []).unshift({ path: result.path, voice: "Ophelia identity · Chatterbox VC", text: take.text, converted: true });
 				$("#lab-status").textContent = result.cached ? "Played from the scratch cache." : "Converted take is in scratch; it has not changed any game clips.";
 				renderTakes();
 				toggle(result.path, `Ophelia voice · ${take.text}`);
@@ -383,27 +413,45 @@ function renderTakes() {
 
 async function tryReading() {
 	const line = state.selected;
-	if (!line) return;
+	if (!line || $("#lab-try").disabled) return;
 	const text = $("#lab-text").value.trim();
+	if (!text) { $("#lab-status").textContent = "Enter the words to audition."; return; }
 	const voice = $("#lab-voice").value;
 	const speed = parseFloat($("#lab-speed").value);
 	$("#lab-status").textContent = "Rendering…";
+	state.auditionBusy = true;
 	$("#lab-try").disabled = true;
 	const engine = $("#lab-engine").value;
-	const qwen = engine !== "kokoro";
-	const result = await api(qwen ? "/api/model_try" : "/api/try", qwen
-		? { id: engine, text, instruction: engine === "qwen-custom-voice-small" ? "" : $("#qwen-instruction").value.trim(),
-			speaker: $("#qwen-speaker").value, seed: parseInt($("#qwen-seed").value, 10) || 1,
-			temperature: parseFloat($("#qwen-temperature").value) }
-		: { text, voice, speed });
-	$("#lab-try").disabled = false;
+	const chatter = engine === "chatterbox-direct";
+	const qwen = engine !== "kokoro" && !chatter;
+	const character = line.speaker;
+	const mood = $("#lab-mood").value;
+	const seed = parseInt($("#qwen-seed").value, 10) || 1;
+	const identityPass = qwen && character === "ophelia" && engine !== "qwen-base-clone" && $("#lab-pipeline").value === "identity";
+	let result;
+	try {
+		result = await api(chatter ? "/api/chatter_try" : qwen ? "/api/model_try" : "/api/try", chatter
+			? { text, character, mood, energy: parseFloat($("#chatter-energy").value), seed }
+			: qwen ? { id: engine, text, instruction: ["qwen-custom-voice-small", "qwen-base-clone"].includes(engine) ? "" : $("#qwen-instruction").value.trim(),
+				speaker: $("#qwen-speaker").value, seed, temperature: parseFloat($("#qwen-temperature").value),
+				character, mood: $("#lab-reference").value === "steady" ? "steady" : mood, identity_pass: identityPass }
+				: { text, voice, speed });
+	} catch (error) {
+		result = { ok: false, error: `Audition could not finish: ${error.message}` };
+	}
+	state.auditionBusy = false;
+	if (state.selected?.uid !== line.uid) { configureModelControls(); return; }
+	configureModelControls();
 	if (!result.ok) {
 		$("#lab-status").textContent = result.error || "Preview failed";
 		return;
 	}
-	$("#lab-status").textContent = result.cached ? "Played from the scratch cache." : `Rendered ${result.seconds}s.`;
-	(state.takes[line.uid] ||= []).unshift({ path: result.path, voice: qwen ? result.model : voice, speed: qwen ? null : speed,
-		seed: qwen ? result.seed : null, temperature: qwen ? result.temperature : null, text, model_id: qwen ? engine : "" });
+	$("#lab-status").textContent = result.cached ? "Played from the scratch cache."
+		: result.seconds != null ? `Rendered ${result.seconds}s in scratch.` : "Rendered in scratch.";
+	(state.takes[line.uid] ||= []).unshift({ path: result.path, raw_path: result.raw_path || "",
+		voice: qwen || chatter ? (result.pipeline || result.model) : voice, speed: qwen || chatter ? null : speed,
+		seed: qwen || chatter ? result.seed : null, temperature: qwen ? result.temperature : null, energy: chatter ? result.energy : null,
+		text, model_id: qwen ? engine : "", converted: identityPass });
 	renderTakes();
 	toggle(result.path, `take · ${text}`);
 }
@@ -509,6 +557,7 @@ async function reloadKeeping(uid) {
 
 function closeLab() {
 	if (!confirmLineSwitch(null)) return;
+	const returnIndex = state.kbd;
 	clearTimeout(previewTimer);
 	previewSequence++;
 	selectionSequence++;
@@ -516,6 +565,12 @@ function closeLab() {
 	state.selected = null;
 	history.replaceState(null, "", "#lines");
 	renderRows();
+	syncLabLayout();
+	if (compactLab.matches) {
+		const row = $(`#rows tr[data-index="${returnIndex}"]`);
+		row?.focus({ preventScroll: true });
+		row?.scrollIntoView({ block: "nearest" });
+	}
 }
 
 // The same choice the server makes (bake_for): what this machine can render for a line.
@@ -551,9 +606,17 @@ async function refreshUndo() {
 
 // ---------------------------------------------------------------- views
 
-const VIEWS = ["lines", "review", "bake", "models", "dream-story"];
+const VIEWS = ["lines", "review", "bake", "models", "sfx", "dream-story"];
 // Each section has its own address, so links work and Back/Forward move between them.
-const ROUTES = { lines: "#lines", review: "#review", bake: "#bake", models: "#voices", "dream-story": "#dream" };
+const ROUTES = { lines: "#lines", review: "#review", bake: "#bake", models: "#voices", sfx: "#sfx", "dream-story": "#dream" };
+const compactLab = window.matchMedia("(max-width: 1250px)");
+
+function syncLabLayout() {
+	const modal = compactLab.matches && !$("#lab").hidden && currentView() === "lines";
+	for (const selector of [".top", ".main", "#nav"]) $(selector).inert = modal;
+	document.body.classList.toggle("lab-overlay-open", modal);
+}
+compactLab.addEventListener("change", syncLabLayout);
 
 function currentView() {
 	return VIEWS.find((view) => !$(`#${view}-view`).hidden) || "lines";
@@ -570,8 +633,10 @@ function showView(name, push = false) {
 	for (const view of VIEWS) $(`#${view}-view`).hidden = view !== name;
 	// The browse sidebar and the lab belong to the lines.
 	$(".shell").classList.toggle("no-nav", name !== "lines");
+	syncLabLayout();
 	if (name === "review") renderReview();
 	if (name === "models") renderModels();
+	if (name === "sfx" && !state.sfx) loadSfx();
 	if (name === "dream-story" && !state.dreamStory) loadDreamStory();
 	const hash = name === "lines" && state.selected ? `#line=${encodeURIComponent(state.selected.uid)}` : ROUTES[name];
 	if (location.hash !== hash) history[push ? "pushState" : "replaceState"](null, "", hash);
@@ -907,20 +972,55 @@ function configureModelControls() {
 	const select = $("#lab-engine");
 	const selected = select.value || "kokoro";
 	select.replaceChildren(el("option", { value: "kokoro", textContent: "Kokoro · quick baseline" }));
+	select.append(el("option", { value: "chatterbox-direct", textContent: "Chatterbox · direct character take" }));
 	for (const model of state.models.models || []) {
 		select.append(el("option", { value: model.id, textContent: model.downloaded ? model.name : `${model.name} · download first` }));
 	}
 	select.value = [...select.options].some((option) => option.value === selected) ? selected : "kokoro";
 	const engine = state.models.models.find((item) => item.id === select.value);
 	const qwen = Boolean(engine);
-	$("#qwen-instruction-wrap").hidden = !qwen || engine.id === "qwen-custom-voice-small";
-	$("#qwen-speaker-wrap").hidden = !qwen || engine.id === "qwen-voice-design";
-	$("#qwen-variation-row").hidden = !qwen;
-	$("#lab-speed").closest("label").hidden = qwen;
-	$("#engine-help").textContent = engine?.id === "qwen-custom-voice-small"
+	const chatter = select.value === "chatterbox-direct";
+	const base = engine?.id === "qwen-base-clone";
+	const ophelia = state.selected?.speaker === "ophelia";
+	const character = state.selected?.speaker;
+	if (!ophelia) $("#lab-pipeline").value = "expressive";
+	$("#qwen-instruction-wrap").hidden = !qwen || ["qwen-custom-voice-small", "qwen-base-clone"].includes(engine.id);
+	$("#qwen-speaker-wrap").hidden = !qwen || ["qwen-voice-design", "qwen-base-clone"].includes(engine.id);
+	$("#lab-pipeline-wrap").hidden = !qwen || base || !ophelia;
+	$("#lab-reference-wrap").hidden = !base || !ophelia;
+	$("#chatter-energy-wrap").hidden = !chatter;
+	$("#qwen-variation-row").hidden = !qwen && !chatter;
+	$("#qwen-temperature-wrap").hidden = chatter;
+	$("#lab-voice").closest("label").hidden = qwen || chatter;
+	$("#lab-speed").closest("label").hidden = qwen || chatter;
+	$("#engine-help").textContent = chatter
+		? "Chatterbox clones the character reference directly. The energy dial adjusts the approved mood's exaggeration and pacing; this is a scratch audition."
+		: base ? "Qwen Base clones a fixed character recording. For Ophelia, compare the steady and current-mood references; Mathilda uses a chapter recording."
+		: engine?.id === "qwen-custom-voice-small"
 		? "0.6B CustomVoice compares built-in timbres; emotional instructions are unavailable in this model."
-		: qwen ? "Qwen previews are scratch takes. VoiceDesign creates an instructed voice; CustomVoice keeps a built-in timbre while varying delivery."
+		: qwen ? "Qwen can render expression alone or follow it with Ophelia's identity conversion. Both stages stay in scratch for A/B listening."
 			: "Kokoro is a local baseline. Qwen experimental takes are saved only in scratch and do not alter the game's voice locks.";
+	const identity = qwen && !base && ophelia && $("#lab-pipeline").value === "identity";
+	const referenceMood = ophelia && (!base || $("#lab-reference").value !== "steady") ? $("#lab-mood").value : "steady";
+	const chosenMood = identity ? "steady" : referenceMood;
+	const referencePath = state.models.references?.[character]?.[chosenMood];
+	const referenceBox = $("#lab-character-reference");
+	referenceBox.hidden = !(base || chatter || identity);
+	referenceBox.replaceChildren();
+	if (!referenceBox.hidden && referencePath) referenceBox.append(playButton(referencePath, `${character} · ${chosenMood} reference`),
+		el("span", { textContent: `${character === "mathilda" ? "Mathilda chapter" : `${chosenMood} mood`} reference · the voice identity used for this path` }));
+	else if (!referenceBox.hidden) referenceBox.textContent = "This character reference is missing.";
+	let availability = "Ready to audition this line.";
+	if (qwen && !engine.downloaded) availability = "Download this model in Voices to audition it.";
+	else if (qwen && !state.models.runtime_ready) availability = "Qwen needs the CUDA runtime on this machine.";
+	else if (identity && !state.models.can_unify) availability = "The identity pass needs Chatterbox CUDA and Ophelia's steady reference.";
+	else if ((base || chatter) && !referencePath) availability = "This character's approved reference recording is missing.";
+	else if (chatter && !state.models.chatterbox_ready) availability = "Chatterbox needs the desktop voice runtime.";
+	else if (chatter && !state.models.can_chatter?.[character]) availability = "Chatterbox needs CUDA and this character's reference.";
+	const ready = availability.startsWith("Ready");
+	$("#lab-availability").textContent = availability;
+	$("#lab-availability").className = ready ? "ready" : "waiting";
+	$("#lab-try").disabled = !ready || Boolean(state.auditionBusy);
 }
 
 function renderModels() {
@@ -928,6 +1028,7 @@ function renderModels() {
 	$("#model-runtime").textContent = state.models.runtime_ready
 		? "Qwen inference is ready on this machine (CUDA runtime detected)."
 		: `Downloads are available${state.models.downloader_ready ? "" : " once uv is installed"}; Qwen inference needs an NVIDIA GPU and build/voice/gpu-venv. ${state.models.chatterbox_ready ? "Chatterbox conversion runtime is installed." : "Chatterbox identity conversion runtime is not installed here."}`;
+	renderPipelineCards();
 	const box = $("#model-cards");
 	box.replaceChildren();
 	for (const item of state.models.models || []) {
@@ -936,10 +1037,7 @@ function renderModels() {
 			disabled: item.downloaded ? !state.models.runtime_ready : !state.models.downloader_ready || jobsBusy });
 		button.onclick = async () => {
 			if (item.downloaded) {
-				$("#lab-engine").value = item.id;
-				configureModelControls();
-				if (state.selected) showView("lines");
-				else toast("Choose a story line, then open the voice lab to preview this model.");
+				chooseLabEngine(item.id);
 				return;
 			}
 			const result = await api("/api/models/download", { id: item.id });
@@ -948,11 +1046,7 @@ function renderModels() {
 			pollJobs();
 		};
 		const use = el("button", { className: "ghost", textContent: "Select for lab" });
-		use.onclick = () => {
-			$("#lab-engine").value = item.id;
-			configureModelControls();
-			if (state.selected) showView("lines"); else toast("Choose a story line, then open the voice lab.");
-		};
+		use.onclick = () => chooseLabEngine(item.id);
 		box.append(el("article", { className: "model-card" },
 			el("div", { className: "kind", textContent: `${item.license} · ${item.size}` }),
 			el("h3", {}, el("a", { href: item.url, target: "_blank", rel: "noreferrer", textContent: item.name })),
@@ -961,6 +1055,36 @@ function renderModels() {
 			el("div", { className: "row" }, button, use)));
 	}
 	renderConversationControls();
+}
+
+function chooseLabEngine(engine, pipeline = "expressive") {
+	if (!state.selected) {
+		state.pendingVoiceEngine = { engine, pipeline };
+		showView("lines");
+		toast("Choose a story line to open this audition path.");
+		return;
+	}
+	$("#lab-engine").value = engine;
+	$("#lab-pipeline").value = pipeline;
+	configureModelControls();
+	showView("lines");
+}
+
+function renderPipelineCards() {
+	const box = $("#pipeline-cards");
+	box.replaceChildren();
+	const paths = [
+		{ title: "Expression → identity", detail: "Direct a Qwen reading, then convert it to Ophelia's steady voice. Keep both takes for comparison.", engine: "qwen-voice-design", pipeline: "identity", ready: state.models.can_unify && state.models.models.some((m) => m.id === "qwen-voice-design" && m.can_try) },
+		{ title: "Reference-first clone", detail: "Qwen Base uses a fixed Ophelia mood or Mathilda chapter recording as the speaker reference.", engine: "qwen-base-clone", ready: state.models.models.some((m) => m.id === "qwen-base-clone" && m.can_try) },
+		{ title: "Direct emotional take", detail: "Chatterbox acts from the character reference, with a bounded energy control around the approved mood.", engine: "chatterbox-direct", ready: Object.values(state.models.can_chatter || {}).some(Boolean) },
+	];
+	for (const path of paths) {
+		const choose = el("button", { className: "ghost", textContent: "Use in voice lab" });
+		choose.onclick = () => chooseLabEngine(path.engine, path.pipeline || "expressive");
+		box.append(el("article", { className: "model-card" },
+			el("h3", { textContent: path.title }), el("p", { textContent: path.detail }),
+			el("div", { className: `model-status ${path.ready ? "ready" : ""}`, textContent: path.ready ? "Ready on this machine" : "Needs model weights or CUDA runtime" }), choose));
+	}
 }
 
 const QWEN_SPEAKERS = ["Serena", "Vivian", "Sohee", "Ryan", "Aiden", "Dylan", "Eric", "Uncle_Fu", "Ono_Anna"];
@@ -1216,6 +1340,22 @@ let jobsBusy = false;
 // ---------------------------------------------------------------- wiring
 
 $("#search").addEventListener("input", (e) => { state.filter.q = e.target.value; renderRows(); });
+$("#clear-filters").onclick = () => {
+	Object.assign(state.filter, { chapter: "", group: "", status: "", speaker: "", owed: "", q: "" });
+	$("#search").value = "";
+	state.kbd = -1;
+	for (const [selector, key] of [["#status-filter", "status"], ["#speaker-filter", "speaker"]]) {
+		for (const button of $(selector).children) {
+			const on = button.dataset[key] === "";
+			button.classList.toggle("on", on);
+			button.setAttribute("aria-pressed", String(on));
+		}
+	}
+	renderSummary();
+	renderNav();
+	renderRows();
+	$("#search").focus();
+};
 for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "speaker"]]) {
 	$(group).addEventListener("click", (e) => {
 		const button = e.target.closest("button");
@@ -1229,6 +1369,8 @@ for (const [group, key] of [["#status-filter", "status"], ["#speaker-filter", "s
 $("#lab-close").onclick = closeLab;
 $("#lab-try").onclick = tryReading;
 $("#lab-engine").onchange = configureModelControls;
+$("#lab-pipeline").onchange = configureModelControls;
+$("#lab-reference").onchange = configureModelControls;
 $("#conversation-search").oninput = renderConversationSource;
 $("#conversation-add").onclick = () => addConversationTurn(state.lines.find((line) => line.uid === $("#conversation-source").value));
 $("#conversation-add-free").onclick = () => addConversationTurn();
@@ -1237,6 +1379,7 @@ $("#conversation-run").onclick = runConversation;
 $("#conversation-new-seed").onclick = () => { $("#conversation-seed").value = Math.floor(Math.random() * 2_147_480_000) + 1; markConversationDirty(); };
 $("#qwen-new-seed").onclick = () => { $("#qwen-seed").value = Math.floor(Math.random() * 2_147_480_000) + 1; };
 $("#qwen-temperature").oninput = (event) => { $("#qwen-temperature-out").textContent = parseFloat(event.target.value).toFixed(2); };
+$("#chatter-energy").oninput = (event) => { $("#chatter-energy-out").textContent = parseFloat(event.target.value).toFixed(2); };
 $("#conversation-temperature").oninput = (event) => { $("#conversation-temperature-out").textContent = parseFloat(event.target.value).toFixed(2); };
 $("#conversation-save").onclick = saveConversationPreset;
 $("#conversation-delete").onclick = deleteConversationPreset;
@@ -1263,6 +1406,7 @@ $("#lab-mood").addEventListener("change", () => {
 		state.autoDirective = MOOD_DIRECTIONS[$("#lab-mood").value] || MOOD_DIRECTIONS.steady;
 		$("#qwen-instruction").value = state.autoDirective;
 	}
+	configureModelControls();
 	schedulePreview();
 });
 for (const id of ["dialogue-speaker", "dialogue-answers", "dialogue-reaction", "dialogue-quote", "dialogue-intensity", "dialogue-pause", "dialogue-overlap", "dialogue-break"]) {
@@ -1317,13 +1461,166 @@ document.addEventListener("keydown", (e) => {
 	if (e.ctrlKey || e.metaKey || e.altKey || e.target.matches("input, textarea, select") || $("#help").open) return;
 	if (e.key === "?") { e.preventDefault(); $("#help").showModal(); return; }
 	if (e.key === "/") { e.preventDefault(); showView("lines", true); $("#search").focus(); $("#search").select(); return; }
-	const index = "12345".indexOf(e.key);
+const index = "123456".indexOf(e.key);
 	if (index >= 0) { e.preventDefault(); showView(VIEWS[index], true); return; }
 	if (currentView() !== "lines") return;
 	if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); moveLine(1); }
 	else if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); moveLine(-1); }
 	else if (e.key === "Enter" && state.kbd >= 0 && state.visibleLines?.[state.kbd]) { e.preventDefault(); select(state.visibleLines[state.kbd]); }
 });
+// -------------------------------------------------------------- sound effects
+
+async function loadSfx() {
+	const overview = $("#sfx-overview");
+	overview.textContent = "Loading sound effects…";
+	try {
+		const response = await api("/api/sfx");
+		if (!response.items) throw new Error(response.error || "Could not read the sound effects");
+		state.sfx = response.items;
+		const categories = [...new Set(state.sfx.map((item) => item.category))].sort();
+		const chosenCategory = $("#sfx-category").value;
+		$("#sfx-category").replaceChildren(el("option", { value: "", textContent: "All groups" }),
+			...categories.map((category) => el("option", { value: category, textContent: category === "root" ? "General" : category })));
+		$("#sfx-category").value = chosenCategory;
+		renderSfxFamilies();
+		renderSfx();
+	} catch (error) {
+		overview.textContent = `Could not load sound effects: ${error.message}`;
+	}
+}
+
+function renderSfxFamilies() {
+	const selected = $("#sfx-family").value;
+	const category = $("#sfx-category").value;
+	const families = [...new Set((state.sfx || []).filter((item) => !category || item.category === category).map((item) => item.family))].sort();
+	$("#sfx-family").replaceChildren(el("option", { value: "", textContent: "All sounds" }),
+		...families.map((family) => el("option", { value: family, textContent: family.replaceAll("_", " ") })));
+	$("#sfx-family").value = families.includes(selected) ? selected : "";
+}
+
+function renderSfx() {
+	const items = state.sfx || [];
+	const used = items.filter((item) => item.used).length;
+	$("#sfx-overview").textContent = `${used} referenced sounds · ${items.length - used} unreferenced files · ${items.length} total`;
+	$("#tab-sfx").textContent = items.length || "";
+	const q = $("#sfx-search").value.trim().toLowerCase();
+	const category = $("#sfx-category").value;
+	const family = $("#sfx-family").value;
+	const includeUnused = $("#sfx-unused").checked;
+	$("#sfx-clear").hidden = !(q || category || family || includeUnused);
+	const visible = items.filter((item) => (includeUnused || item.used) && (!category || item.category === category) && (!family || item.family === family) &&
+		(!q || `${item.path} ${item.family} ${item.source.title} ${item.source.author} ${item.uses.join(" ")}`.toLowerCase().includes(q)));
+	$("#sfx-count").textContent = `${visible.length} shown`;
+	const list = $("#sfx-list");
+	list.replaceChildren();
+	if (!visible.length) {
+		list.append(el("p", { className: "muted sfx-empty", textContent: "No sounds match these filters." }));
+		return;
+	}
+	let previous = "";
+	for (const item of visible) {
+		if (item.category !== previous) {
+			previous = item.category;
+			list.append(el("h2", { className: "sfx-group", textContent: previous === "root" ? "General" : previous }));
+		}
+		const button = el("button", { className: "ghost sfx-change", textContent: "Replace", title: `Replace ${item.name}` });
+		button.onclick = () => openSfxReplace(item, button);
+		button.dataset.sfxPath = item.path;
+		const source = item.source.title || "Source not recorded";
+		const uses = item.uses.length ? item.uses.join(" · ") : "No script reference found";
+		list.append(el("div", { className: "sfx-item" },
+			playButton(item.path, item.name),
+			el("div", { className: "sfx-info" },
+				el("b", { textContent: item.name }),
+				el("span", { className: "muted", textContent: `${source} · ${item.source.license || "license unknown"}` }),
+				el("small", { className: item.used ? "sfx-uses" : "sfx-uses muted", textContent: uses })),
+			el("span", { className: "sfx-size muted", textContent: `${(item.bytes / 1024).toFixed(0)} KB` }), button));
+	}
+}
+
+function openSfxReplace(item, trigger) {
+	state.sfxTarget = item;
+	state.sfxTrigger = trigger;
+	clearSfxPreview();
+	$("#sfx-form").reset();
+	$("#sfx-target").textContent = item.path;
+	$("#sfx-replace-status").textContent = "";
+	$("#sfx-file").accept = item.path.endsWith(".wav") ? ".wav,audio/wav" : ".ogg,audio/ogg";
+	$("#sfx-replace").showModal();
+	$("#sfx-file").focus();
+}
+
+function clearSfxPreview() {
+	const preview = $("#sfx-preview");
+	preview.pause();
+	if (state.sfxPreviewUrl) URL.revokeObjectURL(state.sfxPreviewUrl);
+	state.sfxPreviewUrl = null;
+	preview.removeAttribute("src");
+	preview.hidden = true;
+}
+
+$("#sfx-search").addEventListener("input", renderSfx);
+$("#sfx-category").addEventListener("change", () => { renderSfxFamilies(); renderSfx(); });
+$("#sfx-family").addEventListener("change", renderSfx);
+$("#sfx-unused").addEventListener("change", renderSfx);
+$("#sfx-clear").onclick = () => {
+	$("#sfx-search").value = "";
+	$("#sfx-category").value = "";
+	$("#sfx-unused").checked = false;
+	renderSfxFamilies();
+	$("#sfx-family").value = "";
+	renderSfx();
+	$("#sfx-search").focus();
+};
+$("#sfx-file").addEventListener("change", () => {
+	clearSfxPreview();
+	const file = $("#sfx-file").files[0];
+	if (file) {
+		state.sfxPreviewUrl = URL.createObjectURL(file);
+		$("#sfx-preview").src = state.sfxPreviewUrl;
+		$("#sfx-preview").hidden = false;
+	}
+});
+$("#sfx-replace").addEventListener("close", () => {
+	clearSfxPreview();
+	if (state.sfxTrigger?.isConnected) state.sfxTrigger.focus();
+});
+$("#sfx-cancel").onclick = () => $("#sfx-replace").close();
+$("#sfx-form").addEventListener("submit", async (event) => {
+	event.preventDefault();
+	const target = state.sfxTarget;
+	const file = $("#sfx-file").files[0];
+	const status = $("#sfx-replace-status");
+	if (!target || !file) return;
+	if (!file.name.toLowerCase().endsWith(target.path.slice(target.path.lastIndexOf(".")))) {
+		status.textContent = "Choose a file with the same format as the sound it replaces.";
+		return;
+	}
+	if (file.size > 32 * 1024 * 1024) {
+		status.textContent = "The replacement must be 32 MB or smaller.";
+		return;
+	}
+	const fields = new URLSearchParams({ path: target.path, revision: target.revision,
+		title: $("#sfx-title").value.trim(), author: $("#sfx-author").value.trim(),
+		page: $("#sfx-page").value.trim(), license: $("#sfx-cc0").checked ? "CC0 1.0" : "" });
+	$("#sfx-submit").disabled = true;
+	status.textContent = "Archiving the old sound and saving the replacement…";
+	try {
+		const response = await fetch(`/api/sfx/replace?${fields}`, { method: "PUT", headers: { "Content-Type": file.type || "application/octet-stream" }, body: file });
+		const result = await response.json();
+		if (!response.ok) throw new Error(result.error || "Replacement failed");
+		if (state.playing?.path === target.path) { player.pause(); player.removeAttribute("src"); state.playing = null; paintPlayback(); }
+		$("#sfx-replace").close();
+		await loadSfx();
+		$("#sfx-list").querySelector(`[data-sfx-path="${CSS.escape(target.path)}"]`)?.focus();
+		toast(`Replaced ${target.name}. Old sound archived at ${result.archive}.${result.job ? " Godot import queued." : " Import on the next Godot run."}`);
+	} catch (error) {
+		status.textContent = error.message;
+	} finally {
+		$("#sfx-submit").disabled = false;
+	}
+});
+
 $("#help-open").onclick = () => $("#help").showModal();
 $("#search").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.target.blur(); } if (e.key === "Enter" || e.key === "ArrowDown") { e.target.blur(); moveLine(0); } });
 

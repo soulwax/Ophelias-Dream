@@ -341,10 +341,12 @@ func _build_figure() -> void:
 	add_child(_figure)
 	_silhouette = ShaderMaterial.new()
 	_silhouette.shader = preload("res://shaders/dream_shadow.gdshader")
-	_silhouette.set_shader_parameter("shadow_tint", Color("080611"))
-	_silhouette.set_shader_parameter("aura_tint", Color("32134f"))
-	_silhouette.set_shader_parameter("opacity", 0.76)
+	_silhouette.set_shader_parameter("shadow_tint", Color("09061a"))
+	_silhouette.set_shader_parameter("aura_tint", Color("8a5cff"))
+	_silhouette.set_shader_parameter("opacity", 0.88)
 	_silhouette.set_shader_parameter("dissolve", 0.0)
+	_silhouette.set_shader_parameter("galaxy_spin_speed", 0.52)
+	_silhouette.set_shader_parameter("star_vividness", 1.75)
 	for mesh_node in _figure.find_children("*", "MeshInstance3D", true, false):
 		var mesh := mesh_node as MeshInstance3D
 		mesh.material_override = _silhouette
@@ -363,18 +365,18 @@ func _build_figure() -> void:
 	_figure_aura_material = ShaderMaterial.new()
 	_figure_aura_material.shader = preload("res://shaders/mathilda_dream_aura.gdshader")
 	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
-	_figure_aura_material.set_shader_parameter("intensity", 0.0)
-	_figure_aura_shell.hide()
+	_figure_aura_material.set_shader_parameter("intensity", 0.48)
+	_figure_aura_shell.show()
 	_figure_aura_shell.material_override = _figure_aura_material
 	_figure.add_child(_figure_aura_shell)
 	_figure_aura_light = OmniLight3D.new()
 	_figure_aura_light.name = "MathildaMoodAura"
-	_figure_aura_light.position = Vector3(0.0, 1.05, 0.0)
+	_figure_aura_light.position = Vector3(0.0, 1.12, 0.18)
 	_figure_aura_light.light_color = _figure_aura_color
-	_figure_aura_light.light_energy = 1.25
-	_figure_aura_light.omni_range = 4.4
+	_figure_aura_light.light_energy = 1.35
+	_figure_aura_light.omni_range = 4.6
 	_figure_aura_light.shadow_enabled = false
-	_figure_aura_light.light_volumetric_fog_energy = 0.38
+	_figure_aura_light.light_volumetric_fog_energy = 0.42
 	_figure.add_child(_figure_aura_light)
 	_animation = _figure.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _animation == null:
@@ -395,37 +397,39 @@ func _build_figure() -> void:
 			if _idle_animation == "" and (lowered.contains("idle") or lowered.contains("stand")):
 				_idle_animation = String(animation_name)
 	var particles := GPUParticles3D.new()
-	particles.amount = 12 if Game.lean_graphics else 24
-	particles.lifetime = 3.6
-	particles.position = Vector3.UP * 0.85
+	particles.amount = 24 if Game.lean_graphics else 48
+	particles.lifetime = 3.8
+	particles.position = Vector3.UP * 0.92
 	particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	particles.visibility_aabb = AABB(Vector3(-2, -1, -2), Vector3(4, 4, 4))
 	var process := ParticleProcessMaterial.new()
 	process.direction = Vector3(0, 1, 0)
-	process.spread = 35.0
+	process.spread = 45.0
 	process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	process.emission_sphere_radius = 0.32
-	process.initial_velocity_min = 0.03
-	process.initial_velocity_max = 0.12
-	process.gravity = Vector3(0, 0.02, 0)
-	process.scale_min = 0.12
-	process.scale_max = 0.35
+	process.emission_sphere_radius = 0.38
+	process.initial_velocity_min = 0.04
+	process.initial_velocity_max = 0.14
+	process.tangential_accel_min = 0.12
+	process.tangential_accel_max = 0.28
+	process.gravity = Vector3(0, 0.025, 0)
+	process.scale_min = 0.08
+	process.scale_max = 0.24
 	var lifetime_gradient := Gradient.new()
 	lifetime_gradient.offsets = PackedFloat32Array([0.0, 0.2, 0.7, 1.0])
-	lifetime_gradient.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color(1, 1, 1, 0.5), Color(1, 1, 1, 0)])
+	lifetime_gradient.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color(0.75, 0.92, 1.0, 0.75), Color(1, 1, 1, 0)])
 	var lifetime_texture := GradientTexture1D.new()
 	lifetime_texture.gradient = lifetime_gradient
 	process.color_ramp = lifetime_texture
 	particles.process_material = process
 	var particle_mesh := QuadMesh.new()
-	particle_mesh.size = Vector2(0.16, 0.16)
+	particle_mesh.size = Vector2(0.14, 0.14)
 	_aura_mote_material = StandardMaterial3D.new()
 	_aura_mote_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_aura_mote_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.14)
+	_aura_mote_material.albedo_color = Color(_figure_aura_color, 0.38)
 	var mote_gradient := Gradient.new()
-	mote_gradient.offsets = PackedFloat32Array([0.0, 0.25, 0.7, 1.0])
-	mote_gradient.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0.65), Color(1, 1, 1, 0.08), Color(1, 1, 1, 0)])
+	mote_gradient.offsets = PackedFloat32Array([0.0, 0.22, 0.65, 1.0])
+	mote_gradient.colors = PackedColorArray([Color.WHITE, Color(0.85, 0.95, 1.0, 0.85), Color(1, 1, 1, 0.16), Color(1, 1, 1, 0)])
 	var mote_texture := GradientTexture2D.new()
 	mote_texture.gradient = mote_gradient
 	mote_texture.width = 32
@@ -436,7 +440,7 @@ func _build_figure() -> void:
 	_aura_mote_material.albedo_texture = mote_texture
 	_aura_mote_material.emission_enabled = true
 	_aura_mote_material.emission = _figure_aura_color
-	_aura_mote_material.emission_energy_multiplier = 0.4
+	_aura_mote_material.emission_energy_multiplier = 1.25
 	_aura_mote_material.vertex_color_use_as_albedo = true
 	_aura_mote_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	particle_mesh.material = _aura_mote_material
@@ -1476,10 +1480,10 @@ func _update_figure_aura(delta: float) -> void:
 	var breath := 0.91 + sin(_figure_aura_time * 2.1) * 0.07 + sin(_figure_aura_time * 3.7) * 0.02
 	var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
-	var aura_intensity := (0.025 + cue_pulse * 0.22) * breath * screen_effects
-	_figure_aura_shell.visible = aura_intensity > 0.045 and reveal > 0.01
+	var aura_intensity := (0.45 + cue_pulse * 0.55) * breath * maxf(screen_effects, 0.35)
+	_figure_aura_shell.visible = reveal > 0.01
 	_figure_aura_shell.scale = Vector3(0.58, 1.05, 0.58) * (1.0 + cue_pulse * 0.075 + sin(_figure_aura_time * 1.4) * 0.018)
-	_figure_aura_shell.rotation.y += delta * (0.16 + cue_pulse * 0.48)
+	_figure_aura_shell.rotation.y += delta * (0.22 + cue_pulse * 0.48)
 	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
 	_figure_aura_material.set_shader_parameter("time", _figure_aura_time)
 	_figure_aura_material.set_shader_parameter("pulse", cue_pulse)
@@ -1488,12 +1492,12 @@ func _update_figure_aura(delta: float) -> void:
 	_silhouette.set_shader_parameter("aura_tint", _figure_aura_color)
 	if _figure_aura_light:
 		_figure_aura_light.light_color = _figure_aura_color
-		_figure_aura_light.light_energy = (0.35 + cue_pulse * 0.6) * breath * reveal * screen_effects
-		_figure_aura_light.omni_range = 2.4 + cue_pulse * 1.2
+		_figure_aura_light.light_energy = (1.15 + cue_pulse * 0.85) * breath * reveal * maxf(screen_effects, 0.5)
+		_figure_aura_light.omni_range = 4.2 + cue_pulse * 1.6
 	if _aura_mote_material:
-		_aura_mote_material.albedo_color = Color(_figure_aura_color, (0.14 + cue_pulse * 0.08) * reveal * screen_effects)
+		_aura_mote_material.albedo_color = Color(_figure_aura_color, (0.55 + cue_pulse * 0.35) * reveal * maxf(screen_effects, 0.5))
 		_aura_mote_material.emission = _figure_aura_color
-		_aura_mote_material.emission_energy_multiplier = 0.4 + cue_pulse * 0.6
+		_aura_mote_material.emission_energy_multiplier = 1.6 + cue_pulse * 1.2
 
 
 func _figure_aura_mood_color() -> Color:

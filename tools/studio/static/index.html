@@ -14,6 +14,7 @@
     <a href="#review" data-view="review">Review <span class="badge" id="tab-review"></span></a>
     <a href="#bake" data-view="bake">Bake &amp; check <span class="badge busy" id="tab-bake"></span></a>
     <a href="#voices" data-view="models">Voices</a>
+    <a href="#sfx" data-view="sfx">SFX <span class="badge" id="tab-sfx"></span></a>
     <a href="#dream" data-view="dream-story">Dream story</a>
   </nav>
   <div class="top-tools">
@@ -36,7 +37,7 @@
     <dt><kbd>Ctrl</kbd><kbd>S</kbd></dt><dd>Save the open line edit or Dream story</dd>
     <dt><kbd>/</kbd></dt><dd>Search lines</dd>
     <dt><kbd>A</kbd> · <kbd>R</kbd></dt><dd>Review: accept · reject</dd>
-    <dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd>Lines · Review · Bake · Voices · Dream story</dd>
+    <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Lines · Review · Bake · Voices · SFX · Dream story</dd>
     <dt><kbd>Esc</kbd></dt><dd>Close the lab or this panel</dd>
   </dl>
   <form method="dialog"><button class="primary">Got it</button></form>
@@ -59,7 +60,8 @@
           <button data-speaker="ophelia" aria-pressed="false">Ophelia</button>
           <button data-speaker="mathilda" aria-pressed="false">Mathilda</button>
         </div>
-        <span id="count" class="muted"></span>
+        <button id="clear-filters" class="ghost" type="button" hidden>Clear filters</button>
+        <span id="count" class="muted" role="status" aria-live="polite"></span>
       </div>
       <div class="table-wrap">
         <table class="lines" aria-label="Story lines">
@@ -91,6 +93,9 @@
         <div class="flow-node"><b>Whisper + ECAPA</b><small>transcript + voice checks</small></div>
       </div>
       <p id="model-runtime" class="runtime muted" role="status"></p>
+      <h2>Experimental audition paths</h2>
+      <div id="pipeline-cards" class="model-cards"></div>
+      <h2>Curated model downloads</h2>
       <div id="model-cards" class="model-cards"></div>
       <section class="conversation-workbench">
         <h2>Conversation audition</h2>
@@ -151,6 +156,20 @@
       <h2>Recent model and bake jobs</h2>
       <div id="model-jobs" class="jobs"></div>
     </section>
+    <section id="sfx-view" hidden>
+      <h1>Sound effects</h1>
+      <p class="muted">Every game SFX file, including numbered takes. Listen, find its script references, and replace one file in place. Voice clips and music have separate workflows.</p>
+      <div class="sfx-overview" id="sfx-overview" role="status" aria-live="polite">Loading sound effects…</div>
+      <div class="filters sfx-filters">
+        <input id="sfx-search" type="search" aria-label="Search sound effects" placeholder="Find a sound, source, or script…" autocomplete="off">
+        <select id="sfx-category" aria-label="Sound effect category"><option value="">All groups</option></select>
+        <select id="sfx-family" aria-label="Sound effect family"><option value="">All sounds</option></select>
+        <label class="check"><input id="sfx-unused" type="checkbox"> Include unreferenced</label>
+        <button id="sfx-clear" class="ghost" type="button" hidden>Clear filters</button>
+        <span id="sfx-count" class="muted"></span>
+      </div>
+      <div id="sfx-list" class="sfx-list"></div>
+    </section>
     <section id="dream-story-view" hidden>
       <h1>Dream story</h1>
       <p class="muted">A separate subtitle script for the playable dream. Edit its approach, gentle small talk, choice and aftermath here; these words stay outside the voiced line catalogue.</p>
@@ -190,10 +209,10 @@
       </div>
     </section>
   </main>
-  <aside id="lab" class="lab" hidden aria-labelledby="lab-uid">
+  <aside id="lab" class="lab" hidden tabindex="-1" aria-labelledby="lab-uid">
     <div class="lab-head">
       <div class="lab-title"><div id="lab-uid" class="uid"></div><div id="lab-meta" class="lab-badges"></div></div>
-      <button id="lab-close" class="ghost icon" title="Close (Esc)" aria-label="Close the lab">✕</button>
+      <button id="lab-close" class="ghost" title="Close (Esc)">Close <span aria-hidden="true">✕</span></button>
     </div>
     <section class="lab-section">
       <h3 class="lab-h">In the game</h3>
@@ -220,12 +239,21 @@
     <fieldset class="model-controls">
       <legend>Preview engine</legend>
       <label>Model <select id="lab-engine"><option value="kokoro">Kokoro · quick baseline</option></select></label>
+      <label id="lab-pipeline-wrap" hidden>Audition path
+        <select id="lab-pipeline"><option value="expressive">Expressive take</option><option value="identity">Expressive take → Ophelia identity</option></select>
+      </label>
+      <label id="lab-reference-wrap" hidden>Character reference
+        <select id="lab-reference"><option value="mood">Line's mood</option><option value="steady">Steady voice</option></select>
+      </label>
+      <label id="chatter-energy-wrap" hidden>Performance energy <input id="chatter-energy" type="range" min="0" max="1" step="0.05" value="0.5"><output id="chatter-energy-out">0.50</output></label>
       <label id="qwen-instruction-wrap" hidden>Performance / voice direction
         <textarea id="qwen-instruction" rows="3" placeholder="A restrained, breath-thin reading; grief held close, with a slight tremor on the last word."></textarea>
       </label>
       <label id="qwen-speaker-wrap" hidden>Built-in voice <select id="qwen-speaker"><option>Serena</option><option>Vivian</option><option>Sohee</option><option>Ryan</option><option>Aiden</option><option>Dylan</option><option>Eric</option><option>Uncle_Fu</option><option>Ono_Anna</option></select></label>
-      <div id="qwen-variation-row" class="row" hidden><label>Sampling seed <input id="qwen-seed" type="number" min="1" max="2147483000" value="8137"></label><button id="qwen-new-seed" class="ghost">New variation</button><label>Variation temperature <input id="qwen-temperature" type="range" min="0.55" max="1.2" step="0.05" value="0.85"><output id="qwen-temperature-out">0.85</output></label></div>
+      <div id="qwen-variation-row" class="row" hidden><label>Sampling seed <input id="qwen-seed" type="number" min="1" max="2147483000" value="8137"></label><button id="qwen-new-seed" class="ghost">New variation</button><label id="qwen-temperature-wrap">Variation temperature <input id="qwen-temperature" type="range" min="0.55" max="1.2" step="0.05" value="0.85"><output id="qwen-temperature-out">0.85</output></label></div>
       <small id="engine-help" class="muted">Kokoro is a local baseline. Qwen experimental takes are saved only in scratch and do not alter the game's voice locks.</small>
+      <div id="lab-character-reference" class="character-reference" hidden></div>
+      <p id="lab-availability" class="muted" role="status" aria-live="polite"></p>
     </fieldset>
     <fieldset id="lab-dialogue" hidden>
       <legend>Doorway choreography</legend>
@@ -252,6 +280,21 @@
   </aside>
   <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 </div>
+<dialog id="sfx-replace" class="sfx-dialog" aria-labelledby="sfx-replace-title">
+  <form id="sfx-form">
+    <h2 id="sfx-replace-title">Replace sound</h2>
+    <p id="sfx-target" class="sfx-target"></p>
+    <p class="muted">The old sound is archived in ignored <code>build/studio/sfx_archive/</code>. The replacement keeps this path and must have the same WAV or Ogg format. Godot import is queued when available.</p>
+    <label>New audio file <input id="sfx-file" type="file" accept=".wav,.ogg,audio/wav,audio/ogg" required></label>
+    <audio id="sfx-preview" controls hidden aria-label="Preview replacement sound"></audio>
+    <label>Source title <input id="sfx-title" type="text" maxlength="200" required placeholder="Recording or collection name"></label>
+    <label>Creator <input id="sfx-author" type="text" maxlength="120" required placeholder="Who made this recording?"></label>
+    <label>Source URL (optional) <input id="sfx-page" type="url" maxlength="500" placeholder="https://…"></label>
+    <label class="check"><input id="sfx-cc0" type="checkbox" required> I confirm this replacement is CC0 1.0 and may be committed.</label>
+    <p id="sfx-replace-status" class="muted" role="status" aria-live="polite"></p>
+    <div class="sfx-dialog-actions"><button id="sfx-cancel" type="button" class="ghost">Cancel</button><button id="sfx-submit" type="submit" class="primary">Replace sound</button></div>
+  </form>
+</dialog>
 <audio id="player"></audio>
 <script src="/static/app.js"></script>
 </body>

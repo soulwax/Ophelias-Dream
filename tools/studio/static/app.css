@@ -536,3 +536,86 @@ button.save kbd { color: #1b1014; }
 	.lines td:nth-child(3), .lines th:nth-child(3) { display: none; }
 }
 .chip-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+
+/* ---------------------------------------------------------------- sound effects */
+.sfx-overview { color: var(--lantern); font-size: 13px; font-weight: 650; margin: 12px 0 18px; }
+.sfx-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 2; background: #111c20; padding: 10px 0; }
+.sfx-filters input[type="search"] { flex: 1 1 260px; min-width: 0; }
+.sfx-filters select { min-width: 125px; }
+.sfx-filters .check { white-space: nowrap; font-size: 12px; }
+.sfx-list { padding-bottom: 40px; }
+.sfx-group { margin: 22px 0 5px; color: var(--lantern); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+.sfx-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; border-bottom: 1px solid #28363b; padding: 10px 2px; }
+.sfx-item .play { justify-self: start; }
+.sfx-info { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.sfx-info b { overflow-wrap: anywhere; font-size: 13px; }
+.sfx-info span, .sfx-info small { font-size: 11px; overflow-wrap: anywhere; }
+.sfx-uses { color: #acbbb9; }
+.sfx-size { font-size: 11px; white-space: nowrap; }
+.sfx-change { min-width: 80px; }
+.sfx-empty { padding: 20px 0; }
+.sfx-dialog { width: min(540px, calc(100% - 24px)); max-height: calc(100vh - 32px); overflow: auto; padding: 22px; border: 1px solid #3c4b50; border-radius: 14px; background: #172126; color: var(--ink); }
+.sfx-dialog::backdrop { background: rgb(5 8 10 / 70%); }
+.sfx-dialog h2 { margin-top: 0; }
+.sfx-dialog form { display: grid; gap: 12px; }
+.sfx-dialog label:not(.check) { display: grid; gap: 5px; font-size: 12px; }
+.sfx-dialog input[type="text"], .sfx-dialog input[type="url"], .sfx-dialog input[type="file"] { width: 100%; }
+#sfx-preview { width: 100%; }
+.sfx-target { overflow-wrap: anywhere; color: var(--lantern); font-family: Consolas, monospace; font-size: 12px; }
+.sfx-dialog .check { font-size: 12px; }
+.sfx-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+@media (max-width: 600px) {
+	.sfx-item { grid-template-columns: 34px minmax(0, 1fr) auto; }
+	.sfx-size { display: none; }
+}
+
+/* The studio is an editing tool: keep the active work and its escape route visible. */
+#clear-filters, #sfx-clear { white-space: nowrap; }
+#count, #sfx-count { margin-left: auto; white-space: nowrap; }
+#lab-close { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+.lines tbody tr[data-index]:focus-visible { outline: 2px solid var(--lantern); outline-offset: -2px; }
+.lines tbody tr[data-index] { scroll-margin-top: 92px; }
+#lab-availability { margin: 9px 0 0; padding: 8px 10px; border-radius: 8px; background: #202d32; font-size: 12px; }
+#lab-availability.ready { color: var(--final); background: #1d342d; }
+#lab-availability.waiting { color: var(--draft); background: #34291f; }
+.character-reference { display: flex; align-items: center; gap: 9px; margin-top: 12px; padding: 9px; border: 1px solid #3a4a4e; border-radius: 8px; color: #c6d4d1; font-size: 12px; }
+.character-reference .play { flex: 0 0 30px; }
+.sfx-filters { top: 66px; margin: 0 0 12px; padding: 10px; border: 1px solid #28363b; border-radius: 12px; background: rgb(16 22 25 / 96%); }
+.sfx-filters input, .sfx-filters select { min-height: 38px; }
+.sfx-filters select { max-width: min(200px, 100%); }
+.sfx-list .sfx-item:focus-within { background: rgb(226 180 110 / 7%); }
+.sfx-dialog #sfx-replace-status:not(:empty) { padding: 8px 10px; border-radius: 7px; background: #34291f; color: var(--draft); }
+
+@media (max-width: 1250px) {
+	body.lab-overlay-open::before { content: ""; position: fixed; inset: 0; z-index: 10; background: rgb(4 9 11 / 74%); }
+	.shell:not(.no-nav) > .lab:not([hidden]) { position: fixed; grid-column: auto; top: 0; right: 0; bottom: 0; z-index: 11; width: min(480px, 100vw); height: 100dvh; max-height: none; overflow-y: auto; border: 0; border-left: 1px solid #46565c; box-shadow: -20px 0 50px rgb(0 0 0 / 35%); }
+	.lab-head { position: sticky; top: -18px; }
+}
+@media (max-width: 850px) {
+	.nav { align-items: center; }
+	.nav .legend { display: none; }
+	.sfx-filters { position: static; }
+}
+@media (max-width: 600px) {
+	.shell:not(.no-nav) > .lab:not([hidden]) { width: 100vw; }
+	#lines-view, #sfx-view, .table-wrap, .sfx-list { min-width: 0; max-width: 100%; }
+	.table-wrap { overflow: hidden; }
+	table.lines, .lines tbody { display: block; width: 100%; min-width: 0; max-width: 100%; }
+	.lines thead { display: none; }
+	.lines tbody tr[data-index] { display: grid; width: 100%; min-width: 0; grid-template-columns: 18px minmax(0, 1fr) 32px; gap: 2px 8px; padding: 11px 10px; border-bottom: 1px solid #2d3b40; }
+	.lines tbody tr[data-index] td { min-width: 0; max-width: 100%; padding: 0; border: 0; background: transparent !important; }
+	.lines tbody tr[data-index] td:nth-child(1) { grid-column: 1; grid-row: 1 / 3; }
+	.lines tbody tr[data-index] td:nth-child(2) { grid-column: 2; grid-row: 1; }
+	.lines tbody tr[data-index] td:nth-child(3), .lines tbody tr[data-index] td:nth-child(5) { display: none; }
+	.lines tbody tr[data-index] td:nth-child(4) { grid-column: 2; grid-row: 2; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+	.lines tbody tr[data-index] td:nth-child(6) { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+	.lines tbody tr[data-index] .who { display: inline; margin-left: 7px; }
+	.lines tbody tr[data-index] .uid { display: inline; }
+	.lines tbody tr.group-row, .lines tbody tr.placeholder { display: block; }
+	.lines tbody tr.group-row td, .lines tbody tr.placeholder td { display: block; }
+	.sfx-filters input[type="search"] { flex-basis: 100%; }
+	.sfx-filters select { flex: 1 1 120px; }
+	.sfx-filters .check { flex-basis: 100%; }
+	.sfx-item { width: 100%; min-width: 0; grid-template-columns: 34px minmax(0, 1fr) 74px; gap: 8px; }
+	.sfx-change { width: 74px; min-width: 0; padding-inline: 5px; }
+}

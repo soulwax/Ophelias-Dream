@@ -3,12 +3,23 @@ import functools
 import shutil
 import subprocess
 
-from studio import model
+from studio import model, pipelines
 
 HF_ROOT = model.ROOT / "build/voice/hf"
 QWEN_PYTHON = model.ROOT / "build/voice/gpu-venv/Scripts/python.exe"
 
 CATALOG = {
+    "qwen-base-clone": {
+        "id": "qwen-base-clone",
+        "name": "Qwen3 Base clone · 1.7B",
+        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        "path": HF_ROOT / "Base-1.7B",
+        "size": "4.54 GB",
+        "license": "Apache-2.0",
+        "mode": "base",
+        "role": "Clone a fixed Ophelia or Mathilda reference directly, then compare emotional variations at the same identity.",
+        "url": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    },
     "qwen-voice-design": {
         "id": "qwen-voice-design",
         "name": "Qwen3 VoiceDesign · 1.7B",
@@ -67,19 +78,30 @@ def nvidia_available():
 
 def view():
     ready = runtime_ready()
-    anchor = model.ROOT / "tools/voice/ref/steady.wav"
     chatterbox_ready = (model.ROOT / "build/voice/cb-venv/Scripts/python.exe").is_file()
-    can_unify = chatterbox_ready and anchor.is_file() and nvidia_available()
+    references = {}
+    for character, moods in (("ophelia", model.MOODS), ("mathilda", ("steady",))):
+        references[character] = {}
+        for mood in moods:
+            try:
+                path, _ = pipelines.reference(character, mood)
+                references[character][mood] = path.relative_to(model.ROOT).as_posix()
+            except (OSError, ValueError, RuntimeError):
+                pass
+    can_chatter = {character: chatterbox_ready and nvidia_available() and bool(available)
+                   for character, available in references.items()}
+    can_unify = can_chatter["ophelia"] and "steady" in references["ophelia"]
     rows = []
     for entry in CATALOG.values():
         downloaded = is_downloaded(entry)
         rows.append({key: value for key, value in entry.items() if key not in ("path", "mode")}
                     | {"downloaded": downloaded, "can_try": downloaded and ready,
-                       "contextual": entry["mode"] != "custom-small"})
+                       "contextual": entry["mode"] in ("design", "custom")})
     return {"models": rows, "runtime_ready": ready,
             "runtime_path": "build/voice/gpu-venv" if ready else "",
             "downloader_ready": bool(shutil.which("uv")),
-            "chatterbox_ready": chatterbox_ready, "can_unify": can_unify}
+            "chatterbox_ready": chatterbox_ready, "can_chatter": can_chatter,
+            "references": references, "can_unify": can_unify}
 
 
 def download_action(model_id):
