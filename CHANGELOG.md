@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.19.0 — 2026-10-17
+
+- Follow the red wool thread from the house window through five snags in the trees to the inscribed birch, and uncover Mathilda's glove.
+- Keep the thread keepsake in the journal while preserving base ending and lake requirements.
+- Remember the loose window latch and front-door jam shoves across saved runs and lookout checkpoint restarts.
+
 ## 0.2.18.0 — 2026-10-17
 
 - Make Story Studio easier to use for dialogue, voice pipelines and SFX review, including quicker sound replacement and experimental voice auditions.
