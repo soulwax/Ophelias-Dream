@@ -259,6 +259,9 @@ the stove and other errand writing remain in STORY_CONTRACT section 7.
 - **cups_found:** [warm] You left it out here.
 - **cups_set:** [warm] Both cups, this time.
 - **cups_kettle:** [warm] The kettle’s on.
+- **thread_first:** [steady] Red wool caught in the window.
+- **thread_winding:** [hushed] It goes on.
+- **thread_glove:** [warm] Your glove. Our letters, too.
 
 ### Passing
 

@@ -32,6 +32,10 @@ func _run() -> void:
 	Game.set_phase(Game.Phase.PLAYING)
 	var first := NoteCatalog.all()[0]
 	Game.add_to_journal(first)
+	var window := Game.house.find_child("WindowChore", true, false) as Chore
+	var front := Game.house.doors.get("front") as HouseDoor
+	_check(window != null and window.interact(), "she latches the window before the lookout")
+	_check(front != null and front.interact() and front.jam_shoves == 1, "she shoves the front door once")
 	_check(not Game.at_checkpoint and Game.checkpoint.is_empty(), "no checkpoint at the start")
 	Game.player.global_position = Game.trail.on_ground(Game.trail.exit_point) + Vector3.UP * 0.3
 	Game.player.reset_physics_interpolation()
@@ -51,6 +55,10 @@ func _run() -> void:
 	_check(Game.phase == Game.Phase.PLAYING and not Game.resuming(), "the rebuilt run starts at once")
 	_check(Game.player.global_position.distance_to(kept.origin) < 1.5, "she is back at the lookout")
 	_check(Game.journal.size() == 1 and Game.read_pages.has(first.title), "her page came with her")
+	window = Game.house.find_child("WindowChore", true, false) as Chore
+	front = Game.house.doors.get("front") as HouseDoor
+	_check(window != null and window.done, "the window latch survives the checkpoint")
+	_check(front != null and front.jam_shoves == 1 and not front.is_open, "the front door keeps its remaining shove")
 	var page := Game.trail.get_node_or_null("FieldNote_0") as FieldNote
 	_check(page != null and not page.visible and not page.is_in_group("field_notes"), "and it is gone from the field")
 	_check(Game.at_checkpoint, "the resumed run counts as past the lookout")

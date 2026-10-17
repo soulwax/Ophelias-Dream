@@ -9,6 +9,10 @@ extends Resource
 @export var record_of: String = ""
 # Trail notes advance the hunt. Pages in the house do not.
 @export var counts: bool = true
+# House documents can satisfy the lake's three-entry minimum. This one flag
+# excludes an optional keepsake that is evidence of an errand, not a page of
+# Mathilda's story. It does not affect the trail-page hunt count above.
+@export var lake_counts: bool = true
 
 # Smudged words in body order: {"readings": [right, wrong, wrong], "key":
 # "page:<title>" | "place:<place>" | "event:<call|echo>"}. The body holds

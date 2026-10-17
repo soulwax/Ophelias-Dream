@@ -173,7 +173,7 @@ func _process(delta: float) -> void:
 			reach_checkpoint()
 		# The hole: an attempt, if she carries enough of Mathilda to make one.
 		if _at_lake() and not meeting_waiting:
-			if journal.size() >= Tune.LAKE_PAGES:
+			if lake_page_count() >= Tune.LAKE_PAGES:
 				ending_kind = "prints" if turned_around else "road"
 				escape()
 			elif not _unready_said and voice:
@@ -452,6 +452,14 @@ func add_to_journal(entry: NoteEntry) -> void:
 	journal_changed.emit()
 
 
+func lake_page_count() -> int:
+	var total := 0
+	for entry in journal:
+		if entry.lake_counts:
+			total += 1
+	return total
+
+
 func solved(entry: NoteEntry, index: int) -> bool:
 	return entry != null and deciphered.has(entry.title) and (deciphered[entry.title] as Dictionary).has(index)
 
@@ -580,7 +588,7 @@ func mathilda_gone() -> void:
 	ending_kind = "gone"
 	ending_title = "Mathilda is gone"
 	ending_body = "A whole day, and you never went to her. The posts are still standing; the wind has taken the rags. Out on the lake the prints have filled in. Wherever she was waiting, she has stopped."
-	if journal.size() < Tune.LAKE_PAGES:
+	if lake_page_count() < Tune.LAKE_PAGES:
 		ending_body += " You never read enough of her to follow."
 	mark("mathilda is gone")
 	day_ran_out.emit()
@@ -644,6 +652,7 @@ func reach_checkpoint() -> void:
 		"arrow_pickups": arrow_pickups.duplicate(),
 		"day_seconds": day_seconds,
 		"moments_said": _moments_said.duplicate(),
+		"house": house.capture_run_state() if house else {},
 		"errands": errands.capture() if errands else {},
 	}
 	mark("checkpoint: lookout")
@@ -698,6 +707,8 @@ func resume_checkpoint() -> bool:
 	player.global_transform = checkpoint.at
 	player.velocity = Vector3.ZERO
 	player.reset_physics_interpolation()
+	if house:
+		house.restore_run_state(checkpoint.get("house", {}))
 	# After she is in place, so what she carried comes with her.
 	if errands:
 		errands.restore(checkpoint.get("errands", {}))

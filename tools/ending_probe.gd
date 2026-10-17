@@ -70,6 +70,13 @@ func _run() -> void:
 	_check(Game.day_running, "her day starts when she is in the world")
 	for entry in NoteCatalog.all().slice(0, 2):
 		Game.add_to_journal(entry)
+	var keepsake := NoteEntry.new()
+	keepsake.title = "The thread"
+	keepsake.counts = false
+	keepsake.lake_counts = false
+	Game.add_to_journal(keepsake)
+	_check(Game.journal.size() == 3 and Game.lake_page_count() == 2,
+		"the thread keepsake does not satisfy the lake minimum")
 	_stand(Game.trail.lake_hole)
 	await _frames(4)
 	_check(Game.phase == Game.Phase.PLAYING and Game._unready_said, "two pages: at the hole, not yet")

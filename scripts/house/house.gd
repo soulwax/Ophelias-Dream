@@ -81,6 +81,31 @@ var _stone: Material
 var _timber: Material
 
 
+## Chores and hinges are rebuilt with the house, then quietly returned to the
+## state they had when the run or lookout checkpoint was recorded.
+func capture_run_state() -> Dictionary:
+	var kept_doors := {}
+	for id: String in doors:
+		var door := doors[id] as HouseDoor
+		if door:
+			kept_doors[id] = door.capture_run_state()
+	var window := find_child("WindowChore", true, false) as Chore
+	return {"window_latched": window != null and window.done, "doors": kept_doors}
+
+
+func restore_run_state(value: Dictionary) -> void:
+	if value.is_empty():
+		return
+	var window := find_child("WindowChore", true, false) as Chore
+	if window and bool(value.get("window_latched", false)):
+		window.restore_done()
+	var kept_doors: Dictionary = value.get("doors", {})
+	for id: String in kept_doors:
+		var door := doors.get(id) as HouseDoor
+		if door and kept_doors[id] is Dictionary:
+			door.restore_run_state(kept_doors[id])
+
+
 func _ready() -> void:
 	set_meta("layout_revision", LAYOUT_REVISION)
 	_plank_out = HouseKit.scan("weathered_plank_siding", Color(0.62, 0.54, 0.47))

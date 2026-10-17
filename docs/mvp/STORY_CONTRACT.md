@@ -65,7 +65,7 @@ Turning around after Mathilda appears on the ice removes her (`lake.gd:108`), so
 | A passing happened | `passed` | Lake o20/m23; doorway a16/a17 | Present |
 | Mathilda's camp objects | `gloves`, `note` (+ `cups`, `fire`, `mend` set but unused) | Doorway topics | Present |
 | `two_cups` done | `event:cups` known; `cups` lake flag | Lake cups topic | **Missing**: topic, lines, and the runtime flag (`Lake` must set it; JSON alone is not enough) |
-| `red_thread` done | keepsake *The thread* | Journal only; glove at the camp | Missing |
+| `red_thread` done | keepsake *The thread* | Journal only; glove can be placed at the camp | W09 probe passes, including save/load and lake exclusion |
 | Bell rung | — | Echo *Here.* from the trees, Ophelia's voice | Missing |
 
 ## 6. Accidental contradictions and bounded fixes
@@ -95,8 +95,9 @@ Approve IDs, moods and flags before any generator runs (MASTERPLAN W02). Counts 
 | W11 | *Let go* journal prose for each errand | `errands.json` | 4 prose lines, no voice |
 
 **W08 approved by the owner on 2026-10-15:** the following six lines, IDs,
-moods and the optional completed-`two_cups` flag `cups`. Other writing slots
-in the table above remain pending.
+moods and the optional completed-`two_cups` flag `cups`. **W09 approved by the
+owner on 2026-10-17:** its three lines, IDs, moods and keepsake text below.
+Other writing slots in the table above remain pending.
 
 | Group | ID | Mood | Approved text |
 | --- | --- | --- | --- |
@@ -106,6 +107,14 @@ in the table above remain pending.
 | Ophelia errands | cups_kettle | warm | The kettle’s on. |
 | Lake Ophelia | o21 | warm | Both cups are on the table. The kettle’s on. |
 | Lake Mathilda | m24 | hushed | Both. You never set out both at once. |
+| Ophelia errands | thread_first | steady | Red wool caught in the window. |
+| Ophelia errands | thread_winding | hushed | It goes on. |
+| Ophelia errands | thread_glove | warm | Your glove. Our letters, too. |
+
+Approved keepsake **The thread**: “Red wool from the window, caught on five
+things between the house and the birch. I wound it loose and found your glove
+beneath our initials. The letters are still there.” It does not count toward
+the lake's three-entry minimum.
 
 This keeps m06 (*you only ever set out one for yourself*) true. The pair stays
 on the table after completion so the lake exchange remains true. New recordings
@@ -122,7 +131,7 @@ Answered by the owner on 2026-10-15:
 | 3 | C3 page labels | **Depth-test plus reach** | Implemented in W02 (`field_note.gd`) |
 | 4 | D01 `docs/THREATS.md` | **Drop the references** | Removed from CLAUDE.md, AGENTS.md and MASTERPLAN in W02 |
 
-Still open: approval of the W06/W07/W09–W11 writing slots and IDs in section 7,
+Still open: approval of the W06/W07/W10–W11 writing slots and IDs in section 7,
 and the D03 rewordings in section 9. W08's six lines and completed-cups flag
 are approved above. None of these remaining decisions blocks W08 mechanics.
 

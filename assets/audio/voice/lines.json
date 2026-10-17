@@ -113,6 +113,18 @@
     "cups_kettle": {
       "text": "The kettle’s on.",
       "mood": "warm"
+    },
+    "thread_first": {
+      "text": "Red wool caught in the window.",
+      "mood": "steady"
+    },
+    "thread_winding": {
+      "text": "It goes on.",
+      "mood": "hushed"
+    },
+    "thread_glove": {
+      "text": "Your glove. Our letters, too.",
+      "mood": "warm"
     }
   },
   "encounters": {

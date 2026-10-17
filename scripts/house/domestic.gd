@@ -119,10 +119,11 @@ static func build(house: House) -> void:
 	stove_chore.on_restore = light_stove.bind(false)
 	# A window the storm has worked loose, near enough to the stove that
 	# tending one room is one trip, not two.
-	Chore.make(root,"WindowChore",Vector3(5.75,1.5,-3.2),"Latch the window",func()->void:
+	var window_chore := Chore.make(root,"WindowChore",Vector3(5.75,1.5,-3.2),"Latch the window",func()->void:
 		if Game.voice:
 			Game.voice.chore("window_latched")
 			Game.voice.chore("window_thread"),0.9)
+	window_chore.on_restore = func() -> void: pass
 	if visual(root,"cabinet",Vector3(-3.3,0,1.1)) != null:
 		HouseKit.blocker(root,"WardrobeBody",Vector3(-3.3,.9,1.1),Vector3(1.2,1.8,.8))
 	if visual(root,"shelves",Vector3(5.9,0,.6)) != null:

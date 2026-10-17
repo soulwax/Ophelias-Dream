@@ -149,6 +149,11 @@ func _run() -> void:
 	_check(not stove.interact() and not stove.done, "the cold stove does not light")
 	_check(Game.errands.is_known(WarmHouse.ID), "trying it, she knows the errand")
 	_check(Game.errands.get_errand(WarmHouse.ID).undone_text() != "", "and it has words in the journal")
+	var window := Game.trail.house.find_child("WindowChore", true, false) as Chore
+	var front := Game.trail.house.doors.get("front") as HouseDoor
+	_check(window != null and window.interact(), "she latches the window")
+	_check(front != null and front.jam_shoves == 2 and front.interact() and front.jam_shoves == 1,
+		"one shove loosens the swollen front door")
 	# The armfuls.
 	await _frames(2)
 	_check(_armfuls() == 1 and _loose_armful() != null, "one armful waits on the pile")
@@ -170,6 +175,11 @@ func _run() -> void:
 	_check(is_instance_valid(Game.player.carrying) and Game.player.carrying.item_id == third.item_id if is_instance_valid(third) else Game.player.carrying != null, "and the third is back in her arms")
 	_check(_armfuls() == 3 and _loose_armful() == null, "and no extra armful appeared")
 	_check(not _stove().done, "the stove is still cold")
+	window = Game.trail.house.find_child("WindowChore", true, false) as Chore
+	front = Game.trail.house.doors.get("front") as HouseDoor
+	_check(window != null and window.done and not window.is_in_group("interactables"), "the window remains latched after loading")
+	_check(front != null and front.jam_shoves == 1 and not front.is_open, "the front door remembers its first shove")
+	_check(front.interact() and front.jam_shoves == 0 and front.is_open, "the next shove opens it")
 	await _stand_by(warm.box.global_position)
 	_check(Game.player.place(warm.box), "she puts the third in the box")
 	await _frames(4)
@@ -196,6 +206,8 @@ func _run() -> void:
 	var crackle := Game.trail.house.find_child("HearthCrackle", true, false) as AudioStreamPlayer3D
 	_check(crackle != null and crackle.playing, "the hearth is crackling again")
 	_check(_warm().box.held.size() == 3 and _loose_armful() == null, "the box is full and the pile quiet")
+	front = Game.trail.house.doors.get("front") as HouseDoor
+	_check(front != null and front.jam_shoves == 0 and front.is_open, "the open front door survives another load")
 	_finish()
 
 

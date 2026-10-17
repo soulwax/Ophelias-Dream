@@ -130,6 +130,9 @@ func _build_verbs() -> void:
 	var cups := TwoCups.build(self)
 	if cups:
 		builders[TwoCups.ID] = cups
+	var thread := RedThread.build(self)
+	if thread:
+		builders[RedThread.ID] = thread
 	var camp := get_tree().get_first_node_in_group("camp") as Camp
 	if camp:
 		camp.ensure_built()

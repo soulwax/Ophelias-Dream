@@ -67,7 +67,17 @@ static func everything() -> Array[NoteEntry]:
 	return pages
 
 
+## A keepsake from the optional red-thread walk, not a lake page.
+static func thread() -> NoteEntry:
+	var entry := _make("The thread", "Red wool from the window, caught on five things between the house and the birch. I wound it loose and found your glove beneath our initials. The letters are still there.", 0.0)
+	entry.counts = false
+	entry.lake_counts = false
+	return entry
+
+
 static func find(title: String) -> NoteEntry:
+	if title == "The thread":
+		return thread()
 	for entry in everything():
 		if entry.title == title:
 			return entry

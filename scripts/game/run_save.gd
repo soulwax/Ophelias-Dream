@@ -63,6 +63,7 @@ func save_now() -> bool:
 		"was_paused": Game.phase == Game.Phase.PAUSED,
 		"game": _capture_game(),
 		"player": _capture_player(),
+		"house": Game.house.capture_run_state() if Game.house else {},
 		"weather": _capture_properties(Game.weather, ["regime", "intensity", "gust", "whiteout", "flurry", "wind", "wind_scroll", "shelter", "snow_scale", "dream_quiet", "_heading", "_heading_target", "_gust_target", "_intensity_target", "_whiteout_target", "_flurry_target", "_regime_clock", "_pulse_clock", "_clock", "_pinned_regime"]),
 		"atmosphere": _capture_properties(_atmosphere(), ["shelter", "snow_cover", "clock_hours", "clock_running"]),
 		"chapter": _capture_properties(_chapter(), ["_mathilda_seen", "_pending", "_idle_left", "_place", "_chapter_finished", "_going_home", "_inspected", "_found_photo"]),
@@ -177,7 +178,7 @@ func _valid_snapshot(value: Dictionary) -> bool:
 		return false
 	if not value.get("game", null) is Dictionary or not value.get("player", null) is Dictionary:
 		return false
-	for section: String in ["weather", "atmosphere", "chapter", "voice", "dialogue", "journal_ui", "reader_ui", "dream", "dream_architecture", "dream_route", "dream_soundscape", "errands"]:
+	for section: String in ["house", "weather", "atmosphere", "chapter", "voice", "dialogue", "journal_ui", "reader_ui", "dream", "dream_architecture", "dream_route", "dream_soundscape", "errands"]:
 		if value.has(section) and not value[section] is Dictionary:
 			return false
 	if not value.get("world_seed", null) is int or not value.get("phase", null) is int:
@@ -315,6 +316,8 @@ func apply_pending() -> bool:
 	_apply_properties(_dream_architecture(), data.get("dream_architecture", {}))
 	_apply_properties(_dream_route(), data.get("dream_route", {}))
 	_apply_player(data.get("player", {}))
+	if Game.house and data.get("house", {}) is Dictionary:
+		Game.house.restore_run_state(data.get("house", {}))
 	# After the player, whose carrying_item_id says what is back in her arms.
 	if Game.errands and data.get("errands", {}) is Dictionary:
 		Game.errands.restore(data.get("errands", {}))

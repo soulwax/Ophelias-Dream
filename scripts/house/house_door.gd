@@ -104,6 +104,39 @@ var is_open: bool:
 		return _open
 
 
+## Keep the jam and the hinge's current pose across a rebuilt run. A door may
+## be saved while still swinging; restoring the drive lets it finish naturally.
+func capture_run_state() -> Dictionary:
+	return {
+		"jam_shoves": jam_shoves,
+		"open": _open,
+		"open_rotation": _motion.open_rotation,
+		"angle": _motion.angle,
+		"angular_velocity": _motion.angular_velocity,
+		"driving": _motion.driving,
+		"drive_open": _motion.drive_open,
+		"pace": _motion.pace,
+	}
+
+
+func restore_run_state(value: Dictionary) -> void:
+	if value.is_empty() or _pivot == null:
+		return
+	jam_shoves = maxi(0, int(value.get("jam_shoves", jam_shoves)))
+	_open = bool(value.get("open", false))
+	var saved_rotation := float(value.get("open_rotation", _motion.open_rotation))
+	_motion.open_rotation = clampf(saved_rotation, -_swing_angle, _swing_angle)
+	_motion.angle = clampf(float(value.get("angle", 0.0)), minf(0.0, _motion.open_rotation), maxf(0.0, _motion.open_rotation))
+	_motion.angular_velocity = clampf(float(value.get("angular_velocity", 0.0)), -DoorHingeDynamics.MAX_SPEED, DoorHingeDynamics.MAX_SPEED)
+	_motion.driving = bool(value.get("driving", false))
+	_motion.drive_open = bool(value.get("drive_open", _open))
+	_motion.pace = clampf(float(value.get("pace", 1.0)), 0.1, 1.0)
+	_motion.blocked = false
+	_pivot.rotation.y = _motion.angle
+	_was_moving = _motion.driving
+	_was_blocked = false
+
+
 ## The house moves it: slowly, no hand on the handle, a long creak.
 func drift(open: bool, creak: AudioStream = null) -> void:
 	if open == _open:
