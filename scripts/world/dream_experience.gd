@@ -527,7 +527,7 @@ func _build_caption() -> void:
 	_speech_panel.add_child(dialogue_column)
 	_speaker_label = UiChrome.term_label("", 14, UiChrome.SIGNAL)
 	dialogue_column.add_child(_speaker_label)
-	var subtitle_size: int = [24, 27, 32][clampi(Game.settings.subtitle_size, 0, 2)]
+	var subtitle_size: int = [24, 27, 32, 38][clampi(Game.settings.subtitle_size, 0, 3)]
 	_caption = UiChrome.term_label("", subtitle_size, UiChrome.BONE)
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT

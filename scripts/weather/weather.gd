@@ -181,7 +181,7 @@ func settle() -> void:
 	snow_scale = _snow_here()
 	for layer in _layers:
 		layer.apply(intensity, wind, gust, whiteout, flurry)
-		layer.amount_ratio *= snow_scale
+		layer.amount_ratio *= snow_scale * Game.settings.snowfall_visibility
 		if inside:
 			layer.amount_ratio = 0.0
 	if _atmosphere:
@@ -201,7 +201,7 @@ func _process(delta: float) -> void:
 	snow_scale = move_toward(snow_scale, _snow_here(), delta * 0.6)
 	for layer in _layers:
 		layer.apply(intensity, wind, gust, whiteout, flurry)
-		layer.amount_ratio *= snow_scale
+		layer.amount_ratio *= snow_scale * Game.settings.snowfall_visibility
 		# No snow falls indoors; the storm is only heard through the walls.
 		if inside:
 			layer.amount_ratio = 0.0

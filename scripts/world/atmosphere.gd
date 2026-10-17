@@ -166,9 +166,10 @@ func apply_weather(
 	var base_fog := lerpf(0.0045, 0.024, pow(s, 1.25)) + w * 0.014 + g * 0.004
 	if not Game.lean_graphics:
 		base_fog *= 0.62
-	_env.fog_density = base_fog * outdoor_mask
+	var haze := clampf(Game.settings.haze_strength, 0.4, 1.5) if Game.settings else 1.0
+	_env.fog_density = base_fog * outdoor_mask * haze
 	_env.fog_height = focus_y + lerpf(2.2, 8.5, clampf(s * 0.65 + g * 0.35 + w * 0.4, 0.0, 1.0))
-	_env.fog_height_density = lerpf(0.032, 0.22, clampf(s * 0.55 + g * 0.45 + w * 0.35, 0.0, 1.0)) * outdoor_mask
+	_env.fog_height_density = lerpf(0.032, 0.22, clampf(s * 0.55 + g * 0.45 + w * 0.35, 0.0, 1.0)) * outdoor_mask * haze
 	if in_dream:
 		# Memory fragments and the panoramic cosmos need clear depth through the winter night.
 		_env.fog_density *= 0.36
@@ -191,7 +192,7 @@ func apply_weather(
 
 	# Volumetric fog scattering: forward-scattered sun shafts during lulls,
 	# dense isotropic whiteout wall during blizzards.
-	_env.volumetric_fog_density = lerpf(0.0012, 0.024, pow(s, 1.3)) + w * 0.012
+	_env.volumetric_fog_density = (lerpf(0.0012, 0.024, pow(s, 1.3)) + w * 0.012) * haze
 	if in_dream:
 		_env.volumetric_fog_density *= 0.42
 	_env.volumetric_fog_sky_affect = 0.06 if in_dream else 0.22
@@ -308,9 +309,10 @@ func _update_veil(
 	# Keep the dream's snow moving, but leave enough air between the flakes to
 	# read Mathilda, the path and the landmarks through the storm.
 	var veil_scale := 0.2 if Game.dream_mode else 1.0
-	mat.set_shader_parameter("base_density", base_d * snow_cover * veil_scale)
-	mat.set_shader_parameter("squall_density", squall_d * snow_cover * veil_scale)
-	mat.set_shader_parameter("spindrift_density", spindrift_d * snow_cover * veil_scale)
+	var haze := clampf(Game.settings.haze_strength, 0.4, 1.5) if Game.settings else 1.0
+	mat.set_shader_parameter("base_density", base_d * snow_cover * veil_scale * haze)
+	mat.set_shader_parameter("squall_density", squall_d * snow_cover * veil_scale * haze)
+	mat.set_shader_parameter("spindrift_density", spindrift_d * snow_cover * veil_scale * haze)
 	mat.set_shader_parameter("ground_level", ground_y)
 	mat.set_shader_parameter("weather_intensity", intensity)
 	mat.set_shader_parameter("gust_strength", gust)

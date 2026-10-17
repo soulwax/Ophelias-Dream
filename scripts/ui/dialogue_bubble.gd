@@ -70,6 +70,19 @@ func _ready() -> void:
 	_surface.hide()
 	_surface_layer.add_child(_surface)
 	Game.phase_changed.connect(_on_phase)
+	Game.settings.changed.connect(_apply_subtitle_style)
+	_apply_subtitle_style()
+
+
+func _apply_subtitle_style() -> void:
+	if _panel == null:
+		return
+	var high := Game.settings.subtitle_contrast
+	var panel_style := UiChrome.term_box(Color(UiChrome.VOID, 0.995 if high else 0.94), Color(UiChrome.SIGNAL, 0.82 if high else 0.58), 1, 20)
+	panel_style.border_width_left = 3
+	_panel.add_theme_stylebox_override("panel", panel_style)
+	_line.add_theme_font_size_override("font_size", [18, 22, 27, 32][clampi(Game.settings.subtitle_size, 0, 3)])
+	_panel.size.y = _panel.get_combined_minimum_size().y
 
 
 ## Up to five topics fit without obscuring the scene. Disabled topics remain

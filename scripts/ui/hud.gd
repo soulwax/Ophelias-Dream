@@ -39,6 +39,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 20
 	_build()
+	Game.settings.changed.connect(_apply_subtitle_style)
+	_apply_subtitle_style()
 	Game.phase_changed.connect(_on_phase)
 	Game.interaction_feedback.connect(_on_interaction_feedback)
 	Game.page_added.connect(_on_page_added)
@@ -55,7 +57,7 @@ func _process(delta: float) -> void:
 		Game.murmur_left = maxf(0.0, Game.murmur_left - delta)
 	var reading := Game.phase == Game.Phase.READING or Game.phase == Game.Phase.JOURNAL
 	var spoken := Game.murmur_left > 0.0 and Hud.murmur_shown(Game.phase) and Game.settings.subtitles
-	_murmur.add_theme_font_size_override("font_size", Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, 2)])
+	_murmur.add_theme_font_size_override("font_size", Settings.SUBTITLE_SIZES[clampi(Game.settings.subtitle_size, 0, Settings.SUBTITLE_SIZES.size() - 1)])
 	_murmur.text = Game.murmur if spoken else ""
 	if spoken:
 		var speaker := Game.murmur_speaker.to_upper() if Game.murmur_speaker != "" else ("MATHILDA" if Game.mathilda_pov else "OPHELIA")
@@ -382,6 +384,15 @@ func _build_murmur() -> void:
 	_murmur.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_murmur.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(_murmur)
+
+
+func _apply_subtitle_style() -> void:
+	if _murmur_plate == null:
+		return
+	var high := Game.settings.subtitle_contrast
+	var plate := UiChrome.term_box(Color(UiChrome.VOID, 0.98 if high else 0.86), Color(UiChrome.SIGNAL, 0.75 if high else 0.42), 1, 14)
+	plate.border_width_left = 3
+	_murmur_plate.add_theme_stylebox_override("panel", plate)
 
 
 # A light ring on a dark one, so it reads on snow and on the cabin walls.

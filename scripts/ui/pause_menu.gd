@@ -36,9 +36,9 @@ const PAGE_KEYS := {
 	"Controls": ["mouse_sensitivity", "stick_sensitivity", "invert_y", "invert_x", "sprint_toggle", "rumble"],
 	"Keys": [],
 	"Camera": ["fov", "camera_distance", "camera_shake", "speed_fov"],
-	"Display": ["display_mode", "vsync", "max_fps", "render_scale", "anti_aliasing", "brightness", "graphics"],
+	"Display": ["display_mode", "vsync", "max_fps", "render_scale", "anti_aliasing", "brightness", "graphics", "haze_strength", "snowfall_visibility"],
 	"Audio": ["master_volume", "ambience_volume", "effects_volume", "voice_volume", "dread_volume", "mute_unfocused"],
-	"Interface": ["show_prompts", "show_reticle", "show_journal_toast", "breath_meter", "subtitles", "subtitle_size", "ui_scale", "screen_effects"],
+	"Interface": ["show_prompts", "show_reticle", "show_journal_toast", "breath_meter", "subtitles", "subtitle_size", "subtitle_contrast", "ui_scale", "screen_effects"],
 }
 const LABEL_WIDTH := 280
 const FRAME_MAX := Vector2(1220.0, 760.0)
@@ -448,6 +448,9 @@ func _display_page() -> void:
 	_slider("Brightness", "brightness", 0.7, 1.4, 0.02, _percent, "Raise it until the cellar's darkest corners just show.")
 	var now := "%s on %s" % ["lean" if Game.lean_graphics else "full", RenderingServer.get_video_adapter_name()]
 	_choice("Graphics detail", "graphics", ["Automatic", "Lean", "Full"], [0, 1, 2], "Lean drops volumetric fog and half the snow for integrated GPUs. Applies when the run restarts. Now running %s." % now)
+	_section("Weather visibility")
+	_slider("Snowfall on screen", "snowfall_visibility", 0.0, 1.0, 0.05, _percent, "Changes visible flakes and spindrift only; the weather and its sound continue.")
+	_slider("Atmospheric haze", "haze_strength", 0.4, 1.5, 0.05, _percent, "How much distance fog fills the landscape. Lower it to see farther through the storm.")
 
 
 func _audio_page() -> void:
@@ -469,7 +472,8 @@ func _interface_page() -> void:
 	_choice("Breath meter", "breath_meter", ["Always", "Only when short of breath"], [0, 1], "The bar under the prompt that empties as she runs.")
 	_section("Text")
 	_flag("Subtitles", "subtitles", "Spoken lines as text. Conversations always show theirs.")
-	_choice("Subtitle size", "subtitle_size", ["Small", "Medium", "Large"], [0, 1, 2], "The size of her spoken lines at the bottom of the screen.")
+	_choice("Subtitle size", "subtitle_size", ["Small", "Medium", "Large", "Extra large"], [0, 1, 2, 3], "The size of spoken lines in the world and at the bottom of the screen.")
+	_flag("High-contrast subtitles", "subtitle_contrast", "A darker, stronger backing behind spoken lines against bright snow.")
 	_choice("Interface scale", "ui_scale", ["80%", "90%", "100%", "110%", "120%", "130%"], [0.8, 0.9, 1.0, 1.1, 1.2, 1.3], "Every menu, page and hint, not the world.")
 	_section("Comfort")
 	_slider("Screen effects", "screen_effects", 0.0, 1.0, 0.05, _percent, "The dread vignette at the edges of the screen, and this console's scanlines and grain.")

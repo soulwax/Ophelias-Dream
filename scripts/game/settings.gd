@@ -48,6 +48,8 @@ const DEFAULTS := {
 	"render_scale": 1.0,
 	"graphics": 0,
 	"brightness": 1.0,
+	"haze_strength": 1.0,
+	"snowfall_visibility": 1.0,
 	"anti_aliasing": 0,
 	"ui_scale": 1.0,
 	"master_volume": 1.0,
@@ -62,10 +64,11 @@ const DEFAULTS := {
 	"show_reticle": true,
 	"subtitles": true,
 	"subtitle_size": 1,
+	"subtitle_contrast": false,
 	"screen_effects": 1.0,
 }
-# Subtitle font sizes for subtitle_size 0 small, 1 medium, 2 large.
-const SUBTITLE_SIZES := [14, 16, 20]
+# Subtitle font sizes for small, medium, large and extra large.
+const SUBTITLE_SIZES := [14, 16, 20, 24]
 
 # Look and keys.
 var mouse_sensitivity: float = DEFAULTS.mouse_sensitivity
@@ -90,6 +93,9 @@ var max_fps: int = DEFAULTS.max_fps
 var render_scale: float = DEFAULTS.render_scale
 var graphics: int = DEFAULTS.graphics
 var brightness: float = DEFAULTS.brightness
+# Visual-only weather controls. The storm's timing, sound and story stay put.
+var haze_strength: float = DEFAULTS.haze_strength
+var snowfall_visibility: float = DEFAULTS.snowfall_visibility
 # anti_aliasing 0 off, 1 FXAA, 2 SMAA, 3 TAA. ui_scale multiplies every 2D
 # element (menus, HUD, subtitles), not the world.
 var anti_aliasing: int = DEFAULTS.anti_aliasing
@@ -110,6 +116,7 @@ var breath_meter: int = DEFAULTS.breath_meter
 var show_reticle: bool = DEFAULTS.show_reticle
 var subtitles: bool = DEFAULTS.subtitles
 var subtitle_size: int = DEFAULTS.subtitle_size
+var subtitle_contrast: bool = DEFAULTS.subtitle_contrast
 var screen_effects: float = DEFAULTS.screen_effects
 
 # action -> the events it shipped with, for resetting the keys.
