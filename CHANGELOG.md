@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.20.0 — 2026-10-18
+
+- Add snowfall particle visibility and atmospheric haze sliders to display settings for tuning winter visibility.
+- Add high-contrast subtitle backing and an extra-large subtitle size option for clearer reading against snow.
+
 ## 0.2.19.0 — 2026-10-17
 
 - Follow the red wool thread from the house window through five snags in the trees to the inscribed birch, and uncover Mathilda's glove.
