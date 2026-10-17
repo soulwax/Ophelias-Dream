@@ -467,9 +467,9 @@ func _settle_shadows() -> void:
 			lamp.shadow_enabled = String(lamp.name) in fixture_names
 			if lamp.shadow_enabled:
 				lamp.shadow_caster_mask = 0xFFFFF & ~Tune.FOREST_RENDER_LAYER
-				lamp.shadow_bias = 0.035
-				lamp.shadow_normal_bias = 1.0
-				lamp.shadow_blur = 3.0
+				lamp.shadow_bias = 0.025
+				lamp.shadow_normal_bias = 0.45
+				lamp.shadow_blur = 1.6
 
 
 ## Built after authored properties are applied. Only the opaque structural

@@ -12,6 +12,11 @@ var _env: Environment
 var _dream_sky: Sky
 var _weather_sky: Sky
 var _weather_sky_material: ShaderMaterial
+var _cloud_coverage := 0.2
+var _cloud_opacity := 0.68
+var _cloud_offset := Vector2.ZERO
+var _sun_clear_energy := 0.0
+var _sun_clear_fog_energy := 0.0
 # 0 out in the snow .. 1 deep inside the house. Indoors the daylight ambience
 # falls away and the rooms are only what their lamps make of them.
 var shelter := 0.0
@@ -41,9 +46,7 @@ func start_clock(hours: float) -> void:
 func _process(delta: float) -> void:
 	if clock_running and Game.awake():
 		clock_hours = fposmod(clock_hours + delta * 24.0 / (Tune.DAY_MINUTES * 60.0), 24.0)
-	# The procedural sun disc and its cloud opening are screen anchored. The
-	# camera moves constantly during play, so keep their projection current
-	# even when the weather itself has not changed.
+	# Keep the sun disc and the cloud field aligned with the moving camera.
 	_update_weather_sun_projection()
 
 
@@ -71,7 +74,7 @@ func rebind_authoring_resources() -> void:
 		_veil = null
 	elif volume:
 		if not (volume.material is ShaderMaterial):
-			volume.material = _make_volumetric_material(0.011, 0.026, 0.034, 0.14)
+			volume.material = _make_volumetric_material(0.001, 0.026, 0.034)
 		_veil = volume.material as ShaderMaterial
 
 
@@ -106,7 +109,7 @@ func _snow_volume() -> void:
 	volume.name = "SnowFog"
 	volume.size = Vector3(360, 44, 360)
 	volume.position = Vector3(0, 15, -74)
-	_veil = _make_volumetric_material(0.011, 0.026, 0.034, 0.14)
+	_veil = _make_volumetric_material(0.001, 0.026, 0.034)
 	volume.material = _veil
 	add_child(volume)
 
@@ -114,18 +117,17 @@ func _snow_volume() -> void:
 func bind_local_volume(volume: FogVolume) -> void:
 	if volume == null or Game.lean_graphics:
 		return
-	_local_veil = _make_volumetric_material(0.008, 0.038, 0.052, 0.18)
+	_local_veil = _make_volumetric_material(0.0008, 0.038, 0.052)
 	volume.material = _local_veil
 
 
-func _make_volumetric_material(base_d: float, squall_d: float, spindrift_d: float, emit_e: float) -> ShaderMaterial:
+func _make_volumetric_material(base_d: float, squall_d: float, spindrift_d: float) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	if ResourceLoader.exists(VOLUMETRIC_SHADER):
 		mat.shader = load(VOLUMETRIC_SHADER) as Shader
 	mat.set_shader_parameter("base_density", base_d)
 	mat.set_shader_parameter("squall_density", squall_d)
 	mat.set_shader_parameter("spindrift_density", spindrift_d)
-	mat.set_shader_parameter("emission_energy", emit_e)
 	return mat
 
 
@@ -189,7 +191,7 @@ func apply_weather(
 
 	# Volumetric fog scattering: forward-scattered sun shafts during lulls,
 	# dense isotropic whiteout wall during blizzards.
-	_env.volumetric_fog_density = lerpf(0.0045, 0.024, pow(s, 1.3)) + w * 0.012
+	_env.volumetric_fog_density = lerpf(0.0012, 0.024, pow(s, 1.3)) + w * 0.012
 	if in_dream:
 		_env.volumetric_fog_density *= 0.42
 	_env.volumetric_fog_sky_affect = 0.06 if in_dream else 0.22
@@ -197,7 +199,7 @@ func apply_weather(
 	_env.volumetric_fog_anisotropy = lerpf(0.62, 0.26, clampf(s * 0.55 + w * 0.65, 0.0, 1.0))
 	_env.volumetric_fog_length = lerpf(108.0, 58.0, clampf(s * 0.6 + w * 0.5, 0.0, 1.0))
 	_env.volumetric_fog_detail_spread = lerpf(1.25, 0.82, s)
-	_env.volumetric_fog_ambient_inject = lerpf(0.58, 1.05, clampf(s * 0.6 + w * 0.5, 0.0, 1.0))
+	_env.volumetric_fog_ambient_inject = lerpf(0.35, 0.85, clampf(s * 0.6 + w * 0.5, 0.0, 1.0))
 
 	var sky_clear := Color(0.60, 0.70, 0.81)
 	var sky_squall := Color(0.72, 0.77, 0.83)
@@ -231,27 +233,32 @@ func apply_weather(
 	if _sun:
 		var sun_tint := Color(1.0, 0.96, 0.86).lerp(Color(0.83, 0.88, 0.96), s)
 		_sun.light_color = sun_tint.lerp(Color(0.74, 0.80, 1.0), 0.35) if in_dream else sun_tint
-		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0)) * lerpf(1.0, 0.42, indoors)
-		_sun.light_volumetric_fog_energy = lerpf(1.15, 2.35, clampf(s * 0.6 + g * 0.4 + w * 0.4, 0.0, 1.0)) * lerpf(1.0, 0.18, indoors)
+		_sun.light_energy = lerpf(1.62, 0.82, clampf(s * 0.65 + w * 0.45, 0.0, 1.0))
+		_sun.light_volumetric_fog_energy = lerpf(0.4, 1.35, clampf(s * 0.6 + g * 0.4 + w * 0.4, 0.0, 1.0))
 		if in_dream:
 			_sun.light_energy *= 0.62
 			_sun.light_volumetric_fog_energy *= 0.32
 
 	if clock_running:
-		_apply_clock(indoors)
-	_update_weather_sky(s, g, w, wind)
+		_apply_clock()
+	if _sun:
+		_sun_clear_energy = _sun.light_energy
+		_sun_clear_fog_energy = _sun.light_volumetric_fog_energy
+	_cloud_offset = Vector2(wind_scroll.x, wind_scroll.z) * 0.003
+	_update_weather_sky(s, g, w)
+	_update_cloud_light()
 
 	var flat_wind := Vector2(wind.x, wind.z)
 	var wind_dir := flat_wind.normalized() if flat_wind.length() > 0.05 else Vector2(0.92, 0.38)
 	var house_inv := Game.house.global_transform.affine_inverse() if Game.house else Transform3D.IDENTITY
-	_update_veil(_veil, s, g, w, wind_dir, wind_scroll, focus_y, house_inv, 0.011, 0.028, 0.036)
-	_update_veil(_local_veil, s, g, w, wind_dir, wind_scroll, focus_y, house_inv, 0.008, 0.042, 0.056)
+	_update_veil(_veil, s, g, w, wind_dir, wind_scroll, focus_y, house_inv, 0.001, 0.028, 0.036)
+	_update_veil(_local_veil, s, g, w, wind_dir, wind_scroll, focus_y, house_inv, 0.0008, 0.042, 0.056)
 
 
 ## Lays the hour over the weather's daylight: the sun sinks and warms toward
 ## the horizon, the sky and fog go through amber to blue dusk to night, and a
 ## faint moon takes over the shadows.
-func _apply_clock(indoors: float) -> void:
+func _apply_clock() -> void:
 	var elevation := sun_elevation()
 	var day := daylight()
 	# Low sun: 1 near the horizon, 0 once it is well up.
@@ -264,7 +271,7 @@ func _apply_clock(indoors: float) -> void:
 		_sun.light_energy *= smoothstep(-1.5, 7.0, elevation) * lerpf(1.0, 0.7, low)
 		_sun.light_volumetric_fog_energy *= smoothstep(-3.0, 4.0, elevation)
 	if _moon:
-		_moon.light_energy = 0.11 * (1.0 - day) * lerpf(1.0, 0.24, indoors)
+		_moon.light_energy = 0.11 * (1.0 - day)
 		_moon.visible = _moon.light_energy > 0.002
 	var night_sky := Color(0.025, 0.035, 0.075)
 	var dusk_sky := Color(0.82, 0.52, 0.42)
@@ -383,7 +390,7 @@ func _ensure_weather_sky() -> void:
 	_weather_sky.process_mode = Sky.PROCESS_MODE_REALTIME
 
 
-func _update_weather_sky(intensity: float, gust: float, whiteout: float, wind: Vector3) -> void:
+func _update_weather_sky(intensity: float, gust: float, whiteout: float) -> void:
 	if _weather_sky_material == null or _weather_sky_material.shader == null:
 		return
 	var storm := clampf(intensity * 0.58 + gust * 0.18 + whiteout * 0.78, 0.0, 1.0)
@@ -407,10 +414,11 @@ func _update_weather_sky(intensity: float, gust: float, whiteout: float, wind: V
 	_weather_sky_material.set_shader_parameter("horizon_color", sky_horizon)
 	_weather_sky_material.set_shader_parameter("cloud_light_color", Color(0.98, 0.96, 0.89).lerp(Color(0.87, 0.90, 0.94), storm))
 	_weather_sky_material.set_shader_parameter("cloud_shadow_color", Color(0.46, 0.53, 0.62).lerp(Color(0.37, 0.44, 0.54), storm))
-	_weather_sky_material.set_shader_parameter("cloud_coverage", clampf(0.20 + intensity * 0.42 + gust * 0.17 + whiteout * 0.34, 0.08, 0.96))
-	_weather_sky_material.set_shader_parameter("cloud_opacity", lerpf(0.68, 0.94, storm))
-	_weather_sky_material.set_shader_parameter("wind_direction", Vector2(wind.x, wind.z).normalized() if Vector2(wind.x, wind.z).length() > 0.05 else Vector2(0.92, 0.38))
-	_weather_sky_material.set_shader_parameter("cloud_speed", lerpf(0.006, 0.025, clampf(wind.length() / 13.0, 0.0, 1.0)))
+	_cloud_coverage = clampf(0.20 + intensity * 0.42 + gust * 0.17 + whiteout * 0.34, 0.08, 0.96)
+	_cloud_opacity = lerpf(0.68, 0.94, storm)
+	_weather_sky_material.set_shader_parameter("cloud_coverage", _cloud_coverage)
+	_weather_sky_material.set_shader_parameter("cloud_opacity", _cloud_opacity)
+	_weather_sky_material.set_shader_parameter("cloud_offset", _cloud_offset)
 	_weather_sky_material.set_shader_parameter("sun_warmth", maxf(dusk, 0.14 if not clock_running else 0.0))
 	_weather_sky_material.set_shader_parameter("daylight_amount", day)
 	if _sun:
@@ -428,13 +436,73 @@ func _update_weather_sun_projection() -> void:
 	if camera == null:
 		_weather_sky_material.set_shader_parameter("sun_screen_visible", 0.0)
 		return
+	_weather_sky_material.set_shader_parameter("cloud_origin", Vector2(camera.global_position.x, camera.global_position.z) * 0.0012)
 	var sun_direction := _sun.global_basis.z.normalized()
 	var sun_target := camera.global_position + sun_direction * 1000.0
 	var screen_size := get_viewport().get_visible_rect().size
 	var sun_screen := camera.unproject_position(sun_target)
-	var radius_uv := tan(deg_to_rad(maxf(_sun.light_angular_distance, 0.68)) * 0.5) / tan(deg_to_rad(camera.fov) * 0.5) * 0.5
+	var radius_uv := tan(deg_to_rad(maxf(_sun.light_angular_distance, 0.53)) * 0.5) / tan(deg_to_rad(camera.fov) * 0.5) * 0.5
 	_weather_sky_material.set_shader_parameter("sun_screen_uv", sun_screen / screen_size)
-	_weather_sky_material.set_shader_parameter("sun_screen_radius", maxf(radius_uv, 0.009))
+	_weather_sky_material.set_shader_parameter("sun_screen_radius", maxf(radius_uv, 0.004))
 	_weather_sky_material.set_shader_parameter("screen_aspect", screen_size.x / maxf(screen_size.y, 1.0))
 	_weather_sky_material.set_shader_parameter("sun_screen_visible", 0.0 if camera.is_position_behind(sun_target) else 1.0)
+
+
+# Approximate the sky's cloud field at the sun's direction. The
+# directional light then brightens the ground only when an opening passes over
+# the camera, and cloud banks can actually hide the sun instead of leaving a
+# permanent circular hole in them.
+func _update_cloud_light() -> void:
+	if _sun == null or _weather_sky_material == null:
+		return
+	if Game.dream_mode or Game.phase == Game.Phase.DREAM:
+		_sun.light_energy = _sun_clear_energy
+		_sun.light_volumetric_fog_energy = _sun_clear_fog_energy
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	var view_dir := _sun.global_basis.z.normalized()
+	var cloud_uv := Vector2(view_dir.x, view_dir.z) / maxf(view_dir.y + 0.20, 0.24)
+	cloud_uv += Vector2(camera.global_position.x, camera.global_position.z) * 0.0012
+	var warp_at := cloud_uv * 1.15 + _cloud_offset * 0.42
+	var warp := Vector2(
+		_cloud_noise2(warp_at + Vector2(4.2, -8.1)),
+		_cloud_noise2(warp_at + Vector2(-7.4, 3.6))
+	) - Vector2(0.5, 0.5)
+	var shape_uv := cloud_uv + warp * 0.46
+	var broad := _cloud_fbm(shape_uv * 2.05 + _cloud_offset)
+	var detail := _cloud_fbm(shape_uv * 4.3 - _cloud_offset * 1.65 + Vector2(13.7, -9.2))
+	var wisps := _cloud_noise2(shape_uv * Vector2(5.8, 1.65) + _cloud_offset * 0.6)
+	var shape := broad * 0.67 + detail * 0.23 + wisps * 0.10
+	var threshold := lerpf(0.72, 0.30, _cloud_coverage)
+	var opacity := smoothstep(threshold - 0.20, threshold + 0.25, shape)
+	opacity *= smoothstep(-0.12, 0.10, view_dir.y) * _cloud_opacity
+	var transmission := 1.0 - opacity
+	_sun.light_energy = _sun_clear_energy * lerpf(0.12, 1.0, transmission)
+	_sun.light_volumetric_fog_energy = _sun_clear_fog_energy * lerpf(0.08, 1.0, transmission)
+
+
+func _cloud_hash(p: Vector2) -> float:
+	var value := sin(p.dot(Vector2(127.1, 311.7))) * 43758.5453
+	return value - floorf(value)
+
+
+func _cloud_noise2(p: Vector2) -> float:
+	var cell := Vector2(floorf(p.x), floorf(p.y))
+	var fraction := p - cell
+	fraction = fraction * fraction * (Vector2(3.0, 3.0) - fraction * 2.0)
+	var bottom := lerpf(_cloud_hash(cell), _cloud_hash(cell + Vector2.RIGHT), fraction.x)
+	var top := lerpf(_cloud_hash(cell + Vector2.DOWN), _cloud_hash(cell + Vector2.ONE), fraction.x)
+	return lerpf(bottom, top, fraction.y)
+
+
+func _cloud_fbm(p: Vector2) -> float:
+	var value := 0.0
+	var weight := 0.56
+	for i in 4:
+		value += _cloud_noise2(p) * weight
+		p = Vector2(0.80 * p.x + 0.60 * p.y, -0.60 * p.x + 0.80 * p.y) * 2.03 + Vector2(7.1, 3.7)
+		weight *= 0.5
+	return value
 

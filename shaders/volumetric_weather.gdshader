@@ -16,8 +16,6 @@ uniform vec2 wind_dir = vec2(0.92, 0.38);
 uniform vec3 wind_scroll = vec3(0.0);
 uniform vec4 cold_albedo : source_color = vec4(0.88, 0.92, 0.97, 1.0);
 uniform vec4 squall_albedo : source_color = vec4(0.95, 0.97, 1.0, 1.0);
-uniform vec4 emission_tint : source_color = vec4(0.66, 0.74, 0.84, 1.0);
-uniform float emission_energy : hint_range(0.0, 1.0) = 0.14;
 uniform mat4 house_inv_transform = mat4(1.0);
 uniform vec3 house_half_extents = vec3(7.4, 5.2, 5.6);
 uniform vec3 cellar_center = vec3(0.0, -2.5, -1.6);
@@ -98,8 +96,11 @@ void fog() {
 	float squalls = squall_density * squall_wave * (0.35 + 0.65 * weather_intensity + 0.45 * whiteout) * canopy_fade;
 	float low_drift = spindrift_density * spindrift * (0.4 + 0.6 * weather_intensity);
 
-	DENSITY = (body + squalls + low_drift) * indoor_mask * bounds_fade;
+	// Clear air should reveal the terrain; reserve the local fog banks for
+	// actual drifting snow and squalls.
+	DENSITY = (body + squalls + low_drift) * indoor_mask * bounds_fade * smoothstep(0.20, 0.55, weather_intensity);
 	float billow = clamp(squall_wave * 0.65 + spindrift * 0.5, 0.0, 1.0);
 	ALBEDO = mix(cold_albedo.rgb, squall_albedo.rgb, billow);
-	EMISSION = emission_tint.rgb * (emission_energy * (0.55 + 0.45 * whiteout + 0.25 * billow));
+	// Snow haze scatters scene lighting; it does not glow on its own.
+	EMISSION = vec3(0.0);
 }
