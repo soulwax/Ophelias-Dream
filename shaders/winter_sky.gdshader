@@ -50,17 +50,25 @@ vec4 cloud_layer(vec3 view_dir, vec2 screen_uv, vec3 sun_dir, vec3 sun_color) {
 	float sky_uv_depth = 1.0 / max(view_dir.y + 0.20, 0.24);
 	vec2 cloud_uv = view_dir.xz * sky_uv_depth;
 	vec2 wind = normalize(wind_direction + vec2(0.0001)) * TIME * cloud_speed;
-	float broad = cloud_noise(cloud_uv * 2.05 + wind);
-	float detail = cloud_noise(cloud_uv * 4.3 - wind * 1.65 + vec2(13.7, -9.2));
-	float wisps = noise2(cloud_uv * vec2(5.8, 1.65) + wind * 0.6);
+	// Warp the cloud field at a larger scale before adding smaller puffs and
+	// stretched wisps. This breaks up the round, tiled noise blobs into softer,
+	// wind-sculpted cloud banks.
+	vec2 warp = vec2(
+		noise2(cloud_uv * 1.15 + wind * 0.42 + vec2(4.2, -8.1)),
+		noise2(cloud_uv * 1.15 + wind * 0.42 + vec2(-7.4, 3.6))
+	) - 0.5;
+	vec2 cloud_shape_uv = cloud_uv + warp * 0.46;
+	float broad = cloud_noise(cloud_shape_uv * 2.05 + wind);
+	float detail = cloud_noise(cloud_shape_uv * 4.3 - wind * 1.65 + vec2(13.7, -9.2));
+	float wisps = noise2(cloud_shape_uv * vec2(5.8, 1.65) + wind * 0.6);
 	float shape = broad * 0.67 + detail * 0.23 + wisps * 0.10;
 	float coverage_threshold = mix(0.72, 0.30, cloud_coverage);
 	float clouds = smoothstep(coverage_threshold - 0.13, coverage_threshold + 0.18, shape);
 	clouds *= smoothstep(-0.12, 0.10, view_dir.y) * cloud_opacity;
 	vec2 sun_screen_delta = (screen_uv - sun_screen_uv) * vec2(screen_aspect, 1.0);
 	float sun_screen_distance = length(sun_screen_delta);
-	float sun_gap = 1.0 - smoothstep(sun_screen_radius * 2.0, sun_screen_radius * 8.0, sun_screen_distance);
-	clouds *= 1.0 - sun_gap * 0.92;
+	float sun_gap = 1.0 - smoothstep(sun_screen_radius * 2.0, sun_screen_radius * 9.0, sun_screen_distance);
+	clouds *= 1.0 - sun_gap * 0.94;
 	float cloud_edge = smoothstep(0.08, 0.62, shape - coverage_threshold + 0.22);
 	float sun_facing = pow(max(dot(normalize(vec3(sun_dir.x, 0.58, sun_dir.z)), normalize(vec3(view_dir.x, 0.72, view_dir.z))), 0.0), 2.2);
 	vec3 lit_cloud = mix(cloud_shadow_color, cloud_light_color, 0.48 + 0.34 * sun_facing);
@@ -86,13 +94,23 @@ void sky() {
 		base = mix(base, horizon_color * 1.08, horizon_band * 0.18);
 		vec2 sun_screen_delta = (SCREEN_UV - sun_screen_uv) * vec2(screen_aspect, 1.0);
 		float sun_screen_distance = length(sun_screen_delta);
-	float sun_disc = sun_screen_visible * (1.0 - smoothstep(sun_screen_radius * 0.62, sun_screen_radius, sun_screen_distance));
-		float aureole = sun_screen_visible * exp(-sun_screen_distance / max(sun_screen_radius * 16.0, 0.001));
-		vec3 sky_with_sun = base + sun_color * aureole * 0.72;
-		sky_with_sun = mix(sky_with_sun, sun_color * 3.2, sun_disc);
+		float sun_disc = sun_screen_visible * (1.0 - smoothstep(sun_screen_radius * 0.72, sun_screen_radius, sun_screen_distance));
+		float near_glow = exp(-sun_screen_distance / max(sun_screen_radius * 16.0, 0.001)) * 0.72;
+		float far_glow = exp(-sun_screen_distance / max(sun_screen_radius * 62.0, 0.001)) * 0.16;
+		vec3 sky_with_sun = base + sun_color * (near_glow + far_glow) * sun_screen_visible;
+		vec3 warm_sun_core = sun_color * vec3(3.2, 2.5, 1.45);
+		sky_with_sun = mix(sky_with_sun, warm_sun_core, sun_disc);
 		vec3 result = mix(sky_with_sun, QUARTER_RES_COLOR.rgb, QUARTER_RES_COLOR.a);
 		float atmospheric_glow = exp(-abs(view_dir.y - sun_dir.y) * 11.0) * pow(max(sun_dir.y, 0.0), 0.45);
 		result += sun_color * atmospheric_glow * (0.12 + horizon_band * 0.18) * (1.0 - QUARTER_RES_COLOR.a * 0.55);
+		vec2 ray_vector = (SCREEN_UV - sun_screen_uv) * vec2(screen_aspect, 1.0);
+		float ray_distance = length(ray_vector);
+		float ray_angle = atan(ray_vector.y, ray_vector.x);
+		float ray_bands = pow(max(cos(ray_angle * 9.0 + sin(ray_angle * 4.0) * 0.65), 0.0), 12.0);
+		float ray_fade = exp(-ray_distance / max(sun_screen_radius * 34.0, 0.001));
+		// A restrained screen-space veil complements Godot's volumetric fog shafts;
+		// it only appears in open sky, so cloud banks still occlude the beams.
+		result += sun_color * ray_bands * ray_fade * 0.055 * sun_screen_visible * (1.0 - QUARTER_RES_COLOR.a);
 		COLOR = mix(result, horizon_color, 1.0 - daylight_amount);
 	}
 }

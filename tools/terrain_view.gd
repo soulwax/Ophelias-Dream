@@ -16,19 +16,20 @@ func _ready() -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	if OS.get_environment("RUN_PLAY") == "":
+		OS.set_environment("RUN_PLAY", "1")
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child(main)
 	var waited_frames := 0
-	while Game.trail == null and waited_frames < 1200:
+	while (Game.trail == null or Game.player == null or Game.phase != Game.Phase.PLAYING) and waited_frames < 1200:
 		await get_tree().process_frame
 		waited_frames += 1
-	if Game.trail == null:
+	if Game.trail == null or Game.player == null:
 		push_error("Timed out waiting for the gameplay world to finish building.")
 		get_tree().quit(1)
 		return
 	for layer in main.find_children("*", "CanvasLayer", true, false):
 		(layer as CanvasLayer).visible = false
-	Game.set_phase(Game.Phase.PLAYING)
 	var trail := Game.trail
 	var ground := trail.ground
 	var tag := OS.get_environment("RUN_VIEW_TAG")
@@ -61,6 +62,10 @@ func _run() -> void:
 		if shot[0] != "far":
 			from.y += ground.height_at(from.x, from.z)
 		if shot[0] == "sun":
+			# Let the chapter clock's initial sun placement settle before aiming;
+			# the first clock tick can rotate it from the authored afternoon pose.
+			for i in 12:
+				await get_tree().process_frame
 			var atmosphere := get_tree().get_first_node_in_group("atmosphere") as Atmosphere
 			var sun := atmosphere.get_node("Sun") as DirectionalLight3D if atmosphere else null
 			if sun:
@@ -71,15 +76,10 @@ func _run() -> void:
 				return
 		else:
 			target.y = ground.height_at(target.x, target.z) + (target.y if shot[0] in ["eye", "green"] else 0.0)
-		camera.look_at_from_position(from, target)
+		camera.global_transform = Transform3D(Basis.looking_at((target - from).normalized(), Vector3.UP), from)
 		camera.make_current()
 		for i in 12:
 			await get_tree().process_frame
-		if shot[0] == "sun":
-			var atmosphere := get_tree().get_first_node_in_group("atmosphere") as Atmosphere
-			var sky_material := atmosphere.get("_weather_sky_material") as ShaderMaterial if atmosphere else null
-			if sky_material:
-				print("camera %s sun_uv %s visible %.1f" % [get_viewport().get_camera_3d().name, sky_material.get_shader_parameter("sun_screen_uv"), float(sky_material.get_shader_parameter("sun_screen_visible"))])
 		await RenderingServer.frame_post_draw
 		if shot[0] == "eye":
 			var frames := 0

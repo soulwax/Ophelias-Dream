@@ -41,6 +41,10 @@ func start_clock(hours: float) -> void:
 func _process(delta: float) -> void:
 	if clock_running and Game.awake():
 		clock_hours = fposmod(clock_hours + delta * 24.0 / (Tune.DAY_MINUTES * 60.0), 24.0)
+	# The procedural sun disc and its cloud opening are screen anchored. The
+	# camera moves constantly during play, so keep their projection current
+	# even when the weather itself has not changed.
+	_update_weather_sun_projection()
 
 
 ## Sun height in degrees: up from 06:00 to 18:00, a low winter arc.
@@ -86,6 +90,7 @@ func _ready() -> void:
 	sun.shadow_bias = 0.04
 	sun.light_angular_distance = 0.42
 	sun.shadow_blur = 1.1
+	sun.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_AND_SKY
 	sun.light_volumetric_fog_energy = 1.95
 	if Game.lean_graphics:
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
@@ -413,14 +418,23 @@ func _update_weather_sky(intensity: float, gust: float, whiteout: float, wind: V
 		_weather_sky_material.set_shader_parameter("sun_direction", sun_direction)
 		_weather_sky_material.set_shader_parameter("sun_light_color", _sun.light_color)
 		_weather_sky_material.set_shader_parameter("sun_energy", _sun.light_energy)
-		var camera := get_viewport().get_camera_3d()
-		if camera:
-			var sun_target := camera.global_position + sun_direction * 1000.0
-			var screen_size := get_viewport().get_visible_rect().size
-			var sun_screen := camera.unproject_position(sun_target)
-			var radius_uv := tan(deg_to_rad(maxf(_sun.light_angular_distance, 0.42)) * 0.5) / tan(deg_to_rad(camera.fov) * 0.5) * 0.5
-			_weather_sky_material.set_shader_parameter("sun_screen_uv", sun_screen / screen_size)
-			_weather_sky_material.set_shader_parameter("sun_screen_radius", maxf(radius_uv, 0.006))
-			_weather_sky_material.set_shader_parameter("screen_aspect", screen_size.x / maxf(screen_size.y, 1.0))
-			_weather_sky_material.set_shader_parameter("sun_screen_visible", 0.0 if camera.is_position_behind(sun_target) else 1.0)
+	_update_weather_sun_projection()
+
+
+func _update_weather_sun_projection() -> void:
+	if _weather_sky_material == null or _sun == null:
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		_weather_sky_material.set_shader_parameter("sun_screen_visible", 0.0)
+		return
+	var sun_direction := _sun.global_basis.z.normalized()
+	var sun_target := camera.global_position + sun_direction * 1000.0
+	var screen_size := get_viewport().get_visible_rect().size
+	var sun_screen := camera.unproject_position(sun_target)
+	var radius_uv := tan(deg_to_rad(maxf(_sun.light_angular_distance, 0.68)) * 0.5) / tan(deg_to_rad(camera.fov) * 0.5) * 0.5
+	_weather_sky_material.set_shader_parameter("sun_screen_uv", sun_screen / screen_size)
+	_weather_sky_material.set_shader_parameter("sun_screen_radius", maxf(radius_uv, 0.009))
+	_weather_sky_material.set_shader_parameter("screen_aspect", screen_size.x / maxf(screen_size.y, 1.0))
+	_weather_sky_material.set_shader_parameter("sun_screen_visible", 0.0 if camera.is_position_behind(sun_target) else 1.0)
 
