@@ -226,10 +226,13 @@ func _process(_delta: float) -> void:
 		var w_dir := Vector2(Game.weather.wind.x, Game.weather.wind.z)
 		if w_dir.length_squared() > 0.01:
 			var norm_dir := w_dir.normalized()
-			var gust := 1.0 + Game.weather.gust * 0.8
+			var speed_ratio := clampf(w_dir.length() / 12.6, 0.0, 1.0)
+			var wind_speed := lerpf(0.85, 2.6, speed_ratio)
+			var force := clampf(0.25 + speed_ratio * 0.55 + Game.weather.gust * 0.55, 0.2, 1.35)
 			for mat: ShaderMaterial in _wind_materials.values():
 				mat.set_shader_parameter("wind_dir", norm_dir)
-				mat.set_shader_parameter("wind_strength", gust)
+				mat.set_shader_parameter("wind_speed", wind_speed)
+				mat.set_shader_parameter("wind_strength", force)
 
 
 
@@ -662,7 +665,7 @@ func _wind_material_for(source: Material, model: String) -> Material:
 		wm.set_shader_parameter("wind_speed", 2.2)
 	else:
 		wm.set_shader_parameter("height_reference", 16.0)
-		wm.set_shader_parameter("trunk_sway", 0.075)
+		wm.set_shader_parameter("trunk_sway", 0.48)
 		wm.set_shader_parameter("branch_sway", 0.11)
 		wm.set_shader_parameter("leaf_flutter", 0.04)
 		wm.set_shader_parameter("wind_speed", 2.0)

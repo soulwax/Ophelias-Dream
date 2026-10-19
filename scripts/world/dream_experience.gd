@@ -36,6 +36,7 @@ var _figure_moving := false
 var _figure_motion_active := false
 var _figure_motion_target_offset := 0.0
 var _figure_motion_look_at_player := false
+var _figure_walk_direction := 1.0
 var _figure_motion_tween: Tween
 var _figure_turn_active := false
 var _figure_turn_target_yaw := 0.0
@@ -106,6 +107,8 @@ var _conversation_response := ""
 var _conversation_response_pending := false
 var _conversation_response_ready := false
 var _conversation_response_timer := 0.0
+var _conversation_processing_thought := ""
+var _conversation_thought_pending := false
 var _choice_index := 0
 var _choice_time := 0.0
 var _choice_axis_latched := false
@@ -295,6 +298,10 @@ func restore_after_load(state: Dictionary) -> void:
 		_dream_journal_hint_time = 8.0
 	if _dream_soundscape:
 		_dream_soundscape.call("set_travel_quiet", _window_interval_active())
+	if _memory_architecture:
+		_memory_architecture.respond("restore", clampf(float(_conversation_strain) / 3.0, 0.0, 1.0))
+		if _waking_card:
+			_memory_architecture.settle(_dream_outcome)
 	if Game.weather:
 		Game.weather.set_dream_quiet(maxf(_dream_quiet, _lantern_wind_quiet))
 	if Game.player:
@@ -341,9 +348,9 @@ func _build_figure() -> void:
 	add_child(_figure)
 	_silhouette = ShaderMaterial.new()
 	_silhouette.shader = preload("res://shaders/dream_shadow.gdshader")
-	_silhouette.set_shader_parameter("shadow_tint", Color("09061a"))
+	_silhouette.set_shader_parameter("shadow_tint", Color("010104"))
 	_silhouette.set_shader_parameter("aura_tint", Color("8a5cff"))
-	_silhouette.set_shader_parameter("opacity", 0.88)
+	_silhouette.set_shader_parameter("opacity", 0.97)
 	_silhouette.set_shader_parameter("dissolve", 0.0)
 	_silhouette.set_shader_parameter("galaxy_spin_speed", 0.52)
 	_silhouette.set_shader_parameter("star_vividness", 1.75)
@@ -365,7 +372,7 @@ func _build_figure() -> void:
 	_figure_aura_material = ShaderMaterial.new()
 	_figure_aura_material.shader = preload("res://shaders/mathilda_dream_aura.gdshader")
 	_figure_aura_material.set_shader_parameter("mood_color", _figure_aura_color)
-	_figure_aura_material.set_shader_parameter("intensity", 0.48)
+	_figure_aura_material.set_shader_parameter("intensity", 0.12)
 	_figure_aura_shell.show()
 	_figure_aura_shell.material_override = _figure_aura_material
 	_figure.add_child(_figure_aura_shell)
@@ -373,10 +380,10 @@ func _build_figure() -> void:
 	_figure_aura_light.name = "MathildaMoodAura"
 	_figure_aura_light.position = Vector3(0.0, 1.12, 0.18)
 	_figure_aura_light.light_color = _figure_aura_color
-	_figure_aura_light.light_energy = 1.35
+	_figure_aura_light.light_energy = 0.22
 	_figure_aura_light.omni_range = 4.6
 	_figure_aura_light.shadow_enabled = false
-	_figure_aura_light.light_volumetric_fog_energy = 0.42
+	_figure_aura_light.light_volumetric_fog_energy = 0.08
 	_figure.add_child(_figure_aura_light)
 	_animation = _figure.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _animation == null:
@@ -518,17 +525,19 @@ func _build_caption() -> void:
 	_dream_ui_root.add_child(_speech_sprite)
 	_speech_panel = PanelContainer.new()
 	_speech_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var speech_style := UiChrome.term_box(Color(UiChrome.VOID, 0.94), Color(UiChrome.SIGNAL, 0.58), 1, 18)
-	speech_style.border_width_left = 3
+	var speech_style := UiChrome.term_box(Color(UiChrome.DIALOGUE_INK, 0.96), Color(UiChrome.DIALOGUE_AMBER, 0.34), 1, 21)
+	speech_style.border_width_left = 4
 	_speech_panel.add_theme_stylebox_override("panel", speech_style)
 	_speech_view.add_child(_speech_panel)
 	var dialogue_column := VBoxContainer.new()
 	dialogue_column.add_theme_constant_override("separation", 6)
 	_speech_panel.add_child(dialogue_column)
-	_speaker_label = UiChrome.term_label("", 14, UiChrome.SIGNAL)
+	_speaker_label = UiChrome.term_label("", 13, UiChrome.DIALOGUE_AMBER, true)
 	dialogue_column.add_child(_speaker_label)
 	var subtitle_size: int = [24, 27, 32, 38][clampi(Game.settings.subtitle_size, 0, 3)]
-	_caption = UiChrome.term_label("", subtitle_size, UiChrome.BONE)
+	_caption = UiChrome.term_label("", subtitle_size, UiChrome.DIALOGUE_FROST)
+	_caption.add_theme_font_override("font", UiChrome.literary_font())
+	_caption.add_theme_constant_override("line_spacing", 5)
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -736,9 +745,16 @@ func _refresh_dream_journal() -> void:
 	for child in _dream_journal_rows.get_children():
 		_dream_journal_rows.remove_child(child)
 		child.queue_free()
+	var last_chapter := ""
+	var chapter_index := 0
 	for entry in _dream_journal_entries:
 		var place := str(entry.get("place", "THE WINTER PATH"))
-		var source := UiChrome.term_label("KEPT AT  ·  " + place, 12, UiChrome.SIGNAL)
+		if place != last_chapter:
+			chapter_index += 1
+			last_chapter = place
+			var chapter := UiChrome.term_label("CHAPTER %s  ·  %s" % [_chapter_number(chapter_index), place], 13, UiChrome.SIGNAL, true)
+			_dream_journal_rows.add_child(chapter)
+		var source := UiChrome.term_label("A PAGE FROM THE WALK", 11, UiChrome.ASH)
 		_dream_journal_rows.add_child(source)
 		var title := UiChrome.term_label(str(entry.get("title", "")), 19, UiChrome.BONE, true)
 		_dream_journal_rows.add_child(title)
@@ -746,6 +762,12 @@ func _refresh_dream_journal() -> void:
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_dream_journal_rows.add_child(text)
+		var interpretation := str(entry.get("interpretation", "")).strip_edges()
+		if not interpretation.is_empty():
+			var reading := UiChrome.term_label("A POSSIBLE READING  ·  " + interpretation, 14, UiChrome.SIGNAL)
+			reading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			reading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			_dream_journal_rows.add_child(reading)
 		var approach := str(entry.get("approach", "")).strip_edges()
 		if _journal_guidance_visible and not approach.is_empty():
 			var guidance := UiChrome.term_label("A WAY THROUGH  ·  " + approach, 14, UiChrome.ASH)
@@ -754,6 +776,11 @@ func _refresh_dream_journal() -> void:
 			_dream_journal_rows.add_child(guidance)
 		var divider := HSeparator.new()
 		_dream_journal_rows.add_child(divider)
+
+
+func _chapter_number(value: int) -> String:
+	var names := ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
+	return names[mini(value - 1, names.size() - 1)]
 
 
 func _toggle_journal_guidance() -> void:
@@ -814,7 +841,17 @@ func _cue_story_event(event: Dictionary) -> void:
 		_dream_route.call("cue_event", cue_id, float(event.get("offset", -1.0)))
 	var event_talk: Dictionary = _story.get("event_talk", {})
 	var journal_entry: Dictionary = event.get("journal", {})
+	_queue_between_thought(event.get("interlude", ""))
 	_queue_story_line(str(event.get("line", "")), str(event.get("motion", "")), journal_entry, int(event_talk.get(cue_id, -1)), cue_id)
+
+
+func _queue_between_thought(thoughts: Variant) -> void:
+	var lines: Array = thoughts if thoughts is Array else [thoughts]
+	for thought in lines:
+		var line := str(thought).strip_edges()
+		if line.is_empty():
+			continue
+		_queue_story_line(line, "", {}, -1, "", "OPHELIA · UNDER HER BREATH")
 
 
 func _layout_caption() -> void:
@@ -972,6 +1009,7 @@ func _queue_reached_story_marker(route_progress: float) -> void:
 			return
 		var beat: Dictionary = beats[_stage]
 		_stage += 1
+		_queue_between_thought(beat.get("interlude", ""))
 		_queue_story_line(str(beat.get("text", "")), str(beat.get("motion", "")), beat.get("journal", {}))
 		var cue := "footstep"
 		match str(beat.get("id", "")):
@@ -1014,10 +1052,10 @@ func _update_late_step_scene(delta: float, route_progress: float) -> void:
 		_late_step_stop_time = 0.0
 
 
-func _queue_story_line(line: String, motion: String = "", journal_entry: Dictionary = {}, station_round: int = -1, visual_cue: String = "") -> void:
+func _queue_story_line(line: String, motion: String = "", journal_entry: Dictionary = {}, station_round: int = -1, visual_cue: String = "", speaker: String = "MATHILDA") -> void:
 	if line.strip_edges().is_empty():
 		return
-	_story_line_queue.append({"text": line, "motion": motion, "journal": journal_entry, "station_round": station_round, "visual_cue": visual_cue})
+	_story_line_queue.append({"text": line, "motion": motion, "journal": journal_entry, "station_round": station_round, "visual_cue": visual_cue, "speaker": speaker})
 	if not _story_line_active and _story_gap_remaining <= 0.0 and _apparition_state == ApparitionState.PRESENT:
 		_show_next_story_line()
 
@@ -1031,7 +1069,7 @@ func _show_next_story_line() -> void:
 	var line := str(beat.get("text", ""))
 	_record_dream_entry(beat.get("journal", {}))
 	_play_story_choreography(str(beat.get("motion", "")))
-	_set_caption(line, "MATHILDA", true, "Continue")
+	_set_caption(line, str(beat.get("speaker", "MATHILDA")), true, "Continue")
 	var visual_cue := str(beat.get("visual_cue", ""))
 	if not visual_cue.is_empty() and _memory_architecture:
 		_memory_architecture.queue_reveal(visual_cue)
@@ -1048,6 +1086,7 @@ func _play_story_choreography(cue: String) -> void:
 		_story_motion_tween.kill()
 	_story_motion_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var start := _figure_offset
+	_figure_walk_direction = 1.0
 	var first_stop := start
 	var final_stop := start
 	var first_duration := 0.0
@@ -1133,6 +1172,7 @@ func _start_authored_figure_move(target_offset: float, duration: float, look_at_
 	if _figure_motion_tween and _figure_motion_tween.is_running():
 		_figure_motion_tween.kill()
 	_figure_motion_target_offset = clampf(target_offset, Game.trail.player_start_offset, Game.trail.length)
+	_figure_walk_direction = signf(_figure_motion_target_offset - _figure_offset)
 	_figure_motion_look_at_player = look_at_player
 	_figure_motion_active = absf(_figure_motion_target_offset - _figure_offset) > 0.015
 	if not _figure_motion_active:
@@ -1161,13 +1201,29 @@ func _set_rambling_gaze_from_route(side_sign: float) -> void:
 func _turn_figure_toward_player() -> void:
 	if _figure == null or Game.player == null:
 		return
+	_turn_figure_toward_point(Game.player.global_position, 0.55)
+
+
+func _turn_figure_away_from_player(duration: float) -> void:
+	if _figure == null or Game.player == null:
+		return
+	var away := _figure.global_position - Game.player.global_position
+	away.y = 0.0
+	if away.length_squared() <= 0.01:
+		return
+	_turn_figure_toward_point(_figure.global_position + away, duration)
+
+
+func _turn_figure_partway_toward_player(fraction: float, duration: float) -> void:
+	if _figure == null or Game.player == null:
+		return
 	var direction := Game.player.global_position - _figure.global_position
 	direction.y = 0.0
 	if direction.length_squared() <= 0.01:
 		return
 	var target_yaw := atan2(-direction.x, -direction.z)
-	var turn := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	turn.tween_property(_figure, "rotation:y", target_yaw, 0.55)
+	var partial_yaw := _figure.rotation.y + wrapf(target_yaw - _figure.rotation.y, -PI, PI) * clampf(fraction, 0.0, 1.0)
+	_turn_figure_to_yaw(partial_yaw, duration)
 
 
 func _turn_figure_toward_rambling_gaze() -> void:
@@ -1457,7 +1513,7 @@ func _set_figure_dissolve(value: float) -> void:
 		_silhouette.set_shader_parameter("dissolve", _apparition_dissolve)
 	if _figure_aura_light:
 		var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
-		_figure_aura_light.light_energy = 1.25 * reveal
+		_figure_aura_light.light_energy = 0.22 * reveal
 	if _figure_aura_material:
 		_figure_aura_material.set_shader_parameter("reveal", 1.0 - _apparition_dissolve / APPARITION_DISSOLVE)
 
@@ -1480,7 +1536,7 @@ func _update_figure_aura(delta: float) -> void:
 	var breath := 0.91 + sin(_figure_aura_time * 2.1) * 0.07 + sin(_figure_aura_time * 3.7) * 0.02
 	var reveal := 1.0 - _apparition_dissolve / APPARITION_DISSOLVE
 	var screen_effects := clampf(Game.settings.screen_effects, 0.0, 1.0) if Game.settings else 1.0
-	var aura_intensity := (0.45 + cue_pulse * 0.55) * breath * maxf(screen_effects, 0.35)
+	var aura_intensity := (0.10 + cue_pulse * 0.14) * breath * maxf(screen_effects, 0.35)
 	_figure_aura_shell.visible = reveal > 0.01
 	_figure_aura_shell.scale = Vector3(0.58, 1.05, 0.58) * (1.0 + cue_pulse * 0.075 + sin(_figure_aura_time * 1.4) * 0.018)
 	_figure_aura_shell.rotation.y += delta * (0.22 + cue_pulse * 0.48)
@@ -1492,7 +1548,7 @@ func _update_figure_aura(delta: float) -> void:
 	_silhouette.set_shader_parameter("aura_tint", _figure_aura_color)
 	if _figure_aura_light:
 		_figure_aura_light.light_color = _figure_aura_color
-		_figure_aura_light.light_energy = (1.15 + cue_pulse * 0.85) * breath * reveal * maxf(screen_effects, 0.5)
+		_figure_aura_light.light_energy = (0.22 + cue_pulse * 0.14) * breath * reveal * maxf(screen_effects, 0.5)
 		_figure_aura_light.omni_range = 4.2 + cue_pulse * 1.6
 	if _aura_mote_material:
 		_aura_mote_material.albedo_color = Color(_figure_aura_color, (0.55 + cue_pulse * 0.35) * reveal * maxf(screen_effects, 0.5))
@@ -1515,12 +1571,12 @@ func _figure_aura_mood_color() -> Color:
 				return Color("b5e5cb")
 			"present_need":
 				return Color("ffd79a")
-	if _station_choice_effect == "escalate" or _conversation_strain >= 4:
+	if _station_choice_effect == "escalate" or _conversation_strain >= 3:
 		return Color("ff435f")
+	if _station_choice_effect == "repair":
+		return Color("8ef2d1") if _conversation_strain == 0 else Color("dfb47d")
 	if _station_choice_effect == "push" or _conversation_strain > 0:
 		return Color("f078a9")
-	if _station_choice_effect == "repair":
-		return Color("8ef2d1")
 	match _effect_cue:
 		"insight":
 			return Color("fff0b5")
@@ -1543,7 +1599,8 @@ func _place_figure(along: float, delta: float = 0.0) -> void:
 	_figure.global_position = Game.trail.on_ground(frame.origin + across) + Vector3.UP * 0.02
 	var toward := _rambling_gaze_target - _figure.global_position if _figure_rambling else (Game.player.global_position - _figure.global_position if Game.player else -frame.basis.z)
 	if _figure_moving:
-		var ahead := Game.trail.frame_at(minf(along + 1.0, Game.trail.length)).origin
+		var ahead_offset := clampf(along + _figure_walk_direction, Game.trail.player_start_offset, Game.trail.length)
+		var ahead := Game.trail.frame_at(ahead_offset).origin
 		toward = ahead + frame.basis.x * 0.9 - _figure.global_position
 	toward.y = 0.0
 	if toward.length_squared() > 0.01:
@@ -2118,30 +2175,34 @@ func _build_choice_panel() -> void:
 	_dream_ui_root.add_child(_choice_panel)
 	_choice_title_back = Panel.new()
 	_choice_title_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var title_style := UiChrome.term_box(Color(UiChrome.VOID, 0.9), Color(UiChrome.SIGNAL, 0.65), 1, 0)
+	var title_style := UiChrome.term_box(Color(UiChrome.DIALOGUE_INK, 0.93), Color(UiChrome.DIALOGUE_AMBER, 0.72), 1, 0)
 	title_style.border_width_left = 3
 	_choice_title_back.add_theme_stylebox_override("panel", title_style)
 	_choice_panel.add_child(_choice_title_back)
 	_choice_hint_back = Panel.new()
 	_choice_hint_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_choice_hint_back.add_theme_stylebox_override("panel", UiChrome.term_box(Color(UiChrome.VOID, 0.85), Color(UiChrome.BONE, 0.22), 1, 0))
+	_choice_hint_back.add_theme_stylebox_override("panel", UiChrome.term_box(Color(UiChrome.DIALOGUE_INK, 0.91), Color(UiChrome.DIALOGUE_EDGE, 0.48), 1, 0))
 	_choice_panel.add_child(_choice_hint_back)
 	_choice_title = _new_choice_label(19)
-	_choice_title.modulate = UiChrome.BONE
+	_choice_title.add_theme_font_override("font", UiChrome.display_font())
+	_choice_title.add_theme_color_override("font_color", UiChrome.DIALOGUE_AMBER)
+	_choice_title.modulate = Color.WHITE
 	_choice_title.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_choice_panel.add_child(_choice_title)
 	_choice_hint = _new_choice_label(16)
-	_choice_hint.modulate = Color(UiChrome.BONE, 0.82)
+	_choice_hint.add_theme_font_override("font", UiChrome.mono_font())
+	_choice_hint.modulate = Color(UiChrome.DIALOGUE_FROST, 0.82)
 	_choice_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_choice_hint.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_choice_panel.add_child(_choice_hint)
 
 
 func _new_choice_label(font_size: int) -> Label:
-	var label := UiChrome.term_label("", font_size, UiChrome.BONE)
+	var label := UiChrome.term_label("", font_size, UiChrome.DIALOGUE_FROST)
+	label.add_theme_font_override("font", UiChrome.literary_font())
 	label.custom_minimum_size = Vector2(0.0, 28.0)
-	label.add_theme_color_override("font_outline_color", Color(0.012, 0.016, 0.024, 0.97))
-	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_color_override("font_outline_color", Color(0.012, 0.016, 0.024, 0.88))
+	label.add_theme_constant_override("outline_size", 1)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -2206,13 +2267,6 @@ func _update_choice_positions() -> void:
 		var speaker_clearance := label_width * 0.5 + 64.0
 		left_score -= maxf(0.0, speaker_clearance - absf(speaker_screen.x - left_x)) * 4.0
 		right_score -= maxf(0.0, speaker_clearance - absf(speaker_screen.x - right_x)) * 4.0
-	if is_instance_valid(_lantern) and _lantern.visible:
-		var lantern_screen := camera.unproject_position(_lantern.global_position + Vector3.UP * 0.9)
-		if not camera.is_position_behind(_lantern.global_position + Vector3.UP * 0.9):
-			left_score -= maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - left_x))
-			right_score -= maxf(0.0, label_width * 0.8 - absf(lantern_screen.x - right_x))
-	var side := -1.0 if left_score >= right_score else 1.0
-	var center_x := left_x if side < 0.0 else right_x
 	var row_height := 46.0
 	var characters_per_line := maxi(int((label_width - 38.0) / 12.5), 16)
 	for button in _choice_buttons:
@@ -2232,6 +2286,25 @@ func _update_choice_positions() -> void:
 	var center_margin := maxf(row_half_height + title_height + 20.0, row_half_height + hint_height + 36.0)
 	center_margin = minf(center_margin, viewport_size.y * 0.47)
 	var center_y := clampf(viewport_size.y * 0.55, center_margin, viewport_size.y - center_margin)
+	# Score the actual panel footprint, including its title and thought box. A
+	# horizontal-only penalty still let the reply cover the lantern when it sat
+	# near the lower edge of the panel.
+	if is_instance_valid(_lantern) and _lantern.visible:
+		var lantern_at := _lantern.global_position + Vector3.UP * 0.9
+		if not camera.is_position_behind(lantern_at):
+			var lantern_screen := camera.unproject_position(lantern_at)
+			var panel_top := center_y - row_half_height - title_height - 12.0
+			var panel_bottom := center_y + row_half_height + hint_height + 28.0
+			if lantern_screen.y >= panel_top - 42.0 and lantern_screen.y <= panel_bottom + 42.0:
+				for candidate_x in [left_x, right_x]:
+					var overlap := label_width * 0.5 + 44.0 - absf(lantern_screen.x - candidate_x)
+					if overlap > 0.0:
+						if candidate_x == left_x:
+							left_score -= overlap * 5.0
+						else:
+							right_score -= overlap * 5.0
+	var side := -1.0 if left_score >= right_score else 1.0
+	var center_x := left_x if side < 0.0 else right_x
 	_choice_title_back.size = Vector2(label_width, title_height)
 	_choice_title_back.position = Vector2(center_x - label_width * 0.5, center_y - row_half_height - title_height - 12.0)
 	_choice_title.size = Vector2(label_width - 24.0, title_height - 8.0)
@@ -2263,36 +2336,55 @@ func _choose_small_talk(index: int) -> void:
 	var choice: Dictionary = choices[index]
 	var effect := str(choice.get("effect", ""))
 	_station_choice_effect = effect
-	if _memory_architecture:
-		_memory_architecture.respond(effect)
 	if effect == "push" or effect == "escalate":
-		_conversation_strain += 2
+		_conversation_strain = mini(_conversation_strain + 2, 4)
 		_pulse_effect(0.88, "doubt", _figure)
+		_turn_figure_away_from_player(0.72)
 		if Game.player:
 			Game.player.react_to_dialogue("recoil")
 	elif effect == "repair":
-		_conversation_strain = 0
+		# An apology changes what happens next; it cannot erase the pressure that
+		# has already accumulated in the conversation.
+		_conversation_strain = maxi(_conversation_strain - 1, 0)
 		_pulse_effect(0.72, "release", _figure)
+		_turn_figure_partway_toward_player(0.48, 0.9)
 		if Game.player:
 			Game.player.react_to_dialogue("release")
 	else:
 		_pulse_effect(0.34, "footstep", _figure)
 		if Game.player:
 			Game.player.react_to_dialogue("uncertain")
+	if _memory_architecture:
+		_memory_architecture.respond(effect, clampf(float(_conversation_strain) / 3.0, 0.0, 1.0))
 	_repair_menu_active = false
 	_conversation_choice_advances = bool(choice.get("advance", true))
 	_choice_panel.hide()
-	_record_dream_entry(choice.get("journal", {}))
+	var response := str(choice.get("response", ""))
+	var processing_thought := str(choice.get("processing_thought", ""))
+	var journal_entry: Variant = choice.get("journal", {})
+	if _conversation_strain > 0:
+		var pressured_thought := str(choice.get("processing_thought_if_still_strained", ""))
+		if not pressured_thought.is_empty():
+			processing_thought = pressured_thought
+		var strained_response := str(choice.get("response_if_still_strained", ""))
+		if not strained_response.is_empty():
+			response = strained_response
+		var strained_entry: Variant = choice.get("journal_if_still_strained", {})
+		if typeof(strained_entry) == TYPE_DICTIONARY and not strained_entry.is_empty():
+			journal_entry = strained_entry
+	_record_dream_entry(journal_entry)
 	_set_caption("")
-	_begin_dialogue_exchange(str(choice.get("label", "")), str(choice.get("response", "")))
+	_begin_dialogue_exchange(str(choice.get("label", "")), response, processing_thought)
 	_lantern_prompt.hide()
 	_layout_caption()
 
 
-func _begin_dialogue_exchange(player_line: String, mathilda_line: String) -> void:
+func _begin_dialogue_exchange(player_line: String, mathilda_line: String, processing_thought := "") -> void:
 	_conversation_waiting = true
 	_conversation_response_pending = true
 	_conversation_response_ready = false
+	_conversation_processing_thought = processing_thought.strip_edges()
+	_conversation_thought_pending = not _conversation_processing_thought.is_empty()
 	# Give the chosen words their own readable turn before Mathilda answers.
 	# Confirmation can still move the exchange forward at the player's pace.
 	_conversation_response_timer = clampf(1.1 + player_line.length() * 0.065, 2.6, 7.0)
@@ -2303,8 +2395,14 @@ func _begin_dialogue_exchange(player_line: String, mathilda_line: String) -> voi
 func _reveal_conversation_response() -> void:
 	if not _conversation_response_pending:
 		return
+	if _conversation_thought_pending:
+		_conversation_thought_pending = false
+		_conversation_response_timer = clampf(float(_conversation_processing_thought.length()) * 0.045, 1.6, 3.0)
+		_set_caption(_conversation_processing_thought, "OPHELIA · UNDER HER BREATH", false, "Continue")
+		return
 	_conversation_response_pending = false
 	_conversation_response_ready = true
+	_conversation_processing_thought = ""
 	if _memory_chosen:
 		_dream_quiet_after_response = 4.5
 	_set_caption(_conversation_response, "MATHILDA", false, "Continue")
@@ -2324,6 +2422,14 @@ func _continue_memory_dialogue() -> void:
 func _refresh_conversation_choices(choices: Array) -> void:
 	for index in range(mini(_choice_buttons.size(), choices.size())):
 		_style_choice(index, str(choices[index].get("label", "")))
+	_choice_hint.text = "YOU // REPLY"
+	if _choice_index >= 0 and _choice_index < choices.size():
+		var selected: Dictionary = choices[_choice_index]
+		var background := str(selected.get("background", ""))
+		if _conversation_strain > 0 and not str(selected.get("background_after_pressure", "")).is_empty():
+			background = str(selected.get("background_after_pressure", ""))
+		if not background.is_empty():
+			_choice_hint.text += "\nUNDER THE WORDS · " + background
 
 
 func _focus_choice(direction: int) -> void:
@@ -2353,17 +2459,18 @@ func _style_choice(index: int, text: String) -> void:
 	var label := _choice_buttons[index]
 	var row := _choice_rows[index]
 	var selected := index == _choice_index
-	label.text = ("▸ " if selected else "  ") + "%d  %s" % [index + 1, text]
-	label.modulate = UiChrome.BONE if selected else Color(UiChrome.BONE, 0.72)
-	var border_color := UiChrome.SIGNAL if selected else UiChrome.BONE
-	border_color.a = 0.76 if selected else 0.34
+	label.text = ("› " if selected else "  ") + "%02d   %s" % [index + 1, text]
+	label.modulate = UiChrome.DIALOGUE_FROST if selected else Color(UiChrome.DIALOGUE_FROST, 0.76)
+	var border_color := UiChrome.DIALOGUE_AMBER if selected else UiChrome.DIALOGUE_EDGE
+	border_color.a = 0.88 if selected else 0.34
 	var style := UiChrome.term_box(
-		Color(UiChrome.VOID, 0.94 if selected else 0.78),
+		Color("111720", 0.96 if selected else 0.82),
 		border_color,
 		2 if selected else 1,
-		8
+		4
 	)
 	style.border_width_left = 4 if selected else 1
+	style.border_width_top = 1 if selected else 0
 	row.add_theme_stylebox_override("panel", style)
 	row.modulate.a = 1.0
 
@@ -2380,8 +2487,7 @@ func _refresh_choices() -> void:
 		_refresh_conversation_choices(round_data.get("choices", []))
 		return
 	var branches: Array = _story.get("branches", [])
-	for index in range(mini(_choice_buttons.size(), branches.size())):
-		_style_choice(index, str(branches[index].get("label", "")))
+	_refresh_conversation_choices(branches)
 
 
 func _choose_focused_memory() -> void:
@@ -2412,7 +2518,7 @@ func _choose_memory(memory: String) -> void:
 	_layout_caption()
 	_react_to_answer(memory)
 	var response := str(branch.get("response", "")).replace("\nPress E to wake.", "")
-	_begin_dialogue_exchange(str(branch.get("label", "")), response)
+	_begin_dialogue_exchange(str(branch.get("label", "")), response, str(branch.get("processing_thought", "")))
 	_lantern_prompt.hide()
 	_layout_caption()
 
@@ -2493,6 +2599,7 @@ func _wake() -> void:
 	reflection.set("memory", Game.dream_memory)
 	reflection.set("mathilda", Game.mathilda_pov)
 	reflection.set("outcome", _dream_outcome)
+	reflection.set("lantern_response", _lantern_response_id())
 	get_tree().current_scene.add_child(reflection)
 	if Game.mathilda_pov:
 		get_tree().current_scene.add_child(preload("res://scripts/player/mathilda_pov.gd").new())
@@ -2518,26 +2625,51 @@ func _show_standalone_waking() -> void:
 
 func _ending_text() -> String:
 	var result := ""
-	if _conversation_strain >= 4:
+	if _conversation_strain >= 3:
 		_dream_understood = false
 		_dream_outcome = "ruptured"
 		var ruptured: Dictionary = _story.get("ruptured", {})
 		_record_dream_entry(ruptured.get("journal", {}))
 		result = str(ruptured.get("response", _story.get("arrival", "")))
+	elif _conversation_strain > 0:
+		_dream_understood = false
+		_dream_outcome = "strained"
+		var strained: Dictionary = _story.get("strained", {})
+		_record_dream_entry(strained.get("journal", {}))
+		result = str(strained.get("response", _story.get("arrival", "")))
 	else:
-		_dream_understood = _seen_story_cues.has("window") and _seen_story_cues.size() >= 2
+		# A complete reading asks the player to leave the path and look at the
+		# exposed lantern, then carry that clue through all three trail images.
+		var followed_all_cues := _seen_story_cues.has("sisters") and _seen_story_cues.has("thread") and _seen_story_cues.has("window")
+		var attended_to_lantern := _lantern_sheltered or _lantern_returned
+		_dream_understood = attended_to_lantern and followed_all_cues
 		if _dream_understood:
 			_dream_outcome = "complete"
 			result = str(_story.get("ending", _story.get("arrival", "")))
 		else:
 			var unresolved: Dictionary = _story.get("unresolved", {})
 			_dream_outcome = "unresolved"
-			_record_dream_entry(unresolved.get("journal", {}))
-			result = str(unresolved.get("response", _story.get("arrival", "")))
+			if followed_all_cues and _lantern_seen and not attended_to_lantern:
+				_record_dream_entry(unresolved.get("journal_after_passing_lantern", unresolved.get("journal", {})))
+				result = str(unresolved.get("response_after_passing_lantern", unresolved.get("response", _story.get("arrival", ""))))
+			else:
+				_record_dream_entry(unresolved.get("journal", {}))
+				result = str(unresolved.get("response", _story.get("arrival", "")))
+	Game.save_dream_outcome(_dream_outcome, _lantern_response_id())
 	if _memory_architecture:
 		_memory_architecture.settle(_dream_outcome)
 	_compose_waking_scene()
 	return result
+
+
+func _lantern_response_id() -> String:
+	if not _lantern_seen:
+		return ""
+	if _lantern_returned:
+		return "returned"
+	if _lantern_sheltered:
+		return "sheltered"
+	return "passed"
 
 
 func _compose_waking_scene() -> void:
@@ -2552,6 +2684,10 @@ func _compose_waking_scene() -> void:
 		"unresolved":
 			var window_at := _memory_architecture.cue_position("window") if _memory_architecture else _figure.global_position + Vector3.FORWARD
 			_turn_figure_toward_point(window_at, 0.9)
+		"strained":
+			var lantern_at := _lantern.global_position if is_instance_valid(_lantern) else _figure.global_position + Vector3.BACK
+			_turn_figure_toward_point(lantern_at, 0.9)
+			_figure_aura_pulse = 0.12
 		"ruptured":
 			# She turns out of the exchange and takes one measured step. The
 			# warning remains readable while she chooses to leave the conversation.
@@ -2614,8 +2750,11 @@ func _set_caption_action(caption: String) -> void:
 func _set_speaker(speaker: String) -> void:
 	_speaker_label.text = speaker.to_upper()
 	_speaker_label.visible = not speaker.is_empty()
+	_speaker_label.add_theme_color_override("font_color", UiChrome.DIALOGUE_AMBER if speaker.to_upper() == "MATHILDA" else UiChrome.DIALOGUE_ASH if speaker.to_upper().begins_with("OPHELIA") else UiChrome.DIALOGUE_FROST)
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	if speaker == "YOU":
+	# Ordinary processing belongs to the player’s point of view; do not place
+	# an Ophelia thought over Mathilda merely because the thought is in dialogue UI.
+	if speaker == "YOU" or speaker.to_upper().begins_with("OPHELIA"):
 		_speech_target = Game.player
 	else:
 		_speech_target = _figure if _figure and is_instance_valid(_figure) else Game.player

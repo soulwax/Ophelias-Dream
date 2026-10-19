@@ -755,6 +755,38 @@ function dreamTextarea(labelText, value, oninput, maxLength, rows = 2) {
 	return el("label", {}, labelText, area);
 }
 
+function dreamPressureFields(card, choice, index, kind) {
+	const section = el("details", { className: "dream-pressure-fields" });
+	section.append(el("summary", { textContent: `If strain remains · ${kind} · optional` }));
+	section.append(
+		dreamTextarea(`Background thought ${index + 1} after pressure`, choice.background_after_pressure || "",
+			(value) => { choice.background_after_pressure = value; markDreamStoryDirty(); }, 180),
+		dreamTextarea(`Under-breath afterthought ${index + 1} after pressure`, choice.processing_thought_if_still_strained || "",
+			(value) => { choice.processing_thought_if_still_strained = value; markDreamStoryDirty(); }, 180),
+		dreamTextarea(`Mathilda’s reply ${index + 1} if strain remains`, choice.response_if_still_strained || "",
+			(value) => { choice.response_if_still_strained = value; markDreamStoryDirty(); }, 600, 3));
+	const hadJournalVariant = Boolean(choice.journal_if_still_strained);
+	const journal = choice.journal_if_still_strained || {};
+	const updateJournal = (field, value) => {
+		const variant = { ...(choice.journal_if_still_strained || choice.journal || {}) };
+		variant[field] = value;
+		const base = choice.journal || {};
+		const matchesBase = ["title", "text", "approach"].every((key) => (variant[key] || "") === (base[key] || ""));
+		const allBlank = ["title", "text", "approach"].every((key) => !(variant[key] || "").trim());
+		if ((!hadJournalVariant && matchesBase) || (hadJournalVariant && allBlank)) delete choice.journal_if_still_strained;
+		else choice.journal_if_still_strained = variant;
+		markDreamStoryDirty();
+	};
+	section.append(
+		dreamTextarea(`Journal title ${index + 1} after pressure`, journal.title || "",
+			(value) => updateJournal("title", value), 120),
+		dreamTextarea(`Journal note ${index + 1} after pressure`, journal.text || "",
+			(value) => updateJournal("text", value), 600, 3),
+		dreamTextarea(`Journal approach ${index + 1} after pressure`, journal.approach || "",
+			(value) => updateJournal("approach", value), 360, 3));
+	card.append(section);
+}
+
 function renderDreamStory() {
 	const story = state.dreamStory;
 	if (!story) return;
@@ -773,10 +805,32 @@ function renderDreamStory() {
 			card.append(dreamTextarea(`Your reply ${choiceIndex + 1}`, choice.label,
 				(value) => { choice.label = value; markDreamStoryDirty(); }, 120),
 			dreamTextarea(`What she says next ${choiceIndex + 1}`, choice.response,
-				(value) => { choice.response = value; markDreamStoryDirty(); }, 240));
+				(value) => { choice.response = value; markDreamStoryDirty(); }, 240),
+			dreamTextarea(`Background thought ${choiceIndex + 1} · optional`, choice.background || "",
+				(value) => { choice.background = value; markDreamStoryDirty(); }, 180),
+			dreamTextarea(`Under-breath afterthought ${choiceIndex + 1} · optional`, choice.processing_thought || "",
+				(value) => { choice.processing_thought = value; markDreamStoryDirty(); }, 180));
+			dreamPressureFields(card, choice, choiceIndex, `turn ${roundIndex + 1}`);
 		}
 		return card;
 	}));
+	const repair = story.repair;
+	const repairCard = el("fieldset", { className: "dream-small-talk-round" });
+	repairCard.append(el("legend", { textContent: "Repair turn" }),
+		dreamTextarea("Her opening", repair.prompt, (value) => { repair.prompt = value; markDreamStoryDirty(); }, 180),
+		dreamTextarea("Choice guidance", repair.guidance, (value) => { repair.guidance = value; markDreamStoryDirty(); }, 240));
+	for (const [choiceIndex, choice] of repair.choices.entries()) {
+		repairCard.append(dreamTextarea(`Your repair ${choiceIndex + 1}`, choice.label,
+			(value) => { choice.label = value; markDreamStoryDirty(); }, 120),
+		dreamTextarea(`What she says next ${choiceIndex + 1}`, choice.response,
+			(value) => { choice.response = value; markDreamStoryDirty(); }, 240),
+		dreamTextarea(`Background thought ${choiceIndex + 1} · optional`, choice.background || "",
+			(value) => { choice.background = value; markDreamStoryDirty(); }, 180),
+		dreamTextarea(`Under-breath afterthought ${choiceIndex + 1} · optional`, choice.processing_thought || "",
+			(value) => { choice.processing_thought = value; markDreamStoryDirty(); }, 180));
+		dreamPressureFields(repairCard, choice, choiceIndex, "repair");
+	}
+	$("#dream-repair").replaceChildren(repairCard);
 	renderDreamBranches();
 	$("#dream-story-save").disabled = !state.dreamStoryDirty;
 	$("#dream-opening").oninput = () => { story.opening = $("#dream-opening").value; markDreamStoryDirty(); };
@@ -828,6 +882,14 @@ function renderDreamBranches() {
 				legend.textContent = `Branch ${index + 1} · ${value || "Untitled answer"}`;
 				markDreamStoryDirty();
 			}, 120),
+			dreamTextarea("Background thought · optional", branch.background || "", (value) => {
+				branch.background = value;
+				markDreamStoryDirty();
+			}, 180),
+			dreamTextarea("Under-breath afterthought · optional", branch.processing_thought || "", (value) => {
+				branch.processing_thought = value;
+				markDreamStoryDirty();
+			}, 180),
 			dreamTextarea("Answer in the dream", branch.response, (value) => { branch.response = value; markDreamStoryDirty(); }, 360, 3),
 			el("div", { className: "dream-echoes" },
 				dreamTextarea("Ophelia · waking echo", branch.ophelia, (value) => { branch.ophelia = value; markDreamStoryDirty(); }, 360),
@@ -845,6 +907,7 @@ function addDreamBranch() {
 	let id = `answer_${suffix}`;
 	while (story.branches.some((branch) => branch.id === id)) id = `answer_${++suffix}`;
 	story.branches.push({ id, label: "A new answer.", response: "The figure waits for what follows.\nPress E to wake.",
+		background: "",
 		ophelia: "The dream leaves Ophelia with a question she cannot place.",
 		mathilda: "The dream leaves Mathilda with a question she cannot place." });
 	markDreamStoryDirty();

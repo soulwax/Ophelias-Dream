@@ -32,6 +32,35 @@ def _text(value, label, limit, *, multiline=False):
     return value
 
 
+def _optional_background(choice, label):
+    value = choice.get("background")
+    if value is None or value == "":
+        return
+    _text(value, f"{label} background thought", 180)
+
+
+def _optional_processing_thought(choice, label):
+    value = choice.get("processing_thought")
+    if value is None or value == "":
+        return
+    _text(value, f"{label} processing thought", 180)
+
+
+def _optional_pressure_variants(choice, label):
+    response = choice.get("response_if_still_strained")
+    if response not in (None, ""):
+        _text(response, f"{label} strained response", 600, multiline=True)
+    background = choice.get("background_after_pressure")
+    if background not in (None, ""):
+        _text(background, f"{label} pressured background thought", 180)
+    thought = choice.get("processing_thought_if_still_strained")
+    if thought not in (None, ""):
+        _text(thought, f"{label} strained processing thought", 180)
+    journal = choice.get("journal_if_still_strained")
+    if journal is not None:
+        _entry(journal, f"{label} strained journal entry")
+
+
 def normalize(payload):
     """Validate the runtime schema without stripping fields the editor does not edit."""
     if not isinstance(payload, dict) or payload.get("version") != 1:
@@ -108,15 +137,22 @@ def normalize(payload):
         _text(branch.get("response"), f"branch {index} response", 600, multiline=True)
         _text(branch.get("ophelia"), f"branch {index} Ophelia reflection", 360)
         _text(branch.get("mathilda"), f"branch {index} Mathilda reflection", 360)
+        _optional_background(branch, f"branch {index}")
+        _optional_processing_thought(branch, f"branch {index}")
         _entry(branch.get("journal"), f"branch {index} journal")
 
-    for outcome_name in ("unresolved", "ruptured"):
+    for outcome_name in ("unresolved", "strained", "ruptured"):
         outcome = payload.get(outcome_name)
         if not isinstance(outcome, dict):
             raise ValueError(f"dream story needs a {outcome_name} outcome")
         for field in ("response", "ophelia", "mathilda"):
             _text(outcome.get(field), f"{outcome_name} {field}", 600, multiline=True)
         _entry(outcome.get("journal"), f"{outcome_name} journal")
+        if outcome_name == "unresolved" and outcome.get("response_after_passing_lantern") is not None:
+            _text(outcome["response_after_passing_lantern"], "unresolved lantern-passing response", 600, multiline=True)
+            _entry(outcome.get("journal_after_passing_lantern"), "unresolved lantern-passing journal")
+            for field in ("ophelia_after_passing_lantern", "mathilda_after_passing_lantern"):
+                _text(outcome.get(field), f"unresolved {field}", 360)
     # Keep cue, journal and branch metadata intact when Story Studio saves the
     # subset it edits. Older normalization silently deleted these runtime fields.
     return deepcopy(payload)
@@ -146,6 +182,9 @@ def _choices(value, label, minimum, maximum, effects, *, require_advance=True):
             raise ValueError(f"{label} choice {index} is invalid")
         _text(choice.get("label"), f"{label} choice {index} label", 180)
         _text(choice.get("response"), f"{label} choice {index} response", 600, multiline=True)
+        _optional_background(choice, f"{label} choice {index}")
+        _optional_processing_thought(choice, f"{label} choice {index}")
+        _optional_pressure_variants(choice, f"{label} choice {index}")
         effect = choice.get("effect", "")
         if effect and effect not in effects:
             raise ValueError(f"{label} choice {index} has an unsupported effect")

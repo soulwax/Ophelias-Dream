@@ -66,6 +66,14 @@ def parse():
             continue
         elif raw.startswith("Action / reaction: "):
             current["reaction"] = raw[len("Action / reaction: "):].rstrip(".")
+        elif raw.startswith("Background thought: "):
+            thought = raw[len("Background thought: "):].strip()
+            if "background" not in current:
+                current["background"] = thought
+            elif isinstance(current["background"], list):
+                current["background"].append(thought)
+            else:
+                current["background"] = [current["background"], thought]
         elif raw.startswith("Answers: "):
             found = ANSWERS.match(raw)
             if not found:

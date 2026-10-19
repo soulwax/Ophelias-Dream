@@ -21,20 +21,25 @@ static func load_data() -> Dictionary:
 	var small_talk: Variant = parsed.get("small_talk", [])
 	var events: Variant = parsed.get("events", [])
 	var repair: Variant = parsed.get("repair", {})
-	var ruptured: Variant = parsed.get("ruptured", {})
 	if typeof(beats) != TYPE_ARRAY or beats.size() != BEAT_COUNT or typeof(branches) != TYPE_ARRAY or not (2 <= branches.size() and branches.size() <= 8):
 		push_error("Dream story needs four approach beats and at least two branches")
 		return {}
-	var unresolved: Variant = parsed.get("unresolved", {})
 	if not _valid_journal_entry(parsed.get("journal_cue", {})) or str(parsed.get("question_guidance", "")).strip_edges().is_empty() or typeof(events) != TYPE_ARRAY or events.size() != 3:
 		push_error("Dream story needs an opening journal cue and three trail events")
 		return {}
-	if typeof(unresolved) != TYPE_DICTIONARY or str(unresolved.get("response", "")).strip_edges().is_empty() or str(unresolved.get("ophelia", "")).strip_edges().is_empty() or str(unresolved.get("mathilda", "")).strip_edges().is_empty() or not _valid_journal_entry(unresolved.get("journal", {})):
-		push_error("Dream story needs an unresolved wakeup and reflection for each character")
-		return {}
-	if typeof(ruptured) != TYPE_DICTIONARY or str(ruptured.get("response", "")).strip_edges().is_empty() or str(ruptured.get("ophelia", "")).strip_edges().is_empty() or str(ruptured.get("mathilda", "")).strip_edges().is_empty() or not _valid_journal_entry(ruptured.get("journal", {})):
-		push_error("Dream story needs a closed-conversation outcome for each character")
-		return {}
+	for outcome_name in ["unresolved", "strained", "ruptured"]:
+		var outcome: Variant = parsed.get(outcome_name, {})
+		if typeof(outcome) != TYPE_DICTIONARY or str(outcome.get("response", "")).strip_edges().is_empty() or str(outcome.get("ophelia", "")).strip_edges().is_empty() or str(outcome.get("mathilda", "")).strip_edges().is_empty() or not _valid_journal_entry(outcome.get("journal", {})):
+			push_error("Dream story needs a %s wakeup and reflection for each character" % outcome_name)
+			return {}
+		if outcome_name == "unresolved" and outcome.has("response_after_passing_lantern") and (str(outcome["response_after_passing_lantern"]).strip_edges().is_empty() or not _valid_journal_entry(outcome.get("journal_after_passing_lantern", {}))):
+			push_error("Dream story has an incomplete lantern-passing outcome")
+			return {}
+		if outcome_name == "unresolved":
+			for field in ["ophelia_after_passing_lantern", "mathilda_after_passing_lantern"]:
+				if outcome.has(field) and str(outcome[field]).strip_edges().is_empty():
+					push_error("Dream story has an empty lantern-passing reflection")
+					return {}
 	if typeof(repair) != TYPE_DICTIONARY or str(repair.get("prompt", "")).strip_edges().is_empty() or str(repair.get("guidance", "")).strip_edges().is_empty():
 		push_error("Dream story needs a repair conversation")
 		return {}
@@ -43,7 +48,7 @@ static func load_data() -> Dictionary:
 		push_error("Dream story repair conversation needs at least two choices")
 		return {}
 	for option in repair_options:
-		if typeof(option) != TYPE_DICTIONARY or str(option.get("label", "")).strip_edges().is_empty() or str(option.get("response", "")).strip_edges().is_empty() or not ["repair", "escalate"].has(str(option.get("effect", ""))) or not _valid_journal_entry(option.get("journal", {})):
+		if typeof(option) != TYPE_DICTIONARY or str(option.get("label", "")).strip_edges().is_empty() or str(option.get("response", "")).strip_edges().is_empty() or not ["repair", "escalate"].has(str(option.get("effect", ""))) or not _valid_background_thought(option.get("background")) or not _valid_background_thought(option.get("processing_thought")) or not _valid_journal_entry(option.get("journal", {})) or not _valid_pressure_variants(option):
 			push_error("Dream story contains an invalid repair choice")
 			return {}
 	if typeof(small_talk) != TYPE_ARRAY or small_talk.size() > SMALL_TALK_MAX_ROUNDS:
@@ -96,6 +101,9 @@ static func load_data() -> Dictionary:
 			if str(branch.get(field, "")).strip_edges().is_empty():
 				push_error("Dream story branch %s is missing %s" % [branch["id"], field])
 				return {}
+		if not _valid_background_thought(branch.get("background")) or not _valid_background_thought(branch.get("processing_thought")):
+			push_error("Dream story branch %s has an invalid background thought" % branch["id"])
+			return {}
 		if not branch.has("journal") or not _valid_journal_entry(branch["journal"]):
 			push_error("Dream story branch %s has an invalid journal note" % branch["id"])
 			return {}
@@ -109,7 +117,7 @@ static func load_data() -> Dictionary:
 			push_error("Dream story small talk needs between two and four choices per round")
 			return {}
 		for option in options:
-			if typeof(option) != TYPE_DICTIONARY or str(option.get("label", "")).strip_edges().is_empty() or str(option.get("response", "")).strip_edges().is_empty():
+			if typeof(option) != TYPE_DICTIONARY or str(option.get("label", "")).strip_edges().is_empty() or str(option.get("response", "")).strip_edges().is_empty() or not _valid_background_thought(option.get("background")) or not _valid_background_thought(option.get("processing_thought")) or not _valid_pressure_variants(option):
 				push_error("Dream story contains an incomplete small-talk choice")
 				return {}
 			if not str(option.get("effect", "")).is_empty() and not ["push"].has(str(option.get("effect", ""))):
@@ -144,6 +152,27 @@ static func _valid_journal_entry(entry: Variant) -> bool:
 	if id_regex.search(identifier) == null or str(entry.get("title", "")).strip_edges().is_empty() or str(entry.get("text", "")).strip_edges().is_empty():
 		return false
 	return str(entry.get("approach", "")).strip_edges() != ""
+
+
+static func _valid_background_thought(thought: Variant) -> bool:
+	if thought == null or (typeof(thought) == TYPE_STRING and str(thought).strip_edges().is_empty()):
+		return true
+	return typeof(thought) == TYPE_STRING and str(thought).length() <= 180 and not str(thought).contains("\n") and not str(thought).contains("\r")
+
+
+static func _valid_pressure_variants(raw_option: Variant) -> bool:
+	if typeof(raw_option) != TYPE_DICTIONARY:
+		return false
+	var option: Dictionary = raw_option
+	if option.has("response_if_still_strained") and not str(option["response_if_still_strained"]).is_empty() and str(option["response_if_still_strained"]).strip_edges().is_empty():
+		return false
+	if option.has("background_after_pressure") and not str(option["background_after_pressure"]).is_empty() and not _valid_background_thought(option["background_after_pressure"]):
+		return false
+	if option.has("processing_thought_if_still_strained") and not str(option["processing_thought_if_still_strained"]).is_empty() and not _valid_background_thought(option["processing_thought_if_still_strained"]):
+		return false
+	if option.has("journal_if_still_strained") and not _valid_journal_entry(option["journal_if_still_strained"]):
+		return false
+	return true
 
 
 static func has_branch(branch_id: String) -> bool:

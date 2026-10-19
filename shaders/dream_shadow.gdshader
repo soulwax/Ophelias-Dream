@@ -7,9 +7,9 @@ render_mode blend_mix, depth_prepass_alpha, cull_disabled, diffuse_burley, specu
 // rendering realistic spinning spiral galaxies, dark dust lanes, H-II nebulae,
 // and crisp starfields within her form.
 
-uniform vec3 shadow_tint : source_color = vec3(0.025, 0.018, 0.065);
+uniform vec3 shadow_tint : source_color = vec3(0.001, 0.001, 0.004);
 uniform vec3 aura_tint : source_color = vec3(0.58, 0.36, 0.96);
-uniform float opacity : hint_range(0.0, 0.98) = 0.88;
+uniform float opacity : hint_range(0.0, 0.99) = 0.97;
 uniform float dissolve : hint_range(0.0, 0.4) = 0.0;
 uniform float lantern_warmth : hint_range(0.0, 1.0) = 0.0;
 uniform float galaxy_spin_speed : hint_range(0.05, 2.0) = 0.52;
@@ -308,10 +308,12 @@ void fragment() {
 		vec3 stars_near = starfield_3d(p * (24.0 + lf * 9.0) + vec3(0.0, spin_t * 0.10, 0.0), TIME);
 		vec3 stars_fine = starfield_3d(p * (52.0 + lf * 16.0) - vec3(spin_t * 0.07, 0.0, 0.0), TIME * 1.3) * 0.72;
 
-		vec3 layer_col = gal_heart.rgb + gal_plexus.rgb + gal_crown.rgb + gal_skirt.rgb
-			+ mini_gal + nebula_col + (stars_near + stars_fine) * star_vividness;
+		vec3 galactic_clouds = gal_heart.rgb + gal_plexus.rgb + gal_crown.rgb + gal_skirt.rgb
+			+ mini_gal;
 
-		interior_cosmos += layer_col * weight;
+		// Keep clouds submerged in the void; sparse stars remain crisp points of contrast.
+		interior_cosmos += (galactic_clouds * 0.12 + nebula_col * 0.06
+			+ (stars_near + stars_fine) * star_vividness * 0.78) * weight;
 		galaxy_luma += (gal_heart.w + gal_plexus.w + gal_crown.w + gal_skirt.w) * weight;
 	}
 
@@ -329,23 +331,23 @@ void fragment() {
 
 	// Deep cosmic midnight albedo in the interior window so the spinning galaxies stay high-contrast,
 	// with shaded pearlescent starlight on grazing 3D contours.
-	vec3 base_albedo = mix(shadow_tint * 0.16, iridescent_rim * 0.42, rim * 0.85);
+	vec3 base_albedo = mix(shadow_tint * 0.04, iridescent_rim * 0.10, rim * 0.52);
 	base_albedo += vec3(0.22, 0.12, 0.04) * lantern_warmth * rim;
 
 	ALBEDO = base_albedo;
-	ROUGHNESS = mix(0.26, 0.10, rim);
-	METALLIC = mix(0.18, 0.55, rim);
-	SPECULAR = 0.92;
+	ROUGHNESS = mix(0.42, 0.24, rim);
+	METALLIC = mix(0.02, 0.12, rim);
+	SPECULAR = 0.28;
 
 	// Interior galaxies shine vividly through her dark cosmic core, framed by the shaded starchild rim.
-	float interior_window = mix(1.32, 0.48, rim);
-	vec3 emission = vec3(0.012, 0.008, 0.038) + interior_cosmos * interior_window;
-	emission += iridescent_rim * (rim * 0.68 + fine_rim * 1.15) * opacity;
+	float interior_window = mix(0.78, 0.42, rim);
+vec3 emission = vec3(0.001, 0.001, 0.004) + interior_cosmos * interior_window;
+emission += iridescent_rim * (rim * 0.24 + fine_rim * 0.72) * opacity;
 	emission += vec3(1.0, 0.68, 0.32) * rim * lantern_warmth * 0.55;
 	emission += aura_tint * 2.2 * dissolve_edge * step(0.001, dissolve);
 
 	EMISSION = emission;
-	ALPHA = clamp(opacity + 0.10 + rim * 0.12 + clamp(galaxy_luma, 0.0, 0.25), 0.0, 0.98) * intact;
+ALPHA = clamp(opacity + 0.015 + rim * 0.025 + clamp(galaxy_luma, 0.0, 0.08), 0.0, 0.99) * intact;
 }
 
 void light() {
@@ -366,13 +368,13 @@ void light() {
 
 	// Pearlescent Schlick-GGX specular highlight on her contours.
 	float ndoth = max(dot(n, h), 0.0);
-	float spec = pow(ndoth, 48.0) * 0.72;
+	float spec = pow(ndoth, 48.0) * 0.18;
 
 	vec3 iridescent_tint = mix(aura_tint, vec3(0.58, 0.90, 1.0), fresnel);
 	DIFFUSE_LIGHT += LIGHT_COLOR * ATTENUATION * (
-		ALBEDO * wrapped_diffuse * 0.75
-		+ iridescent_tint * translucency * fresnel * 0.45
-		+ iridescent_tint * fresnel * max(ndotl + 0.25, 0.0) * 0.32
+		ALBEDO * wrapped_diffuse * 0.35
+		+ iridescent_tint * translucency * fresnel * 0.18
+		+ iridescent_tint * fresnel * max(ndotl + 0.25, 0.0) * 0.12
 	);
 	SPECULAR_LIGHT += LIGHT_COLOR * ATTENUATION * mix(vec3(1.0), iridescent_tint, 0.4) * spec * (0.35 + 0.65 * fresnel);
 }

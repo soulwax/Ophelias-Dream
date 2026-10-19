@@ -9,7 +9,11 @@
     "answers": "none",
     "quote": "",
     "intensity": 0.35,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": [
+      "Her hand has already turned toward the kettle. It always needs something to do.",
+      "The kettle is between us now, though neither of us has gone in."
+    ]
   },
   {
     "id": "02",
@@ -21,7 +25,8 @@
     "answers": "01",
     "quote": "I'll put the kettle on.",
     "intensity": 0.3,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "A stripe of warm light crosses the threshold. My boots are still full of snow."
   },
   {
     "id": "03",
@@ -33,7 +38,8 @@
     "answers": "02",
     "quote": "Not yet.",
     "intensity": 0.45,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "She looks at my hands first. The gloves hide what they always hide."
   },
   {
     "id": "04",
@@ -45,7 +51,8 @@
     "answers": "03",
     "quote": "Are you hurt?",
     "intensity": 0.6,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "The wool is biting my knuckles. I keep the gloves on."
   },
   {
     "id": "05",
@@ -57,7 +64,8 @@
     "answers": "04",
     "quote": "I'm angry.",
     "intensity": 0.7,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "She says it to the door between us. The latch remembers the rest."
   },
   {
     "id": "06",
@@ -69,7 +77,8 @@
     "answers": "05",
     "quote": "I didn't mean for you to go.",
     "intensity": 0.65,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "A path runs behind me all the way to the cabin. I do not have to take it yet."
   },
   {
     "id": "07",
@@ -93,7 +102,11 @@
     "answers": "07",
     "quote": "I watched the door all night.",
     "intensity": 0.8,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": [
+      "The door stayed shut. I can still feel where I stopped.",
+      "I used to think a closed door was the same as an answer."
+    ]
   },
   {
     "id": "09",
@@ -105,7 +118,8 @@
     "answers": "08",
     "quote": "why didn't you open it?",
     "intensity": 0.75,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "Her fingers worry the cup handle, though there is no cup yet."
   },
   {
     "id": "10",
@@ -118,7 +132,8 @@
     "quote": "I would have to hear you.",
     "intensity": 0.35,
     "overlap": 0.0,
-    "break": true
+    "break": true,
+    "background": "One word. It is all I can give her without pretending I am ready to forgive."
   },
   {
     "id": "11",
@@ -130,7 +145,8 @@
     "answers": "10",
     "quote": "Yes.",
     "intensity": 0.6,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "For once, she leaves a space where an answer could go."
   },
   {
     "id": "12",
@@ -142,7 +158,11 @@
     "answers": "11",
     "quote": "I never thought of what to ask.",
     "intensity": 0.5,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": [
+      "I rehearsed the sentence on the walk back. I still don't know how it sounds aloud.",
+      "In my rehearsal, she always said the right thing. I never practiced what I would say after."
+    ]
   },
   {
     "id": "13",
@@ -166,7 +186,8 @@
     "answers": "13",
     "quote": "What did you need from me?",
     "intensity": 0.65,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "I can still see the list in her hand. I remember the milk."
   },
   {
     "id": "15",
@@ -178,7 +199,8 @@
     "answers": "14",
     "quote": "you handed me a list.",
     "intensity": 0.4,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "She remembers the paper. I remember the pencil breaking through it."
   },
   {
     "id": "16",
@@ -191,7 +213,11 @@
     "quote": "The shopping list.",
     "intensity": 0.85,
     "overlap": 0.0,
-    "break": true
+    "break": true,
+    "background": [
+      "Milk is the word I remember. The room around it is harder to place.",
+      "I have made that one small word carry everything I could not say."
+    ]
   },
   {
     "id": "17",
@@ -203,7 +229,8 @@
     "answers": "16",
     "quote": "I needed you.",
     "intensity": 0.8,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "The old words return in the old order. Only the room around them has changed."
   },
   {
     "id": "18",
@@ -215,7 +242,8 @@
     "answers": "17",
     "quote": "I knew how to fix milk.",
     "intensity": 0.45,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "The space beside me is empty. I leave it empty long enough for her to choose it."
   },
   {
     "id": "19",
@@ -227,7 +255,8 @@
     "answers": "18",
     "quote": "sit beside me.",
     "intensity": 0.45,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "She lowers herself slowly, as if the chair might ask her to leave."
   },
   {
     "id": "20",
@@ -239,7 +268,11 @@
     "answers": "19",
     "quote": "I'll listen until you're finished.",
     "intensity": 0.35,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": [
+      "A cup can wait without knowing what for. I wish I could do that.",
+      "It has my old chip at the rim. I kept turning it away from her."
+    ]
   },
   {
     "id": "21",
@@ -251,7 +284,8 @@
     "answers": "20",
     "quote": "I brought your cup back.",
     "intensity": 0.4,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "The question is so soft I almost mistake it for the kettle."
   },
   {
     "id": "22",
@@ -263,7 +297,11 @@
     "answers": "21",
     "quote": "You kept it?",
     "intensity": 0.45,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": [
+      "The anger is still here. It has stopped being the only thing I can carry.",
+      "Wanting her here does not make what happened less true."
+    ]
   },
   {
     "id": "23",
@@ -275,7 +313,8 @@
     "answers": "22",
     "quote": "I didn't want you gone.",
     "intensity": 0.35,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "She waits with both hands open. I have seen her do this with a door."
   },
   {
     "id": "24",
@@ -287,7 +326,8 @@
     "answers": "23",
     "quote": "May I take it?",
     "intensity": 0.45,
-    "overlap": 0.0
+    "overlap": 0.0,
+    "background": "The cup has gone cold in my hands. I do not put it down."
   },
   {
     "id": "a01",

@@ -173,6 +173,7 @@
     <section id="dream-story-view" hidden>
       <h1>Dream story</h1>
       <p class="muted">A separate subtitle script for the playable dream. Edit its approach, gentle small talk, choice and aftermath here; these words stay outside the voiced line catalogue.</p>
+      <p class="muted">Background thoughts are ordinary processing: a detail noticed, a habit, or a feeling arriving before the reply. Keep them brief, first-person and uncertain. They are not another speaker or a dissociation voice.</p>
       <div class="dream-story-editor" id="dream-story-editor" aria-busy="false">
         <p id="dream-story-status" class="runtime muted" role="status" aria-live="polite">Loading the dream story…</p>
         <label>Opening caption
@@ -188,9 +189,14 @@
         </label>
           <div class="dream-beats">
             <h2>Small talk before the harder question</h2>
-            <p class="muted">Up to three short turns let the player build trust. Each reply stays optional and no choice forces disclosure.</p>
+            <p class="muted">Up to four short turns let the player build trust. Each reply stays optional and no choice forces disclosure.</p>
             <div id="dream-small-talk"></div>
           </div>
+        <div class="dream-beats">
+          <h2>Repair after pressure</h2>
+          <p class="muted">The small repair exchange keeps its own choices and background thoughts.</p>
+          <div id="dream-repair"></div>
+        </div>
         <label>What she asks
           <textarea id="dream-question" rows="2" maxlength="180"></textarea>
         </label>

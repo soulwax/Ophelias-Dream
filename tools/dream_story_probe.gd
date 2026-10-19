@@ -8,6 +8,8 @@ const DREAM_ROUTE := preload("res://scripts/world/dream_route.gd")
 
 
 func _ready() -> void:
+	var previous_saved_outcome := Game.dream_outcome
+	var previous_saved_lantern_response := Game.dream_lantern_response
 	var story := STORY.load_data()
 	assert(not story.is_empty(), "dream story data should load")
 	assert(story["beats"].size() == 4, "four path beats must keep their movement pacing")
@@ -27,10 +29,15 @@ func _ready() -> void:
 	reflection.mathilda = false
 	reflection.outcome = "unresolved"
 	assert(reflection._reflection_text() == story["unresolved"]["ophelia"], "missing clues should have an unresolved Ophelia waking")
+	reflection.outcome = "strained"
+	assert(reflection._reflection_text() == story["strained"]["ophelia"], "repaired pressure should have a distinct Ophelia waking")
 	reflection.mathilda = true
 	reflection.outcome = "ruptured"
 	assert(reflection._reflection_text() == story["ruptured"]["mathilda"], "a closed conversation should have a distinct Mathilda waking")
 	reflection.outcome = "complete"
+	reflection.lantern_response = "sheltered"
+	assert(reflection._reflection_text().ends_with("She stayed with the lantern until the flame steadied. The wind did not."), "the chosen light response should survive into the waking thought")
+	reflection.lantern_response = ""
 	assert(EXPERIENCE != null, "the playable dream scene script should parse")
 	assert(DREAM_ROUTE != null, "the dream route event hook should parse without scene assets")
 	assert(not STORY.has_branch("missing_branch"), "unknown saved choices should be discarded")
@@ -78,9 +85,10 @@ func _ready() -> void:
 	assert(not menu._settings_terminal.visible, "the terminal should return to the main menu")
 	menu._stop_music()
 	menu.free()
-	experience._seen_story_cues = {"window": true, "sisters": true}
+	experience._seen_story_cues = {"window": true, "sisters": true, "thread": true}
+	experience._lantern_seen = true
 	experience._conversation_strain = 0
-	assert(experience._ending_text() == story["ending"], "the warm window cue and one other event should complete the warning")
+	assert(experience._ending_text() == story["ending"], "visiting the lantern and following all three trail cues should complete the warning")
 	Game.dream_mode = true
 	Game.dream_memory = story["branches"][0]["id"]
 	experience._show_standalone_waking()
@@ -94,7 +102,9 @@ func _ready() -> void:
 	experience._seen_story_cues.clear()
 	experience._conversation_strain = 0
 	assert(experience._ending_text() == story["unresolved"]["response"], "missing the route clues should lead to the unresolved wakeup")
-	experience._conversation_strain = 4
+	experience._conversation_strain = 1
+	assert(experience._ending_text() == story["strained"]["response"], "repaired pressure should keep the warning but change the waking")
+	experience._conversation_strain = 3
 	assert(experience._ending_text() == story["ruptured"]["response"], "repeatedly pressing after repair chances should rupture the conversation")
 	experience._conversation_strain = 2
 	experience._repair_menu_attempts = 0
@@ -104,7 +114,8 @@ func _ready() -> void:
 	experience._build_small_talk_choices()
 	assert(experience._repair_menu_active and experience._choice_buttons.size() == story["repair"]["choices"].size(), "pressure should open the in-world repair dialogue")
 	experience._choose_small_talk(0)
-	assert(experience._conversation_strain == 0 and not experience._conversation_choice_advances, "a repair should restore trust and return to the interrupted topic")
+	assert(experience._conversation_strain == 1 and not experience._conversation_choice_advances, "a repair should lower strain and return to the interrupted topic")
+	Game.save_dream_outcome(previous_saved_outcome, previous_saved_lantern_response)
 	Game.dream_mode = false
 	Game.dream_memory = ""
 	Game.set_phase(Game.Phase.BOOT)

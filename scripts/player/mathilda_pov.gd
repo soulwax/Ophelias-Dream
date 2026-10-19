@@ -257,8 +257,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_group("photograph")
 		elif _inspected.size() == _object_names.size() and Game.player.global_position.distance_to(_camp) < 6.0:
 			Game.dialogue.open("Mathilda", "You kept her cup. What do you keep now?", [
-				{"id": "return", "text": "Return to Ophelia"},
-				{"id": "wait", "text": "Wait with the light"},
+				{"id": "return", "text": "Return to Ophelia", "background": "The door is open. I can still choose not to cross it."},
+				{"id": "wait", "text": "Wait with the light", "background": "The lantern is steady. I do not have to decide what comes after."},
 			], null, _choose)
 		get_viewport().set_input_as_handled()
 

@@ -3,6 +3,7 @@ extends CanvasLayer
 var memory := ""
 var mathilda := false
 var outcome := "complete"
+var lantern_response := ""
 var _line: Label
 var _panel: Panel
 var _armed := false
@@ -148,13 +149,43 @@ func _echo_anchor_position() -> Vector3:
 
 func _reflection_text() -> String:
 	var story := STORY.load_data()
+	var reflection := ""
 	if outcome == "ruptured":
 		var ruptured: Dictionary = story.get("ruptured", {})
-		return str(ruptured.get("mathilda" if mathilda else "ophelia", "The conversation closed before the warning could be heard."))
-	if outcome == "unresolved":
+		reflection = str(ruptured.get("mathilda" if mathilda else "ophelia", "The conversation closed before the warning could be heard."))
+	elif outcome == "unresolved":
 		var unresolved: Dictionary = story.get("unresolved", {})
-		return str(unresolved.get("mathilda" if mathilda else "ophelia", "The dream kept its warning behind a closed door."))
-	var branch := STORY.branch_for(story, memory)
-	if branch.is_empty():
-		return "The dream follows Mathilda into the afternoon." if mathilda else "The dream stays with Ophelia."
-	return str(branch.get("mathilda" if mathilda else "ophelia", ""))
+		var reflection_key := "mathilda" if mathilda else "ophelia"
+		if lantern_response == "passed":
+			var passed_key := "mathilda_after_passing_lantern" if mathilda else "ophelia_after_passing_lantern"
+			reflection = str(unresolved.get(passed_key, unresolved.get(reflection_key, "The dream kept its warning behind a closed door.")))
+		else:
+			reflection = str(unresolved.get(reflection_key, "The dream kept its warning behind a closed door."))
+	elif outcome == "strained":
+		var strained: Dictionary = story.get("strained", {})
+		reflection = str(strained.get("mathilda" if mathilda else "ophelia", "The warning remained between them."))
+	else:
+		var branch := STORY.branch_for(story, memory)
+		if branch.is_empty():
+			reflection = "The dream follows Mathilda into the afternoon." if mathilda else "The dream stays with Ophelia."
+		else:
+			reflection = str(branch.get("mathilda" if mathilda else "ophelia", ""))
+	if outcome in ["ruptured", "unresolved", "strained"]:
+		var saved_answer := STORY.branch_for(story, memory)
+		if not saved_answer.is_empty():
+			var answer_echo := str(saved_answer.get("mathilda" if mathilda else "ophelia", "")).strip_edges()
+			if not answer_echo.is_empty():
+				reflection += "\n\n" + answer_echo
+	var lantern_memory := _lantern_memory()
+	return reflection if lantern_memory.is_empty() else reflection + " " + lantern_memory
+
+
+func _lantern_memory() -> String:
+	match lantern_response:
+		"sheltered":
+			return "She stayed with the lantern until the flame steadied. The wind did not."
+		"returned":
+			return "She passed the lantern once, then turned back. The light was still there."
+		"passed":
+			return "The lantern stood outside the path, burning into the wind. She kept walking."
+	return ""

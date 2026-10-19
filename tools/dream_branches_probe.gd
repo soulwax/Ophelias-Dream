@@ -82,7 +82,7 @@ func _run() -> void:
 	experience.set("_conversation_strain", 3)
 	experience.call("_choose_small_talk", repair_index)
 	await get_tree().process_frame
-	_check(int(experience.get("_conversation_strain")) == 0, "a repair reply clears the strain", str(experience.get("_conversation_strain")))
+	_check(int(experience.get("_conversation_strain")) == 2, "a repair reply reduces but does not erase strain", str(experience.get("_conversation_strain")))
 	experience.set("_repair_menu_active", true)
 	experience.set("_conversation_strain", 3)
 	experience.call("_choose_small_talk", escalate_index)

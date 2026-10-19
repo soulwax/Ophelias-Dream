@@ -177,9 +177,15 @@ const SIGNAL_DIM := Color(0.46, 0.07, 0.09)
 const BONE := Color(0.91, 0.89, 0.85)
 const ASH := Color(0.56, 0.54, 0.53)
 const SOOT := Color(0.06, 0.035, 0.035)
+const DIALOGUE_INK := Color("080b12")
+const DIALOGUE_FROST := Color("d7e1e4")
+const DIALOGUE_ASH := Color("a9b4b8")
+const DIALOGUE_AMBER := Color("d4ad77")
+const DIALOGUE_EDGE := Color("59636a")
 
 static var _mono: FontVariation
 static var _display: FontVariation
+static var _literary: FontVariation
 
 
 ## The console's reading face, tracked out a little.
@@ -204,6 +210,16 @@ static func display_font() -> Font:
 		_display.base_font = base
 		_display.spacing_glyph = 3
 	return _display
+
+
+## A book face for character dialogue; keeps the prose distinct from the console UI.
+static func literary_font() -> Font:
+	if _literary == null:
+		var base := SystemFont.new()
+		base.font_names = PackedStringArray(["Georgia", "Palatino Linotype", "Book Antiqua", "Noto Serif", "DejaVu Serif", "serif"])
+		_literary = FontVariation.new()
+		_literary.base_font = base
+	return _literary
 
 
 static func term_label(text: String, size: int, color: Color = BONE, heading := false) -> Label:

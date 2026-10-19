@@ -26,6 +26,8 @@ const DREAM_STORY := preload("res://scripts/world/dream_story.gd")
 var mathilda_pov := false
 var dream_mode := false
 var dream_memory := ""
+var dream_outcome := ""
+var dream_lantern_response := ""
 var dream_completed := false
 var character_selected := false
 var phase: Phase = Phase.BOOT
@@ -275,13 +277,36 @@ func save_dream_memory(memory: String) -> void:
 	if not DREAM_STORY.has_branch(memory):
 		return
 	dream_memory = memory
+	# A new answer begins a new outcome; the prior ending must not color this one.
+	dream_outcome = ""
+	dream_lantern_response = ""
 	var file := ConfigFile.new()
 	file.load(DREAM_SAVE_PATH)
 	file.set_value("dream", "memory", dream_memory)
+	file.set_value("dream", "outcome", dream_outcome)
+	file.set_value("dream", "lantern_response", dream_lantern_response)
 	file.set_value("dream", "completed", dream_completed)
 	var result := file.save(DREAM_SAVE_PATH)
 	if result != OK:
 		push_warning("Could not save the dream memory: %s" % error_string(result))
+
+
+func save_dream_outcome(outcome: String, lantern_response: String = "") -> void:
+	if not ["", "complete", "unresolved", "strained", "ruptured"].has(outcome):
+		return
+	if not ["", "sheltered", "returned", "passed"].has(lantern_response):
+		return
+	dream_outcome = outcome
+	dream_lantern_response = lantern_response
+	var file := ConfigFile.new()
+	file.load(DREAM_SAVE_PATH)
+	file.set_value("dream", "memory", dream_memory)
+	file.set_value("dream", "outcome", dream_outcome)
+	file.set_value("dream", "lantern_response", dream_lantern_response)
+	file.set_value("dream", "completed", dream_completed)
+	var result := file.save(DREAM_SAVE_PATH)
+	if result != OK:
+		push_warning("Could not save the dream outcome: %s" % error_string(result))
 
 
 func complete_dream() -> void:
@@ -289,6 +314,8 @@ func complete_dream() -> void:
 	var file := ConfigFile.new()
 	file.load(DREAM_SAVE_PATH)
 	file.set_value("dream", "memory", dream_memory)
+	file.set_value("dream", "outcome", dream_outcome)
+	file.set_value("dream", "lantern_response", dream_lantern_response)
 	file.set_value("dream", "completed", true)
 	var result := file.save(DREAM_SAVE_PATH)
 	if result != OK:
@@ -301,6 +328,10 @@ func _load_dream_memory() -> void:
 		return
 	var saved: Variant = file.get_value("dream", "memory", "")
 	dream_memory = str(saved) if DREAM_STORY.has_branch(str(saved)) else ""
+	var saved_outcome := str(file.get_value("dream", "outcome", ""))
+	dream_outcome = saved_outcome if ["complete", "unresolved", "strained", "ruptured"].has(saved_outcome) else ""
+	var saved_lantern_response := str(file.get_value("dream", "lantern_response", ""))
+	dream_lantern_response = saved_lantern_response if ["sheltered", "returned", "passed"].has(saved_lantern_response) else ""
 	dream_completed = bool(file.get_value("dream", "completed", false))
 
 

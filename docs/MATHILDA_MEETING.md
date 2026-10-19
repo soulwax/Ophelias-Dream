@@ -14,6 +14,12 @@ Ophelia stands by the door, angled rather than squarely blocking it. She looks t
 
 Voice chain: existing Qwen-designed Ophelia mood references -> Chatterbox performance; separate Kokoro af_bella Mathilda reference -> Chatterbox performance. Keep speaker conditioning separate. Render a draft sequence first, then candidates, verify words with Whisper and inspect durations/levels. Use only supported controls; extra conversion stages are rejected if they weaken identity or intelligibility. No model ships in the game. Performances and provenance are recorded separately from the exploration clips.
 
+Selected lines in `assets/audio/voice/meeting/lines.json` carry an optional
+`background` thought. It arrives quietly in the reaction pause after a line,
+then clears when the next line begins. Continue can shorten the pause. The
+thought belongs to Mathilda's attention: after Ophelia speaks, it catches a
+gesture, a sound, or a familiar habit; it never claims to know her mind.
+
 ## Spoken exchange
 
 ### 01 | ophelia | pleading | 0.30
@@ -24,6 +30,9 @@ Intensity: 0.35
 
 > You're here. Come in. I'll put the kettle on.
 
+Background thought: Her hand has already turned toward the kettle. It always needs something to do.
+Background thought: The kettle is between us now, though neither of us has gone in.
+
 ### 02 | mathilda | hushed | 0.80
 
 Action / reaction: stop her before welcome becomes avoidance.
@@ -31,6 +40,8 @@ Answers: 01 "I'll put the kettle on."
 Intensity: 0.30
 
 > Not yet.
+
+Background thought: A stripe of warm light crosses the threshold. My boots are still full of snow.
 
 ### 03 | ophelia | shaken | 0.35
 
@@ -40,6 +51,8 @@ Intensity: 0.45
 
 > Are you hurt?
 
+Background thought: She looks at my hands first. The gloves hide what they always hide.
+
 ### 04 | mathilda | bitter | 0.70
 
 Action / reaction: name the feeling rather than accuse.
@@ -47,6 +60,8 @@ Answers: 03 "Are you hurt?"
 Intensity: 0.60
 
 > I'm cold. I'm angry. Those are different things.
+
+Background thought: The wool is biting my knuckles. I keep the gloves on.
 
 ### 05 | ophelia | breaking | 0.45
 
@@ -56,6 +71,8 @@ Intensity: 0.70
 
 > I didn't mean for you to go.
 
+Background thought: She says it to the door between us. The latch remembers the rest.
+
 ### 06 | mathilda | resolve | 0.95
 
 Action / reaction: answer the actual claim.
@@ -63,6 +80,8 @@ Answers: 05 "I didn't mean for you to go."
 Intensity: 0.65
 
 > You said go. I needed you to notice that I could.
+
+Background thought: A path runs behind me all the way to the cabin. I do not have to take it yet.
 
 ### 07 | ophelia | hushed | 0.55
 
@@ -80,6 +99,9 @@ Intensity: 0.80
 
 > Then why didn't you open it?
 
+Background thought: The door stayed shut. I can still feel where I stopped.
+Background thought: I used to think a closed door was the same as an answer.
+
 ### 09 | ophelia | shaken | 0.90
 
 Action / reaction: give up the excuse.
@@ -87,6 +109,8 @@ Answers: 08 "why didn't you open it?"
 Intensity: 0.75
 
 > Because if you came back angry, I would have to hear you.
+
+Background thought: Her fingers worry the cup handle, though there is no cup yet.
 
 ### 10 | mathilda | hushed | 1.10
 
@@ -97,6 +121,8 @@ Break: yes
 
 > Yes.
 
+Background thought: One word. It is all I can give her without pretending I am ready to forgive.
+
 ### 11 | ophelia | breaking | 0.60
 
 Action / reaction: recognize her pattern.
@@ -105,6 +131,8 @@ Intensity: 0.60
 
 > I kept thinking of what to say. I never thought of what to ask.
 
+Background thought: For once, she leaves a space where an answer could go.
+
 ### 12 | mathilda | resolve | 0.90
 
 Action / reaction: offer a chance without rescuing her.
@@ -112,6 +140,9 @@ Answers: 11 "I never thought of what to ask."
 Intensity: 0.50
 
 > Ask me now.
+
+Background thought: I rehearsed the sentence on the walk back. I still don't know how it sounds aloud.
+Background thought: In my rehearsal, she always said the right thing. I never practiced what I would say after.
 
 ### 13 | ophelia | hushed | 0.55
 
@@ -129,6 +160,8 @@ Intensity: 0.65
 
 > To let me finish. I said I was unhappy, and you handed me a list.
 
+Background thought: I can still see the list in her hand. I remember the milk.
+
 ### 15 | ophelia | hushed | 0.30
 
 Action / reaction: remember the small action.
@@ -136,6 +169,8 @@ Answers: 14 "you handed me a list."
 Intensity: 0.40
 
 > The shopping list.
+
+Background thought: She remembers the paper. I remember the pencil breaking through it.
 
 ### 16 | mathilda | bitter | 1.25
 
@@ -146,6 +181,9 @@ Break: yes
 
 > You asked if we needed milk. I was trying to tell you I needed you.
 
+Background thought: Milk is the word I remember. The room around it is harder to place.
+Background thought: I have made that one small word carry everything I could not say.
+
 ### 17 | ophelia | breaking | 1.00
 
 Action / reaction: take responsibility.
@@ -153,6 +191,8 @@ Answers: 16 "I needed you."
 Intensity: 0.80
 
 > I heard you. I made it smaller because I knew how to fix milk.
+
+Background thought: The old words return in the old order. Only the room around them has changed.
 
 ### 18 | mathilda | hushed | 0.85
 
@@ -162,6 +202,8 @@ Intensity: 0.45
 
 > You don't have to fix this before you sit beside me.
 
+Background thought: The space beside me is empty. I leave it empty long enough for her to choose it.
+
 ### 19 | ophelia | resolve | 0.75
 
 Action / reaction: specific promise.
@@ -169,6 +211,8 @@ Answers: 18 "sit beside me."
 Intensity: 0.45
 
 > Then I'll sit. And I'll listen until you're finished.
+
+Background thought: She lowers herself slowly, as if the chair might ask her to leave.
 
 ### 20 | mathilda | warm | 0.55
 
@@ -178,6 +222,9 @@ Intensity: 0.35
 
 > I brought your cup back.
 
+Background thought: A cup can wait without knowing what for. I wish I could do that.
+Background thought: It has my old chip at the rim. I kept turning it away from her.
+
 ### 21 | ophelia | warm | 0.35
 
 Action / reaction: surprised tenderness.
@@ -185,6 +232,8 @@ Answers: 20 "I brought your cup back."
 Intensity: 0.40
 
 > You kept it?
+
+Background thought: The question is so soft I almost mistake it for the kettle.
 
 ### 22 | mathilda | warm | 1.00
 
@@ -194,6 +243,9 @@ Intensity: 0.45
 
 > I was angry with you. I didn't want you gone.
 
+Background thought: The anger is still here. It has stopped being the only thing I can carry.
+Background thought: Wanting her here does not make what happened less true.
+
 ### 23 | ophelia | hushed | 0.60
 
 Action / reaction: ask instead of reaching.
@@ -202,6 +254,8 @@ Intensity: 0.35
 
 > May I take it?
 
+Background thought: She waits with both hands open. I have seen her do this with a door.
+
 ### 24 | mathilda | resolve | 1.20
 
 Action / reaction: consent and a small shared action.
@@ -209,6 +263,8 @@ Answers: 23 "May I take it?"
 Intensity: 0.45
 
 > Yes. Walk beside me.
+
+Background thought: The cup has gone cold in my hands. I do not put it down.
 
 
 ## Branches

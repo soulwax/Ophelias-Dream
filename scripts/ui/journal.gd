@@ -15,9 +15,16 @@ const HINTS := {
 }
 
 var _list: VBoxContainer
+var _chapter: Label
+var _chapter_opening: Label
+var _lead_in: Label
 var _title: Label
 var _body: RichTextLabel
 var _between: Label
+var _reading_head: Label
+var _reading: Label
+var _coda_head: Label
+var _coda: Label
 var _blots: HBoxContainer
 var _readings: HBoxContainer
 var _hint: Label
@@ -113,11 +120,25 @@ func _refresh() -> void:
 	_fill_list()
 	_fill_undone()
 	_empty.visible = Game.journal.is_empty()
+	_chapter.visible = _selected != null
+	_chapter_opening.visible = _selected != null
+	_lead_in.visible = _selected != null
+	_chapter.text = _chapter_heading(_selected) if _selected else ""
+	_chapter_opening.text = NoteCatalog.chapter_opening_for(_selected.title) if _selected else ""
+	_lead_in.text = NoteCatalog.lead_in_for(_selected) if _selected else ""
 	_title.text = _selected.title if _selected else ""
 	_body.text = UiChrome.smudge_text(_selected, true) if _selected else ""
 	var whole := _selected != null and Game.page_solved(_selected)
 	_between.text = _selected.between if whole else ""
 	_between.visible = whole
+	var reading := NoteCatalog.reading_for(_selected) if whole else ""
+	_reading_head.visible = not reading.is_empty()
+	_reading.visible = not reading.is_empty()
+	_reading.text = reading
+	var coda := NoteCatalog.chapter_coda_for(_selected) if whole else ""
+	_coda_head.visible = not coda.is_empty()
+	_coda.visible = not coda.is_empty()
+	_coda.text = coda
 	_fill_blots()
 	_fill_readings()
 	if focus_group:
@@ -137,19 +158,51 @@ func _focus_child(group: HBoxContainer, text_to_find := "") -> void:
 
 
 func _fill_list() -> void:
+	for child in _list.get_children():
+		_list.remove_child(child)
+		child.queue_free()
+	_buttons.clear()
+	var placed := {}
+	for chapter: Dictionary in NoteCatalog.CHAPTERS:
+		var pages: Array[NoteEntry] = []
+		for title in chapter.pages:
+			var entry := _kept(str(title))
+			if entry:
+				pages.append(entry)
+		if pages.is_empty():
+			continue
+		var heading := UiChrome.term_label("%s  ·  %d/%d" % [str(chapter.label).to_upper(), pages.size(), chapter.pages.size()], 11, UiChrome.SIGNAL)
+		heading.add_theme_constant_override("outline_size", 0)
+		heading.custom_minimum_size.y = 18
+		_list.add_child(heading)
+		for entry in pages:
+			_add_page_button(entry)
+			placed[entry.title] = true
 	for entry in Game.journal:
-		if not _buttons.has(entry.title):
-			var button := UiChrome.text_button(entry.title)
-			button.focus_mode = Control.FOCUS_ALL
-			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			button.pressed.connect(_select.bind(entry))
-			_list.add_child(button)
-			_buttons[entry.title] = button
-		var shown := _buttons[entry.title] as Button
-		shown.text = entry.title + ("   (whole)" if Game.page_solved(entry) else "")
-		var chosen := _selected != null and _selected.title == entry.title
-		shown.add_theme_color_override("font_color", UiChrome.BONE if chosen else UiChrome.ASH)
-		shown.add_theme_stylebox_override("normal", UiChrome.term_box(Color(UiChrome.SIGNAL, 0.12) if chosen else Color(0, 0, 0, 0), Color(UiChrome.SIGNAL, 0.7) if chosen else Color(UiChrome.BONE, 0.12), 1, 8))
+		if placed.has(entry.title):
+			continue
+		if not placed.has("loose_header"):
+			_list.add_child(UiChrome.term_label("OTHER PAGES", 11, UiChrome.SIGNAL))
+			placed["loose_header"] = true
+		_add_page_button(entry)
+
+
+func _add_page_button(entry: NoteEntry) -> void:
+	var button := UiChrome.text_button(entry.title)
+	button.focus_mode = Control.FOCUS_ALL
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.pressed.connect(_select.bind(entry))
+	_list.add_child(button)
+	_buttons[entry.title] = button
+	button.text = entry.title + ("   (whole)" if Game.page_solved(entry) else "")
+	var chosen := _selected != null and _selected.title == entry.title
+	button.add_theme_color_override("font_color", UiChrome.BONE if chosen else UiChrome.ASH)
+	button.add_theme_stylebox_override("normal", UiChrome.term_box(Color(UiChrome.SIGNAL, 0.12) if chosen else Color(0, 0, 0, 0), Color(UiChrome.SIGNAL, 0.7) if chosen else Color(UiChrome.BONE, 0.12), 1, 8))
+
+
+func _chapter_heading(entry: NoteEntry) -> String:
+	var chapter := NoteCatalog.chapter_for(entry.title)
+	return "CHAPTER  %s" % str(chapter.get("label", "")).replace("  ·  ", "  /  ")
 
 
 ## Known errands in the data's order; none known, no section.
@@ -290,13 +343,20 @@ func _build() -> void:
 	left.custom_minimum_size = Vector2(260, 0)
 	left.add_theme_constant_override("separation", 6)
 	columns.add_child(left)
-	left.add_child(UiChrome.term_label("JOURNAL  //  RECORDS", 25, UiChrome.BONE, true))
+	left.add_child(UiChrome.term_label("JOURNAL  //  HER STORY", 25, UiChrome.BONE, true))
 	_empty = UiChrome.term_label("Nothing yet. The pages she finds are kept here.", 15, UiChrome.ASH)
 	_empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(_empty)
+	var list_scroll := ScrollContainer.new()
+	list_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list_scroll.custom_minimum_size = Vector2(0, 180)
+	list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	list_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	left.add_child(list_scroll)
 	_list = VBoxContainer.new()
-	_list.add_theme_constant_override("separation", 2)
-	left.add_child(_list)
+	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_list.add_theme_constant_override("separation", 5)
+	list_scroll.add_child(_list)
 	_undone_head = UiChrome.term_label("UNDONE", 17, UiChrome.ASH, true)
 	_undone_head.visible = false
 	left.add_child(_undone_head)
@@ -305,7 +365,7 @@ func _build() -> void:
 	_undone.visible = false
 	left.add_child(_undone)
 	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer.custom_minimum_size.y = 4
 	left.add_child(spacer)
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
@@ -325,8 +385,11 @@ func _build() -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 12)
 	sheet.add_child(right)
-	_title = UiChrome.label("", 28, UiChrome.PAPER_INK)
-	right.add_child(_title)
+	_chapter = UiChrome.label("", 15, Color(0.47, 0.32, 0.20))
+	right.add_child(_chapter)
+	_chapter_opening = UiChrome.label("", 17, UiChrome.PAPER_INK)
+	_chapter_opening.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right.add_child(_chapter_opening)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 330)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -336,6 +399,11 @@ func _build() -> void:
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_theme_constant_override("separation", 14)
 	scroll.add_child(page)
+	_title = UiChrome.label("", 24, UiChrome.PAPER_INK)
+	page.add_child(_title)
+	_lead_in = UiChrome.label("", 16, Color(UiChrome.PAPER_INK, 0.65))
+	_lead_in.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	page.add_child(_lead_in)
 	_body = UiChrome.page_label(19)
 	_body.mouse_filter = Control.MOUSE_FILTER_PASS
 	_body.meta_clicked.connect(func(meta: Variant) -> void: _pick(int(str(meta))))
@@ -343,6 +411,20 @@ func _build() -> void:
 	_between = UiChrome.label("", 16, Color(UiChrome.PAPER_INK, 0.55))
 	_between.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	page.add_child(_between)
+	_reading_head = UiChrome.label("IN THE MARGIN  ·  ONE POSSIBLE READING", 12, Color(0.47, 0.32, 0.20))
+	_reading_head.visible = false
+	page.add_child(_reading_head)
+	_reading = UiChrome.label("", 16, Color(UiChrome.PAPER_INK, 0.75))
+	_reading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_reading.visible = false
+	page.add_child(_reading)
+	_coda_head = UiChrome.label("CHAPTER CLOSE  ·  THE PAGE DOES NOT SETTLE IT", 12, Color(0.47, 0.32, 0.20))
+	_coda_head.visible = false
+	page.add_child(_coda_head)
+	_coda = UiChrome.label("", 16, Color(UiChrome.PAPER_INK, 0.84))
+	_coda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_coda.visible = false
+	page.add_child(_coda)
 	_blots = HBoxContainer.new()
 	_blots.add_theme_constant_override("separation", 8)
 	right.add_child(_blots)

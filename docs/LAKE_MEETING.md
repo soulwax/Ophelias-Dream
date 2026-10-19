@@ -38,6 +38,13 @@ Mathilda's voice is her chapter's (Kokoro `af_bella` at 0.94, `tools/bake_lake.p
 Ophelia's lines have no clips until the Chatterbox bake on the desktop; they
 show as subtitles.
 
+Selected lines in `assets/audio/voice/lake/lines.json` carry an optional
+`background` thought. It arrives quietly in the reaction pause after a line,
+then clears when the next line begins. Continue can shorten the pause. The
+thought belongs to Ophelia's attention: sometimes a line leaves her looking at
+the ice, sometimes at Mathilda's hands. The details gather into possible
+readings without settling what Mathilda is.
+
 ## Lines
 
 | id | speaker | mood | text |
@@ -87,6 +94,38 @@ show as subtitles.
 | m23 | mathilda | wry | Neither did you. |
 | o21 | ophelia | warm | Both cups are on the table. The kettle’s on. |
 | m24 | mathilda | hushed | Both. You never set out both at once. |
+
+### Ophelia's thoughts between lines
+
+These are brief, subjective associations that surface under selected lines
+Ophelia speaks. They are not a second voice and do not settle who Mathilda is.
+
+| id | thought |
+|---|---|
+| o01 | The prints behind me have filled, but the ones ahead still look like an invitation. |
+| o02 | The lie had a shape: two lanterns and no car. |
+| o03 | The old hole is narrower in this light. I remember a hand, not whose it was. |
+| o04 | The ice answers under my feet. I have no memory with it. |
+| o05 | I held on so tightly that I stopped asking where she wanted to go. |
+| o09 | The apology comes with a breath I have been holding since the door. |
+| o10 | The doorway returns each time I tell this story. I cannot make it stay in the past. |
+| o11 | I have asked this question a hundred times. Now I have to let her answer. |
+| o12 | My hand knew the letters before I could read them. |
+| o13 | I know this sentence. I do not remember reading it. |
+| o15 | Home is the word I reach for when I do not know how to ask. |
+| o16 | Beside me. The word lands differently than behind. |
+| o17 | The lantern makes a promise I can keep from here. |
+| m01 | Her face is the same distance away as the far shore. I remember it nearer. |
+| m01 | The prints between us stop short of where she is standing. |
+| m03 | She waits for my answer with the patience of someone who has heard it before. |
+| m05 | Her hands stay at her sides. Mine remember holding on. |
+| m05 | I have called that memory protection for so long I cannot separate the two. |
+| m09 | The word *then* leaves the door open behind us. |
+| m11 | She says she heard me. The lake gives nothing back. |
+| m15 | I look for a seam in her coat, a place where the sentence could have started. |
+| m15 | If she is only a memory, why does she always know the way out? |
+| m17 | The question is small enough to carry across the ice without breaking it. |
+| m17 | I have mistaken an answer for permission before. I wait for the rest. |
 
 The optional `cups` topic in *held* opens only after `two_cups` is done:
 both cups set on the kitchen table and the kettle warmed on the lit stove.

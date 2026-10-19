@@ -365,7 +365,7 @@ func _capture_game() -> Dictionary:
 		"passings", "understood", "read_last_page", "journal_focus", "read_pages", "visited",
 		"heard_events", "deciphered", "turned_around", "_turn_hold", "at_checkpoint",
 		"day_seconds", "day_running", "_moments_said", "ending_kind", "meeting_waiting", "_unready_said",
-		"hunt_started", "_hunt_seconds", "audio_fade", "_audio_hold", "dream_memory", "dream_completed",
+		"hunt_started", "_hunt_seconds", "audio_fade", "_audio_hold", "dream_memory", "dream_outcome", "dream_lantern_response", "dream_completed",
 		"ending_title", "ending_body"
 	])
 	result["journal_titles"] = Game.journal.map(func(entry: NoteEntry) -> String: return entry.title)
@@ -515,7 +515,8 @@ func _dream_state_keys() -> Array:
 		"_dream_quiet", "_dream_quiet_after_response", "_dream_elapsed", "_dream_voice_unlocked", "_opening_station_pending",
 		"_conversation_camera_active", "_conversation_camera_returning",
 		"_conversation_camera_return_time", "_camera_choreography_enabled", "_conversation_response",
-		"_conversation_response_pending", "_conversation_response_ready", "_conversation_response_timer", "_choice_index",
+		"_conversation_response_pending", "_conversation_response_ready", "_conversation_response_timer",
+		"_conversation_processing_thought", "_conversation_thought_pending", "_choice_index",
 		"_choice_time", "_answer_open", "_conversation_intro_waiting", "_conversation_round", "_station_dialogue_active",
 		"_station_round_index", "_station_after_line", "_station_choice_effect", "_completed_talk_rounds",
 		"_conversation_waiting", "_conversation_strain", "_repair_menu_attempts", "_repair_menu_active",

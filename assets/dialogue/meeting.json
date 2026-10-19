@@ -8,47 +8,47 @@
   "leave": {"say": "a13", "reply": ["a14"]},
   "nodes": {
     "kettle": {"say": ["01"], "choices": [
-      {"say": "02", "goto": "hurt"},
-      {"say": "a01", "reply": ["a02"], "once": true}
+      {"say": "02", "goto": "hurt", "background": "The kettle. The answer she reaches for before she has heard mine."},
+      {"say": "a01", "reply": ["a02"], "once": true, "background": "She kept the lantern burning. I noticed from halfway down the path."}
     ]},
     "hurt": {"say": ["03"], "choices": [
-      {"say": "04", "goto": "meant"},
-      {"say": "a03", "reply": ["a04"], "once": true, "requires": ["gloves"]}
+      {"say": "04", "goto": "meant", "background": "Cold. Angry. Two things. She does know the difference."},
+      {"say": "a03", "reply": ["a04"], "once": true, "requires": ["gloves"], "background": "I said they were perfect. It was easier than saying they hurt."}
     ]},
     "meant": {"say": ["05"], "choices": [
-      {"say": "06", "goto": "door"},
-      {"say": "a05", "reply": ["a06"], "once": true}
+      {"say": "06", "goto": "door", "background": "I needed my leaving to feel real to her."},
+      {"say": "a05", "reply": ["a06"], "once": true, "background": "She meant it then. I can hear that now."}
     ]},
     "door": {"say": ["07"], "choices": [
-      {"say": "08", "goto": "why"},
-      {"say": "a07", "reply": ["a08"], "once": true, "requires": ["note"]},
-      {"say": "a16", "reply": ["a17"], "once": true, "requires": ["passed"]}
+      {"say": "08", "goto": "why", "background": "She watched the door all night. Why did it stay shut?"},
+      {"say": "a07", "reply": ["a08"], "once": true, "requires": ["note"], "background": "I read the note again and again. The words would not stay put."},
+      {"say": "a16", "reply": ["a17"], "once": true, "requires": ["passed"], "background": "I made it halfway. That has to count for something."}
     ]},
     "why": {"say": ["09"], "choices": [
-      {"say": "10", "goto": "ask"}
+      {"say": "10", "goto": "ask", "background": "Yes. No soft edge around it. Just yes."}
     ]},
     "ask": {"say": ["11"], "choices": [
-      {"say": "12", "goto": "need"}
+      {"say": "12", "goto": "need", "background": "She wants to ask. I can see her trying not to fill the silence."}
     ]},
     "need": {"say": ["13"], "choices": [
-      {"say": "14", "goto": "list"},
-      {"say": "a09", "reply": ["a10"], "once": true}
+      {"say": "14", "goto": "list", "background": "The list again. How do I make her hear me without turning this into an errand?"},
+      {"say": "a09", "reply": ["a10"], "once": true, "background": "I am not sure I know any more. The words are somewhere; I cannot reach them yet."}
     ]},
     "list": {"say": ["15"], "choices": [
-      {"say": "16", "goto": "milk"}
+      {"say": "16", "goto": "milk", "background": "Milk had an answer. She needed me to hear the question underneath it."}
     ]},
     "milk": {"say": ["17"], "sets": ["admitted"], "choices": [
-      {"say": "18", "goto": "sit"}
+      {"say": "18", "goto": "sit", "background": "I do not have to be fixed before I sit beside her."}
     ]},
     "sit": {"say": ["19"], "choices": [
-      {"say": "20", "goto": "kept", "sets": ["cup_offered"]}
+      {"say": "20", "goto": "kept", "sets": ["cup_offered"], "background": "She brought my cup back. She remembered which one was mine."}
     ]},
     "kept": {"say": ["21"], "choices": [
-      {"say": "22", "goto": "take"}
+      {"say": "22", "goto": "take", "background": "I was angry. I still wanted her there."}
     ]},
     "take": {"say": ["23"], "choices": [
-      {"say": "24", "end": "home"},
-      {"say": "a11", "reply": ["a12"], "end": "step"}
+      {"say": "24", "end": "home", "background": "May I take it? Such a small question to ask after all this."},
+      {"say": "a11", "reply": ["a12"], "end": "step", "background": "Not yet. I am not ready for the threshold."}
     ]}
   }
 }

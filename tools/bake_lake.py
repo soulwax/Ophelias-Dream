@@ -22,18 +22,34 @@ ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs/LAKE_MEETING.md"
 OUT = ROOT / "assets/audio/voice/lake"
 ROW = re.compile(r"^\| ([a-z]\d\d) \| (ophelia|mathilda) \| ([a-z]+) \| (.+) \|$")
+THOUGHT_ROW = re.compile(r"^\| ([a-z]\d\d) \| (.+) \|$")
 # A beat after each line before the next, longer after the heavy ones.
 PAUSE = {"breaking": 0.9, "numb": 0.9, "hushed": 0.6}
 
 
 def parse():
     lines = []
+    thoughts = {}
     for raw in DOC.read_text(encoding="utf-8").splitlines():
-        match = ROW.match(raw.strip())
+        row = raw.strip()
+        match = ROW.match(row)
         if match:
             ident, speaker, mood, text = match.groups()
             lines.append({"id": ident, "speaker": speaker, "mood": mood, "text": text.strip(),
                           "pause": PAUSE.get(mood, 0.4)})
+        else:
+            thought = THOUGHT_ROW.match(row)
+            if thought:
+                ident, text = thought[1], thought[2].strip()
+                if ident not in thoughts:
+                    thoughts[ident] = text
+                elif isinstance(thoughts[ident], list):
+                    thoughts[ident].append(text)
+                else:
+                    thoughts[ident] = [thoughts[ident], text]
+    for line in lines:
+        if line["id"] in thoughts:
+            line["background"] = thoughts[line["id"]]
     return lines
 
 

@@ -13,10 +13,14 @@ func _ready() -> void:
 	add_child(bubble)
 	assert(bubble.open("Mathilda", "You kept her cup. What do you keep now?", [
 		{"id": "locked", "text": "A memory not yet understood", "disabled": true},
-		{"id": "return", "text": "Return to Ophelia"},
-		{"id": "wait", "text": "Wait with the light"},
+		{"id": "return", "text": "Return to Ophelia", "background": "The door is open. I can still choose not to cross it."},
+		{"id": "wait", "text": "Wait with the light", "background": "The lantern is steady. I do not have to decide what comes after."},
 	], null, _selected))
 	assert(Game.locks_movement() and Game.locks_look() and Game.awake())
+	assert(bubble._background.visible and "The door is open" in bubble._background.text)
+	bubble._select(2)
+	assert("The lantern is steady" in bubble._background.text)
+	bubble._select(1)
 	bubble.choose(0)
 	assert(selected == "")
 	await get_tree().process_frame
@@ -39,7 +43,7 @@ func _ready() -> void:
 	Game.set_phase(Game.Phase.CAUGHT)
 	assert(not bubble._active and Game.phase == Game.Phase.CAUGHT)
 	assert(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE)
-	print("Dialogue probe passed: disabled topics, selection, cancel, phase and control lifecycle")
+	print("Dialogue probe passed: background thoughts, disabled topics, selection, cancel and phase lifecycle")
 	get_tree().quit()
 
 

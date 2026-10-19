@@ -91,7 +91,10 @@ func enter_clearing() -> void:
 		_states["window"] = "afterimage"
 
 
-func respond(effect: String) -> void:
+func respond(effect: String, pressure: float = -1.0) -> void:
+	if pressure >= 0.0:
+		_pressure_target = clampf(pressure, 0.0, 1.0)
+		return
 	match effect:
 		"push":
 			_pressure_target = maxf(_pressure_target, 0.56)
@@ -106,7 +109,7 @@ func settle(outcome: String) -> void:
 	enter_clearing()
 	_states["sisters"] = "quiet"
 	_states["thread"] = "afterimage"
-	_states["window"] = "afterimage" if outcome == "complete" else "quiet"
+	_states["window"] = "afterimage" if outcome in ["complete", "strained"] else "quiet"
 	if outcome == "ruptured":
 		_pressure_target = 1.0
 	elif outcome == "complete":

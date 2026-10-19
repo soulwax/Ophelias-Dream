@@ -8,38 +8,38 @@
   "leave": {"say": "o18", "reply": ["m20"]},
   "nodes": {
     "turned": {"say": ["m01"], "choices": [
-      {"say": "o01", "goto": "lake"},
-      {"say": "o02", "reply": ["m02"], "once": true}
+      {"say": "o01", "goto": "lake", "background": "Every step forward, the same thought came back: turn around."},
+      {"say": "o02", "reply": ["m02"], "once": true, "background": "I lied to bring her here. Out here, it still sounds like a lie."}
     ]},
     "lake": {"say": ["m03"], "choices": [
-      {"say": "o03", "reply": ["m04"], "goto": "held"},
-      {"say": "o04", "goto": "held"}
+      {"say": "o03", "reply": ["m04"], "goto": "held", "background": "This is the memory I keep repeating. Her version belongs here, too."},
+      {"say": "o04", "goto": "held", "background": "I was certain I knew. Now I hear what I do not remember."}
     ]},
     "held": {"say": ["m05"], "choices": [
-      {"say": "o05", "goto": "go"},
-      {"say": "o06", "reply": ["m06"], "once": true, "requires": ["intake"]},
-      {"say": "o07", "reply": ["m07"], "once": true, "requires": ["pack"]},
-      {"say": "o19", "reply": ["m22"], "once": true, "requires": ["bed"]},
-      {"say": "o20", "reply": ["m23"], "once": true, "requires": ["passed"]},
-      {"say": "o21", "reply": ["m24"], "once": true, "requires": ["cups"]}
+      {"say": "o05", "goto": "go", "background": "I held on because I was afraid. I can hear the rest now."},
+      {"say": "o06", "reply": ["m06"], "once": true, "requires": ["intake"], "background": "One cup, then one cup again. I thought it was just how we lived."},
+      {"say": "o07", "reply": ["m07"], "once": true, "requires": ["pack"], "background": "She packed for both of us. I never knew she kept doing that."},
+      {"say": "o19", "reply": ["m22"], "once": true, "requires": ["bed"], "background": "An open door. I still cannot tell which of us it was for."},
+      {"say": "o20", "reply": ["m23"], "once": true, "requires": ["passed"], "background": "I saw her. She saw me. The quiet stayed between us."},
+      {"say": "o21", "reply": ["m24"], "once": true, "requires": ["cups"], "background": "Two cups. She put out two cups before I came back."}
     ]},
     "go": {"say": ["m09"], "choices": [
-      {"say": "o09", "goto": "sorry"},
-      {"say": "o10", "reply": ["m10"], "goto": "sorry"}
+      {"say": "o09", "goto": "sorry", "background": "I am sorry. The words are true, even if they are late."},
+      {"say": "o10", "reply": ["m10"], "goto": "sorry", "background": "She was waiting at the door. I keep seeing that now."}
     ]},
     "sorry": {"say": ["m11"], "choices": [
-      {"say": "o11", "reply": ["m12"], "goto": "self"},
-      {"say": "o12", "reply": ["m13"], "once": true, "requires": ["handwriting"]},
-      {"say": "o08", "reply": ["m08"], "once": true, "requires": ["post"]},
-      {"say": "o13", "reply": ["m14"], "once": true, "requires": ["torn"]}
+      {"say": "o11", "reply": ["m12"], "goto": "self", "background": "She answered. It came back in my own voice."},
+      {"say": "o12", "reply": ["m13"], "once": true, "requires": ["handwriting"], "background": "My handwriting. I know every turn of it, and none of what it says."},
+      {"say": "o08", "reply": ["m08"], "once": true, "requires": ["post"], "background": "I wrote her name. The trees gave it back to me."},
+      {"say": "o13", "reply": ["m14"], "once": true, "requires": ["torn"], "background": "The prints end where I stopped looking."}
     ]},
     "self": {"say": ["m15"], "choices": [
-      {"say": "o14", "reply": ["m16"], "goto": "ask"},
-      {"say": "o15", "goto": "ask"}
+      {"say": "o14", "reply": ["m16"], "goto": "ask", "background": "Only a coat. I was afraid of the shape I gave it."},
+      {"say": "o15", "goto": "ask", "background": "What is she? The question feels smaller than what she just asked."}
     ]},
     "ask": {"say": ["m17"], "choices": [
-      {"say": "o16", "reply": ["m18"], "end": "together"},
-      {"say": "o17", "reply": ["m19"], "end": "shore"}
+      {"say": "o16", "reply": ["m18"], "end": "together", "background": "Beside her. This time, we both know which way we are going."},
+      {"say": "o17", "reply": ["m19"], "end": "shore", "background": "She can stay. I can keep the lantern lit from here."}
     ]}
   }
 }

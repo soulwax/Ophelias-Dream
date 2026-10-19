@@ -44,7 +44,7 @@ Exact conditions from the code. *Base route* means pages, places and the walk; n
 | `together` / `shore` | Ophelia | `meeting_ready()`: all five trail pages read, the last page's smudges solved (keys: lights visited, *On the post* read), never turned around; then the lake talk's last exchange | `game.gd:580`, `lake.gd:64`, `assets/dialogue/lake.json` | Yes; no errand involved |
 | `home` (*Walk beside me*) / `step` (*On the step*) | Mathilda | All five camp objects done (cups, gloves, note, fire, mend) → Return → doorway talk to line 24 / a11 | `mathilda_pov.gd:258`, `assets/dialogue/meeting.json` | Yes |
 | `wait` (*With the light*) | Mathilda | All five camp objects done → Wait | `mathilda_pov.gd:252-267` | Yes |
-| complete / unresolved / ruptured wake | Dream | `assets/dialogue/dream.json` `ending`, `unresolved`, `ruptured`, with `repair` | `dream_experience.gd` | Walk to waking verified by `dream_flow_probe` (walk, sprint); each outcome class still needs its own check (W05) |
+| complete / unresolved / strained / ruptured wake | Dream | `assets/dialogue/dream.json` `ending`, `unresolved`, `strained`, `ruptured`, with `repair` | `dream_experience.gd` | Walk to waking verified by `dream_flow_probe` (walk, sprint); each outcome class still needs its own check (W05) |
 
 Turning around after Mathilda appears on the ice removes her (`lake.gd:108`), so `together`/`shore` become `prints`.
 

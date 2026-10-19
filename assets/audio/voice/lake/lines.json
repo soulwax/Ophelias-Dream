@@ -4,21 +4,27 @@
     "speaker": "mathilda",
     "mood": "hushed",
     "text": "You didn't turn around.",
-    "pause": 0.6
+    "pause": 0.6,
+    "background": [
+      "Her face is the same distance away as the far shore. I remember it nearer.",
+      "The prints between us stop short of where she is standing."
+    ]
   },
   {
     "id": "o01",
     "speaker": "ophelia",
     "mood": "shaken",
     "text": "I wanted to. Every step.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "The prints behind me have filled, but the ones ahead still look like an invitation."
   },
   {
     "id": "o02",
     "speaker": "ophelia",
     "mood": "bitter",
     "text": "You lied about the car.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "The lie had a shape: two lanterns and no car."
   },
   {
     "id": "m02",
@@ -32,14 +38,16 @@
     "speaker": "mathilda",
     "mood": "steady",
     "text": "This is where it happened. Do you remember which of us went through?",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "She waits for my answer with the patience of someone who has heard it before."
   },
   {
     "id": "o03",
     "speaker": "ophelia",
     "mood": "steady",
     "text": "You did. I pulled you out.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "The old hole is narrower in this light. I remember a hand, not whose it was."
   },
   {
     "id": "m04",
@@ -53,21 +61,27 @@
     "speaker": "ophelia",
     "mood": "breaking",
     "text": "I don't. I've never known.",
-    "pause": 0.9
+    "pause": 0.9,
+    "background": "The ice answers under my feet. I have no memory with it."
   },
   {
     "id": "m05",
     "speaker": "mathilda",
     "mood": "warm",
     "text": "One of us held very still, and one of us pulled. And after that you never let me go anywhere again.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": [
+      "Her hands stay at her sides. Mine remember holding on.",
+      "I have called that memory protection for so long I cannot separate the two."
+    ]
   },
   {
     "id": "o05",
     "speaker": "ophelia",
     "mood": "breaking",
     "text": "I was scared you'd go through again.",
-    "pause": 0.9
+    "pause": 0.9,
+    "background": "I held on so tightly that I stopped asking where she wanted to go."
   },
   {
     "id": "o06",
@@ -116,21 +130,24 @@
     "speaker": "mathilda",
     "mood": "bitter",
     "text": "So you said go, then.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "The word *then* leaves the door open behind us."
   },
   {
     "id": "o09",
     "speaker": "ophelia",
     "mood": "breaking",
     "text": "I'm sorry. I'm so sorry I said it.",
-    "pause": 0.9
+    "pause": 0.9,
+    "background": "The apology comes with a breath I have been holding since the door."
   },
   {
     "id": "o10",
     "speaker": "ophelia",
     "mood": "bitter",
     "text": "You were already going.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "The doorway returns each time I tell this story. I cannot make it stay in the past."
   },
   {
     "id": "m10",
@@ -144,14 +161,16 @@
     "speaker": "mathilda",
     "mood": "hushed",
     "text": "I know. I heard you. Every time you called, I heard you.",
-    "pause": 0.6
+    "pause": 0.6,
+    "background": "She says she heard me. The lake gives nothing back."
   },
   {
     "id": "o11",
     "speaker": "ophelia",
     "mood": "pleading",
     "text": "Then why didn't you answer?",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "I have asked this question a hundred times. Now I have to let her answer."
   },
   {
     "id": "m12",
@@ -165,7 +184,8 @@
     "speaker": "ophelia",
     "mood": "hushed",
     "text": "It's my handwriting on your pages.",
-    "pause": 0.6
+    "pause": 0.6,
+    "background": "My hand knew the letters before I could read them."
   },
   {
     "id": "m13",
@@ -179,7 +199,8 @@
     "speaker": "ophelia",
     "mood": "shaken",
     "text": "The torn page said the prints just stop.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "I know this sentence. I do not remember reading it."
   },
   {
     "id": "m14",
@@ -193,7 +214,11 @@
     "speaker": "mathilda",
     "mood": "steady",
     "text": "I'm not the one who went out into the storm, Ophelia. I'm the part of you that wanted to.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": [
+      "I look for a seam in her coat, a place where the sentence could have started.",
+      "If she is only a memory, why does she always know the way out?"
+    ]
   },
   {
     "id": "o14",
@@ -214,21 +239,27 @@
     "speaker": "ophelia",
     "mood": "resolve",
     "text": "I don't care what you are. Come home.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "Home is the word I reach for when I do not know how to ask."
   },
   {
     "id": "m17",
     "speaker": "mathilda",
     "mood": "warm",
     "text": "Ask me properly. Not \"come home.\" Ask.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": [
+      "The question is small enough to carry across the ice without breaking it.",
+      "I have mistaken an answer for permission before. I wait for the rest."
+    ]
   },
   {
     "id": "o16",
     "speaker": "ophelia",
     "mood": "pleading",
     "text": "Walk back with me. Beside me. Not behind.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "Beside me. The word lands differently than behind."
   },
   {
     "id": "m18",
@@ -242,7 +273,8 @@
     "speaker": "ophelia",
     "mood": "resolve",
     "text": "Stay out here if you need to. I'll keep the lantern lit.",
-    "pause": 0.4
+    "pause": 0.4,
+    "background": "The lantern makes a promise I can keep from here."
   },
   {
     "id": "m19",

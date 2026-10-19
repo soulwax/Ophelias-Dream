@@ -270,6 +270,8 @@ func _ready() -> void:
 		var reflection := preload("res://scripts/ui/dream_reflection.gd").new()
 		reflection.set("memory", Game.dream_memory)
 		reflection.set("mathilda", Game.mathilda_pov)
+		reflection.set("outcome", Game.dream_outcome)
+		reflection.set("lantern_response", Game.dream_lantern_response)
 		add_child(reflection)
 		if not Game.mathilda_pov:
 			Game.begin_intro()

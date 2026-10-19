@@ -11,6 +11,64 @@ extends RefCounted
 # The page that asks her to stop looking. The road remembers it.
 const LAST_TITLE := "don't turn around"
 const EVENTS := ["call", "echo", "cups"]
+const CHAPTERS := [
+	{"id": "house", "label": "I  ·  The House", "opening": "The house keeps its small arrangements after Mathilda leaves. Each one looks ordinary until I try to decide who made it. I start with the door, because a door is allowed to belong to two rooms at once. The pages lie where a hand might reach for them in the dark: bedside, hearth, hall, then the cold desk where a name ought to be.", "pages": ["by the bed", "the grate", "the photograph", "intake"], "coda_page": "intake", "coda": "No record names a woman it cannot see. Still, I keep asking the form whether Mathilda went out, or whether I did. Perhaps she is the name the clerk left blank; perhaps she is the one who came back to fill it in. The paper keeps the space where a name should be. I press my thumb to the empty line. It warms, briefly, as if someone has just lifted a pen."},
+	{"id": "road", "label": "II  ·  The Road Out", "opening": "Her notes lay a route around the places I thought I knew. I follow the handwriting before I trust the prints. The path seems to have been waiting for my feet to remember it. She has packed for two, but the snow keeps trying to reduce the arithmetic to one.", "pages": ["from the pack", "on the post"], "coda_page": "on the post", "coda": "The trees say the voice is mine. Maybe I taught the forest her name. Maybe her name was what my voice sounded like before I learned to stay quiet. If the woods return only what we give them, why does the answer always know where to hurt? I leave the post without calling again. Behind me, the branches settle into the shape of someone listening."},
+	{"id": "prints", "label": "III  ·  The Missing Prints", "opening": "At the lake, the snow keeps two accounts of one afternoon. I cannot find the moment one set became two. The page is torn across the place where a witness might have stood.", "pages": ["torn page"], "coda_page": "torn page", "coda": "If two tracks can meet and continue as one, perhaps Mathilda is where my memory crossed itself. Or perhaps the snow is simply a poor witness. I have blamed the weather for less than this. When I lift my boot, the print underneath is already filling with light."},
+	{"id": "hand", "label": "IV  ·  The Familiar Hand", "opening": "The letters change their posture halfway across the page. I recognize the hand and distrust the voice. The ink does not pause where the thought changes owners. I read the sentence aloud; the room answers in the voice I meant to use.", "pages": ["the handwriting changes"], "coda_page": "the handwriting changes", "coda": "My hand wrote you. I cannot tell whether it was addressing someone, or trying to become someone who would answer. Mathilda may be the reader I invented to survive the sentence. She may be the only one who ever read it. The last stroke of her name is mine, but I do not remember putting it there."},
+	{"id": "last", "label": "V  ·  The Last Instruction", "opening": "The final page does not lead me to her. It leaves me with the direction she chose. I read it once for the road, and once for the person following. There is no map now, only a pronoun with its face turned away.", "pages": [LAST_TITLE], "coda_page": LAST_TITLE, "coda": "If she is the part of me that went, what is the part that stayed waiting? If she is someone else, why do all my memories have only one set of hands? I close the journal. In the dark glass, someone is still standing just behind my shoulder. I turn the lamp toward the window. The reflection does not move; the room feels less empty anyway."},
+	{"id": "aside", "label": "Loose Thread", "opening": "A loose thread is a small thing. I follow it because the cold has made every small thing matter.", "pages": ["The thread"]},
+]
+const READINGS := {
+	"by the bed": "I keep trying to divide us into the one who stayed and the one who left. The open door refuses to hold that line. Perhaps she left it for me. Perhaps I left it for the person I was trying to bring home.",
+	"the grate": "Someone keeps the fire alive, then calls the work proof that nobody left. I know that trick. I have used it on this house.",
+	"the photograph": "Two people remember standing there. The glass gives me one. I cannot tell whether the picture has lost someone, or whether memory has added her back.",
+	"intake": "A form can name a coat, a cup, a length. It cannot tell me who was under the sheet. I keep reading the blank where a name should be as if it might answer differently.",
+	"from the pack": "Two cups are a small, stubborn future. Mathilda packed as though we would both arrive, even when I had stopped believing in the plural.",
+	"on the post": "The forest gives my voice back in her name. If she is only an echo, why does the echo know what I am afraid to hear?",
+	"torn page": "The prints stop together. I have been treating that as proof of an ending. It could also be the place where one memory was laid over another.",
+	"the handwriting changes": "The hand is mine. The anger may be hers. I do not know whether that makes Mathilda a memory, a witness, or the part of me that learned to say no.",
+	"don't turn around": "I read this as a warning not to look because I might lose her. Another reading is harder: perhaps I am being asked to stop making her turn back for me.",
+	"The thread": "A path can be marked without becoming a command. I can follow the wool to the glove and still choose what I do with what it tells me.",
+}
+const LEAD_INS := {
+	"by the bed": "At the cabin, I begin with the door she left unlatched. The cold has not yet reached the sheets.",
+	"the grate": "The grate was warm before I knew who had banked it. A little ash shifted when I came in, like a breath held too long.",
+	"the photograph": "The photograph is the first thing that refuses to stay singular. I carry it down the hall toward the window and watch the glass add a second witness.",
+	"intake": "The record speaks in measurements, as though the body were the simplest part. At the bottom, the clerk has left a line for whoever comes to claim the coat.",
+	"from the pack": "Her route begins with a pack laid down for two. I find the second cup before I find the road.",
+	"on the post": "The trail gives my own voice back in her name. The echo arrives from ahead of me, where no one is standing.",
+	"torn page": "The tracks end at the place where neither memory will lead. I kneel there long enough for the snow to soften the edge of my glove.",
+	"the handwriting changes": "The letter changes hands without changing ink. Somewhere in the middle of the line, I stop being sure which of us is asking for an answer.",
+	"don't turn around": "The last page asks its reader to keep facing forward. The road is plain; it is the pronoun that will not hold still.",
+	"The thread": "I follow the thread past what I already knew.",
+}
+
+
+static func chapter_for(title: String) -> Dictionary:
+	for chapter: Dictionary in CHAPTERS:
+		if (chapter.pages as Array).has(title):
+			return chapter
+	return {"id": "aside", "label": "Loose Thread", "pages": []}
+
+
+static func reading_for(entry: NoteEntry) -> String:
+	return str(READINGS.get(entry.title, ""))
+
+
+static func lead_in_for(entry: NoteEntry) -> String:
+	return str(LEAD_INS.get(entry.title, ""))
+
+
+static func chapter_opening_for(title: String) -> String:
+	return str(chapter_for(title).get("opening", ""))
+
+
+static func chapter_coda_for(entry: NoteEntry) -> String:
+	var chapter := chapter_for(entry.title)
+	if str(chapter.get("coda_page", "")) != entry.title:
+		return ""
+	return str(chapter.get("coda", ""))
 
 
 static func all() -> Array[NoteEntry]:

@@ -14,6 +14,7 @@ var _speaker: Label
 var _line: Label
 var _turn: Label
 var _topics: VBoxContainer
+var _background: Label
 var _buttons: Array[Button] = []
 var _responses: Array[Dictionary] = []
 var _target: Node3D
@@ -40,23 +41,31 @@ func _ready() -> void:
 	_panel = PanelContainer.new()
 	_panel.position = Vector2(12, 12)
 	_panel.size = Vector2(696, 0)
-	var panel_style := UiChrome.term_box(Color(UiChrome.VOID, 0.94), Color(UiChrome.SIGNAL, 0.58), 1, 20)
-	panel_style.border_width_left = 3
+	var panel_style := UiChrome.term_box(Color(UiChrome.DIALOGUE_INK, 0.96), Color(UiChrome.DIALOGUE_AMBER, 0.38), 1, 22)
+	panel_style.border_width_left = 4
 	_panel.add_theme_stylebox_override("panel", panel_style)
 	_viewport.add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	_panel.add_child(box)
-	_speaker = UiChrome.term_label("", 13, UiChrome.SIGNAL)
+	_speaker = UiChrome.term_label("", 13, UiChrome.DIALOGUE_AMBER, true)
 	box.add_child(_speaker)
-	_line = UiChrome.term_label("", 22, UiChrome.BONE)
+	_line = UiChrome.term_label("", 24, UiChrome.DIALOGUE_FROST)
+	_line.add_theme_font_override("font", UiChrome.literary_font())
+	_line.add_theme_constant_override("line_spacing", 4)
 	_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_line)
-	_turn = UiChrome.term_label("// YOUR RESPONSE", 12, UiChrome.SIGNAL)
+	_turn = UiChrome.term_label("", 12, UiChrome.DIALOGUE_AMBER)
+	_turn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_turn)
 	_topics = VBoxContainer.new()
 	_topics.add_theme_constant_override("separation", 4)
 	box.add_child(_topics)
+	_background = UiChrome.term_label("", 16, UiChrome.DIALOGUE_ASH)
+	_background.add_theme_font_override("font", UiChrome.literary_font())
+	_background.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_background.visible = false
+	box.add_child(_background)
 	_surface_layer = CanvasLayer.new()
 	_surface_layer.name = "DialogueBubbleOverlay"
 	_surface_layer.layer = 22
@@ -78,10 +87,11 @@ func _apply_subtitle_style() -> void:
 	if _panel == null:
 		return
 	var high := Game.settings.subtitle_contrast
-	var panel_style := UiChrome.term_box(Color(UiChrome.VOID, 0.995 if high else 0.94), Color(UiChrome.SIGNAL, 0.82 if high else 0.58), 1, 20)
-	panel_style.border_width_left = 3
+	var panel_style := UiChrome.term_box(Color(UiChrome.DIALOGUE_INK, 0.995 if high else 0.96), Color(UiChrome.DIALOGUE_AMBER, 0.68 if high else 0.38), 1, 22)
+	panel_style.border_width_left = 4
 	_panel.add_theme_stylebox_override("panel", panel_style)
 	_line.add_theme_font_size_override("font_size", [18, 22, 27, 32][clampi(Game.settings.subtitle_size, 0, 3)])
+	_turn.text = "// YOUR REPLY · W/S, ↑/↓ MOVE · 1–5 QUICK · %s / ENTER SELECT · ESC CLOSE" % Game.settings.key_label("interact")
 	_panel.size.y = _panel.get_combined_minimum_size().y
 
 
@@ -95,6 +105,9 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 	var available := false
 	for response: Dictionary in responses:
 		if str(response.get("id", "")) == "" or str(response.get("text", "")) == "":
+			return false
+		var background: Variant = response.get("background", "")
+		if background != null and (typeof(background) != TYPE_STRING or str(background).length() > 180 or str(background).contains("\n") or str(background).contains("\r")):
 			return false
 		available = available or not response.get("disabled", false)
 	if not available:
@@ -119,12 +132,12 @@ func open(speaker: String, text: String, responses: Array, target: Node3D = null
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.disabled = _responses[i].get("disabled", false)
 		button.focus_mode = Control.FOCUS_ALL
-		button.add_theme_font_override("font", UiChrome.mono_font())
-		button.add_theme_font_size_override("font_size", 16)
-		button.add_theme_color_override("font_color", UiChrome.ASH)
-		button.add_theme_color_override("font_hover_color", UiChrome.BONE)
-		button.add_theme_color_override("font_focus_color", UiChrome.BONE)
-		button.add_theme_color_override("font_pressed_color", UiChrome.BONE)
+		button.add_theme_font_override("font", UiChrome.literary_font())
+		button.add_theme_font_size_override("font_size", 18)
+		button.add_theme_color_override("font_color", UiChrome.DIALOGUE_ASH)
+		button.add_theme_color_override("font_hover_color", UiChrome.DIALOGUE_FROST)
+		button.add_theme_color_override("font_focus_color", UiChrome.DIALOGUE_FROST)
+		button.add_theme_color_override("font_pressed_color", UiChrome.DIALOGUE_FROST)
 		button.add_theme_stylebox_override("normal", _response_style(false))
 		button.add_theme_stylebox_override("hover", _response_style(true))
 		button.add_theme_stylebox_override("focus", _response_style(true))
@@ -213,14 +226,18 @@ func _select(index: int) -> void:
 		return
 	_selected = index
 	for i in _buttons.size():
-		_buttons[i].text = ("> " if i == index else "  ") + "%d  %s" % [i + 1, str(_responses[i].text)]
+		_buttons[i].text = ("› " if i == index else "  ") + "%02d   %s" % [i + 1, str(_responses[i].text)]
+	var background: Variant = _responses[index].get("background", "")
+	var thought := str(background).strip_edges() if background != null else ""
+	_background.text = "UNDER THE WORDS · " + thought if not thought.is_empty() else ""
+	_background.visible = not thought.is_empty()
 	_buttons[index].grab_focus()
 
 
 func _response_style(selected: bool) -> StyleBoxFlat:
-	var style := UiChrome.term_box(Color(UiChrome.SIGNAL, 0.12) if selected else Color(0, 0, 0, 0),
-		Color(UiChrome.SIGNAL, 0.68) if selected else Color(UiChrome.BONE, 0.08), 1, 4)
-	style.border_width_left = 2 if selected else 1
+	var style := UiChrome.term_box(Color("17212a", 0.92) if selected else Color(0, 0, 0, 0),
+		Color(UiChrome.DIALOGUE_AMBER, 0.84) if selected else Color(UiChrome.DIALOGUE_EDGE, 0.28), 1, 8)
+	style.border_width_left = 3 if selected else 1
 	return style
 
 
@@ -293,6 +310,7 @@ func _process(delta: float) -> void:
 	if not _active:
 		_topics.hide()
 		_turn.hide()
+		_background.hide()
 		_speaker.text = Game.murmur_speaker.to_upper() if Game.murmur_speaker != "" else ("MATHILDA" if Game.mathilda_pov else "OPHELIA")
 		if _last_line != Game.murmur:
 			_last_line = Game.murmur

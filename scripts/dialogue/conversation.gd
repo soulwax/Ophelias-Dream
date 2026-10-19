@@ -2,8 +2,8 @@ class_name Conversation
 extends Node
 
 ## Runs a DialogueTree with someone in the world (docs/DIALOGUE.md). Lines are
-## spoken one at a time, each from its speaker, with the authored pause after
-## it; then her topics show. The view turns to whoever speaks and the storm is
+## spoken one at a time, followed by the authored pause and any private thought
+## beat; then her topics show. The view turns to whoever speaks and the storm is
 ## ducked while they talk. Leaving, by a topic or Esc, keeps the place: the
 ## next begin() greets her and picks up at the same node. Movement and look
 ## are locked in Game.Phase.DIALOGUE; the world keeps going.
@@ -16,6 +16,10 @@ signal left
 const DUCK := 0.35
 ## A skipped line still leaves this much of a beat, so the rhythm survives.
 const SKIP_BEAT := 0.35
+## A private association gets room to land after the line without becoming a
+## second voiced turn. The existing continue action can cut it short.
+const THOUGHT_BEAT_MIN := 0.9
+const THOUGHT_BEAT_MAX := 1.6
 
 var tree: DialogueTree
 ## Speaks from its head(); faces her while they talk if it has face().
@@ -31,6 +35,8 @@ var finished := ""
 var _menu: ConversationMenu
 var _queue: Array[Dictionary] = []
 var _current: Dictionary = {}
+var _thought_pending: Array[String] = []
+var _thought_left := 0.0
 var _line_left := 0.0
 var _gap_left := 0.0
 var _then: Callable
@@ -87,6 +93,8 @@ func skip() -> void:
 		_own_voice.stop()
 		_line_left = 0.0
 	_gap_left = minf(_gap_left, SKIP_BEAT)
+	if _thought_left > 0.0:
+		_thought_left = minf(_thought_left, SKIP_BEAT)
 
 
 ## Takes the topic at this index of the ones on screen.
@@ -140,6 +148,8 @@ func _speak(ids: Array, then: Callable) -> void:
 			_queue.append(line)
 	_then = then
 	_current = {}
+	_thought_pending.clear()
+	_thought_left = 0.0
 	_gap_left = 0.0
 	_next()
 
@@ -155,6 +165,7 @@ func _next() -> void:
 	_current = _queue.pop_front()
 	heard[str(_current.id)] = true
 	var theirs := str(_current.speaker) == tree.npc
+	_thought_pending = Conversation._thoughts_for(_current.get("background", ""))
 	_menu.show_line(tree.name_of(str(_current.speaker)), str(_current.text), theirs)
 	if Game.player:
 		Game.player.set_dialogue_pose(true, not theirs)
@@ -172,6 +183,25 @@ func _next() -> void:
 ## How long a line without a clip stays on screen.
 static func spoken_for(text: String) -> float:
 	return clampf(1.2 + text.length() * 0.055, 1.6, 6.5)
+
+
+## How long an unvoiced association remains in the reaction pause.
+static func inner_beat_for(text: String) -> float:
+	return clampf(0.8 + text.length() * 0.02, THOUGHT_BEAT_MIN, THOUGHT_BEAT_MAX)
+
+
+## A line may hold one association or a short chain of them. Chains remain in
+## the player's ordinary attention, arriving one at a time after the voice.
+static func _thoughts_for(value: Variant) -> Array[String]:
+	var thoughts: Array[String] = []
+	if typeof(value) == TYPE_ARRAY:
+		for thought in value:
+			var text := str(thought).strip_edges()
+			if not text.is_empty():
+				thoughts.append(text)
+	elif typeof(value) == TYPE_STRING and not str(value).strip_edges().is_empty():
+		thoughts.append(str(value).strip_edges())
+	return thoughts
 
 
 func _clip(line: Dictionary) -> AudioStream:
@@ -217,6 +247,8 @@ func _close() -> void:
 	active = false
 	_queue.clear()
 	_current = {}
+	_thought_pending.clear()
+	_thought_left = 0.0
 	_then = Callable()
 	_their_voice.stop()
 	_own_voice.stop()
@@ -262,6 +294,15 @@ func _process(delta: float) -> void:
 			_next()
 		return
 	if _their_voice.playing or _own_voice.playing:
+		return
+	if _thought_left > 0.0:
+		_thought_left -= delta
+		if _thought_left > 0.0:
+			return
+	if not _thought_pending.is_empty():
+		var thought := str(_thought_pending.pop_front())
+		_menu.show_pause_thought(thought)
+		_thought_left = Conversation.inner_beat_for(thought)
 		return
 	_gap_left -= delta
 	if _gap_left <= 0.0:

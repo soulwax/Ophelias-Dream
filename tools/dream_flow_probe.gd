@@ -251,16 +251,29 @@ func _exercise_endings(experience: Node) -> bool:
 	var previous_strain: int = experience.get("_conversation_strain")
 	var previous_outcome := str(experience.get("_dream_outcome"))
 	var previous_understood: bool = experience.get("_dream_understood")
+	var previous_lantern_seen: bool = experience.get("_lantern_seen")
+	var previous_lantern_sheltered: bool = experience.get("_lantern_sheltered")
+	var previous_lantern_returned: bool = experience.get("_lantern_returned")
+	var previous_saved_outcome := Game.dream_outcome
+	var previous_saved_lantern_response := Game.dream_lantern_response
 	experience.set("_conversation_strain", 0)
-	experience.set("_seen_story_cues", {"window": true, "sisters": true})
+	experience.set("_seen_story_cues", {"window": true, "sisters": true, "thread": true})
+	experience.set("_lantern_seen", true)
+	experience.set("_lantern_sheltered", true)
+	experience.set("_lantern_returned", false)
 	experience.call("_ending_text")
-	if not _require(experience.get("_dream_outcome") == "complete", "window and another cue must reach the complete ending"):
+	if not _require(experience.get("_dream_outcome") == "complete", "the lantern and all three trail images must reach the complete ending"):
+		return false
+	experience.set("_conversation_strain", 1)
+	experience.call("_ending_text")
+	if not _require(experience.get("_dream_outcome") == "strained", "repaired pressure must reach the strained ending"):
 		return false
 	experience.set("_seen_story_cues", {})
+	experience.set("_conversation_strain", 0)
 	experience.call("_ending_text")
 	if not _require(experience.get("_dream_outcome") == "unresolved", "missing clues must reach the unresolved ending"):
 		return false
-	experience.set("_conversation_strain", 4)
+	experience.set("_conversation_strain", 3)
 	experience.call("_ending_text")
 	if not _require(experience.get("_dream_outcome") == "ruptured", "high conversation strain must reach the ruptured ending"):
 		return false
@@ -268,6 +281,10 @@ func _exercise_endings(experience: Node) -> bool:
 	experience.set("_seen_story_cues", previous_cues)
 	experience.set("_dream_outcome", previous_outcome)
 	experience.set("_dream_understood", previous_understood)
+	experience.set("_lantern_seen", previous_lantern_seen)
+	experience.set("_lantern_sheltered", previous_lantern_sheltered)
+	experience.set("_lantern_returned", previous_lantern_returned)
+	Game.save_dream_outcome(previous_saved_outcome, previous_saved_lantern_response)
 	return true
 
 
