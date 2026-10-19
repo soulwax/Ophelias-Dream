@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.20.1 — 2026-10-19
+
+Two old tongues leave questions at the edge of the snow:
+
+> Silumë — sí.  Talumë — vanwa.  Lúmë lantuva.  Man ná i lúmë?
+>
+> Mîn vi menel; gilath sílar.  O menel palan-diriel.  Man?
+
+The first keeps time; the second leaves a space between stars. Both are written in the Latin alphabet, with no answers given.
+
 ## 0.2.20.0 — 2026-10-18
 
 - Add snowfall particle visibility and atmospheric haze sliders to display settings for tuning winter visibility.
